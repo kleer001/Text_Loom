@@ -66,10 +66,11 @@ class NetworkEntity(ABC):
         return hash((self.__class__, self.networkItemType()))
     
 
-
-from typing import List, Tuple, Optional
+from typing import List, Tuple, Optional, ClassVar, Set, Iterable
 import random
 import string
+import weakref
+from abc import ABC, abstractmethod
 
 class MobileItem(NetworkEntity):
     """
@@ -79,7 +80,10 @@ class MobileItem(NetworkEntity):
     named, selected, and colored within the network.
     """
 
-    def __init__(self, name: str, position: List[float], color: Optional[List[float]] = None):
+    _instances: ClassVar[Set[weakref.ref]] = set()
+    _session_ids: ClassVar[Set[str]] = set()
+
+    def __init__(self, name: str, position: List[float], color: Optional[List[float]] = None, session_id: Optional[str] = None):
         """
         Initialize a MobileItem.
 
@@ -87,12 +91,16 @@ class MobileItem(NetworkEntity):
             name (str): The name of the item.
             position (List[float]): The initial position [x, y] of the item.
             color (Optional[List[float]]): The color of the item as [r, g, b], each 0-1. Defaults to None.
+            session_id (Optional[str]): A pre-existing session ID. If None, a new one will be generated.
         """
         self._name: str = name
         self._position: List[float] = position
         self._color: List[float] = color or [0.5, 0.5, 0.5]  # Default to gray if no color provided
         self._selected: bool = False
-        self._session_id: str = self._generate_session_id()
+        self._session_id: str = session_id if session_id else self._generate_unique_session_id()
+        
+        self._instances.add(weakref.ref(self))
+        self._session_ids.add(self._session_id)
 
     def name(self) -> str:
         """Get the name of this item."""
@@ -107,6 +115,7 @@ class MobileItem(NetworkEntity):
         """
         self._name = name
 
+    @abstractmethod
     def path(self) -> str:
         """
         Get the full path of this item in the network.
@@ -114,10 +123,11 @@ class MobileItem(NetworkEntity):
         Returns:
             str: The full path starting with /.
 
-        Note: This method should be implemented by subclasses to provide the correct path.
+        Note: This method must be implemented by subclasses to provide the correct path.
         """
-        raise NotImplementedError("path() must be implemented by subclasses")
+        pass
 
+    @abstractmethod
     def relativePathTo(self, base_node: 'MobileItem') -> str:
         """
         Get the relative path to another node from this one.
@@ -128,9 +138,9 @@ class MobileItem(NetworkEntity):
         Returns:
             str: The relative path.
 
-        Note: This method should be implemented by subclasses to provide the correct relative path.
+        Note: This method must be implemented by subclasses to provide the correct relative path.
         """
-        raise NotImplementedError("relativePathTo() must be implemented by subclasses")
+        pass
 
     def isSelected(self) -> bool:
         """Check if this item is selected."""
@@ -191,12 +201,53 @@ class MobileItem(NetworkEntity):
         self._position[0] += xy[0]
         self._position[1] += xy[1]
 
+    @classmethod
+    def _generate_unique_session_id(cls) -> str:
+        """Generate a unique 8-digit base62 session ID."""
+        while True:
+            session_id = cls._generate_session_id()
+            if session_id not in cls._session_ids:
+                return session_id
+
     @staticmethod
     def _generate_session_id() -> str:
-        """Generate a unique 8-digit base62 session ID."""
+        """Generate an 8-digit base62 session ID."""
         characters = string.ascii_letters + string.digits
         return ''.join(random.choice(characters) for _ in range(8))
 
+    @classmethod
+    def bulk_add(cls, items: Iterable['MobileItem']) -> None:
+        """
+        Add multiple MobileItems at once, ensuring unique session IDs.
+
+        Args:
+            items (Iterable[MobileItem]): An iterable of MobileItems to add.
+        """
+        new_session_ids = set(item.sessionId() for item in items)
+        conflicting_ids = new_session_ids.intersection(cls._session_ids)
+
+        for item in items:
+            if item.sessionId() in conflicting_ids:
+                new_id = cls._generate_unique_session_id()
+                item._session_id = new_id
+            cls._instances.add(weakref.ref(item))
+            cls._session_ids.add(item.sessionId())
+
+    def __del__(self):
+        """Remove this instance from the set of instances when it's deleted."""
+        self._instances.discard(weakref.ref(self))
+        self._session_ids.discard(self._session_id)
+
     def __repr__(self) -> str:
         """Return a string representation of the MobileItem."""
-        return f"{self.__class__.__name__}(name='{self._name}', position={self._position}, color={self._color})"
+        return f"{self.__class__.__name__}(name='{self._name}', position={self._position}, color={self._color}, session_id='{self._session_id}')"
+
+    @abstractmethod
+    def networkItemType(self) -> NetworkItemType:
+        """
+        Get the type of this network entity.
+
+        Returns:
+            NetworkItemType: An enum value representing the type of this network entity.
+        """
+        pass
