@@ -251,3 +251,155 @@ class MobileItem(NetworkEntity):
             NetworkItemType: An enum value representing the type of this network entity.
         """
         pass
+
+
+    from typing import List, Tuple, Optional, Dict
+from base_classes import MobileItem, NetworkItemType
+
+class Node(MobileItem):
+    def __init__(self, name: str, position: List[float], node_type: 'NodeType', color: Optional[List[float]] = None):
+        super().__init__(name, position, color)
+        self._node_type: 'NodeType' = node_type
+        self._inputs: List[Optional['NodeConnection']] = []
+        self._outputs: List['NodeConnection'] = []
+        self._comment: str = ""
+        self._is_current: bool = False
+        self._errors: List[str] = []
+        self._warnings: List[str] = []
+        self._messages: List[str] = []
+
+    def node_path(self) -> str:
+        path = f"/{self.name()}"
+        parent = self.parent()
+        while parent:
+            path = f"/{parent.name()}" + path
+            parent = parent.parent()
+        return path
+
+    def children(self) -> Tuple['Node', ...]:
+        return tuple(conn.inputNode() for conn in self._outputs)
+
+    def createNode(self, node_type_name: str, node_name: Optional[str] = None) -> 'Node':
+        # This would need to be implemented based on your node creation system
+        # It should check against available node types in the nodes/ directory
+        raise NotImplementedError("createNode() needs to be implemented")
+
+    def destroy(self) -> None:
+        for conn in self._inputs + self._outputs:
+            conn.destroy()
+        # Additional cleanup as needed
+
+    def isCurrent(self) -> bool:
+        return self._is_current
+
+    def setCurrent(self, is_current: bool = True) -> None:
+        self._is_current = is_current
+
+    def type(self) -> 'NodeType':
+        return self._node_type
+
+    def childrenType(self) -> Tuple['NodeType', ...]:
+        return tuple(child.type() for child in self.children())
+
+    def inputs(self) -> Tuple[Optional['Node'], ...]:
+        return tuple(conn.outputNode() if conn else None for conn in self._inputs)
+
+    def outputs(self) -> Tuple['Node', ...]:
+        return tuple(conn.inputNode() for conn in self._outputs)
+
+    def setInput(self, input_index: int, output_node: 'Node', output_index: int = 0) -> None:
+        while len(self._inputs) <= input_index:
+            self._inputs.append(None)
+        if self._inputs[input_index]:
+            self._inputs[input_index].destroy()
+        self._inputs[input_index] = NodeConnection(output_node, self, output_index, input_index)
+
+    def setNextInput(self, output_node: 'Node', output_index: int = 0) -> None:
+        next_input = self._inputs.index(None) if None in self._inputs else len(self._inputs)
+        self.setInput(next_input, output_node, output_index)
+
+    def createInputNode(self, input_index: int, node_type_name: str, node_name: Optional[str] = None) -> 'Node':
+        new_node = self.createNode(node_type_name, node_name)
+        self.setInput(input_index, new_node)
+        return new_node
+
+    def inputNames(self) -> Tuple[str, ...]:
+        return self._node_type.inputNames()
+
+    def outputNames(self) -> Tuple[str, ...]:
+        return self._node_type.outputNames()
+
+    def comment(self) -> str:
+        return self._comment
+
+    def setComment(self, comment: str) -> None:
+        self._comment = comment
+
+    def appendComment(self, comment: str) -> None:
+        self._comment += comment
+
+    def errors(self) -> Tuple[str, ...]:
+        return tuple(self._errors)
+
+    def warnings(self) -> Tuple[str, ...]:
+        return tuple(self._warnings)
+
+    def messages(self) -> Tuple[str, ...]:
+        return tuple(self._messages)
+
+    def networkItemType(self) -> NetworkItemType:
+        return NetworkItemType.NODE
+
+    def __repr__(self) -> str:
+        return f"Node(name='{self.name()}', type='{self._node_type}', position={self.position()})"
+
+class NodeConnection:
+    def __init__(self, output_node: 'Node', input_node: 'Node', output_index: int, input_index: int):
+        self._output_node = output_node
+        self._input_node = input_node
+        self._output_index = output_index
+        self._input_index = input_index
+        self._selected = False
+
+        if self._output_node == self._input_node:
+            print("Warning: Connection creates a cycle. Deleting connection.")
+            self.destroy()
+
+    def outputNode(self) -> 'Node':
+        return self._output_node
+
+    def inputNode(self) -> 'Node':
+        return self._input_node
+
+    def outputIndex(self) -> int:
+        return self._output_index
+
+    def inputIndex(self) -> int:
+        return self._input_index
+
+    def outputName(self) -> str:
+        return self._output_node.outputNames()[self._output_index]
+
+    def inputName(self) -> str:
+        return self._input_node.inputNames()[self._input_index]
+
+    def outputDataType(self) -> str:
+        return self._output_node.type().outputTypes()[self._output_index]
+
+    def inputDataType(self) -> str:
+        return self._input_node.type().inputTypes()[self._input_index]
+
+    def isSelected(self) -> bool:
+        return self._selected
+
+    def setSelected(self, selected: bool = True) -> None:
+        self._selected = selected
+
+    def destroy(self) -> None:
+        if self in self._output_node._outputs:
+            self._output_node._outputs.remove(self)
+        if self._input_node._inputs[self._input_index] == self:
+            self._input_node._inputs[self._input_index] = None
+
+    def __repr__(self) -> str:
+        return f"NodeConnection(output={self._output_node.name()}[{self._output_index}], input={self._input_node.name()}[{self._input_index}])"
