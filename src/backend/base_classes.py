@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from enum import Enum, auto
 from typing import ClassVar
 
+
 class NetworkItemType(Enum):
     """Enum representing types of network entities."""
     NODE = auto()
