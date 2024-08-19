@@ -1,6 +1,24 @@
 from abc import ABC, abstractmethod
 from enum import Enum, auto
 from typing import ClassVar
+from enum import Enum, auto
+from pathlib import Path
+import importlib
+
+def generate_node_types():
+    node_types = {}
+    nodes_dir = Path(__file__).parent / 'nodes'
+    for file in nodes_dir.glob('*_node.py'):
+        node_type_name = file.stem.replace('_node', '').upper()
+        node_types[node_type_name] = auto()
+    return node_types
+
+class NodeType(Enum):
+    @classmethod
+    def _generate_next_value_(cls, name, start, count, last_values):
+        return name.lower()
+
+NodeType = Enum('NodeType', generate_node_types(), type=NodeType)
 
 
 class NetworkItemType(Enum):
@@ -446,27 +464,24 @@ class NodeConnection(NetworkEntity):
 
 from typing import List, Tuple, Optional, Dict, Any
 from enum import Enum
-from base_classes import MobileItem, NetworkEntity, NetworkItemType
+import importlib
 
 class NodeState(Enum):
     COOKING = "cooking"
     UNCHANGED = "unchanged"
     UNCOOKED = "uncooked"
 
-class NodeConnection(NetworkEntity):
-    # ... (NodeConnection class implementation as provided earlier)
 
 class Node(MobileItem):
     """
     Represents a Node in the workspace, inheriting from MobileItem.
-    
-    This class implements the Composite pattern, allowing for a hierarchical
-    structure of nodes. It also implements the Observer pattern for NodeConnections.
+    This class implements the Composite pattern, allowing for a hierarchical structure of nodes.
+    It also implements the Observer pattern for NodeConnections.
     """
 
-    def __init__(self, name: str, path: str, position: List[float, float], node_type_name: str):
+    def __init__(self, name: str, path: str, position: List[float], node_type: NodeType):
         super().__init__(name, path, position)
-        self._node_type_name: str = node_type_name
+        self._node_type: NodeType = node_type
         self._children: List['Node'] = []
         self._inputs: Dict[str, NodeConnection] = {}
         self._outputs: Dict[str, List[NodeConnection]] = {}
@@ -484,27 +499,44 @@ class Node(MobileItem):
         """Returns a tuple of the list of nodes it's connected to on its output."""
         return tuple(self._children)
 
-    def create_node(self, node_type_name: str, node_name: Optional[str] = None) -> 'Node':
+    def create_node(self, node_type: NodeType, node_name: Optional[str] = None) -> 'Node':
         """
         Creates a node of the specified type as a child of this node.
-        
-        This method could be extended to use a Factory pattern for creating
-        different types of nodes.
+
+        Args:
+            node_type (NodeType): The type of node to create.
+            node_name (Optional[str]): The name for the new node. If None, a default name will be generated.
+
+        Returns:
+            Node: The newly created node.
+
+        Raises:
+            ImportError: If the module for the specified node type cannot be imported.
+            AttributeError: If the node class cannot be found in the imported module.
         """
-        # TODO: Implement node factory
-        new_node = Node(node_name or f"{node_type_name}_{len(self._children)}", 
-                        f"{self.node_path()}/{node_name or node_type_name}",
-                        [0, 0],  # Default position
-                        node_type_name)
-        self._children.append(new_node)
-        return new_node
+        new_name = node_name or f"{node_type.value}_{len(self._children)}"
+        new_path = f"{self.node_path()}/{new_name}"
+        
+        try:
+            module_name = f"nodes.{node_type.value}_node"
+            module = importlib.import_module(module_name)
+            node_class_name = f"{node_type.value.capitalize()}Node"
+            node_class = getattr(module, node_class_name)
+            
+            new_node = node_class(new_name, new_path, [0, 0], node_type)
+            self._children.append(new_node)
+            return new_node
+        except ImportError:
+            raise ImportError(f"Could not import module for node type: {node_type.value}")
+        except AttributeError:
+            raise AttributeError(f"Could not find node class for node type: {node_type.value}")
 
     def destroy(self) -> None:
         """Deletes this node and its connections."""
         for connection in list(self.inputs()) + list(self.outputs()):
             self._remove_connection(connection)
-        # Additional cleanup logic here
-        # TODO: Remove this node from its parent's children list
+        if self.parent():
+            self.parent()._children.remove(self)
 
     def is_current(self) -> bool:
         """Returns whether this node has been selected."""
@@ -514,14 +546,12 @@ class Node(MobileItem):
         """Set or unset this node as selected for editing."""
         self.set_selected(is_current)
 
-    def type(self) -> str:
-        """Returns the node type name for this node."""
-        # TODO: Return a NodeType object instead of a string
-        return self._node_type_name
+    def type(self) -> NodeType:
+        """Returns the NodeType for this node."""
+        return self._node_type
 
-    def children_type(self) -> Tuple[str, ...]:
-        """Returns the node types of the children of this node."""
-        # TODO: Return NodeType objects instead of strings
+    def children_type(self) -> Tuple[NodeType, ...]:
+        """Returns the NodeTypes of the children of this node."""
         return tuple(child.type() for child in self._children)
 
     def inputs(self) -> Tuple[NodeConnection, ...]:
@@ -533,98 +563,97 @@ class Node(MobileItem):
         return tuple(conn for conns in self._outputs.values() for conn in conns)
 
     def set_input(self, input_index: str, input_node: 'Node', output_index: str) -> None:
-        """
-        Set the output connection of another node to the numbered input connector of this node.
-        """
+        """Connects an input of this node to an output of another node."""
         if input_index in self._inputs:
             self._remove_connection(self._inputs[input_index])
-        
-        new_connection = NodeConnection(input_node, self, output_index, input_index)
-        self._inputs[input_index] = new_connection
-        input_node._outputs.setdefault(output_index, []).append(new_connection)
-        self._on_connection_changed(new_connection)
+        connection = NodeConnection(input_node, self, output_index, input_index)
+        self._inputs[input_index] = connection
+        input_node._outputs.setdefault(output_index, []).append(connection)
 
-    def set_next_input(self, input_node: 'Node', output_index: str) -> None:
-        """
-        Connect the output connector from another node into the first unconnected input connector of this node.
-        """
-        available_inputs = set(self.input_names()) - set(self._inputs.keys())
-        if not available_inputs:
-            raise ValueError("No available input connections")
-        next_input = min(available_inputs)
-        self.set_input(next_input, input_node, output_index)
+    def remove_input(self, input_index: str) -> None:
+        """Removes the connection to the specified input."""
+        if input_index in self._inputs:
+            self._remove_connection(self._inputs[input_index])
 
-    def create_input_node(self, input_index: str, node_type_name: str, node_name: Optional[str] = None) -> 'Node':
-        """Create a new node and connect it to one of this node's inputs."""
-        new_node = self.create_node(node_type_name, node_name)
-        self.set_input(input_index, new_node, "0")  # Assuming "0" is a valid output index
-        return new_node
-
-    def input_names(self) -> Tuple[str, ...]:
-        """Returns a tuple of all the input names for this node."""
-        # TODO: Implement input name logic based on node type
-        return tuple()
-
-    def output_names(self) -> Tuple[str, ...]:
-        """Returns a tuple of all the output names for this node."""
-        # TODO: Implement output name logic based on node type
-        return tuple()
-
-    def input_data_types(self) -> Dict[str, str]:
-        """Returns a dictionary of input names to their data types."""
-        # TODO: Implement input data type logic based on node type
-        return {}
-
-    def output_data_types(self) -> Dict[str, str]:
-        """Returns a dictionary of output names to their data types."""
-        # TODO: Implement output data type logic based on node type
-        return {}
+    def _remove_connection(self, connection: NodeConnection) -> None:
+        """Removes a connection from both nodes it connects."""
+        if connection.input_index() in self._inputs:
+            del self._inputs[connection.input_index()]
+        if connection.output_index() in connection.output_node()._outputs:
+            connection.output_node()._outputs[connection.output_index()].remove(connection)
 
     def comment(self) -> str:
-        """Returns the node's comment string."""
+        """Returns the comment associated with this node."""
         return self._comment
 
     def set_comment(self, comment: str) -> None:
-        """Set the node's comment string."""
+        """Sets the comment for this node."""
         self._comment = comment
 
-    def append_comment(self, comment: str) -> None:
-        """Appends the given text to the comment on this node."""
-        self._comment += comment
+    def state(self) -> NodeState:
+        """Returns the current state of the node."""
+        return self._state
+
+    def set_state(self, state: NodeState) -> None:
+        """Sets the state of the node."""
+        self._state = state
 
     def errors(self) -> Tuple[str, ...]:
-        """Return the text of any errors from the last cook of this node."""
+        """Returns a tuple of error messages associated with this node."""
         return tuple(self._errors)
 
+    def add_error(self, error: str) -> None:
+        """Adds an error message to this node."""
+        self._errors.append(error)
+
+    def clear_errors(self) -> None:
+        """Clears all error messages from this node."""
+        self._errors.clear()
+
     def warnings(self) -> Tuple[str, ...]:
-        """Return the text of any warnings from the last cook of this node."""
+        """Returns a tuple of warning messages associated with this node."""
         return tuple(self._warnings)
 
+    def add_warning(self, warning: str) -> None:
+        """Adds a warning message to this node."""
+        self._warnings.append(warning)
+
+    def clear_warnings(self) -> None:
+        """Clears all warning messages from this node."""
+        self._warnings.clear()
+
     def messages(self) -> Tuple[str, ...]:
-        """Return the text of any messages from the last cook of this node."""
+        """Returns a tuple of informational messages associated with this node."""
         return tuple(self._messages)
 
-    def _remove_connection(self, connection: NodeConnection) -> None:
-        """Remove a connection from this node."""
-        if connection.input_node() == self:
-            del self._inputs[connection.input_index()]
-        elif connection.output_node() == self:
-            self._outputs[connection.output_index()].remove(connection)
-            if not self._outputs[connection.output_index()]:
-                del self._outputs[connection.output_index()]
-        self._on_connection_changed(connection, removed=True)
+    def add_message(self, message: str) -> None:
+        """Adds an informational message to this node."""
+        self._messages.append(message)
 
-    def _on_connection_changed(self, connection: NodeConnection, removed: bool = False) -> None:
-        """Observer method called when a connection is added or removed."""
-        # Implement any necessary logic here, e.g., updating node state
-        self._state = NodeState.UNCOOKED
+    def clear_messages(self) -> None:
+        """Clears all informational messages from this node."""
+        self._messages.clear()
+
+    def input_names(self) -> Dict[str, str]:
+        """Returns a dictionary of input names for this node type."""
+        return {}  # To be implemented by subclasses
+
+    def output_names(self) -> Dict[str, str]:
+        """Returns a dictionary of output names for this node type."""
+        return {}  # To be implemented by subclasses
+
+    def input_data_types(self) -> Dict[str, str]:
+        """Returns a dictionary of input data types for this node type."""
+        return {}  # To be implemented by subclasses
+
+    def output_data_types(self) -> Dict[str, str]:
+        """Returns a dictionary of output data types for this node type."""
+        return {}  # To be implemented by subclasses
 
     def network_item_type(self) -> NetworkItemType:
         """Implement the abstract method from NetworkEntity."""
         return NetworkItemType.NODE
 
     def __repr__(self) -> str:
-        """Return a string representation of the Node."""
-        return f"Node(name='{self._name}', type='{self._node_type_name}', path='{self.node_path()}')"
-
-
+        """Returns a string representation of the Node."""
+        return f"Node(name='{self.name()}', type={self._node_type}, path='{self.path()}')"
