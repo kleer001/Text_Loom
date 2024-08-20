@@ -4,27 +4,83 @@ from typing import ClassVar
 from enum import Enum, auto
 from pathlib import Path
 import importlib
+import os
+from typing import Dict, Any
+from pathlib import PurePosixPath
+import re 
 
 def generate_node_types():
     node_types = {}
     nodes_dir = Path(__file__).parent / 'nodes'
     for file in nodes_dir.glob('*_node.py'):
         node_type_name = file.stem.replace('_node', '').upper()
-        node_types[node_type_name] = auto()
+        node_types[node_type_name] = node_type_name.lower()
     return node_types
 
 class NodeType(Enum):
-    @classmethod
-    def _generate_next_value_(cls, name, start, count, last_values):
-        return name.lower()
+    pass
 
 NodeType = Enum('NodeType', generate_node_types(), type=NodeType)
 
 
+class NodeEnvironment:
+    _instance = None
+    nodes: Dict[str, 'Node'] = {}
+
+    @classmethod
+    def get_instance(cls):
+        if cls._instance is None:
+            cls._instance = cls()
+        return cls._instance
+
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super(NodeEnvironment, cls).__new__(cls)
+            cls._instance.root = PurePosixPath("/")
+            cls._instance.current_node = None
+            cls._instance.globals = cls._instance._build_globals()
+        return cls._instance
+
+    def _build_globals(self) -> Dict[str, Any]:
+        return {
+            'Node': Node,
+            'NodeType': NodeType,
+            'current_node': self.current_node,
+            'NodeEnvironment': NodeEnvironment,
+        }
+
+    def get_namespace(self):
+        return {
+            'current_node': self.current_node,
+            **self.globals
+        }
+
+    def execute(self, code):
+        try:
+            local_vars = {}
+            exec(code, self.get_namespace(), local_vars)
+            # Update the current namespace with any new variables
+            self.globals.update(local_vars)
+            # Return the last defined variable or expression result
+            return local_vars.get('_') if '_' in local_vars else None
+        except Exception as e:
+            print(f"Error: {str(e)}")
+            return None
+
+    def inspect(self):
+        print("NodeEnvironment state:")
+        print(f"Nodes: {self.nodes}")
+        print(f"Globals: {self.globals}")
+
+    @classmethod
+    def list_nodes(cls) -> list[str]:
+        return list(cls.nodes.keys())
+
+
 class NetworkItemType(Enum):
     """Enum representing types of network entities."""
-    NODE = auto()
-    CONNECTION = auto()
+    NODE = 'node'
+    CONNECTION = 'connection'
 
 class NetworkEntity(ABC):
     """
@@ -188,7 +244,7 @@ class MobileItem(NetworkEntity):
         _path (InternalPath): The full path of the item in the internal network.
         _selected (bool): Whether the item is currently selected.
         _color (Tuple[float, float, float]): The color of the item (RGB, 0-1 range).
-        _position (List[float, float]): The x, y position of the item.
+        _position (Tuple[float, float]): The x, y position of the item.
         _session_id (str): A unique 8-digit base62 identifier for the session.
     
     Class Attributes:
@@ -197,21 +253,21 @@ class MobileItem(NetworkEntity):
 
     _existing_session_ids: Set[str] = set()
 
-    def __init__(self, name: str, path: str, position: List[float, float]) -> None:
+    def __init__(self, name: str, path: str, position: Tuple[float, float]) -> None:
         """
         Initialize a new MobileItem.
         
         Args:
             name (str): The name of the item.
             path (str): The full path of the item in the internal network.
-            position (List[float, float]): The initial x, y position of the item.
+            position (Tuple[float, float]): The initial x, y position of the item.
         """
         super().__init__()
         self._name: str = name
         self._path: InternalPath = InternalPath(path)
         self._selected: bool = False
         self._color: Tuple[float, float, float] = (1.0, 1.0, 1.0)  # Default to white
-        self._position: List[float, float] = position
+        self._position: Tuple[float, float] = position
         self._session_id: str = self._generate_unique_session_id()
 
     def name(self) -> str:
@@ -278,25 +334,25 @@ class MobileItem(NetworkEntity):
         """Get the unique session ID of the item."""
         return self._session_id
 
-    def position(self) -> List[float, float]:
+    def position(self) -> Tuple[float, float]:
         """Get the current position of the item."""
         return self._position
 
-    def set_position(self, xy: List[float, float]) -> None:
+    def set_position(self, xy: Tuple[float, float]) -> None:
         """
         Set the position of the item.
         
         Args:
-            xy (List[float, float]): The new x, y position.
+            xy (Tuple[float, float]): The new x, y position.
         """
         self._position = xy
 
-    def move(self, xy: List[float, float]) -> None:
+    def move(self, xy: Tuple[float, float]) -> None:
         """
         Move the item by the given increments.
         
         Args:
-            xy (List[float, float]): The x, y increments to move by.
+            xy (Tuple[float, float]): The x, y increments to move by.
         """
         self._position[0] += xy[0]
         self._position[1] += xy[1]
@@ -499,9 +555,10 @@ class Node(MobileItem):
         """Returns a tuple of the list of nodes it's connected to on its output."""
         return tuple(self._children)
 
-    def create_node(self, node_type: NodeType, node_name: Optional[str] = None) -> 'Node':
+    @classmethod
+    def create_node(cls, node_type: NodeType, node_name: Optional[str] = None) -> 'Node':
         """
-        Creates a node of the specified type as a child of this node.
+        Creates a node of the specified type.
 
         Args:
             node_type (NodeType): The type of node to create.
@@ -514,8 +571,19 @@ class Node(MobileItem):
             ImportError: If the module for the specified node type cannot be imported.
             AttributeError: If the node class cannot be found in the imported module.
         """
-        new_name = node_name or f"{node_type.value}_{len(self._children)}"
-        new_path = f"{self.node_path()}/{new_name}"
+        base_name = node_name or f"{node_type.value}"
+        new_name = base_name
+        counter = 1
+
+        while f"/{new_name}" in NodeEnvironment.nodes:
+            match = re.match(r"(.+)_(\d+)$", new_name)
+            if match:
+                base_name, counter = match.groups()
+                counter = int(counter) + 1
+            new_name = f"{base_name}_{counter}"
+            counter += 1
+
+        new_path = f"/{new_name}"
         
         try:
             module_name = f"nodes.{node_type.value}_node"
@@ -523,8 +591,9 @@ class Node(MobileItem):
             node_class_name = f"{node_type.value.capitalize()}Node"
             node_class = getattr(module, node_class_name)
             
-            new_node = node_class(new_name, new_path, [0, 0], node_type)
-            self._children.append(new_node)
+            new_node = node_class(new_name, new_path, (0.0, 0.0), node_type)
+            new_node._session_id = new_node._generate_unique_session_id()
+            NodeEnvironment.nodes[new_path] = new_node
             return new_node
         except ImportError:
             raise ImportError(f"Could not import module for node type: {node_type.value}")
