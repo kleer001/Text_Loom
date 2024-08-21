@@ -150,44 +150,6 @@ from typing import List, Tuple, Optional, Set, Dict, Any
 from base64 import b64encode
 from os import urandom
 from concurrent.futures import ThreadPoolExecutor, as_completed
-
-class InternalPath:
-    def __init__(self, path: str):
-        self.path = self._normalize_path(path)
-
-    def _normalize_path(self, path: str) -> str:
-        return '/' + '/'.join(part for part in path.split('/') if part)
-
-    def parent(self) -> 'InternalPath':
-        parent_path = '/'.join(self.path.split('/')[:-1])
-        return InternalPath(parent_path if parent_path else '/')
-
-    def name(self) -> str:
-        return self.path.split('/')[-1]
-
-    def relative_to(self, other: 'InternalPath') -> str:
-        self_parts = self.path.split('/')
-        other_parts = other.path.split('/')
-        
-        # Find common prefix
-        i = 0
-        while i < len(self_parts) and i < len(other_parts) and self_parts[i] == other_parts[i]:
-            i += 1
-        
-        up_count = len(other_parts) - i
-        down_parts = self_parts[i:]
-        
-        relative_parts = ['..'] * up_count + down_parts
-        return '/'.join(relative_parts) if relative_parts else '.'
-
-    def __str__(self) -> str:
-        return self.path
-
-
-from typing import List, Tuple, Optional, Set, Dict, Any
-from base64 import b64encode
-from os import urandom
-from concurrent.futures import ThreadPoolExecutor, as_completed
 from abc import ABC, abstractmethod
 from enum import Enum, auto
 
@@ -282,7 +244,7 @@ class MobileItem(NetworkEntity):
             name (str): The new name for the item.
         """
         self._name = name
-
+        #TODO Add undo logic
     def path(self) -> str:
         """Get the full path of the item in the internal network."""
         return str(self._path)
@@ -311,7 +273,7 @@ class MobileItem(NetworkEntity):
             selected (bool): True to select, False to deselect. Defaults to True.
         """
         self._selected = selected
-
+        #TODO Add undo logic
     def color(self) -> Tuple[float, float, float]:
         """Get the color of the item."""
         return self._color
@@ -329,7 +291,7 @@ class MobileItem(NetworkEntity):
         if not all(0 <= c <= 1 for c in color):
             raise ValueError("Color values must be between 0 and 1")
         self._color = color
-
+        #TODO Add undo logic
     def session_id(self) -> str:
         """Get the unique session ID of the item."""
         return self._session_id
@@ -346,7 +308,7 @@ class MobileItem(NetworkEntity):
             xy (Tuple[float, float]): The new x, y position.
         """
         self._position = xy
-
+        #TODO Add undo logic
     def move(self, xy: Tuple[float, float]) -> None:
         """
         Move the item by the given increments.
@@ -356,7 +318,7 @@ class MobileItem(NetworkEntity):
         """
         self._position[0] += xy[0]
         self._position[1] += xy[1]
-
+        #TODO Add undo logic
     @classmethod
     def bulk_add(cls, items: List[Dict[str, Any]]) -> List['MobileItem']:
         """
@@ -400,7 +362,7 @@ class MobileItem(NetworkEntity):
         cls._existing_session_ids.update(new_session_ids)
 
         return new_items
-
+        #TODO Add undo logic
     @classmethod
     def _generate_unique_session_id(cls) -> str:
         """
@@ -444,7 +406,7 @@ class MobileItem(NetworkEntity):
         Removes the session ID from the set of existing IDs.
         """
         self._existing_session_ids.discard(self._session_id)
-
+        #TODO Add undo logic
 
 from typing import Optional
 from base_classes import NetworkEntity, NetworkItemType
@@ -505,7 +467,7 @@ class NodeConnection(NetworkEntity):
     def set_selected(self, selected: bool = True) -> None:
         """Selects or deselects this connection."""
         self._selected = selected
-
+        #TODO Add undo logic
     def network_item_type(self) -> NetworkItemType:
         """Implement the abstract method from NetworkEntity."""
         return NetworkItemType.CONNECTION
@@ -599,14 +561,14 @@ class Node(MobileItem):
             raise ImportError(f"Could not import module for node type: {node_type.value}")
         except AttributeError:
             raise AttributeError(f"Could not find node class for node type: {node_type.value}")
-
+        #TODO Add undo logic
     def destroy(self) -> None:
         """Deletes this node and its connections."""
         for connection in list(self.inputs()) + list(self.outputs()):
             self._remove_connection(connection)
         if self.parent():
             self.parent()._children.remove(self)
-
+        #TODO Add undo logic
     def is_current(self) -> bool:
         """Returns whether this node has been selected."""
         return self.is_selected()
@@ -614,7 +576,7 @@ class Node(MobileItem):
     def set_current(self, is_current: bool = True) -> None:
         """Set or unset this node as selected for editing."""
         self.set_selected(is_current)
-
+        #TODO Add undo logic
     def type(self) -> NodeType:
         """Returns the NodeType for this node."""
         return self._node_type
@@ -638,19 +600,19 @@ class Node(MobileItem):
         connection = NodeConnection(input_node, self, output_index, input_index)
         self._inputs[input_index] = connection
         input_node._outputs.setdefault(output_index, []).append(connection)
-
+        #TODO Add undo logic
     def remove_input(self, input_index: str) -> None:
         """Removes the connection to the specified input."""
         if input_index in self._inputs:
             self._remove_connection(self._inputs[input_index])
-
+        #TODO Add undo logic
     def _remove_connection(self, connection: NodeConnection) -> None:
         """Removes a connection from both nodes it connects."""
         if connection.input_index() in self._inputs:
             del self._inputs[connection.input_index()]
         if connection.output_index() in connection.output_node()._outputs:
             connection.output_node()._outputs[connection.output_index()].remove(connection)
-
+        #TODO Add undo logic
     def comment(self) -> str:
         """Returns the comment associated with this node."""
         return self._comment
@@ -658,7 +620,7 @@ class Node(MobileItem):
     def set_comment(self, comment: str) -> None:
         """Sets the comment for this node."""
         self._comment = comment
-
+        #TODO Add undo logic
     def state(self) -> NodeState:
         """Returns the current state of the node."""
         return self._state
@@ -666,7 +628,7 @@ class Node(MobileItem):
     def set_state(self, state: NodeState) -> None:
         """Sets the state of the node."""
         self._state = state
-
+        #TODO Add undo logic
     def errors(self) -> Tuple[str, ...]:
         """Returns a tuple of error messages associated with this node."""
         return tuple(self._errors)
@@ -674,11 +636,11 @@ class Node(MobileItem):
     def add_error(self, error: str) -> None:
         """Adds an error message to this node."""
         self._errors.append(error)
-
+        #TODO Add undo logic
     def clear_errors(self) -> None:
         """Clears all error messages from this node."""
         self._errors.clear()
-
+        #TODO Add undo logic
     def warnings(self) -> Tuple[str, ...]:
         """Returns a tuple of warning messages associated with this node."""
         return tuple(self._warnings)
@@ -686,11 +648,11 @@ class Node(MobileItem):
     def add_warning(self, warning: str) -> None:
         """Adds a warning message to this node."""
         self._warnings.append(warning)
-
+        #TODO Add undo logic
     def clear_warnings(self) -> None:
         """Clears all warning messages from this node."""
         self._warnings.clear()
-
+        #TODO Add undo logic
     def messages(self) -> Tuple[str, ...]:
         """Returns a tuple of informational messages associated with this node."""
         return tuple(self._messages)
@@ -698,11 +660,11 @@ class Node(MobileItem):
     def add_message(self, message: str) -> None:
         """Adds an informational message to this node."""
         self._messages.append(message)
-
+        #TODO Add undo logic
     def clear_messages(self) -> None:
         """Clears all informational messages from this node."""
         self._messages.clear()
-
+        #TODO Add undo logic
     def input_names(self) -> Dict[str, str]:
         """Returns a dictionary of input names for this node type."""
         return {}  # To be implemented by subclasses
@@ -718,7 +680,7 @@ class Node(MobileItem):
     def output_data_types(self) -> Dict[str, str]:
         """Returns a dictionary of output data types for this node type."""
         return {}  # To be implemented by subclasses
-
+        
     def network_item_type(self) -> NetworkItemType:
         """Implement the abstract method from NetworkEntity."""
         return NetworkItemType.NODE
