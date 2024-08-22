@@ -63,7 +63,9 @@ class UndoManager:
         self.undo_depth = depth
         self.undo_limit_reached = False  # Reset warning flag
 
-""" Example usage with the Bottle class
+
+""" 
+Example usage with the Bottle class
 class Bottle:
     def __init__(self, undo_manager: UndoManager):
         self._color = [1.0, 1.0, 1.0]
