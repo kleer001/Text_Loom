@@ -411,6 +411,7 @@ class Node(MobileItem):
     It also implements the Observer pattern for NodeConnections.
     """
 
+
     def __init__(
         self, name: str, path: str, position: List[float], node_type: NodeType
     ):
@@ -423,6 +424,9 @@ class Node(MobileItem):
         self._state: NodeState = NodeState.UNCOOKED
         self._errors: List[str] = []
         self._warnings: List[str] = []
+        self._is_time_dependent = False  # New attribute for time-dependent nodes
+        self._last_cook_time = 0.0  # New attribute for last cook duration
+        self._cook_count = 0  # New attribute for cooking count
         # self._messages: List[str] = []
 
     def node_path(self) -> str:
@@ -590,10 +594,54 @@ class Node(MobileItem):
         """Implement the abstract method from NetworkEntity."""
         return NetworkItemType.NODE
 
+    def isTimeDependent(self) -> bool:
+        """Return whether the node is time dependent."""
+        return self._is_time_dependent
+
+    def lastCookTime(self) -> float:
+        """Returns the duration of the node’s last cook in milliseconds. Returns a 0 if the node cannot be cooked, doesn’t need to be cooked, is bypassed, or locked"""
+        return self._last_cook_time
+
+    def cook(self, force: bool = False) -> None:
+        """Asks or forces the node to re-cook."""
+        # Add cooking logic here (not provided in this context)
+        if force:
+            self.set_state(NodeState.UNCOOKED)
+
+    def needsToCook(self) -> bool:
+        """Asks if the node needs to re-cook."""
+        return self._is_time_dependent and (
+            self.get_state() == NodeState.UNCOOKED or force
+        )
+
+    def cookCount(self) -> int:
+        """Returns the number of times this node has cooked in the current session."""
+        return self._cook_count
+
+    def inputsWithIndices(self, use_names: bool = False) -> Sequence[Tuple["Node", Union[int, str], Union[int, str]]]:
+        """Returns a sequence of tuples representing each connected input of this node."""
+        if not use_names:
+            return list((node, output_index, self._inputs[output_index].input_index()) for node, output_index in self._inputs.items())
+        else:
+            # Assuming input_names() and output_names() methods are implemented as expected
+            input_dict = self.input_names()
+            return [(node, output_name, self._inputs[output_index].input_index()) for node, output_name in input_dict.items()]
+
+    def outputsWithIndices(self, use_names: bool = False) -> Sequence[Tuple["Node", Union[int, str], Union[int, str]]]:
+        """Returns a sequence of tuples representing each connected output of this node."""
+        if not use_names:
+            return list((node, input_index, self._inputs[output_index].output_index()) for input_index, (node, output_index) in self._outputs.items())
+        else:
+            # Assuming input_names() and output_names() methods are implemented as expected
+            output_dict = self.output_names()
+            return [(node, output_name, self._inputs[output_index].output_index()) for output_name, (node, output_index) in output_dict.items()]
+
+
     def __repr__(self) -> str:
         """Returns a string representation of the Node."""
         return (
             f"Node(name='{self.name()}', type={self._node_type}, path='{self.path()}')"
         )
+
 
 
