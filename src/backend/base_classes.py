@@ -1,11 +1,10 @@
 import importlib
 import re
 from abc import ABC, abstractmethod
-from base64 import b64encode
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from enum import Enum, auto
-from os import urandom
-from pathlib import Path, PurePosixPath
+import uuid
+from pathlib import Path
 from typing import Any, ClassVar, Dict, List, Optional, Set, Tuple
 from UndoManager import UndoManager
 
@@ -23,59 +22,6 @@ class NodeType(Enum):
 
 
 NodeType = Enum("NodeType", generate_node_types(), type=NodeType)
-
-
-class NodeEnvironment:
-    _instance = None
-    nodes: Dict[str, "Node"] = {}
-
-    @classmethod
-    def get_instance(cls):
-        if cls._instance is None:
-            cls._instance = cls()
-        return cls._instance
-
-    def __new__(cls):
-        if cls._instance is None:
-            cls._instance = super(NodeEnvironment, cls).__new__(cls)
-            cls._instance.root = PurePosixPath("/")
-            cls._instance.current_node = None
-            cls._instance.globals = cls._instance._build_globals()
-        return cls._instance
-
-    def _build_globals(self) -> Dict[str, Any]:
-        return {
-            "Node": Node,
-            "NodeType": NodeType,
-            "current_node": self.current_node,
-            "NodeEnvironment": NodeEnvironment,
-            }
-
-    def get_namespace(self):
-        return {"current_node": self.current_node, **self.globals}
-
-    def execute(self, code):
-        try:
-            local_vars = {}
-            exec(code, self.get_namespace(), local_vars)
-            # Update the current namespace with any new variables
-            self.globals.update(local_vars)
-            # Return the last defined variable or expression result
-
-            return local_vars.get("_") if "_" in local_vars else None
-        except Exception as e:
-            print(f"Error: {str(e)}")
-            return None
-
-    def inspect(self):
-        print("NodeEnvironment state:")
-        print(f"Nodes: {self.nodes}")
-        print(f"Globals: {self.globals}")
-
-    @classmethod
-    def list_nodes(cls) -> list[str]:
-        return list(cls.nodes.keys())
-
 
 class NetworkItemType(Enum):
     """Enum representing types of network entities."""
@@ -203,17 +149,17 @@ class MobileItem(NetworkEntity):
         _selected (bool): Whether the item is currently selected.
         _color (Tuple[float, float, float]): The color of the item (RGB, 0-1 range).
         _position (Tuple[float, float]): The x, y position of the item.
-        _session_id (str): A unique 8-digit base62 identifier for the session.
+        _session_id (str): A unique identifier for the session.
 
-    Class Attributes:
-        _existing_session_ids (Set[str]): A set of all existing session IDs.
+    Class Attributes:session 
+        _existing_session_ids (Set[int]): A set of all existing session IDs.
         all_MobileItems : A global list of nodes for UndoManager
     """
 
-    _existing_session_ids: Set[str] = set()
+    _existing_session_ids: Set[int] = set()
     all_MobileItems = []
 
-    def __init__(self, name: str, path: str, position: Tuple[float, float]) -> None:
+    def __init__(self, name: str, path: str, position=[0.0, 0.0]) -> None:
         """
         Initialize a new MobileItem.
 
@@ -234,7 +180,7 @@ class MobileItem(NetworkEntity):
         self._selected: bool = False
         self._color: Tuple[float, float, float] = (1.0, 1.0, 1.0)  # Default to white
         self._position: Tuple[float, float] = position
-        self._session_id: str = self._generate_unique_session_id()
+        self._session_id: int = self._generate_unique_session_id()
 
     def delete(self):
         if self in MobileItem.all_MobileItems:
@@ -267,84 +213,9 @@ class MobileItem(NetworkEntity):
         """Get the full path of the item in the internal network."""
         return str(self._path)
 
-    def relative_path_to(self, base_node: "MobileItem") -> str:
-        """
-        Get the relative path to another node from this one.
-
-        Args:
-            base_node (MobileItem): The node to calculate the relative path to.
-
-        Returns:
-            str: The relative path between the two nodes.
-        """
-        return self._path.relative_to(base_node._path)
-
-    def is_selected(self) -> bool:
-        """Check if the item is selected."""
-        return self._selected
-
-    def set_selected(self, selected: bool = True) -> None:
-        """
-        Select or deselect the item.
-
-        Args:
-            selected (bool): True to select, False to deselect. Defaults to True.
-        """
-        self._selected = selected
-        # TODO Add undo logic
-
-    def color(self) -> Tuple[float, float, float]:
-        """Get the color of the item."""
-        return self._color
-
-    def set_color(self, color: Tuple[float, float, float]) -> None:
-        """
-        Set the color of the item.
-
-        Args:
-            color (Tuple[float, float, float]): The new color (RGB, 0-1 range).
-
-        Raises:
-            ValueError: If the color values are not in the range [0, 1].
-        """
-        if not all(0 <= c <= 1 for c in color):
-            raise ValueError("Color values must be between 0 and 1")
-        old_color = self._color
-        self._color = color
-        UndoManager().undo_stack.append((self.set_color, (old_color,)))
-        UndoManager().redo_stack.clear()
-
-        
-        # TODO Added undo logic ?
-
     def session_id(self) -> str:
         """Get the unique session ID of the item."""
         return self._session_id
-
-    def position(self) -> Tuple[float, float]:
-        """Get the current position of the item."""
-        return self._position
-
-    def set_position(self, xy: Tuple[float, float]) -> None:
-        """
-        Set the position of the item.
-
-        Args:
-            xy (Tuple[float, float]): The new x, y position.
-        """
-        self._position = xy
-        # TODO Add undo logic
-
-    def move(self, xy: Tuple[float, float]) -> None:
-        """
-        Move the item by the given increments.
-
-        Args:
-            xy (Tuple[float, float]): The x, y increments to move by.
-        """
-        self._position[0] += xy[0]
-        self._position[1] += xy[1]
-        # TODO Add undo logic
 
     @classmethod
     def bulk_add(cls, items: List[Dict[str, Any]]) -> List["MobileItem"]:
@@ -393,15 +264,14 @@ class MobileItem(NetworkEntity):
         cls._existing_session_ids.update(new_session_ids)
 
         return new_items
-        # TODO Add undo logic
 
     @classmethod
-    def _generate_unique_session_id(cls) -> str:
+    def _generate_unique_session_id(cls) -> int:
         """
-        Generate a unique 8-digit base62 session ID.
+        Generate a unique integer session ID.
 
         Returns:
-            str: A unique session ID.
+            int: A unique session ID.
 
         Raises:
             RuntimeError: If unable to generate a unique ID after 100 attempts.
@@ -414,9 +284,9 @@ class MobileItem(NetworkEntity):
         raise RuntimeError("Unable to generate a unique session ID")
 
     @staticmethod
-    def _generate_session_id() -> str:
-        """Generate an 8-digit base62 session ID."""
-        return b64encode(urandom(6)).decode("ascii")[:8]
+    def _generate_session_id() -> int:
+        """Generate an integer session ID using UUID."""
+        return uuid.uuid4().int & ((1 << 63) - 1)  # Ensure it fits in a 64-bit signed integer
 
     def __repr__(self) -> str:
         """Return a string representation of the MobileItem."""
@@ -458,14 +328,14 @@ class NodeConnection(NetworkEntity):
         self,
         output_node: "Node",
         input_node: "Node",
-        output_index: str,
-        input_index: str,
+        output_index: int,
+        input_index: int,
     ):
         super().__init__()
         self._output_node: "Node" = output_node
         self._input_node: "Node" = input_node
-        self._output_index: str = output_index
-        self._input_index: str = input_index
+        self._output_index: int = output_index
+        self._input_index: int = input_index
         self._selected: bool = False
 
     def output_node(self) -> "Node":
@@ -476,11 +346,11 @@ class NodeConnection(NetworkEntity):
         """Returns the node on the input side of this connection."""
         return self._input_node
 
-    def output_index(self) -> str:
+    def output_index(self) -> int:
         """Returns the index of the output connection on the output node."""
         return self._output_index
 
-    def input_index(self) -> str:
+    def input_index(self) -> int:
         """Returns the index of the input connection on the input node."""
         return self._input_index
 
@@ -549,11 +419,11 @@ class Node(MobileItem):
         self._children: List["Node"] = []
         self._inputs: Dict[str, NodeConnection] = {}
         self._outputs: Dict[str, List[NodeConnection]] = {}
-        self._comment: str = ""
+#        self._comment: str = ""
         self._state: NodeState = NodeState.UNCOOKED
         self._errors: List[str] = []
         self._warnings: List[str] = []
-        self._messages: List[str] = []
+        # self._messages: List[str] = []
 
     def node_path(self) -> str:
         """Returns the current location in the hierarchy of the workspace."""
@@ -623,22 +493,10 @@ class Node(MobileItem):
             self.parent()._children.remove(self)
         # TODO Add undo logic
 
-    def is_current(self) -> bool:
-        """Returns whether this node has been selected."""
-        return self.is_selected()
-
-    def set_current(self, is_current: bool = True) -> None:
-        """Set or unset this node as selected for editing."""
-        self.set_selected(is_current)
-        # TODO Add undo logic
 
     def type(self) -> NodeType:
         """Returns the NodeType for this node."""
         return self._node_type
-
-    def children_type(self) -> Tuple[NodeType, ...]:
-        """Returns the NodeTypes of the children of this node."""
-        return tuple(child.type() for child in self._children)
 
     def inputs(self) -> Tuple[NodeConnection, ...]:
         """Returns a tuple of the nodes connected to this node's input."""
@@ -673,15 +531,6 @@ class Node(MobileItem):
             connection.output_node()._outputs[connection.output_index()].remove(
                 connection
             )
-        # TODO Add undo logic
-
-    def comment(self) -> str:
-        """Returns the comment associated with this node."""
-        return self._comment
-
-    def set_comment(self, comment: str) -> None:
-        """Sets the comment for this node."""
-        self._comment = comment
         # TODO Add undo logic
 
     def state(self) -> NodeState:
@@ -719,20 +568,6 @@ class Node(MobileItem):
     def clear_warnings(self) -> None:
         """Clears all warning messages from this node."""
         self._warnings.clear()
-        # TODO Add undo logic
-
-    def messages(self) -> Tuple[str, ...]:
-        """Returns a tuple of informational messages associated with this node."""
-        return tuple(self._messages)
-
-    def add_message(self, message: str) -> None:
-        """Adds an informational message to this node."""
-        self._messages.append(message)
-        # TODO Add undo logic
-
-    def clear_messages(self) -> None:
-        """Clears all informational messages from this node."""
-        self._messages.clear()
         # TODO Add undo logic
 
     def input_names(self) -> Dict[str, str]:
