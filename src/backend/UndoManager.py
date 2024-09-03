@@ -1,6 +1,6 @@
 class UndoManager:
     _instance = None
-    
+
     def __new__(cls):
         if cls._instance is None:
             cls._instance = super(UndoManager, cls).__new__(cls)
@@ -19,3 +19,4 @@ class UndoManager:
             action, args = self.redo_stack.pop()
             action(*args)
             self.undo_stack.append((action, args))
+
