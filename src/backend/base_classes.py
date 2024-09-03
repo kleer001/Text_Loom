@@ -762,3 +762,6 @@ class Node(MobileItem):
         )
 
 
+#it's got too much stuff, gotta trim down 
+#there's extranious logic and hooks for gui only stuff. Yuck!
+#this will be the bloated-code branch
