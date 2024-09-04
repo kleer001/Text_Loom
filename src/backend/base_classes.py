@@ -1,12 +1,14 @@
 import importlib
 import re
+import uuid
 from abc import ABC, abstractmethod
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from enum import Enum, auto
-import uuid
 from pathlib import Path
 from typing import Any, ClassVar, Dict, List, Optional, Set, Tuple
+
 from UndoManager import UndoManager
+
 
 def generate_node_types():
     node_types = {}
@@ -480,13 +482,9 @@ class Node(MobileItem):
             NodeEnvironment.nodes[new_path] = new_node
             return new_node
         except ImportError:
-            raise ImportError(
-                f"Could not import module for node type: {node_type.value}"
-            )
+            raise ImportError(f"Could not import module for node type: {node_type.value}")
         except AttributeError:
-            raise AttributeError(
-                f"Could not find node class for node type: {node_type.value}"
-            )
+            raise AttributeError(f"Could not find node class for node type: {node_type.value}")
         # TODO Add undo logic
 
     def destroy(self) -> None:
@@ -598,7 +596,7 @@ class Node(MobileItem):
         """Return whether the node is time dependent."""
         return self._is_time_dependent
 
-    def lastCookTime(self) -> float:
+    def last_cook_time(self) -> float:
         """Returns the duration of the node’s last cook in milliseconds. Returns a 0 if the node cannot be cooked, doesn’t need to be cooked, is bypassed, or locked"""
         return self._last_cook_time
 
@@ -608,17 +606,17 @@ class Node(MobileItem):
         if force:
             self.set_state(NodeState.UNCOOKED)
 
-    def needsToCook(self) -> bool:
+    def needs_to_cook(self) -> bool:
         """Asks if the node needs to re-cook."""
         return self._is_time_dependent and (
             self.get_state() == NodeState.UNCOOKED or force
         )
 
-    def cookCount(self) -> int:
+    def cook_count(self) -> int:
         """Returns the number of times this node has cooked in the current session."""
         return self._cook_count
 
-    def inputsWithIndices(self, use_names: bool = False) -> Sequence[Tuple["Node", Union[int, str], Union[int, str]]]:
+    def inputs_with_indices(self, use_names: bool = False) -> Sequence[Tuple["Node", Union[int, str], Union[int, str]]]:
         """Returns a sequence of tuples representing each connected input of this node."""
         if not use_names:
             return list((node, output_index, self._inputs[output_index].input_index()) for node, output_index in self._inputs.items())
@@ -627,7 +625,7 @@ class Node(MobileItem):
             input_dict = self.input_names()
             return [(node, output_name, self._inputs[output_index].input_index()) for node, output_name in input_dict.items()]
 
-    def outputsWithIndices(self, use_names: bool = False) -> Sequence[Tuple["Node", Union[int, str], Union[int, str]]]:
+    def outputs_with_indices(self, use_names: bool = False) -> Sequence[Tuple["Node", Union[int, str], Union[int, str]]]:
         """Returns a sequence of tuples representing each connected output of this node."""
         if not use_names:
             return list((node, input_index, self._inputs[output_index].output_index()) for input_index, (node, output_index) in self._outputs.items())
@@ -635,6 +633,7 @@ class Node(MobileItem):
             # Assuming input_names() and output_names() methods are implemented as expected
             output_dict = self.output_names()
             return [(node, output_name, self._inputs[output_index].output_index()) for output_name, (node, output_index) in output_dict.items()]
+
 
 
     def __repr__(self) -> str:
