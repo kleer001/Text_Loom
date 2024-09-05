@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 from base_classes import Node, NodeType, NodeState
 
 class NullNode(Node):
@@ -9,7 +9,7 @@ class NullNode(Node):
     It has a single input and can connect its output to multiple other nodes.
     """
 
-    def __init__(self, name: str, path: str, position: Tuple[float, float], node_type: NodeType):
+    def __init__(self, name: str, path: str, position=[0, 0], node_type=NodeType.NULL):
         """
         Initialize a new NullNode.
 
@@ -20,7 +20,7 @@ class NullNode(Node):
             node_type (NodeType): The type of the node (should be NodeType.NULL).
         """
         super().__init__(name, path, position, node_type)
-        self._input_value: Any = None
+        self._input_value: Optional[List[str]] = None
 
     def process(self) -> None:
         """
@@ -31,12 +31,12 @@ class NullNode(Node):
         # The Null Node doesn't modify the input, so we just need to update its state
         self.set_state(NodeState.UNCHANGED)
 
-    def get_output(self) -> Any:
+    def get_output(self) -> Optional[List[str]]:
         """
         Get the output value of the Null Node.
 
         Returns:
-            Any: The unmodified input value.
+            Optional[List[str]]: The unmodified input value.
         """
         return self._input_value
 
