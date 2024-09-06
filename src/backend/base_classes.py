@@ -5,7 +5,8 @@ from abc import ABC, abstractmethod
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from enum import Enum, auto
 from pathlib import Path
-from typing import Any, ClassVar, Dict, List, Optional, Set, Tuple
+from typing import Any, ClassVar, Dict, List
+from typing import Optional, Set, Tuple, Sequence, Union
 
 from UndoManager import UndoManager
 
@@ -15,15 +16,68 @@ def generate_node_types():
     nodes_dir = Path(__file__).parent / "nodes"
     for file in nodes_dir.glob("*_node.py"):
         node_type_name = file.stem.replace("_node", "").upper()
-        node_types[node_type_name] = node_type_name.lower()
+        node_types[node_type_name] = file.stem.replace("_node", "")
     return node_types
 
 
 class NodeType(Enum):
     pass
 
-
 NodeType = Enum("NodeType", generate_node_types(), type=NodeType)
+
+class NodeEnvironment:
+    _instance = None
+    nodes: Dict[str, 'Node'] = {}
+
+    @classmethod
+    def get_instance(cls):
+        if cls._instance is None:
+            cls._instance = cls()
+        return cls._instance
+
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super(NodeEnvironment, cls).__new__(cls)
+            cls._instance.root = PurePosixPath("/")
+            cls._instance.current_node = None
+            cls._instance.globals = cls._instance._build_globals()
+        return cls._instance
+
+    def _build_globals(self) -> Dict[str, Any]:
+        return {
+            'Node': Node,
+            'NodeType': NodeType,
+            'current_node': self.current_node,
+            'NodeEnvironment': NodeEnvironment,
+        }
+
+    def get_namespace(self):
+        return {
+            'current_node': self.current_node,
+            **self.globals
+        }
+
+    def execute(self, code):
+        try:
+            local_vars = {}
+            exec(code, self.get_namespace(), local_vars)
+            # Update the current namespace with any new variables
+            self.globals.update(local_vars)
+            # Return the last defined variable or expression result
+            return local_vars.get('_') if '_' in local_vars else None
+        except Exception as e:
+            print(f"Error: {str(e)}")
+            return None
+
+    def inspect(self):
+        print("NodeEnvironment state:")
+        print(f"Nodes: {self.nodes}")
+        print(f"Globals: {self.globals}")
+
+    @classmethod
+    def list_nodes(cls) -> list[str]:
+        return list(cls.nodes.keys())
+
 
 class NetworkItemType(Enum):
     """Enum representing types of network entities."""
@@ -440,9 +494,7 @@ class Node(MobileItem):
         return tuple(self._children)
 
     @classmethod
-    def create_node(
-        cls, node_type: NodeType, node_name: Optional[str] = None
-    ) -> "Node":
+    def create_node(cls, node_type: NodeType, node_name: Optional[str] = None) -> "Node":
         """
         Creates a node of the specified type.
 
@@ -474,10 +526,12 @@ class Node(MobileItem):
         try:
             module_name = f"nodes.{node_type.value}_node"
             module = importlib.import_module(module_name)
-            node_class_name = f"{node_type.value.capitalize()}Node"
-            node_class = getattr(module, node_class_name)
+            
+            # Convert snake_case to PascalCase and remove '_node' suffix
+            class_name = ''.join(word.capitalize() for word in node_type.value.split('_'))
+            node_class = getattr(module, f"{class_name}Node")
 
-            new_node = node_class(new_name, new_path, (0.0, 0.0), node_type)
+            new_node = node_class(new_name, new_path, node_type)
             new_node._session_id = new_node._generate_unique_session_id()
             NodeEnvironment.nodes[new_path] = new_node
             return new_node
