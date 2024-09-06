@@ -5,8 +5,8 @@ from base_classes import Node, NodeType, NodeState
 from parm import Parm, ParameterType
 
 class FileInNode(Node):
-    def __init__(self, name: str, path: str, position: List[float]):
-        super().__init__(name, path, position, NodeType.FILEIN)
+    def __init__(self, name: str, path: str, position: [List[float]]):
+        super().__init__(name, path, position, NodeType.FILE_IN)
         self._is_time_dependent = True
         self._file_hash = None
 
