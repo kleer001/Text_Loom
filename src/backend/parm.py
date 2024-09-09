@@ -5,6 +5,7 @@ from typing import Dict, Tuple, Union, Any
 import re
 from enum import Enum
 from typing import Dict, Tuple, Union, Callable
+from base_classes import OperationFailed
 
 class ParameterType(Enum):
     INT = "int"
@@ -115,13 +116,11 @@ class Parm:
     def eval(self) -> Any:
         """Evaluates this parameter and returns the result."""
         expanded_value = self._expand_dollar_signs(self._value)
-        if self._check_script_safety(expanded_value):
-            try:
-                return eval(expanded_value, {'__builtins__': {}}, {})
-            except Exception as e:
-                raise OperationFailed(f"Failed to evaluate parameter: {str(e)}")
-        else:
-            raise OperationFailed("Expression failed safety check")
+        try:
+            return eval(expanded_value, {'__builtins__': {}}, {})
+        except Exception as e:
+            OperationFailed(f"Failed to evaluate parameter: {str(e)}")
+            return None  # Return None in case of failure
 
     def raw_value(self) -> str:
         """Returns the parameter's raw text value without evaluation or expansion."""
@@ -155,11 +154,30 @@ class Parm:
         return re.sub(r'\$\$(\d+)', replace, value)
 
     def _check_script_safety(self, script: str) -> bool:
-        """Checks if the given script is safe to run using bandit."""
-        b_mgr = manager.BanditManager(bandit.config.BanditConfig(), bandit.config.BanditConfig().get_option('profile'))
-        b_mgr.discover_files([script])
-        b_mgr.run_tests()
-        return b_mgr.scores[0] == 0  # Return True if no issues found
+        allowed_modules = {'os', 'math', 'time'}  # Add more as needed
+        allowed_functions = {'open', 'read', 'write', 'join', 'split'}  # Add more as needed
+
+        try:
+            tree = ast.parse(script)
+            for node in ast.walk(tree):
+                if isinstance(node, ast.Import):
+                    for alias in node.names:
+                        if alias.name not in allowed_modules:
+                            return False
+                elif isinstance(node, ast.ImportFrom):
+                    if node.module not in allowed_modules:
+                        return False
+                elif isinstance(node, ast.Call):
+                    if isinstance(node.func, ast.Name):
+                        if node.func.id not in allowed_functions:
+                            return False
+                elif isinstance(node, ast.Attribute):
+                    if node.attr not in allowed_functions:
+                        return False
+            return True
+        except SyntaxError:
+            return False
+
 
     def set(self, value: str) -> None:
         """Sets the parameter value."""

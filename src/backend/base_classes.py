@@ -7,7 +7,7 @@ from enum import Enum, auto
 from pathlib import Path
 from typing import Any, ClassVar, Dict, List
 from typing import Optional, Set, Tuple, Sequence, Union
-
+import time
 from UndoManager import UndoManager
 
 
@@ -18,6 +18,28 @@ def generate_node_types():
         node_type_name = file.stem.replace("_node", "").upper()
         node_types[node_type_name] = file.stem.replace("_node", "")
     return node_types
+
+import inspect
+import traceback
+
+def OperationFailed(message: str):
+    stack = traceback.extract_stack()[:-1]  # Remove the last entry (this function call)
+    caller_frame = inspect.currentframe().f_back
+    func_name = caller_frame.f_code.co_name
+    line_no = caller_frame.f_lineno
+    file_name = caller_frame.f_code.co_filename
+
+    print(f"OperationFailed: {message}")
+    print(f"  In function: {func_name}")
+    print(f"  File: {file_name}")
+    print(f"  Line: {line_no}")
+    print("\nStack Trace:")
+    for filename, line, func, code in stack:
+        print(f"  File: {filename}, Line: {line}, in {func}")
+        if code:
+            print(f"    {code.strip()}")
+    print()  # Add an empty line for better readability
+
 
 
 class NodeType(Enum):
@@ -558,6 +580,12 @@ class Node(MobileItem):
         """Returns a tuple of the nodes connected to this node's input."""
         return tuple(self._inputs.values())
 
+    def input_nodes(self) -> List['Node']:
+        """
+        Returns a list of all nodes connected to this node's inputs.
+            """
+        return [conn.output_node() for conn in self.inputs()]
+
     def outputs(self) -> Tuple[NodeConnection, ...]:
         """Returns a tuple of the nodes connected to this node's output."""
         return tuple(conn for conns in self._outputs.values() for conn in conns)
@@ -650,45 +678,101 @@ class Node(MobileItem):
         """Return whether the node is time dependent."""
         return self._is_time_dependent
 
+    def cook_dependencies(self) -> None:
+        """
+        Cooks all input nodes that this node depends on.
+        This method ensures that all input data is up-to-date before this node cooks.
+        """
+        cooked_nodes: Set[Node] = set()
+        nodes_to_cook: List[Node] = list(self.input_nodes())
+
+        while nodes_to_cook:
+            current_node = nodes_to_cook.pop(0)
+            if current_node not in cooked_nodes:
+                # Add this node's input nodes to the list to be cooked
+                nodes_to_cook.extend(current_node.input_nodes())
+                
+                # Cook the current node if it needs to
+                if current_node.needs_to_cook():
+                    current_node.cook()
+                
+                cooked_nodes.add(current_node)
+
+    def cook(self, force: bool = False) -> None:
+        """
+        Cooks the node, updating its state and output.
+        This method should be overridden by subclasses to implement specific cooking behavior.
+        """
+        self.cook_dependencies()  # Ensure all dependencies are cooked first
+        
+        self.set_state(NodeState.COOKING)
+        self._cook_count += 1
+        start_time = time.time()
+
+        try:
+            # Placeholder for node-specific cooking logic
+            # Subclasses should override this method and implement their specific cooking behavior here
+            pass
+
+        except Exception as e:
+            self.add_error(f"Error during cooking: {str(e)}")
+            self.set_state(NodeState.UNCOOKED)
+
+        self._last_cook_time = (time.time() - start_time) * 1000  # Convert to milliseconds
+        
+        if self.state() == NodeState.COOKING:
+            self.set_state(NodeState.UNCHANGED)
+
+
     def last_cook_time(self) -> float:
         """Returns the duration of the node’s last cook in milliseconds. Returns a 0 if the node cannot be cooked, doesn’t need to be cooked, is bypassed, or locked"""
         return self._last_cook_time
 
-    def cook(self, force: bool = False) -> None:
-        """Asks or forces the node to re-cook."""
-        # Add cooking logic here (not provided in this context)
-        if force:
-            self.set_state(NodeState.UNCOOKED)
-
     def needs_to_cook(self) -> bool:
-        """Asks if the node needs to re-cook."""
-        return self._is_time_dependent and (
-            self.get_state() == NodeState.UNCOOKED or force
-        )
+        """
+        Determines if the node needs to be cooked.
+        This method should be overridden by subclasses to implement specific logic.
+        """
+        return self._is_time_dependent or self.state() != NodeState.UNCHANGED
 
     def cook_count(self) -> int:
         """Returns the number of times this node has cooked in the current session."""
         return self._cook_count
 
+
     def inputs_with_indices(self, use_names: bool = False) -> Sequence[Tuple["Node", Union[int, str], Union[int, str]]]:
         """Returns a sequence of tuples representing each connected input of this node."""
-        if not use_names:
-            return list((node, output_index, self._inputs[output_index].input_index()) for node, output_index in self._inputs.items())
-        else:
-            # Assuming input_names() and output_names() methods are implemented as expected
-            input_dict = self.input_names()
-            return [(node, output_name, self._inputs[output_index].input_index()) for node, output_name in input_dict.items()]
+        result = []
+        for input_index, connection in self._inputs.items():
+            output_node = connection.output_node()
+            output_index = connection.output_index()
+            if use_names:
+                input_name = self.input_names().get(input_index, input_index)
+                output_name = output_node.output_names().get(output_index, output_index)
+                result.append((output_node, output_name, input_name))
+            else:
+                result.append((output_node, output_index, input_index))
+        return result
+
 
     def outputs_with_indices(self, use_names: bool = False) -> Sequence[Tuple["Node", Union[int, str], Union[int, str]]]:
         """Returns a sequence of tuples representing each connected output of this node."""
-        if not use_names:
-            return list((node, input_index, self._inputs[output_index].output_index()) for input_index, (node, output_index) in self._outputs.items())
-        else:
-            # Assuming input_names() and output_names() methods are implemented as expected
-            output_dict = self.output_names()
-            return [(node, output_name, self._inputs[output_index].output_index()) for output_name, (node, output_index) in output_dict.items()]
+        result = []
+        for output_index, connections in self._outputs.items():
+            for connection in connections:
+                input_node = connection.input_node()
+                input_index = connection.input_index()
+                if use_names:
+                    output_name = self.output_names().get(output_index, output_index)
+                    input_name = input_node.input_names().get(input_index, input_index)
+                    result.append((input_node, output_name, input_name))
+                else:
+                    result.append((input_node, output_index, input_index))
+        return result
 
-
+    def eval(self):
+        # Pass-through evaluation logic
+        pass
 
     def __repr__(self) -> str:
         """Returns a string representation of the Node."""
