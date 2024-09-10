@@ -16,22 +16,16 @@ class FileOutNode(Node):
         self._parms: Dict[str, Parm] = {
             "file_name": Parm("file_name", ParameterType.STRING, self),
             "file_text": Parm("file_text", ParameterType.STRING, self),
-            "file_system_path": Parm("file_system_path", ParameterType.STRING, self),
             "refresh": Parm("refresh", ParameterType.BUTTON, self)
         }
 
         # Set default values
-        self._parms["file_name"].set("output.txt")
+        self._parms["file_name"].set("./output.txt")
         self._parms["file_text"].set("")
-        self._parms["file_system_path"].set(os.getcwd())  # Default to current working directory
 
         # Set up refresh button callback
         self._parms["refresh"].set_script_callback("self.node().refresh()")
 
-    def get_full_file_path(self) -> str:
-        file_system_path = self._parms["file_system_path"].eval()
-        file_name = self._parms["file_name"].eval()
-        return os.path.join(file_system_path, file_name)
 
     def cook(self, force: bool = False) -> None:
         self.set_state(NodeState.COOKING)
@@ -43,14 +37,16 @@ class FileOutNode(Node):
             if not self.inputs():
                 raise ValueError("No input connected to FileOutNode")
 
-            input_data = self.inputs()[0].output_node().eval()
+            input_data = self.inputs()[0].eval()
+            print(f"Debug: Input data received: {input_data}")
+
             if not isinstance(input_data, list) or not all(isinstance(item, str) for item in input_data):
                 raise TypeError("Input data must be a list of strings")
 
             content = "\n".join(input_data)
             self._parms["file_text"].set(content)
 
-            full_file_path = self.get_full_file_path()
+            full_file_path = self._parms["file_name"].eval()
 
             new_hash = self._calculate_file_hash(content)
 
