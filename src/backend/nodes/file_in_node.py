@@ -15,24 +15,15 @@ class FileInNode(Node):
         self._parms: Dict[str, Parm] = {
             "file_name": Parm("file_name", ParameterType.STRING, self),
             "file_text": Parm("file_text", ParameterType.STRING, self),
-            "file_system_path": Parm("file_system_path", ParameterType.STRING, self),
             "refresh": Parm("refresh", ParameterType.BUTTON, self)
         }
 
         # Set default values
-        self._parms["file_name"].set("input.txt")
+        self._parms["file_name"].set("./input.txt")  # Default to current directory
         self._parms["file_text"].set("")
-        self._parms["file_system_path"].set(os.getcwd())  # Default to current working directory
 
         # Set up refresh button callback
         self._parms["refresh"].set_script_callback("self.node().refresh()")
-
-    def get_full_file_path(self) -> str:
-        file_system_path = str(self._parms["file_system_path"].eval())
-        file_name = str(self._parms["file_name"].eval())
-        fullfilepath = os.path.join(file_system_path, file_name)
-        print("Full combined path is ", fullfilepath)
-        return fullfilepath
 
     def validate_parameters(self) -> bool:
         file_system_path = self._parms["file_system_path"].eval()
@@ -49,24 +40,19 @@ class FileInNode(Node):
         return True
 
     def cook(self, force: bool = False) -> None:
-
-        if not self.validate_parameters(): #rabid checks
-            self.set_state(NodeState.UNCOOKED)
-            return
-
-        print(f"file_system_path: {self._parms['file_system_path'].eval()}")
-        print(f"file_name: {self._parms['file_name'].eval()}")
-
         self.set_state(NodeState.COOKING)
         self._cook_count += 1
         start_time = time.time()
 
+        print(f"Debug: file_name raw value = {self._parms['file_name'].raw_value()}")
+        full_file_path = self._parms["file_name"].eval()
+
         try:
-            full_file_path = self.get_full_file_path()
+            full_file_path = self._parms["file_name"].eval()
             print(f"Attempting to read file: {full_file_path}")  # Debug print
 
-            if not os.path.isfile(full_file_path):
-                raise FileNotFoundError(f"Not a file or file not found: {full_file_path}")
+            if not full_file_path:
+                raise ValueError("File path is empty or None")
 
             if not os.path.exists(full_file_path):
                 raise FileNotFoundError(f"File not found: {full_file_path}")
@@ -75,21 +61,15 @@ class FileInNode(Node):
                 content = file.read()
 
             new_hash = self._calculate_file_hash(content)
-
             if force or new_hash != self._file_hash:
                 self._parms["file_text"].set(content)
                 self._file_hash = new_hash
-                self.set_state(NodeState.UNCHANGED)
-            else:
-                self.set_state(NodeState.UNCHANGED)
 
+            self.set_state(NodeState.UNCHANGED)
             print(f"Successfully read file. Content length: {len(content)}")  # Debug print
 
         except Exception as e:
-            error_msg = f"Error reading file: {str(e)}"
-            if isinstance(e, FileNotFoundError):
-                error_msg += f"\nCheck if '{self._parms['file_name'].eval()}' exists in '{self._parms['file_system_path'].eval()}'"
-            self.add_error(error_msg)
+            self.add_error(f"Error reading file: {str(e)}")
             self.set_state(NodeState.UNCOOKED)
             print(f"Exception details: {type(e).__name__}: {str(e)}")  # Debug print
 

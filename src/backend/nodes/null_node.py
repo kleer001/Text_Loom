@@ -22,16 +22,22 @@ class NullNode(Node):
         super().__init__(name, path, position, node_type)
         self._input_value: Optional[List[str]] = None
 
-    def process(self) -> None:
-        """
-        Process the input data.
+    def cook(self, force: bool = False) -> None:
+        self.set_state(NodeState.COOKING)
+        try:
+            if self.inputs():
+                input_data = self.inputs()[0].eval()
+                if not isinstance(input_data, list) or not all(isinstance(item, str) for item in input_data):
+                    raise TypeError("Input data must be a list of strings")
+                self._input_value = input_data
+            else:
+                self._input_value = []
+            self.set_state(NodeState.UNCHANGED)
+        except Exception as e:
+            self.add_error(f"Error in NullNode cook: {str(e)}")
+            self.set_state(NodeState.UNCOOKED)
 
-        For a Null Node, this simply passes the input to the output without modification.
-        """
-        # The Null Node doesn't modify the input, so we just need to update its state
-        self.set_state(NodeState.UNCHANGED)
-
-    def get_output(self) -> Optional[List[str]]:
+    def eval(self) -> Optional[List[str]]:
         """
         Get the output value of the Null Node.
 

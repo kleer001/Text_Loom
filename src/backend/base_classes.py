@@ -576,9 +576,9 @@ class Node(MobileItem):
         """Returns the NodeType for this node."""
         return self._node_type
 
-    def inputs(self) -> Tuple[NodeConnection, ...]:
+    def inputs(self) -> Tuple["Node", ...]:
         """Returns a tuple of the nodes connected to this node's input."""
-        return tuple(self._inputs.values())
+        return tuple(conn.output_node() for conn in self._inputs.values())
 
     def input_nodes(self) -> List['Node']:
         """
@@ -586,9 +586,9 @@ class Node(MobileItem):
             """
         return [conn.output_node() for conn in self.inputs()]
 
-    def outputs(self) -> Tuple[NodeConnection, ...]:
+    def outputs(self) -> Tuple["Node", ...]:
         """Returns a tuple of the nodes connected to this node's output."""
-        return tuple(conn for conns in self._outputs.values() for conn in conns)
+        return tuple(conn.input_node() for conns in self._outputs.values() for conn in conns)
 
     def set_input(
         self, input_index: str, input_node: "Node", output_index: str

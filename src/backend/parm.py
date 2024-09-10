@@ -115,12 +115,45 @@ class Parm:
 
     def eval(self) -> Any:
         """Evaluates this parameter and returns the result."""
-        expanded_value = self._expand_dollar_signs(self._value)
-        try:
-            return eval(expanded_value, {'__builtins__': {}}, {})
-        except Exception as e:
-            OperationFailed(f"Failed to evaluate parameter: {str(e)}")
-            return None  # Return None in case of failure
+        print(f"Debug: Evaluating parameter {self._name}, raw value: {self._value}")
+
+        if self._type == ParameterType.INT:
+            return int(self._value)
+        elif self._type == ParameterType.FLOAT:
+            return float(self._value)
+        elif self._type == ParameterType.STRING:
+            expanded_value = self._expand_dollar_signs(str(self._value))
+            return self._eval_backticks(expanded_value)
+        elif self._type in [ParameterType.BUTTON, ParameterType.TOGGLE, ParameterType.MENU]:
+            return self._value
+        else:
+            raise OperationFailed(f"Unsupported parameter type: {self._type}")
+
+    def _expand_dollar_signs(self, value: str) -> str:
+        """Expands $$ expressions in the given value."""
+        def replace(match):
+            index = int(match.group(1)) - 1
+            inputs = self.node().inputs()
+            if 0 <= index < len(inputs):
+                return str(inputs[index])
+            return match.group(0)
+        return re.sub(r'\$\$(\d+)', replace, value)
+
+    def _eval_backticks(self, value: str) -> str:
+        """Evaluates expressions within backticks."""
+        def evaluate_expression(match):
+            expr = match.group(1)
+            try:
+                if self._check_script_safety(expr):
+                    result = eval(expr, {'__builtins__': {}}, {})
+                    return str(result)
+                else:
+                    raise OperationFailed(f"Expression failed safety check: {expr}")
+            except Exception as e:
+                print(f"Error evaluating expression '{expr}': {str(e)}")
+                return match.group(0)
+
+        return re.sub(r'`([^`]+)`', evaluate_expression, value)
 
     def raw_value(self) -> str:
         """Returns the parameter's raw text value without evaluation or expansion."""
@@ -179,6 +212,13 @@ class Parm:
             return False
 
 
-    def set(self, value: str) -> None:
+    def set(self, value: Union[int, float, str]) -> None:
         """Sets the parameter value."""
-        self._value = value
+        if self._type == ParameterType.INT:
+            self._value = int(value)
+        elif self._type == ParameterType.FLOAT:
+            self._value = float(value)
+        elif self._type in [ParameterType.STRING, ParameterType.BUTTON, ParameterType.TOGGLE, ParameterType.MENU]:
+            self._value = str(value)
+        else:
+            raise TypeError(f"Cannot set value of type {type(value)} for parameter of type {self._type}")
