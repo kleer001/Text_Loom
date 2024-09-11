@@ -6,6 +6,12 @@ from base_classes import Node, NodeType, NodeState
 from parm import Parm, ParameterType
 
 class FileInNode(Node):
+
+    """Reads content from a specified file and stores it as a parameter.
+    Provides functionality to refresh file content and track file changes."""
+
+    SINGLE_INPUT = True
+
     def __init__(self, name: str, path: str, position: List[float]):
         super().__init__(name, path, position, NodeType.FILE_IN)
         self._is_time_dependent = True
