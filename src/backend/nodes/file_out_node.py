@@ -7,6 +7,28 @@ from parm import Parm, ParameterType
 
 
 class FileOutNode(Node):
+
+def write_file(filename, content):
+
+    """
+    Write the given content to a text file. The function provides a refresh button to force the write.
+
+    The hash check helps to determine whether the file needs to be written again. If the hash of the input content matches the previously recorded hash and `force_write` is False, the function will skip writing the file.
+
+    Parameters:
+        filename (str): The name of the file to write to.
+        content (list of str): A list of strings to be written to the file.
+        refresh (button): Force the file to be written regardless of content changes or hash matching. Default is False.
+
+    Returns:
+        None
+
+    Raises:
+        FileNotFoundError: If the specified file does not exist.
+    """
+
+    SINGLE_INPUT = True
+
     def __init__(self, name: str, path: str, position: List[float]):
         super().__init__(name, path, position, NodeType.FILE_OUT)
         self._is_time_dependent = True

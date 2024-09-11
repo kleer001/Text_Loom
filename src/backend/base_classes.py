@@ -9,7 +9,7 @@ from typing import Any, ClassVar, Dict, List
 from typing import Optional, Set, Tuple, Sequence, Union
 import time
 from UndoManager import UndoManager
-
+import ast
 
 def generate_node_types():
     node_types = {}
@@ -590,12 +590,15 @@ class Node(MobileItem):
         """Returns a tuple of the nodes connected to this node's output."""
         return tuple(conn.input_node() for conns in self._outputs.values() for conn in conns)
 
-    def set_input(
-        self, input_index: str, input_node: "Node", output_index: str
-    ) -> None:
+    def set_input(self, input_index: str, input_node: "Node", output_index: str) -> None:
         """Connects an input of this node to an output of another node."""
+        if hasattr(self, 'SINGLE_INPUT') and self.SINGLE_INPUT and self._inputs:
+            self.add_warning(f"Node type {self.__class__.__name__} accepts only one input. Existing input will be replaced.")
+            self._remove_connection(next(iter(self._inputs.values())))
+
         if input_index in self._inputs:
             self._remove_connection(self._inputs[input_index])
+
         connection = NodeConnection(input_node, self, output_index, input_index)
         self._inputs[input_index] = connection
         input_node._outputs.setdefault(output_index, []).append(connection)

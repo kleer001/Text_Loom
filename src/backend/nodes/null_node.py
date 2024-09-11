@@ -9,6 +9,8 @@ class NullNode(Node):
     It has a single input and can connect its output to multiple other nodes.
     """
 
+    SINGLE_INPUT = True
+
     def __init__(self, name: str, path: str, position=[0, 0], node_type=NodeType.NULL):
         """
         Initialize a new NullNode.
@@ -46,38 +48,3 @@ class NullNode(Node):
         """
         return self._input_value
 
-    def to_dict(self) -> Dict[str, Any]:
-        """
-        Convert the NullNode to a dictionary representation.
-
-        Returns:
-            Dict[str, Any]: A dictionary containing the NullNode's data.
-        """
-        return {
-            "name": self.name(),
-            "type": self.type().value,
-            "path": self.path(),
-            "position": self.position(),
-            "input_value": self._input_value,
-        }
-
-    @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'NullNode':
-        """
-        Create a NullNode instance from a dictionary representation.
-
-        Args:
-            data (Dict[str, Any]): A dictionary containing the NullNode's data.
-
-        Returns:
-            NullNode: A new NullNode instance.
-        """
-        node = cls(
-            name=data["name"],
-            path=data["path"],
-            position=tuple(data["position"]),
-            node_type=NodeType.NULL
-        )
-        if "input_value" in data:
-            node._input_value = data["input_value"]
-        return node

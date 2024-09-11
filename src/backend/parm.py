@@ -4,8 +4,12 @@ from bandit.core import manager
 from typing import Dict, Tuple, Union, Any
 import re
 from enum import Enum
-from typing import Dict, Tuple, Union, Callable
+from typing import Dict, Tuple, Union, Callable 
+from typing import List, Optional
 from base_classes import OperationFailed
+
+"""Defines parameter types and the Parm class for node-based operations.
+Provides functionality for parameter management, evaluation, and script execution."""
 
 class ParameterType(Enum):
     INT = "int"
@@ -16,6 +20,12 @@ class ParameterType(Enum):
     MENU = "menu"
 
 class Parm:
+
+    """
+    Represents a parameter with various types and associated operations.
+    Handles parameter value setting, evaluation, and script execution for node interactions.
+    """
+
     def __init__(self, name: str, parm_type: ParameterType, node: 'Node'):
         self._name: str = name
         self._type: ParameterType = parm_type
@@ -122,22 +132,23 @@ class Parm:
         elif self._type == ParameterType.FLOAT:
             return float(self._value)
         elif self._type == ParameterType.STRING:
-            expanded_value = self._expand_dollar_signs(str(self._value))
-            return self._eval_backticks(expanded_value)
+            return self._expand_and_evaluate(str(self._value))
         elif self._type in [ParameterType.BUTTON, ParameterType.TOGGLE, ParameterType.MENU]:
             return self._value
         else:
             raise OperationFailed(f"Unsupported parameter type: {self._type}")
 
-    def _expand_dollar_signs(self, value: str) -> str:
-        """Expands $$ expressions in the given value."""
-        def replace(match):
-            index = int(match.group(1)) - 1
-            inputs = self.node().inputs()
-            if 0 <= index < len(inputs):
-                return str(inputs[index])
-            return match.group(0)
-        return re.sub(r'\$\$(\d+)', replace, value)
+    def _expand_and_evaluate(self, value: str) -> str:
+        """Expands dollar signs and evaluates backticks until no more changes occur."""
+        previous_value = None
+        current_value = value
+
+        while current_value != previous_value:
+            previous_value = current_value
+            current_value = self._expand_dollar_signs(current_value)
+            current_value = self._eval_backticks(current_value)
+
+        return current_value
 
     def _eval_backticks(self, value: str) -> str:
         """Evaluates expressions within backticks."""
@@ -176,15 +187,46 @@ class Parm:
         """Returns True if the parameter contains one or more valid functions in backticks."""
         return bool(re.search(r'`.*?`', self._value))
 
-    def _expand_dollar_signs(self, value: str) -> str:
-        """Expands $$ expressions in the given value."""
+    def _expand_dollar_signs(self, value: str, loop_number: Optional[int] = None) -> str:
+        """
+        Expands $$ expressions in the given value.
+        
+        Args:
+            value (str): The input string containing $$ expressions.
+            loop_number (Optional[int]): The optional loop number for $$N replacement.
+        
+        Returns:
+            str: The expanded string with $$ expressions replaced.
+        """
         def replace(match):
-            index = int(match.group(1)) - 1
-            inputs = self.node().inputs()
-            if inputs:
-                return str(inputs[index % len(inputs)])
-            return ''
-        return re.sub(r'\$\$(\d+)', replace, value)
+            expression = match.group(0)
+            
+            # Handle $$N replacement
+            if expression == "$$N":
+                if loop_number is None:
+                    print(f"Warning: Found $$N but no loop_number provided.")
+                    return expression
+                return str(loop_number)
+            
+            # Handle $$<number> replacement
+            if match.group(1).isdigit():
+                index = int(match.group(1)) - 1
+                if self.node.inputs and self.node.inputs[0].list:
+                    input_list = self.node.inputs[0].list
+                    modulo_index = index % len(input_list)
+                    if modulo_index != index:
+                        print(f"Modulo replacement: {expression} -> $${modulo_index + 1}")
+                    return str(input_list[modulo_index])
+                return expression
+            
+            # Handle malformed $$ expressions
+            print(f"Warning: Malformed $$ expression found: {expression}")
+            return expression
+
+        # Updated regex pattern to catch malformed $$ expressions
+        pattern = r'\$\$N|\$\$(\d+)|\$\$\S*'
+        return re.sub(pattern, replace, value)
+
 
     def _check_script_safety(self, script: str) -> bool:
         allowed_modules = {'os', 'math', 'time'}  # Add more as needed
