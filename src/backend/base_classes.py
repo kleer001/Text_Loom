@@ -576,9 +576,9 @@ class Node(MobileItem):
         """Returns the NodeType for this node."""
         return self._node_type
 
-    def inputs(self) -> Tuple["Node", ...]:
-        """Returns a tuple of the nodes connected to this node's input."""
-        return tuple(conn.output_node() for conn in self._inputs.values())
+    def inputs(self) -> Tuple[NodeConnection, ...]:
+        """Returns a tuple of the NodeConnections connected to this node's input."""
+        return tuple(self._inputs.values())
 
     def input_nodes(self) -> List['Node']:
         """

@@ -253,14 +253,3 @@ class Parm:
         except SyntaxError:
             return False
 
-
-    def set(self, value: Union[int, float, str]) -> None:
-        """Sets the parameter value."""
-        if self._type == ParameterType.INT:
-            self._value = int(value)
-        elif self._type == ParameterType.FLOAT:
-            self._value = float(value)
-        elif self._type in [ParameterType.STRING, ParameterType.BUTTON, ParameterType.TOGGLE, ParameterType.MENU]:
-            self._value = str(value)
-        else:
-            raise TypeError(f"Cannot set value of type {type(value)} for parameter of type {self._type}")
