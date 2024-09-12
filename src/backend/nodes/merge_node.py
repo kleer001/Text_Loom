@@ -49,16 +49,17 @@ class MergeNode(Node):
         self._merged_output: List[str] = []
 
     def cook(self, force: bool = False) -> None:
+        self.cook_dependencies()
         self.set_state(NodeState.COOKING)
         self._cook_count += 1
         start_time = time.time()
 
         try:
             input_data = []
-            for input_node in self.inputs():
-                node_data = input_node.eval()
+            for input_connection in self.inputs():
+                node_data = input_connection.output_node().eval()
                 if not isinstance(node_data, list) or not all(isinstance(item, str) for item in node_data):
-                    raise TypeError(f"Input from {input_node.name()} must be a list of strings")
+                    raise TypeError(f"Input from {input_connection.output_node().name()} must be a list of strings")
                 input_data.extend(node_data)
 
             self._merged_output = ["".join(input_data)]
@@ -69,7 +70,7 @@ class MergeNode(Node):
             self.set_state(NodeState.UNCOOKED)
 
         self._last_cook_time = (time.time() - start_time) * 1000  # Convert to milliseconds
-
+        
     def input_names(self) -> Dict[str, str]:
         return {f"input{i}": f"Input {i}" for i in range(len(self.inputs()))}
 

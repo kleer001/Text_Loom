@@ -8,8 +8,6 @@ from parm import Parm, ParameterType
 
 class FileOutNode(Node):
 
-def write_file(filename, content):
-
     """
     Write the given content to a text file. The function provides a refresh button to force the write.
 
@@ -50,6 +48,7 @@ def write_file(filename, content):
 
 
     def cook(self, force: bool = False) -> None:
+        self.cook_dependencies()  # Cook dependencies first
         self.set_state(NodeState.COOKING)
         self._cook_count += 1
         start_time = time.time()
@@ -59,7 +58,7 @@ def write_file(filename, content):
             if not self.inputs():
                 raise ValueError("No input connected to FileOutNode")
 
-            input_data = self.inputs()[0].eval()
+            input_data = self.inputs()[0].output_node().eval()
             print(f"Debug: Input data received: {input_data}")
 
             if not isinstance(input_data, list) or not all(isinstance(item, str) for item in input_data):
@@ -88,6 +87,7 @@ def write_file(filename, content):
             self.set_state(NodeState.UNCOOKED)
 
         self._last_cook_time = (time.time() - start_time) * 1000  # Convert to milliseconds
+
 
 
     def input_names(self) -> Dict[str, str]:
