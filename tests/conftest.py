@@ -1,5 +1,23 @@
+
 import pytest
-from src.backend.base_classes import Node, NodeType
+#from backend.base_classes import Node, NodeType
+
+import sys
+import os
+
+# Get the absolute path to the project root
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+
+# Add the src directory to the Python path
+src_path = os.path.join(project_root, 'src')
+sys.path.insert(0, src_path)
+
+src_path = os.path.join(project_root, 'src/backend')
+sys.path.insert(0, src_path)
+
+
+print("Python path:", sys.path)
+
 
 @pytest.fixture
 def create_node():

@@ -9,15 +9,19 @@ from typing import Any, ClassVar, Dict, List
 from typing import Optional, Set, Tuple, Sequence, Union
 import time
 from UndoManager import UndoManager
-import ast
+
+_node_types = None
 
 def generate_node_types():
-    node_types = {}
-    nodes_dir = Path(__file__).parent / "nodes"
-    for file in nodes_dir.glob("*_node.py"):
-        node_type_name = file.stem.replace("_node", "").upper()
-        node_types[node_type_name] = file.stem.replace("_node", "")
-    return node_types
+    global _node_types
+    if _node_types is None:
+        node_types = {}
+        nodes_dir = Path(__file__).parent / "nodes"
+        for file in nodes_dir.glob("*_node.py"):
+            node_type_name = file.stem.replace("_node", "").upper()
+            node_types[node_type_name] = file.stem.replace("_node", "")
+        _node_types = node_types
+    return _node_types
 
 import inspect
 import traceback
@@ -600,6 +604,7 @@ class Node(MobileItem):
             self._remove_connection(self._inputs[input_index])
 
         connection = NodeConnection(input_node, self, output_index, input_index)
+        print("New Connection: ", self, " and ", input_node)
         self._inputs[input_index] = connection
         input_node._outputs.setdefault(output_index, []).append(connection)
         # TODO Add undo logic

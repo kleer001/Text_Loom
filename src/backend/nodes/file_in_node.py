@@ -50,7 +50,6 @@ class FileInNode(Node):
         self._cook_count += 1
         start_time = time.time()
 
-        print(f"Debug: file_name raw value = {self._parms['file_name'].raw_value()}")
         full_file_path = self._parms["file_name"].eval()
 
         try:

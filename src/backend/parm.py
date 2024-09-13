@@ -125,7 +125,7 @@ class Parm:
 
     def eval(self) -> Any:
         """Evaluates this parameter and returns the result."""
-        print(f"Debug: Evaluating parameter {self._name}, raw value: {self._value}")
+        print(f"Debug~ Evaluating parameter {self._name} : {self._value}")
 
         if self._type == ParameterType.INT:
             return int(self._value)
