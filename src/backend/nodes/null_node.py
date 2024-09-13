@@ -25,17 +25,30 @@ class NullNode(Node):
         self._input_value: Optional[List[str]] = None
 
     def cook(self, force: bool = False) -> None:
+        """
+        Evaluate and store the input value without modifying it.
+        """
         self.set_state(NodeState.COOKING)
         try:
+            # Check if there's an input connection
             if self.inputs():
-                input_data = self.inputs()[0].eval()
-                if not isinstance(input_data, list) or not all(isinstance(item, str) for item in input_data):
+                # Get the NodeConnection object and then evaluate the output node
+                input_connection = self.inputs()[0]
+                input_data = input_connection.output_node().eval()  # Evaluate the output node of the connection
+                
+                if isinstance(input_data, list) and all(isinstance(item, str) for item in input_data):
+                    self._input_value = input_data  # Valid input data
+                else:
                     raise TypeError("Input data must be a list of strings")
-                self._input_value = input_data
             else:
+                # No input, set to empty list
                 self._input_value = []
+            
+            # Since it's a pass-through node, no cooking needed, mark as unchanged
             self.set_state(NodeState.UNCHANGED)
+
         except Exception as e:
+            # Handle errors, reset state to uncooked
             self.add_error(f"Error in NullNode cook: {str(e)}")
             self.set_state(NodeState.UNCOOKED)
 
