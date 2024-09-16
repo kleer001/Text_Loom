@@ -18,6 +18,7 @@ class ParameterType(Enum):
     BUTTON = "button"
     TOGGLE = "toggle"
     MENU = "menu"
+    STRINGLIST = "stringList"
 
 class Parm:
 
@@ -31,7 +32,7 @@ class Parm:
         self._type: ParameterType = parm_type
         self._node: 'Node' = node
         self._script_callback: str = ""
-        self._value: Union[int, float, str] = "" # Initial value, to be set later
+        self._value: Union[int, float, str, List[str]] = "" # Initial value, to be set later
 
     def name(self) -> str:
         """Returns this parameter's name."""
@@ -53,9 +54,12 @@ class Parm:
         """Returns the node on which this parameter exists."""
         return self._node
 
-    def set(self, value: Union[int, float, str]) -> None:
-        """Sets the parameter value."""
-        if self._type == ParameterType.INT:
+    def set(self, value: Union[int, float, str, List[str]]) -> None:
+        if self._type == ParameterType.STRINGLIST:
+            if not isinstance(value, list):
+                raise TypeError(f"Expected list for STRINGLIST, got {type(value)}")
+            self._value = [str(item) for item in value]
+        elif self._type == ParameterType.INT:
             self._value = int(value)
         elif self._type == ParameterType.FLOAT:
             self._value = float(value)
@@ -63,6 +67,7 @@ class Parm:
             self._value = str(value)
         else:
             raise TypeError(f"Cannot set value of type {type(value)} for parameter of type {self._type}")
+
 
     def script_callback(self) -> str:
         """Return the contents of the script that gets runs when this parameter changes."""
@@ -124,10 +129,11 @@ class Parm:
             raise OperationFailed("Invalid menu format")
 
     def eval(self) -> Any:
-        """Evaluates this parameter and returns the result."""
         print(f"Debug~ Evaluating parameter {self._name} : {self._value}")
 
-        if self._type == ParameterType.INT:
+        if self._type == ParameterType.STRINGLIST:
+            return [self._expand_and_evaluate(str(item)) for item in self._value]
+        elif self._type == ParameterType.INT:
             return int(self._value)
         elif self._type == ParameterType.FLOAT:
             return float(self._value)
@@ -187,17 +193,26 @@ class Parm:
         """Returns True if the parameter contains one or more valid functions in backticks."""
         return bool(re.search(r'`.*?`', self._value))
 
-    def _expand_dollar_signs(self, value: str, loop_number: Optional[int] = None) -> str:
+    def _expand_dollar_signs(self, value: str) -> str:
         """
         Expands $$ expressions in the given value.
         
         Args:
             value (str): The input string containing $$ expressions.
-            loop_number (Optional[int]): The optional loop number for $$N replacement.
         
         Returns:
             str: The expanded string with $$ expressions replaced.
+
+        **NOTE**
+        The global 'loop_number' variable, if present, is used in the
+        expansion process. This design choice may impact testability
+        and could lead to unexpected behavior if the global state
+        is modified elsewhere in the codebase.
+        **NOTE**
         """
+
+        loop_number = globals().get('loop_number') #comes from Loop node
+
         def replace(match):
             expression = match.group(0)
             
