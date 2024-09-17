@@ -1,9 +1,48 @@
 import time
+import sys
+import re
 from typing import List, Dict, Any, Optional
 from base_classes import Node, NodeType, NodeState, NodeEnvironment
 from parm import Parm, ParameterType
 from out_null_node import OutputNullNode
-import sys
+
+#Shoud be enough, but change if you must
+MAX_LOOP_DEPTH = 4  # Maximum nesting depth for looper nodes
+#Seriuosly  though 4 is a lot
+
+def get_loop_var_name(path: str, depth: int) -> str:
+    """
+    Generate a loop variable name based on the looper node's path and depth.
+    """
+    safe_path = re.sub(r'[^a-zA-Z0-9_]', '_', path)
+    return f"loop_{safe_path}_{depth}"
+
+
+def get_current_loop(path: str, depth: int) -> Optional[int]:
+    """
+    Get the current loop number for a given path and depth.
+    """
+    var_name = get_loop_var_name(path, depth)
+    return globals().get(var_name)
+
+
+def set_loop(path: str, depth: int, value: int) -> None:
+    """
+    Set the loop number for a given path and depth.
+    """
+    var_name = get_loop_var_name(path, depth)
+    globals()[var_name] = value
+
+
+def clean_stale_loops() -> None:
+    """
+    Remove all stale loop variables from globals.
+    This should be called at the beginning of each cook operation.
+    """
+    for var in list(globals().keys()):
+        if var.startswith("loop_"):
+            del globals()[var]
+
 
 class LooperNode(Node):
     """
@@ -16,6 +55,7 @@ class LooperNode(Node):
     def __init__(self, name: str, path: str, node_type: NodeType):
         super().__init__(name, path, [0.0, 0.0], node_type)
         self._is_time_dependent = False
+        self._depth = self._calculate_depth()
 
         # Initialize parameters
         self._parms: Dict[str, Parm] = {
@@ -117,7 +157,13 @@ class LooperNode(Node):
         if self.state() == NodeState.COOKING:
             self.set_state(NodeState.UNCHANGED)
 
+    def _calculate_depth(self) -> int:
+        """Calculate the depth of this looper node based on its path."""
+        return min(self.path().count('/') + 1, MAX_LOOP_DEPTH)
+
     def _perform_iterations(self):
+        clean_stale_loops()  # Clean up stale loop variables at the start of cooking
+
         min_val = self._parms["min"].eval()
         max_val = self._parms["max"].eval()
         step = self._parms["step"].eval()
@@ -138,13 +184,12 @@ class LooperNode(Node):
                 self.add_warning(f"Iteration timeout reached after {timeout_limit} seconds.")
                 break
 
-            # Set global loop_number
-            globals()['loop_number'] = i
+            # Set loop number for this iteration
+            set_loop(self.path(), self._depth, i)
 
             # Cook internal nodes
             self._input_node.cook()
             self._output_node.cook()
-
             # Get output from internal outputNode
             output_value = self._output_node.eval()
             
@@ -167,6 +212,8 @@ class LooperNode(Node):
 
         self._parms["staging_data"].set(staging_data)
         self._parms["output_hook"].set("\n".join(staging_data))
+        # Clean up this loop's variable after iterations are complete
+        set_loop(self.path(), self._depth, None)
 
     def eval(self) -> List[str]:
         if self.state() != NodeState.UNCHANGED:
