@@ -48,6 +48,13 @@ class MergeNode(Node):
         self._is_time_dependent = False
         self._merged_output: List[str] = []
 
+        # Initialize parameters
+        self._parms: Dict[str, Parm] = {
+            "single_string": Parm("single_string", ParameterType.TOGGLE, self)
+        }
+        # Set default value
+        self._parms["single_string"].set(True)
+
     def cook(self, force: bool = False) -> None:
         self.cook_dependencies()
         self.set_state(NodeState.COOKING)
@@ -62,7 +69,13 @@ class MergeNode(Node):
                     raise TypeError(f"Input from {input_connection.output_node().name()} must be a list of strings")
                 input_data.extend(node_data)
 
-            self._merged_output = ["".join(input_data)]
+            single_string = self._parms["single_string"].eval()
+
+            if single_string:
+                self._merged_output = ["".join(input_data)]
+            else:
+                self._merged_output = input_data
+
             self.set_state(NodeState.UNCHANGED)
 
         except Exception as e:
@@ -70,6 +83,7 @@ class MergeNode(Node):
             self.set_state(NodeState.UNCOOKED)
 
         self._last_cook_time = (time.time() - start_time) * 1000  # Convert to milliseconds
+
         
     def input_names(self) -> Dict[str, str]:
         return {f"input{i}": f"Input {i}" for i in range(len(self.inputs()))}

@@ -16,7 +16,7 @@ class ParameterType(Enum):
     FLOAT = "float"
     STRING = "string"
     BUTTON = "button"
-    TOGGLE = "toggle"
+    TOGGLE = "toggle" #Boolean
     MENU = "menu"
     STRINGLIST = "stringList"
 
@@ -32,7 +32,7 @@ class Parm:
         self._type: ParameterType = parm_type
         self._node: 'Node' = node
         self._script_callback: str = ""
-        self._value: Union[int, float, str, List[str]] = "" # Initial value, to be set later
+        self._value: Union[int, float, str, List[str], bool] = "" # Initial value, to be set later
 
     def name(self) -> str:
         """Returns this parameter's name."""
@@ -54,7 +54,7 @@ class Parm:
         """Returns the node on which this parameter exists."""
         return self._node
 
-    def set(self, value: Union[int, float, str, List[str]]) -> None:
+    def set(self, value: Union[int, float, str, List[str], bool]) -> None:
         if self._type == ParameterType.STRINGLIST:
             if not isinstance(value, list):
                 raise TypeError(f"Expected list for STRINGLIST, got {type(value)}")
@@ -65,9 +65,10 @@ class Parm:
             self._value = float(value)
         elif self._type == ParameterType.STRING:
             self._value = str(value)
+        elif self._type == ParameterType.TOGGLE:
+            self._value = bool(value)
         else:
             raise TypeError(f"Cannot set value of type {type(value)} for parameter of type {self._type}")
-
 
     def script_callback(self) -> str:
         """Return the contents of the script that gets runs when this parameter changes."""
@@ -139,7 +140,9 @@ class Parm:
             return float(self._value)
         elif self._type == ParameterType.STRING:
             return self._expand_and_evaluate(str(self._value))
-        elif self._type in [ParameterType.BUTTON, ParameterType.TOGGLE, ParameterType.MENU]:
+        elif self._type == ParameterType.TOGGLE:
+            return bool(self._value)
+        elif self._type in [ParameterType.BUTTON, ParameterType.MENU]:
             return self._value
         else:
             raise OperationFailed(f"Unsupported parameter type: {self._type}")
@@ -211,36 +214,31 @@ class Parm:
         **NOTE**
         """
 
-        loop_number = globals().get('loop_number') #comes from Loop node
-
         def replace(match):
-            expression = match.group(0)
-            
-            # Handle $$N replacement
-            if expression == "$$N":
-                if loop_number is None:
-                    print(f"Warning: Found $$N but no loop_number provided.")
+                    expression = match.group(0)
+                    
+                    if expression == "$$N":
+                        loop_number = get_current_loop(self.node().path(), self.node()._depth)
+                        if loop_number is None:
+                            print(f"Warning: Found $$N but no active loop for {self.node().path()}")
+                            return expression
+                        return str(loop_number)
+                    
+                    if match.group(1).isdigit():
+                        index = int(match.group(1)) - 1
+                        if self.node().inputs and self.node().inputs[0].list:
+                            input_list = self.node().inputs[0].list
+                            modulo_index = index % len(input_list)
+                            if modulo_index != index:
+                                print(f"Modulo replacement: {expression} -> $${modulo_index + 1}")
+                            return str(input_list[modulo_index])
+                        return expression
+                    
+                    print(f"Warning: Malformed $$ expression found: {expression}")
                     return expression
-                return str(loop_number)
-            
-            # Handle $$<number> replacement
-            if match.group(1).isdigit():
-                index = int(match.group(1)) - 1
-                if self.node.inputs and self.node.inputs[0].list:
-                    input_list = self.node.inputs[0].list
-                    modulo_index = index % len(input_list)
-                    if modulo_index != index:
-                        print(f"Modulo replacement: {expression} -> $${modulo_index + 1}")
-                    return str(input_list[modulo_index])
-                return expression
-            
-            # Handle malformed $$ expressions
-            print(f"Warning: Malformed $$ expression found: {expression}")
-            return expression
 
-        # Updated regex pattern to catch malformed $$ expressions
-        pattern = r'\$\$N|\$\$(\d+)|\$\$\S*'
-        return re.sub(pattern, replace, value)
+                pattern = r'\$\$N|\$\$(\d+)|\$\$\S*'
+                return re.sub(pattern, replace, value)
 
 
     def _check_script_safety(self, script: str) -> bool:
