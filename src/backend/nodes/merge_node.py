@@ -1,6 +1,7 @@
 import time
 from typing import List, Dict, Any
 from base_classes import Node, NodeType, NodeState
+from parm import Parm, ParameterType
 
 class MergeNode(Node):
     """

@@ -237,8 +237,8 @@ class Parm:
                     print(f"Warning: Malformed $$ expression found: {expression}")
                     return expression
 
-                pattern = r'\$\$N|\$\$(\d+)|\$\$\S*'
-                return re.sub(pattern, replace, value)
+        pattern = r'\$\$N|\$\$(\d+)|\$\$\S*'
+        return re.sub(pattern, replace, value)
 
 
     def _check_script_safety(self, script: str) -> bool:

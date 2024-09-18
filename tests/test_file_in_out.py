@@ -3,7 +3,7 @@ from backend.base_classes import Node, NodeType
 from backend.nodes.file_in_node import FileInNode
 from backend.nodes.file_out_node import FileOutNode
 from backend.nodes.null_node import NullNode
-
+from backend.nodes.input_null_node import InputNullNode
 
 @pytest.fixture
 def setup_nodes():
