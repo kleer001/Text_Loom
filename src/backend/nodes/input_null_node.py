@@ -50,7 +50,7 @@ class InputNullNode(Node):
             if not in_node.inputs():
                 raise ValueError(f"Node at {in_node_path} has no inputs")
 
-            input_data = in_node.inputs()[0].output_node().eval()
+            input_data = in_node.inputs()[0].output_data()
 
             if not isinstance(input_data, list) or not all(isinstance(item, str) for item in input_data):
                 raise TypeError("Input data must be a list of strings")

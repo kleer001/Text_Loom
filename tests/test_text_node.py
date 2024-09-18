@@ -1,4 +1,3 @@
-import os
 import pytest
 from backend.base_classes import Node, NodeType
 from backend.nodes.file_out_node import FileOutNode

@@ -4,11 +4,12 @@ import uuid
 from abc import ABC, abstractmethod
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from enum import Enum, auto
-from pathlib import Path
-from typing import Any, ClassVar, Dict, List
+from pathlib import Path, PurePosixPath
+from typing import Any, ClassVar, Dict, List, Callable
 from typing import Optional, Set, Tuple, Sequence, Union
 import time
 from UndoManager import UndoManager
+
 
 _node_types = None
 
@@ -55,6 +56,13 @@ class NodeEnvironment:
     _instance = None
     nodes: Dict[str, 'Node'] = {}
 
+    def __init__(self):
+        self._node_created_callbacks = []
+        self._creating_node = False  # Flag to prevent recursive calls
+        self.root = PurePosixPath("/")
+        self.current_node = None
+        self.globals = self._build_globals()
+
     @classmethod
     def get_instance(cls):
         if cls._instance is None:
@@ -94,6 +102,18 @@ class NodeEnvironment:
         except Exception as e:
             print(f"Error: {str(e)}")
             return None
+    #For looper node
+    def register_node_created(self, callback: Callable[[], None]) -> Callable[[], None]:
+        self._node_created_callbacks.append(callback)
+
+        def unregister():
+            self._node_created_callbacks.remove(callback)
+
+        return unregister
+    #For looper node
+    def call_node_created_callbacks(self):
+        for callback in self._node_created_callbacks:
+            callback()
 
     def inspect(self):
         print("NodeEnvironment state:")
@@ -103,6 +123,23 @@ class NodeEnvironment:
     @classmethod
     def list_nodes(cls) -> list[str]:
         return list(cls.nodes.keys())
+    
+    @classmethod
+    def node_exists(cls, node_name: str) -> bool:
+        return node_name in cls.nodes
+    
+    @classmethod
+    def add_node(cls, node: 'Node'):
+        if cls.get_instance()._creating_node:
+            return
+        cls.get_instance()._creating_node = True
+        cls.nodes[node.path()] = node
+        cls.get_instance().call_node_created_callbacks()
+        cls.get_instance()._creating_node = False
+
+    def call_node_created_callbacks(self):
+        for callback in self._node_created_callbacks:
+            callback()
 
 
 class NetworkItemType(Enum):
@@ -520,13 +557,14 @@ class Node(MobileItem):
         return tuple(self._children)
 
     @classmethod
-    def create_node(cls, node_type: NodeType, node_name: Optional[str] = None) -> "Node":
+    def create_node(cls, node_type: NodeType, node_name: Optional[str] = None, parent_path: str = "/") -> "Node":
         """
         Creates a node of the specified type.
 
         Args:
             node_type (NodeType): The type of node to create.
             node_name (Optional[str]): The name for the new node. If None, a default name will be generated.
+            parent_path (str): The path where the new node should be created. Defaults to root "/".
 
         Returns:
             Node: The newly created node.
@@ -534,12 +572,17 @@ class Node(MobileItem):
         Raises:
             ImportError: If the module for the specified node type cannot be imported.
             AttributeError: If the node class cannot be found in the imported module.
+            ValueError: If the specified parent path does not exist.
         """
+        # Validate parent path
+        if parent_path != "/" and not NodeEnvironment.node_exists(parent_path):
+            raise ValueError(f"Parent path '{parent_path}' does not exist.")
+
         base_name = node_name or f"{node_type.value}"
         new_name = base_name
         counter = 1
 
-        while f"/{new_name}" in NodeEnvironment.nodes:
+        while f"{parent_path}/{new_name}" in NodeEnvironment.nodes:
             match = re.match(r"(.+)_(\d+)$", new_name)
             if match:
                 base_name, counter = match.groups()
@@ -547,7 +590,7 @@ class Node(MobileItem):
             new_name = f"{base_name}_{counter}"
             counter += 1
 
-        new_path = f"/{new_name}"
+        new_path = f"{parent_path.rstrip('/')}/{new_name}"
 
         try:
             module_name = f"nodes.{node_type.value}_node"
@@ -559,7 +602,8 @@ class Node(MobileItem):
 
             new_node = node_class(new_name, new_path, node_type)
             new_node._session_id = new_node._generate_unique_session_id()
-            NodeEnvironment.nodes[new_path] = new_node
+            NodeEnvironment.add_node(new_node)  # Use the new add_node method
+            print("Created new node: ",new_node, " - at: ", parent_path)
             return new_node
         except ImportError:
             raise ImportError(f"Could not import module for node type: {node_type.value}")

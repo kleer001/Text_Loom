@@ -4,7 +4,9 @@ import re
 from typing import List, Dict, Any, Optional
 from base_classes import Node, NodeType, NodeState, NodeEnvironment
 from parm import Parm, ParameterType
-from out_null_node import OutputNullNode
+from .input_null_node import InputNullNode
+from .output_null_node import OutputNullNode
+from dataclasses import dataclass
 
 #Shoud be enough, but change if you must
 MAX_LOOP_DEPTH = 4  # Maximum nesting depth for looper nodes
@@ -56,7 +58,11 @@ class LooperNode(Node):
         super().__init__(name, path, [0.0, 0.0], node_type)
         self._is_time_dependent = False
         self._depth = self._calculate_depth()
-
+        self._input_node = None
+        self._output_node = None
+        self._internal_nodes_created = False
+        self._on_created_callback = NodeEnvironment.get_instance().register_node_created(self._create_internal_nodes)
+        
         # Initialize parameters
         self._parms: Dict[str, Parm] = {
             "min": Parm("min", ParameterType.INT, self),
@@ -83,21 +89,6 @@ class LooperNode(Node):
         self._parms["timeout_limit"].set(180.0)  # 3 minutes in seconds
         self._parms["data_limit"].set(200 * 1024 * 1024)  # 200MB in bytes
 
-        # Create internal nodes
-        self._create_internal_nodes()
-
-    def _create_internal_nodes(self):
-        try:
-            self._input_node = Node.create_node(NodeType.OUTPUTNULL, "inputNode")
-            self._output_node = Node.create_node(NodeType.OUTPUTNULL, "outputNode")
-            
-            # Set input_node's in_node parameter to this looper node's path
-            input_node_parms = self._input_node._parms
-            if "in_node" in input_node_parms:
-                input_node_parms["in_node"].set(self.path())
-            
-        except Exception as e:
-            self.add_error(f"Failed to create internal nodes: {str(e)}")
 
     def validate_parameters(self):
         min_val = self._parms["min"].eval()
@@ -231,3 +222,40 @@ class LooperNode(Node):
 
     def output_data_types(self) -> Dict[str, str]:
         return {"output": "List[str]"}
+
+    def _create_internal_nodes(self):
+        if self._internal_nodes_created:
+            return
+        try:
+            # Create InputNull node
+            input_node_name = "inputNullNode"
+            input_node_path = f"{self.path()}/{input_node_name}"
+            self._input_node = Node.create_node(NodeType.INPUT_NULL, node_name=input_node_name, parent_path=self.path())
+
+            # Create OutputNull node
+            output_node_name = "outputNullNode"
+            output_node_path = f"{self.path()}/{output_node_name}"
+            self._output_node = Node.create_node(NodeType.OUTPUT_NULL, node_name=output_node_name, parent_path=self.path())
+            
+            # Set input_node's in_node parameter to this looper node's path
+            input_node_parms = self._input_node._parms
+            if "in_node" in input_node_parms:
+                input_node_parms["in_node"].set(self.path())
+            
+            # Set parent-child relationships
+            self._children.append(self._input_node)
+            self._children.append(self._output_node)
+            
+        except Exception as e:
+            self.add_error(f"Failed to create internal nodes: {str(e)}")
+
+        # Unregister the callback after creating internal nodes
+        if self._on_created_callback:
+            self._on_created_callback()
+            self._on_created_callback = None
+
+    def __del__(self):
+        # Ensure the callback is unregistered when the LooperNode is deleted
+        if self._on_created_callback:
+            self._on_created_callback()
+        super().__del__()
