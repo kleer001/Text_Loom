@@ -61,7 +61,6 @@ class LooperNode(Node):
         self._input_node = None
         self._output_node = None
         self._internal_nodes_created = False
-        self._on_created_callback = NodeEnvironment.get_instance().register_node_created(self._create_internal_nodes)
         
         # Initialize parameters
         self._parms: Dict[str, Parm] = {
@@ -89,6 +88,10 @@ class LooperNode(Node):
         self._parms["timeout_limit"].set(180.0)  # 3 minutes in seconds
         self._parms["data_limit"].set(200 * 1024 * 1024)  # 200MB in bytes
 
+    @classmethod
+    def post_registration_init(cls, node):
+        if isinstance(node, LooperNode) and not node._internal_nodes_created:
+            node._create_internal_nodes()
 
     def validate_parameters(self):
         min_val = self._parms["min"].eval()
@@ -179,8 +182,11 @@ class LooperNode(Node):
             set_loop(self.path(), self._depth, i)
 
             # Cook internal nodes
-            self._input_node.cook()
-            self._output_node.cook()
+            if self._input_node.needs_to_cook():
+                self._input_node.cook()
+            if self._output_node.needs_to_cook():
+                self._output_node.cook()
+                
             # Get output from internal outputNode
             output_value = self._output_node.eval()
             
@@ -249,10 +255,6 @@ class LooperNode(Node):
         except Exception as e:
             self.add_error(f"Failed to create internal nodes: {str(e)}")
 
-        # Unregister the callback after creating internal nodes
-        if self._on_created_callback:
-            self._on_created_callback()
-            self._on_created_callback = None
 
     def __del__(self):
         # Ensure the callback is unregistered when the LooperNode is deleted

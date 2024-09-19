@@ -134,12 +134,13 @@ class NodeEnvironment:
             return
         cls.get_instance()._creating_node = True
         cls.nodes[node.path()] = node
-        cls.get_instance().call_node_created_callbacks()
+        
+        # Call post-registration initialization
+        if hasattr(node.__class__, 'post_registration_init'):
+            node.__class__.post_registration_init(node)
+        
         cls.get_instance()._creating_node = False
 
-    def call_node_created_callbacks(self):
-        for callback in self._node_created_callbacks:
-            callback()
 
 
 class NetworkItemType(Enum):
@@ -603,7 +604,12 @@ class Node(MobileItem):
             new_node = node_class(new_name, new_path, node_type)
             new_node._session_id = new_node._generate_unique_session_id()
             NodeEnvironment.add_node(new_node)  # Use the new add_node method
-            print("Created new node: ",new_node, " - at: ", parent_path)
+            print("Created new node: ",new_node.name(), new_node, " - at: ", parent_path)
+
+            # Call post-registration initialization
+            if hasattr(new_node.__class__, 'post_registration_init'):
+                new_node.__class__.post_registration_init(new_node)
+
             return new_node
         except ImportError:
             raise ImportError(f"Could not import module for node type: {node_type.value}")
@@ -648,7 +654,7 @@ class Node(MobileItem):
             self._remove_connection(self._inputs[input_index])
 
         connection = NodeConnection(input_node, self, output_index, input_index)
-        print("New Connection: ", self, " and ", input_node)
+        print("New Connection: from input ", self.name(), " to output: ", input_node.name())
         self._inputs[input_index] = connection
         input_node._outputs.setdefault(output_index, []).append(connection)
         # TODO Add undo logic
