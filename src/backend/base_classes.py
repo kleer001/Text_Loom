@@ -516,6 +516,7 @@ class NodeState(Enum):
     COOKING = "cooking"
     UNCHANGED = "unchanged"
     UNCOOKED = "uncooked"
+    COOKED = "cooked"
 
 
 class Node(MobileItem):
