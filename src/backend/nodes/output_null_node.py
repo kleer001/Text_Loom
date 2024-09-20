@@ -34,27 +34,36 @@ class OutputNullNode(Node):
 
         # Set default value
         self._parms["out_data"].set([])
-
+        
     def cook(self, force: bool = False) -> None:
-        self.cook_dependencies()  # Cook dependencies first
+        self.add_error(f"Starting cook for {self.name}")
+        self.cook_dependencies()
         self.set_state(NodeState.COOKING)
         self._cook_count += 1
         start_time = time.time()
 
         try:
-            input_data = self.inputs()[0].output_node().eval() if self.inputs() else []
-            if not isinstance(input_data, list) or not all(isinstance(item, str) for item in input_data):
-                raise TypeError("Input data must be a list of strings")
+            input_data = self.inputs()[0].output_node().eval() if self.inputs() else None
+            self.add_error(f"Input data: {type(input_data)} - {input_data[:100] if input_data else 'None'}")
 
-            self._parms["out_data"].set(input_data)
-            self._output = input_data
+            if input_data is None:
+                self.add_warning("Input data is None, setting empty list as output")
+                self._parms["out_data"].set([])
+                self._output = []
+            elif not isinstance(input_data, list) or not all(isinstance(item, str) for item in input_data):
+                raise TypeError("Input data must be a list of strings")
+            else:
+                self._parms["out_data"].set(input_data)
+                self._output = input_data
+                #self.add_error(f"Set output: {type(self._output)} - {self._output[:100]}")
+
             self.set_state(NodeState.UNCHANGED)
 
         except Exception as e:
-            self.add_error(f"Error processing output: {str(e)}")
+            self.add_error(f"Error in NullNode cook: {str(e)}")
             self.set_state(NodeState.UNCOOKED)
 
-        self._last_cook_time = (time.time() - start_time) * 1000  # Convert to milliseconds
+        self._last_cook_time = (time.time() - start_time) * 1000
 
     def needs_to_cook(self) -> bool:
         if super().needs_to_cook():

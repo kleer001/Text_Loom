@@ -1,6 +1,6 @@
 
-def print_node_info(node, node_name):
-    print(f"\n--- {node_name} Node Information ---")
+def print_node_info(node):
+    print(f"\n--- {node.name()} Node Information ---")
     print(f"Node: {node}")
     print(f"Node Type: {node.type()}")
     print(f"Node Path: {node.path()}")

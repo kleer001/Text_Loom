@@ -24,7 +24,7 @@ class InputNullNode(Node):
         self._is_time_dependent = False
         self._input_hash = None
         self._last_input_size = 0
-
+        self._output = None
         # Initialize parameters
         self._parms: Dict[str, Parm] = {
             "in_node": Parm("in_node", ParameterType.STRING, self),
@@ -42,29 +42,49 @@ class InputNullNode(Node):
 
         try:
             in_node_path = self._parms["in_node"].eval()
-            in_node = NodeEnvironment.nodes.get(in_node_path)
+            self.add_error(f"Input node path: {in_node_path}")
 
+            if not in_node_path:
+                raise ValueError("Input node path is empty")
+
+            in_node = NodeEnvironment.nodes.get(in_node_path)
             if not in_node:
                 raise ValueError(f"Invalid node path: {in_node_path}")
 
             if not in_node.inputs():
-                raise ValueError(f"Node at {in_node_path} has no inputs")
+                self.add_warning(f"Node at {in_node_path} has no inputs")
+                self._parms["in_data"].set([])
+                self._output = []
+                self.set_state(NodeState.COOKED)
+                return
 
             input_data = in_node.inputs()[0].output_data()
+            self.add_error(f"Retrieved input data: {type(input_data)} - {input_data[:100] if input_data else 'None'}")
 
-            if not isinstance(input_data, list) or not all(isinstance(item, str) for item in input_data):
-                raise TypeError("Input data must be a list of strings")
+            if input_data is None:
+                self.add_warning("Input data is None, setting empty list as output")
+                self._parms["in_data"].set([])
+                self._output = []
+            elif not isinstance(input_data, list):
+                raise TypeError(f"Input data must be a list, got {type(input_data)}")
+            elif not all(isinstance(item, str) for item in input_data):
+                raise TypeError("All items in input data must be strings")
+            else:
+                self._parms["in_data"].set(input_data)
+                self._output = input_data
+                self.add_error(f"Set output: {type(self._output)} - {self._output[:100]}")
 
-            self._parms["in_data"].set(input_data)
-            self._output = input_data
-            self.set_state(NodeState.UNCHANGED)
+            self.set_state(NodeState.COOKED)
 
         except Exception as e:
-            self.add_error(f"Error processing input: {str(e)}")
+            self.add_error(f"Error in InputNullNode cook: {str(e)}")
             self.set_state(NodeState.UNCOOKED)
+            self._output = []  # Clear previous output on error
+            self._parms["in_data"].set([])
 
-        self._last_cook_time = (time.time() - start_time) * 1000  # Convert to milliseconds
+        self._last_cook_time = (time.time() - start_time) * 1000
 
+    # ... (rest of the class remains the same)
     def needs_to_cook(self) -> bool:
         if super().needs_to_cook():
             return True

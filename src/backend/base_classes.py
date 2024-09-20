@@ -11,6 +11,7 @@ import time
 from UndoManager import UndoManager
 
 
+
 _node_types = None
 
 def generate_node_types():
@@ -102,18 +103,6 @@ class NodeEnvironment:
         except Exception as e:
             print(f"Error: {str(e)}")
             return None
-    #For looper node
-    def register_node_created(self, callback: Callable[[], None]) -> Callable[[], None]:
-        self._node_created_callbacks.append(callback)
-
-        def unregister():
-            self._node_created_callbacks.remove(callback)
-
-        return unregister
-    #For looper node
-    def call_node_created_callbacks(self):
-        for callback in self._node_created_callbacks:
-            callback()
 
     def inspect(self):
         print("NodeEnvironment state:")
@@ -133,13 +122,18 @@ class NodeEnvironment:
         if cls.get_instance()._creating_node:
             return
         cls.get_instance()._creating_node = True
-        cls.nodes[node.path()] = node
-        
-        # Call post-registration initialization
+        cls.nodes[node.path()] = node    
+        # Call post-registration initialization, for looper node internal node creation
         if hasattr(node.__class__, 'post_registration_init'):
             node.__class__.post_registration_init(node)
         
         cls.get_instance()._creating_node = False
+
+    @classmethod
+    def node_from_name(cls, node_name: str) -> Optional['Node']:
+        if node_name in cls.nodes:
+            return cls.nodes[node_name]
+        return None
 
 
 
@@ -604,7 +598,7 @@ class Node(MobileItem):
             new_node = node_class(new_name, new_path, node_type)
             new_node._session_id = new_node._generate_unique_session_id()
             NodeEnvironment.add_node(new_node)  # Use the new add_node method
-            print("Created new node: ",new_node.name(), new_node, " - at: ", parent_path)
+            #print("Created new node: ",new_node.name(), new_node, " - at: ", parent_path)
 
             # Call post-registration initialization
             if hasattr(new_node.__class__, 'post_registration_init'):
@@ -644,7 +638,7 @@ class Node(MobileItem):
         """Returns a tuple of the nodes connected to this node's output."""
         return tuple(conn.input_node() for conns in self._outputs.values() for conn in conns)
 
-    def set_input(self, input_index: str, input_node: "Node", output_index: str) -> None:
+    def set_input(self, input_index: int, input_node: "Node", output_index: str = "output") -> None:
         """Connects an input of this node to an output of another node."""
         if hasattr(self, 'SINGLE_INPUT') and self.SINGLE_INPUT and self._inputs:
             self.add_warning(f"Node type {self.__class__.__name__} accepts only one input. Existing input will be replaced.")
@@ -749,10 +743,13 @@ class Node(MobileItem):
             if current_node not in cooked_nodes:
                 # Add this node's input nodes to the list to be cooked
                 nodes_to_cook.extend(current_node.input_nodes())
-                
+                print("cook_dependencies: considering ", current_node.name() ," from ", self.name())
                 # Cook the current node if it needs to
                 if current_node.needs_to_cook():
+                    print("cooking: ",current_node.name() ," from ", self.name())
                     current_node.cook()
+                else:
+                    print("not cooking: ",current_node.name() ," from ", self.name())
                 
                 cooked_nodes.add(current_node)
 
