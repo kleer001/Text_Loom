@@ -108,7 +108,7 @@ class MergeNode(Node):
             return True
 
         # Check if inputs have changed
-        current_inputs = self.inputs()
+        current_inputs = self.input_nodes()
         if len(current_inputs) != len(self._merged_output):
             return True
 

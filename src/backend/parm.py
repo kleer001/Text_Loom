@@ -4,35 +4,39 @@ from bandit.core import manager
 from typing import Dict, Tuple, Union, Any
 import re
 from enum import Enum
-from typing import Dict, Tuple, Union, Callable 
+from typing import Dict, Tuple, Union, Callable
 from typing import List, Optional
 from base_classes import OperationFailed
 
+
 """Defines parameter types and the Parm class for node-based operations.
 Provides functionality for parameter management, evaluation, and script execution."""
+
 
 class ParameterType(Enum):
     INT = "int"
     FLOAT = "float"
     STRING = "string"
     BUTTON = "button"
-    TOGGLE = "toggle" #Boolean
+    TOGGLE = "toggle"  # Boolean
     MENU = "menu"
     STRINGLIST = "stringList"
 
-class Parm:
 
+class Parm:
     """
     Represents a parameter with various types and associated operations.
     Handles parameter value setting, evaluation, and script execution for node interactions.
     """
 
-    def __init__(self, name: str, parm_type: ParameterType, node: 'Node'):
+    def __init__(self, name: str, parm_type: ParameterType, node: "Node"):
         self._name: str = name
         self._type: ParameterType = parm_type
-        self._node: 'Node' = node
+        self._node: "Node" = node
         self._script_callback: str = ""
-        self._value: Union[int, float, str, List[str], bool] = "" # Initial value, to be set later
+        self._value: Union[int, float, str, List[str], bool] = (
+            ""  # Initial value, to be set later
+        )
 
     def name(self) -> str:
         """Returns this parameter's name."""
@@ -50,7 +54,7 @@ class Parm:
         """Returns the full path to this parameter."""
         return f"{self._node.node_path()}/{self.name()}"
 
-    def node(self) -> 'Node':
+    def node(self) -> "Node":
         """Returns the node on which this parameter exists."""
         return self._node
 
@@ -68,7 +72,9 @@ class Parm:
         elif self._type == ParameterType.TOGGLE:
             self._value = bool(value)
         else:
-            raise TypeError(f"Cannot set value of type {type(value)} for parameter of type {self._type}")
+            raise TypeError(
+                f"Cannot set value of type {type(value)} for parameter of type {self._type}"
+            )
 
     def script_callback(self) -> str:
         """Return the contents of the script that gets runs when this parameter changes."""
@@ -81,18 +87,18 @@ class Parm:
     def press_button(self, arguments: Dict[str, Any] = {}) -> None:
         """
         Emulates clicking a button parameter to trigger its callback script.
-        
+
         Raises:
             OperationFailed: If the callback script could not be run.
             TypeError: If an argument value type is unsupported.
         """
         if self._type != ParameterType.BUTTON:
             raise OperationFailed("Parameter is not a button.")
-        
+
         expanded_script = self._expand_dollar_signs(self._script_callback)
         if self._check_script_safety(expanded_script):
             try:
-                result = eval(expanded_script, {'__builtins__': {}}, arguments)
+                result = eval(expanded_script, {"__builtins__": {}}, arguments)
                 self.set(str(result))
             except Exception as e:
                 raise OperationFailed(f"Failed to execute button script: {str(e)}")
@@ -130,7 +136,7 @@ class Parm:
             raise OperationFailed("Invalid menu format")
 
     def eval(self) -> Any:
-        print(f"Debug~ Evaluating parameter {self._name} : {self._value}")
+        #print(f"Debug~ Evaluating parameter {self._name} : {self._value}")
 
         if self._type == ParameterType.STRINGLIST:
             return [self._expand_and_evaluate(str(item)) for item in self._value]
@@ -161,11 +167,12 @@ class Parm:
 
     def _eval_backticks(self, value: str) -> str:
         """Evaluates expressions within backticks."""
+
         def evaluate_expression(match):
             expr = match.group(1)
             try:
                 if self._check_script_safety(expr):
-                    result = eval(expr, {'__builtins__': {}}, {})
+                    result = eval(expr, {"__builtins__": {}}, {})
                     return str(result)
                 else:
                     raise OperationFailed(f"Expression failed safety check: {expr}")
@@ -173,7 +180,7 @@ class Parm:
                 print(f"Error evaluating expression '{expr}': {str(e)}")
                 return match.group(0)
 
-        return re.sub(r'`([^`]+)`', evaluate_expression, value)
+        return re.sub(r"`([^`]+)`", evaluate_expression, value)
 
     def raw_value(self) -> str:
         """Returns the parameter's raw text value without evaluation or expansion."""
@@ -182,27 +189,27 @@ class Parm:
     def expression(self) -> str:
         """
         Returns this parameter's expression.
-        
+
         Raises:
             OperationFailed: If the parameter does not contain an expression.
         """
-        matches = re.findall(r'`(.*?)`', self._value)
+        matches = re.findall(r"`(.*?)`", self._value)
         if matches:
-            return ' '.join(matches)
+            return " ".join(matches)
         else:
             raise OperationFailed("Parameter does not contain an expression")
 
     def is_expression(self) -> bool:
         """Returns True if the parameter contains one or more valid functions in backticks."""
-        return bool(re.search(r'`.*?`', self._value))
+        return bool(re.search(r"`.*?`", self._value))
 
     def _expand_dollar_signs(self, value: str) -> str:
         """
         Expands $$ expressions in the given value.
-        
+
         Args:
             value (str): The input string containing $$ expressions.
-        
+
         Returns:
             str: The expanded string with $$ expressions replaced.
 
@@ -213,37 +220,41 @@ class Parm:
         is modified elsewhere in the codebase.
         **NOTE**
         """
-
         def replace(match):
-                    expression = match.group(0)
-                    
-                    if expression == "$$N":
-                        loop_number = get_current_loop(self.node().path(), self.node()._depth)
-                        if loop_number is None:
-                            print(f"Warning: Found $$N but no active loop for {self.node().path()}")
-                            return expression
-                        return str(loop_number)
-                    
-                    if match.group(1).isdigit():
-                        index = int(match.group(1)) - 1
-                        if self.node().inputs and self.node().inputs[0].list:
-                            input_list = self.node().inputs[0].list
-                            modulo_index = index % len(input_list)
-                            if modulo_index != index:
-                                print(f"Modulo replacement: {expression} -> $${modulo_index + 1}")
-                            return str(input_list[modulo_index])
-                        return expression
-                    
-                    print(f"Warning: Malformed $$ expression found: {expression}")
-                    return expression
+            expression = match.group(0)
 
-        pattern = r'\$\$N|\$\$(\d+)|\$\$\S*'
+            if expression == "$$N":
+                loop_number = loop_manager.get_current_loop(self.node().path(), self.node()._depth)
+                if loop_number is None:
+                    print(f"Warning: Found $$N but no active loop for {self.node().path()}")
+                    return expression
+                return str(loop_number)
+
+            if match.group(1).isdigit():
+                index = int(match.group(1)) - 1
+                if self.node().inputs and self.node().inputs[0].list:
+                    input_list = self.node().inputs[0].list
+                    modulo_index = index % len(input_list)
+                    if modulo_index != index:
+                        print(f"Modulo replacement: {expression} -> $${modulo_index + 1}")
+                    return str(input_list[modulo_index])
+                return expression
+
+            print(f"Warning: Malformed $$ expression found: {expression}")
+            return expression
+
+        pattern = r"\$\$N|\$\$(\d+)|\$\$\S*"
         return re.sub(pattern, replace, value)
 
-
     def _check_script_safety(self, script: str) -> bool:
-        allowed_modules = {'os', 'math', 'time'}  # Add more as needed
-        allowed_functions = {'open', 'read', 'write', 'join', 'split'}  # Add more as needed
+        allowed_modules = {"os", "math", "time"}  # Add more as needed
+        allowed_functions = {
+            "open",
+            "read",
+            "write",
+            "join",
+            "split",
+        }  # Add more as needed
 
         try:
             tree = ast.parse(script)
@@ -265,4 +276,3 @@ class Parm:
             return True
         except SyntaxError:
             return False
-

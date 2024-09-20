@@ -3,47 +3,55 @@ import sys
 import re
 from typing import List, Dict, Any, Optional
 from base_classes import Node, NodeType, NodeState, NodeEnvironment
-from parm import Parm, ParameterType
+from parm import Parm, ParameterType#, set_loop, clean_stale_loops
 from .input_null_node import InputNullNode
 from .output_null_node import OutputNullNode
 from dataclasses import dataclass
+from loop_manager import LoopManager, loop_manager
 
-#Shoud be enough, but change if you must
+# Shoud be enough, but change if you must
 MAX_LOOP_DEPTH = 4  # Maximum nesting depth for looper nodes
-#Seriuosly  though 4 is a lot
+# Seriuosly  though 4 is a lot
 
-def get_loop_var_name(path: str, depth: int) -> str:
-    """
-    Generate a loop variable name based on the looper node's path and depth.
-    """
-    safe_path = re.sub(r'[^a-zA-Z0-9_]', '_', path)
-    return f"loop_{safe_path}_{depth}"
+"""
+Looping functions for looper node type and what it does
+Called in looper_node.py too
+"""
 
 
-def get_current_loop(path: str, depth: int) -> Optional[int]:
-    """
-    Get the current loop number for a given path and depth.
-    """
-    var_name = get_loop_var_name(path, depth)
-    return globals().get(var_name)
+# def get_loop_var_name(path: str, depth: int) -> str:
+#     """
+#     Generate a loop variable name based on the looper node's path and depth.
+#     """
+#     safe_path = re.sub(r"[^a-zA-Z0-9_]", "_", path)
+#     return f"loop_{safe_path}_{depth}"
 
 
-def set_loop(path: str, depth: int, value: int) -> None:
-    """
-    Set the loop number for a given path and depth.
-    """
-    var_name = get_loop_var_name(path, depth)
-    globals()[var_name] = value
+# def get_current_loop(path: str, depth: int) -> Optional[int]:
+#     """
+#     Get the current loop number for a given path and depth.
+#     """
+#     var_name = get_loop_var_name(path, depth)
+#     return globals().get(var_name)
 
 
-def clean_stale_loops() -> None:
-    """
-    Remove all stale loop variables from globals.
-    This should be called at the beginning of each cook operation.
-    """
-    for var in list(globals().keys()):
-        if var.startswith("loop_"):
-            del globals()[var]
+# def set_loop(path: str, depth: int, value: int) -> None:
+#     """
+#     Set the loop number for a given path and depth.
+#     """
+#     var_name = get_loop_var_name(path, depth)
+#     globals()[var_name] = value
+
+
+# def clean_stale_loops() -> None:
+#     """
+#     Remove all stale loop variables from globals.
+#     This should be called at the beginning of each cook operation.
+#     """
+#     for var in list(globals().keys()):
+#         if var.startswith("loop_"):
+#             del globals()[var]
+
 
 
 class LooperNode(Node):
@@ -124,9 +132,9 @@ class LooperNode(Node):
         self._cook_count += 1
         start_time = time.time()
 
-        self.clear_errors()
-        self.clear_warnings()
-        self.validate_parameters()
+        # self.clear_errors()
+        # self.clear_warnings()
+        # self.validate_parameters()
 
         if self.errors():
             self.set_state(NodeState.UNCOOKED)
@@ -156,7 +164,7 @@ class LooperNode(Node):
         return min(self.path().count('/') + 1, MAX_LOOP_DEPTH)
 
     def _perform_iterations(self):
-        clean_stale_loops()  # Clean up stale loop variables at the start of cooking
+        loop_manager.clean_stale_loops()  # Clean up stale loop variables at the start of cooking
 
         min_val = self._parms["min"].eval()
         max_val = self._parms["max"].eval()
@@ -179,14 +187,8 @@ class LooperNode(Node):
                 break
 
             # Set loop number for this iteration
-            set_loop(self.path(), self._depth, i)
+            loop_manager.set_loop(self.path(), self._depth, i)
 
-            # Cook internal nodes
-            if self._input_node.needs_to_cook():
-                self._input_node.cook()
-            if self._output_node.needs_to_cook():
-                self._output_node.cook()
-                
             # Get output from internal outputNode
             output_value = self._output_node.eval()
             
@@ -203,14 +205,10 @@ class LooperNode(Node):
             elif data_size > 100 * 1024 * 1024:  # 100MB
                 self.add_warning(f"Data size exceeds 100MB: {data_size} bytes.")
 
-        # Remove global loop_number
-        if 'loop_number' in globals():
-            del globals()['loop_number']
-
         self._parms["staging_data"].set(staging_data)
         self._parms["output_hook"].set("\n".join(staging_data))
         # Clean up this loop's variable after iterations are complete
-        set_loop(self.path(), self._depth, None)
+        loop_manager.set_loop(self.path(), self._depth, None)
 
     def eval(self) -> List[str]:
         if self.state() != NodeState.UNCHANGED:
