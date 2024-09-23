@@ -1,4 +1,5 @@
 import re
+import os
 from typing import Optional, Dict
 
 class LoopManager:
@@ -10,20 +11,22 @@ class LoopManager:
             cls._instance._loops: Dict[str, int] = {}
         return cls._instance
 
-    def get_loop_var_name(self, path: str, depth: int) -> str:
-        safe_path = re.sub(r"[^a-zA-Z0-9_]", "_", path)
-        var_name = f"loop_{safe_path}_{depth}"
+    def get_loop_var_name(self, path: str) -> str:
+        # Get the parent folder of the current path
+        parent_path = os.path.dirname(path)
+        safe_path = re.sub(r"[^a-zA-Z0-9_]", "_", parent_path)
+        var_name = f"loop_{parent_path}"
         print(f"get_loop_var_name: Returning {var_name}")
         return var_name
 
-    def get_current_loop(self, path: str, depth: int) -> Optional[int]:
-        var_name = self.get_loop_var_name(path, depth)
+    def get_current_loop(self, path: str) -> Optional[int]:
+        var_name = self.get_loop_var_name(path)
         current_loop = self._loops.get(var_name)
-        print(f"get_current_loop: Returning {current_loop}")
+        print(f"get_current_loop: Returning {current_loop} for {path}")
         return current_loop
 
-    def set_loop(self, path: str, depth: int, value: Optional[int]) -> None:
-        var_name = self.get_loop_var_name(path, depth)
+    def set_loop(self, path: str, value: Optional[int]) -> None:
+        var_name = self.get_loop_var_name(path)
         if value is None:
             self._loops.pop(var_name, None)
             print(f"set_loop: Removed loop {var_name}")

@@ -533,6 +533,7 @@ class Node(MobileItem):
         super().__init__(name, path, position)
         self._node_type: NodeType = node_type
         self._children: List["Node"] = []
+        self._depth = self._calculate_depth()
         self._inputs: Dict[str, NodeConnection] = {}
         self._outputs: Dict[str, List[NodeConnection]] = {}
 #        self._comment: str = ""
@@ -547,6 +548,10 @@ class Node(MobileItem):
     def node_path(self) -> str:
         """Returns the current location in the hierarchy of the workspace."""
         return self.path()
+
+    def _calculate_depth(self) -> int:
+            """Calculate the depth of this looper node based on its path."""
+            return (self.path().count('/') + 1)
 
     def children(self) -> Tuple["Node", ...]:
         """Returns a tuple of the list of nodes it's connected to on its output."""
