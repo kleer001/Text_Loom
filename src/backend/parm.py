@@ -7,7 +7,7 @@ from enum import Enum
 from typing import Dict, Tuple, Union, Callable
 from typing import List, Optional
 from base_classes import OperationFailed
-
+from loop_manager import *
 
 """Defines parameter types and the Parm class for node-based operations.
 Provides functionality for parameter management, evaluation, and script execution."""
@@ -204,40 +204,26 @@ class Parm:
         return bool(re.search(r"`.*?`", self._value))
 
     def _expand_dollar_signs(self, value: str) -> str:
-        """
-        Expands $$ expressions in the given value.
-
-        Args:
-            value (str): The input string containing $$ expressions.
-
-        Returns:
-            str: The expanded string with $$ expressions replaced.
-
-        **NOTE**
-        The global 'loop_number' variable, if present, is used in the
-        expansion process. This design choice may impact testability
-        and could lead to unexpected behavior if the global state
-        is modified elsewhere in the codebase.
-        **NOTE**
-        """
         def replace(match):
             expression = match.group(0)
 
             if expression == "$$N":
-                loop_number = loop_manager.get_current_loop(self.node().path(), self.node()._depth)
+                loop_number = loop_manager.get_current_loop(self.node().path())
                 if loop_number is None:
                     print(f"Warning: Found $$N but no active loop for {self.node().path()}")
                     return expression
                 return str(loop_number)
 
-            if match.group(1).isdigit():
+            if match.group(1) and match.group(1).isdigit():
                 index = int(match.group(1)) - 1
                 if self.node().inputs and self.node().inputs[0].list:
                     input_list = self.node().inputs[0].list
-                    modulo_index = index % len(input_list)
-                    if modulo_index != index:
-                        print(f"Modulo replacement: {expression} -> $${modulo_index + 1}")
-                    return str(input_list[modulo_index])
+                    if input_list:
+                        modulo_index = index % len(input_list)
+                        if modulo_index != index:
+                            print(f"Modulo replacement: {expression} -> $${modulo_index + 1}")
+                        return str(input_list[modulo_index])
+                print(f"Warning: Unable to resolve {expression}, no valid input list found")
                 return expression
 
             print(f"Warning: Malformed $$ expression found: {expression}")

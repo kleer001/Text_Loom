@@ -9,9 +9,6 @@ from .output_null_node import OutputNullNode
 from dataclasses import dataclass
 from loop_manager import LoopManager, loop_manager
 
-# Shoud be enough, but change if you must
-MAX_LOOP_DEPTH = 4  # Maximum nesting depth for looper nodes
-# Seriuosly  though 4 is a lot
 
 """
 Looping functions for looper node type and what it does
@@ -65,7 +62,6 @@ class LooperNode(Node):
     def __init__(self, name: str, path: str, node_type: NodeType):
         super().__init__(name, path, [0.0, 0.0], node_type)
         self._is_time_dependent = False
-        self._depth = self._calculate_depth()
         self._input_node = None
         self._output_node = None
         self._internal_nodes_created = False
@@ -159,11 +155,9 @@ class LooperNode(Node):
         if self.state() == NodeState.COOKING:
             self.set_state(NodeState.UNCHANGED)
 
-    def _calculate_depth(self) -> int:
-        """Calculate the depth of this looper node based on its path."""
-        return min(self.path().count('/') + 1, MAX_LOOP_DEPTH)
 
     def _perform_iterations(self):
+        print("∞ loop: starting loop, cleaning up")
         loop_manager.clean_stale_loops()  # Clean up stale loop variables at the start of cooking
 
         min_val = self._parms["min"].eval()
@@ -187,7 +181,7 @@ class LooperNode(Node):
                 break
 
             # Set loop number for this iteration
-            loop_manager.set_loop(self.path(), self._depth, i)
+            loop_manager.set_loop(self.path(), i)
 
             # Get output from internal outputNode
             output_value = self._output_node.eval()
@@ -208,7 +202,9 @@ class LooperNode(Node):
         self._parms["staging_data"].set(staging_data)
         self._parms["output_hook"].set("\n".join(staging_data))
         # Clean up this loop's variable after iterations are complete
-        loop_manager.set_loop(self.path(), self._depth, None)
+        print("∞ loop: end of loop reached, cleaning up")
+        loop_manager.set_loop(self.path(), None)
+
 
     def eval(self) -> List[str]:
         if self.state() != NodeState.UNCHANGED:
