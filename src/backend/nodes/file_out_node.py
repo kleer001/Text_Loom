@@ -47,8 +47,8 @@ class FileOutNode(Node):
         self._parms["refresh"].set_script_callback("self.node().refresh()")
 
 
-    def cook(self, force: bool = False) -> None:
-        self.cook_dependencies()  # Cook dependencies first
+    def _internal_cook(self, force: bool = False) -> None:
+        
         self.set_state(NodeState.COOKING)
         self._cook_count += 1
         start_time = time.time()

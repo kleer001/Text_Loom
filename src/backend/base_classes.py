@@ -736,53 +736,59 @@ class Node(MobileItem):
         """Return whether the node is time dependent."""
         return self._is_time_dependent
 
-    def cook_dependencies(self) -> None:
+    def cook_dependencies(self) -> List['Node']:
         """
-        Cooks all input nodes that this node depends on.
-        This method ensures that all input data is up-to-date before this node cooks.
+        Gathers all input nodes that this node depends on into a list in the correct order (furthest nodes first).
+        The actual cooking is deferred and should be handled later by the last node in the chain.
+        Returns a list of nodes in the correct order they should be cooked.
         """
-        cooked_nodes: Set[Node] = set()
-        nodes_to_cook: List[Node] = list(self.input_nodes())
+        nodes_to_cook: List[Node] = []
+        visited_nodes: Set[Node] = set()  # To track nodes that are already processed
 
-        while nodes_to_cook:
-            current_node = nodes_to_cook.pop(0)
-            if current_node not in cooked_nodes:
-                # Add this node's input nodes to the list to be cooked
-                nodes_to_cook.extend(current_node.input_nodes())
-                #print("cook_dependencies: considering ", current_node.name() ," from ", self.name())
-                # Cook the current node if it needs to
-                if current_node.needs_to_cook():
-                    print("cooking: ",current_node.name() ," from ", self.name())
-                    current_node.cook()
-                else:
-                    print("not cooking: ",current_node.name() ," from ", self.name())
-                
-                cooked_nodes.add(current_node)
+        def dfs(node: Node):
+            if node in visited_nodes:
+                return
+            # First mark this node as visited to avoid cyclic dependencies
+            visited_nodes.add(node)
+
+            # Recursively process all input nodes (depth-first)
+            for input_node in node.input_nodes():
+                dfs(input_node)
+
+            # Once all dependencies are processed, add the current node to the cook list
+            if node.needs_to_cook():
+                nodes_to_cook.append(node)
+                print(f"Adding {node.name()} to the cook list from {self.name()}")
+            else:
+                print(f"{node.name()} does not need to cook from {self.name()}")
+
+        # Start the DFS from the current node's inputs
+        for input_node in self.input_nodes():
+            dfs(input_node)
+        print("nodes to cook: \n",nodes_to_cook)
+        return nodes_to_cook  # Return the nodes in the correct order (DFS ensures furthest nodes first)
+
+
 
     def cook(self, force: bool = False) -> None:
         """
-        Cooks the node, updating its state and output.
-        This method should be overridden by subclasses to implement specific cooking behavior.
+        Public cook method which includes dependency handling and core cooking logic.
+        This method should be called externally and will manage dependency cooking before
+        executing the core logic of this node.
         """
-        self.cook_dependencies()  # Ensure all dependencies are cooked first
-        
-        self.set_state(NodeState.COOKING)
-        self._cook_count += 1
-        start_time = time.time()
+        print(f"☀ Starting cook for {self.name()}")
 
-        try:
-            # Placeholder for node-specific cooking logic
-            # Subclasses should override this method and implement their specific cooking behavior here
-            pass
+        # Gather the list of dependencies that need to be cooked
+        # dependencies = self.cook_dependencies()
 
-        except Exception as e:
-            self.add_error(f"Error during cooking: {str(e)}")
-            self.set_state(NodeState.UNCOOKED)
+        # # Cook each node in the dependency list using their internal cook method
+        # for node in dependencies:
+        #     print(f"Cooking {node.name()} via _internal_cook() from {self.name()}")
+        #     node._internal_cook()
 
-        self._last_cook_time = (time.time() - start_time) * 1000  # Convert to milliseconds
-        
-        if self.state() == NodeState.COOKING:
-            self.set_state(NodeState.UNCHANGED)
+        # Now, execute the internal cooking logic for this node after dependencies are cooked
+        self._internal_cook()
+
 
 
     def last_cook_time(self) -> float:

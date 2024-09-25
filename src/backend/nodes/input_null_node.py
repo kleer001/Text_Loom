@@ -35,7 +35,7 @@ class InputNullNode(Node):
         self._parms["in_node"].set("")
         self._parms["in_data"].set([])
 
-    def cook(self, force: bool = False) -> None:
+    def _internal_cook(self, force: bool = False) -> None:
         self.set_state(NodeState.COOKING)
         self._cook_count += 1
         start_time = time.time()

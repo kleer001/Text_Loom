@@ -24,7 +24,7 @@ class NullNode(Node):
         super().__init__(name, path, position, node_type)
         self._input_value: Optional[List[str]] = None
 
-    def cook(self, force: bool = False) -> None:
+    def _internal_cook(self, force: bool = False) -> None:
         """
         Evaluate and store the input value without modifying it.
         """
