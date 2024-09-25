@@ -2,6 +2,25 @@ import re
 import os
 from typing import Optional, Dict
 
+import inspect
+
+def print_calfun():
+    frame = inspect.stack()[2]
+    frame2 = inspect.stack()[3]
+    frame3 = inspect.stack()[4]
+    frame4 = inspect.stack()[5]
+    frame5 = inspect.stack()[6]
+    frame5 = inspect.stack()[7]
+    calfun = frame.function
+    calfun2 = frame2.function
+    calfun3 = frame3.function
+    calfun4 = frame4.function
+    calfun5 = frame4.function
+    calfun6 = frame4.function
+    print(f"~fP~ {calfun}←{calfun2}←{calfun3}←{calfun4}←{calfun5}←{calfun6}")
+
+
+
 class LoopManager:
     _instance = None
 
@@ -11,32 +30,33 @@ class LoopManager:
             cls._instance._loops: Dict[str, int] = {}
         return cls._instance
 
-    def get_loop_var_name(self, path: str) -> str:
-        # Get the parent folder of the current path
-        parent_path = os.path.dirname(path)
-        safe_path = re.sub(r"[^a-zA-Z0-9_]", "_", parent_path)
-        var_name = f"loop_{parent_path}"
-        print(f"get_loop_var_name: Returning {var_name}")
-        return var_name
-
     def get_current_loop(self, path: str) -> Optional[int]:
-        var_name = self.get_loop_var_name(path)
-        current_loop = self._loops.get(var_name)
-        print(f"get_current_loop: Returning {current_loop} for {path}")
+        # Extract the looper name from the full path
+        looper_path = os.path.dirname(path)
+        loop_key = f"loop_{looper_path}"
+        current_loop = self._loops.get(loop_key)
+        print(f"♺ Get_Current_LOOP: Returning {current_loop} for {path} with {current_loop}")
+        print_calfun()
         return current_loop
 
-    def set_loop(self, path: str, value: Optional[int]) -> None:
-        var_name = self.get_loop_var_name(path)
+    def set_loop(self, looper_name: str, value: Optional[int]) -> None:
+        loop_key = f"loop_{looper_name}"
         if value is None:
-            self._loops.pop(var_name, None)
-            print(f"set_loop: Removed loop {var_name}")
+            self._loops.pop(loop_key, None)
+            print(f"SET-LOOP: Removed loop {loop_key}")
         else:
-            self._loops[var_name] = value
-            print(f"set_loop: Set loop {var_name} to {value}")
+            self._loops[loop_key] = value
+            print(f"SET_LOOP: Set loop {loop_key} to {value}")
 
-    def clean_stale_loops(self) -> None:
-        self._loops.clear()
-        print("clean_stale_loops: Cleared all loops")
+    def clean_stale_loops(self, looper_name: str) -> None:
+        loop_key = f"loop_{looper_name}"
+        if loop_key in self._loops:
+            del self._loops[loop_key]
+            print(f"clean_stale_loops: Removed loop {loop_key}")
+        else:
+            print(f"clean_stale_loops: No loop found for {looper_name}")
+
 
 # Create a single instance of LoopManager
 loop_manager = LoopManager()
+

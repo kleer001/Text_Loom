@@ -16,41 +16,6 @@ Called in looper_node.py too
 """
 
 
-# def get_loop_var_name(path: str, depth: int) -> str:
-#     """
-#     Generate a loop variable name based on the looper node's path and depth.
-#     """
-#     safe_path = re.sub(r"[^a-zA-Z0-9_]", "_", path)
-#     return f"loop_{safe_path}_{depth}"
-
-
-# def get_current_loop(path: str, depth: int) -> Optional[int]:
-#     """
-#     Get the current loop number for a given path and depth.
-#     """
-#     var_name = get_loop_var_name(path, depth)
-#     return globals().get(var_name)
-
-
-# def set_loop(path: str, depth: int, value: int) -> None:
-#     """
-#     Set the loop number for a given path and depth.
-#     """
-#     var_name = get_loop_var_name(path, depth)
-#     globals()[var_name] = value
-
-
-# def clean_stale_loops() -> None:
-#     """
-#     Remove all stale loop variables from globals.
-#     This should be called at the beginning of each cook operation.
-#     """
-#     for var in list(globals().keys()):
-#         if var.startswith("loop_"):
-#             del globals()[var]
-
-
-
 class LooperNode(Node):
     """
     A node that performs loop iterations, managing internal input and output nodes.
@@ -128,10 +93,6 @@ class LooperNode(Node):
         self._cook_count += 1
         start_time = time.time()
 
-        # self.clear_errors()
-        # self.clear_warnings()
-        # self.validate_parameters()
-
         if self.errors():
             self.set_state(NodeState.UNCOOKED)
             return
@@ -157,8 +118,8 @@ class LooperNode(Node):
 
 
     def _perform_iterations(self):
-        print("∞ loop: starting loop, cleaning up")
-        loop_manager.clean_stale_loops()  # Clean up stale loop variables at the start of cooking
+        print("\n∞ loop: starting loop, cleaning up")
+        loop_manager.clean_stale_loops(self.path())  # Clean up stale loop variables at the start of cooking
 
         min_val = self._parms["min"].eval()
         max_val = self._parms["max"].eval()
@@ -202,9 +163,8 @@ class LooperNode(Node):
         self._parms["staging_data"].set(staging_data)
         self._parms["output_hook"].set("\n".join(staging_data))
         # Clean up this loop's variable after iterations are complete
-        print("∞ loop: end of loop reached, cleaning up")
-        loop_manager.set_loop(self.path(), None)
-
+        loop_manager.set_loop(self.path(), value=None)
+        print("∞ loop: end of loop reached, cleaning up\n")
 
     def eval(self) -> List[str]:
         if self.state() != NodeState.UNCHANGED:

@@ -41,26 +41,28 @@ class TextNode(Node):
         self._cook_count += 1
         start_time = time.time()
 
-        try:
-            pass_through = self._parms["pass_through"].eval()
-            text_string = self._parms["text_string"].eval()
+        self._is_time_dependent = self._parms["text_string"].is_expression()
+        print("~COOKING~:", self.name())
+        #try:
+        pass_through = self._parms["pass_through"].eval()
+        text_string = self._parms["text_string"].eval()
 
-            if pass_through:
-                input_data = self.inputs()[0].output_node().eval() if self.inputs() else []
-                if not isinstance(input_data, list) or not all(isinstance(item, str) for item in input_data):
-                    raise TypeError("Input data must be a list of strings")
-                result = input_data + [text_string]
-            else:
-                result = [text_string]
+        if pass_through:
+            input_data = self.inputs()[0].output_node().eval() if self.inputs() else []
+            if not isinstance(input_data, list) or not all(isinstance(item, str) for item in input_data):
+                raise TypeError("Input data must be a list of strings")
+            result = input_data + [text_string]
+        else:
+            result = [text_string]
 
-            self._output = result
-            self._param_hash = self._calculate_hash(text_string)
-            self._input_hash = self._calculate_hash(str(input_data)) if pass_through else None
-            self.set_state(NodeState.UNCHANGED)
+        self._output = result
+        self._param_hash = self._calculate_hash(text_string)
+        self._input_hash = self._calculate_hash(str(input_data)) if pass_through else None
+        self.set_state(NodeState.UNCHANGED)
 
-        except Exception as e:
-            self.add_error(f"Error processing text: {str(e)}")
-            self.set_state(NodeState.UNCOOKED)
+        # except Exception as e:
+        #     self.add_error(f"Error processing text: {str(e)}")
+        #     self.set_state(NodeState.UNCOOKED)
 
         self._last_cook_time = (time.time() - start_time) * 1000  # Convert to milliseconds
 
@@ -79,10 +81,11 @@ class TextNode(Node):
     def needs_to_cook(self) -> bool:
         if super().needs_to_cook():
             return True
-
+        if self._is_time_dependent:
+            return True
         try:
-            pass_through = self._parms["pass_through"].eval()
-            text_string = self._parms["text_string"].eval()
+            pass_through = self._parms["pass_through"].raw_value()
+            text_string = self._parms["text_string"].raw_value()
             new_param_hash = self._calculate_hash(text_string)
 
             if pass_through:
@@ -102,10 +105,4 @@ class TextNode(Node):
     def _calculate_hash(self, content: str) -> str:
         return hashlib.md5(content.encode()).hexdigest()
 
-    def eval(self) -> List[str]:
-        if self.state() != NodeState.UNCHANGED:
-            if self.needs_to_cook():
-                self.cook()
-        return self._output
-    
     

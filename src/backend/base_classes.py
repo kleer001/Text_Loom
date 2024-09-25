@@ -749,7 +749,7 @@ class Node(MobileItem):
             if current_node not in cooked_nodes:
                 # Add this node's input nodes to the list to be cooked
                 nodes_to_cook.extend(current_node.input_nodes())
-                print("cook_dependencies: considering ", current_node.name() ," from ", self.name())
+                #print("cook_dependencies: considering ", current_node.name() ," from ", self.name())
                 # Cook the current node if it needs to
                 if current_node.needs_to_cook():
                     print("cooking: ",current_node.name() ," from ", self.name())
