@@ -35,14 +35,14 @@ class TextNode(Node):
         self._parms["text_string"].set("")
         self._parms["pass_through"].set("True")
     
-    def cook(self, force: bool = False) -> None:
-        self.cook_dependencies()
+    def _internal_cook(self, force: bool = False) -> None:
+        
         self.set_state(NodeState.COOKING)
         self._cook_count += 1
         start_time = time.time()
 
         self._is_time_dependent = self._parms["text_string"].is_expression()
-        print("~COOKING~:", self.name())
+        print("🍳 cooking", self.name())
         #try:
         pass_through = self._parms["pass_through"].eval()
         text_string = self._parms["text_string"].eval()
@@ -59,10 +59,6 @@ class TextNode(Node):
         self._param_hash = self._calculate_hash(text_string)
         self._input_hash = self._calculate_hash(str(input_data)) if pass_through else None
         self.set_state(NodeState.UNCHANGED)
-
-        # except Exception as e:
-        #     self.add_error(f"Error processing text: {str(e)}")
-        #     self.set_state(NodeState.UNCOOKED)
 
         self._last_cook_time = (time.time() - start_time) * 1000  # Convert to milliseconds
 

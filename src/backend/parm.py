@@ -210,7 +210,7 @@ class Parm:
     def _expand_dollar_signs(self, value: str) -> str:
         def replace(match):
             expression = match.group(0)
-            loop_number = loop_manager.get_current_loop(self.node().path())
+            loop_number = loop_manager.get_current_loop(self.node().path()) - 1
             
             print(f"$$ Processing expression: {expression}")
             print(f"$$ Current loop number: {loop_number}")
@@ -246,16 +246,13 @@ class Parm:
 
         # Refined regex to match only $$N or $$<number>
         pattern = r"\$\$N|\$\$(\d+)"
-        print(f"Initial input value: {value}")
+        #print(f"Initial input value: {value}")
 
         # Perform the replacement with a safeguard to avoid loops
         result = re.sub(pattern, replace, value)
 
-        print(f"Final expanded value: {result}")
+        #print(f"Final expanded value: {result}")
         return result
-
-
-    
 
 
     def _check_script_safety(self, script: str) -> bool:

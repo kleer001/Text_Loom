@@ -45,7 +45,7 @@ class FileInNode(Node):
         
         return True
 
-    def cook(self, force: bool = False) -> None:
+    def _internal_cook(self, force: bool = False) -> None:
         self.set_state(NodeState.COOKING)
         self._cook_count += 1
         start_time = time.time()

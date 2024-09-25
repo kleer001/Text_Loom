@@ -29,10 +29,10 @@ print(":: LOOPER EVAL::")
 loopeval = looper1.eval()
 print("::LOOP EVALS TO::", loopeval)
 
-print_node_info(looper1._input_node)
+#print_node_info(looper1._input_node)
 print_node_info(merge1)
 print_node_info(text1)
 print_node_info(looper1._output_node)
-print_node_info(looper1)
+#print_node_info(looper1)
 
-print("looper evals to : ", looper1._output_node.eval())
+#print("looper evals to : ", looper1._output_node.eval())

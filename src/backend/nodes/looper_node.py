@@ -87,8 +87,8 @@ class LooperNode(Node):
         if (max_val - min_val) // step == 0:
             self.add_warning("The current parameter values will result in no iterations.")
 
-    def cook(self, force: bool = False) -> None:
-        self.cook_dependencies()
+    def _internal_cook(self, force: bool = False) -> None:
+        
         self.set_state(NodeState.COOKING)
         self._cook_count += 1
         start_time = time.time()
@@ -134,7 +134,6 @@ class LooperNode(Node):
             iteration_range = range(min_val, max_val + 1, step) if step > 0 else range(max_val, min_val - 1, step)
 
         start_time = time.time()
-        staging_data = []
 
         for i in iteration_range:
             if time.time() - start_time > timeout_limit:
@@ -145,23 +144,13 @@ class LooperNode(Node):
             loop_manager.set_loop(self.path(), i)
 
             # Get output from internal outputNode
-            output_value = self._output_node.eval()
+            output_value = self._output_node.cook()
             
             if output_value in (None, "", "  "):
                 self.add_warning(f"Iteration {i} created a blank value.")
-            
-            staging_data.append(str(output_value))
-            
-            # Check data size limit
-            data_size = sum(sys.getsizeof(item) for item in staging_data)
-            if data_size > self._parms["data_limit"].eval():
-                self.add_warning(f"Data size limit reached: {data_size} bytes.")
-                break
-            elif data_size > 100 * 1024 * 1024:  # 100MB
-                self.add_warning(f"Data size exceeds 100MB: {data_size} bytes.")
-
-        self._parms["staging_data"].set(staging_data)
-        self._parms["output_hook"].set("\n".join(staging_data))
+        
+        accumulated = self._output_node._parms["out_data"].eval()
+        self._parms["staging_data"].set(accumulated)
         # Clean up this loop's variable after iterations are complete
         loop_manager.set_loop(self.path(), value=None)
         print("∞ loop: end of loop reached, cleaning up\n")
