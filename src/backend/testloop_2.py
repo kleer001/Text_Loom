@@ -20,28 +20,31 @@ text1._parms["pass_through"].set(False)
 text2._parms["text_string"].set("Poop Text 2")
 text3._parms["text_string"].set("Lalala Text 3")
 # Set merge node parameter
-merge1._parms["single_string"].set(True)
+merge1._parms["single_string"].set(False)
 
 # Connect nodes
-looper1._output_node.set_input(0, text1, "output")
+looper1._output_node.set_input(0, text1)
 text1.set_input(0, merge1)
-merge1.set_input(0, text2, "output")
-merge1.set_input(1, text3, "output")
+merge1.set_input(0, text2)
+merge1.set_input(1, text3)
 
 # print_node_info(text1)
 # print_node_info(looper1)
 # print_node_info(looper1._input_node)
 # print_node_info(looper1._output_node)
 
-print(":: LOOPER EVAL::")
+print("\n:: LOOPER EVAL::")
 loopeval = looper1.eval()
 print("::LOOP EVALS TO::", loopeval)
+
 
 # newtext = text1._parms["text_string"].eval()
 # print("eval text1 text to : ", newtext)
 
+#print("merge1 evals to : ", merge1.eval())
+print("text1 vars = ",vars(text1))
 # print_node_info(looper1._input_node)
-# print_node_info(merge1)
+#print_node_info(merge1)
 # print_node_info(text1)
 # print_node_info(looper1._output_node)
 # print_node_info(looper1)
