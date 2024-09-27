@@ -69,36 +69,13 @@ class OutputNullNode(Node):
 
         self._last_cook_time = (time.time() - start_time) * 1000
 
-    # def needs_to_cook(self) -> bool:
-    #     if super().needs_to_cook():
-    #         return True
-    #     if self._is_time_dependent:
-    #         return True
-        # try:
-        #     current_input = self.inputs()[0].output_node().eval() if self.inputs() else []
-        #     current_size = sum(len(s.encode('utf-8')) for s in current_input)
-
-        #     if current_size != self._last_input_size:
-        #         return True
-
-        #     if current_size < 10 * 1024 * 1024:  # 10MB
-        #         return True
-
-        #     current_hash = self._calculate_hash(str(current_input))
-        #     if current_hash != self._input_hash:
-        #         return True
-
-        #     return False
-
-        # except Exception:
-        #     return True
 
     def _calculate_hash(self, content: str) -> str:
         return hashlib.md5(content.encode()).hexdigest()
 
     def eval(self) -> List[str]:
-        if self.state() != NodeState.UNCHANGED:
-            self.cook()
+        # if self.state() != NodeState.UNCHANGED:
+        #     self.cook()
         return self._output
 
     def input_names(self) -> Dict[str, str]:
