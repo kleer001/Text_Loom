@@ -98,8 +98,8 @@ class MergeNode(Node):
         return {"output": "List[str]"}
 
     def eval(self) -> List[str]:
-        if self.state() != NodeState.UNCHANGED:
-            self.cook()
+        # if self.state() != NodeState.UNCHANGED:
+        #     self.cook()
         return self._merged_output
 
     def needs_to_cook(self) -> bool:

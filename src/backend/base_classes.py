@@ -779,12 +779,12 @@ class Node(MobileItem):
         print(f"☀ Starting cook for {self.name()}")
 
         # Gather the list of dependencies that need to be cooked
-        # dependencies = self.cook_dependencies()
+        dependencies = self.cook_dependencies()
 
         # # Cook each node in the dependency list using their internal cook method
-        # for node in dependencies:
-        #     print(f"Cooking {node.name()} via _internal_cook() from {self.name()}")
-        #     node._internal_cook()
+        for node in dependencies:
+            print(f"Cooking {node.name()} via _internal_cook() from {self.name()}")
+            node._internal_cook()
 
         # Now, execute the internal cooking logic for this node after dependencies are cooked
         self._internal_cook()
@@ -838,7 +838,9 @@ class Node(MobileItem):
         return result
 
     def eval(self):
-        # Pass-through evaluation logic
+        # implement in class as a simple return of the
+        # state of the self._output after previous cooking
+        
         pass
 
     def __repr__(self) -> str:
