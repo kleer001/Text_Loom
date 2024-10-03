@@ -3,6 +3,7 @@ import bandit
 from bandit.core import manager
 from typing import Dict, Tuple, Union, Any
 import re
+import operator
 from enum import Enum
 from typing import Dict, Tuple, Union, Callable
 from typing import List, Optional
@@ -204,21 +205,39 @@ class Parm:
 
     def is_expression(self) -> bool:
         """Returns True if the parameter contains one or more valid functions in backticks."""
-        return bool(re.search(r"`[^`]*`|\$\$(N|\d+)", self._value))
-
+        return bool(re.search(r"`[^`]*`|\$\$N|\$\$M([-+*/%]?\d+)|\$\$(\d+)", self._value))
 
     def _expand_dollar_signs(self, value: str) -> str:
+        def safe_eval(expression: str, loop_number: int) -> int:
+            ops = {
+                '+': operator.add,
+                '-': operator.sub,
+                '*': operator.mul,
+                '/': operator.truediv,
+                '%': operator.mod
+            }
+            if expression[0] in ops:
+                op = ops[expression[0]]
+                try:
+                    return op(loop_number, int(expression[1:]))
+                except ValueError:
+                    print(f"$$ Warning: Invalid arithmetic expression: {expression}")
+                    return loop_number
+            else:
+                print(f"$$ Warning: Unsupported operation in expression: {expression}")
+                return loop_number
+
         def replace(match):
             expression = match.group(0)
             loop_number = loop_manager.get_current_loop(self.node().path()) - 1
             
             print(f"$$ Processing expression: {expression}")
             print(f"$$ Current loop number: {loop_number}")
-
-            if not (self.node().inputs()):
+            
+            if not self.node().inputs():
                 print(f"$$ Warning: No valid input list found for {expression}")
                 return expression
-
+            
             input_list = self.node().inputs()[0].output_node().eval()
             list_length = len(input_list)
             print(f"$$ Input list found: {input_list} (Length: {list_length})")
@@ -226,22 +245,26 @@ class Parm:
             if list_length == 0:
                 print(f"$$ Warning: Empty input list for {expression}")
                 return expression
-
+            
             if expression == "$$N":
                 index = loop_number % list_length
                 print(f"$$ Resolved index for $$N: {index}")
-            elif match.group(1) and match.group(1).isdigit():
-                index = (int(match.group(1)) - 1) % list_length
+            elif match.group(1):  # $$M expression
+                arithmetic_result = safe_eval(match.group(1), loop_number)
+                index = arithmetic_result % list_length
+                print(f"$$ Resolved index for {expression}: {index} (Arithmetic result: {arithmetic_result})")
+            elif match.group(2):  # $$<number> expression
+                index = (int(match.group(2)) - 1) % list_length
                 print(f"$$ Resolved index for {expression}: {index}")
             else:
                 print(f"$$ Warning: Malformed $$ expression: {expression}")
                 return expression
-
+            
             replacement_value = str(input_list[index])
             print(f"Replacing {expression} with: {replacement_value}")
             return replacement_value
 
-        pattern = r"\$\$N|\$\$(\d+)"
+        pattern = r"\$\$N|\$\$M([-+*/%]?\d+)|\$\$(\d+)"
         result = re.sub(pattern, replace, value)
         return result
 
