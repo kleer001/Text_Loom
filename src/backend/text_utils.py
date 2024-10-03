@@ -1,11 +1,4 @@
-import configparser
 import re
-
-# settings we need on creation
-config = configparser.ConfigParser()
-config.read('settings.cfg')
-#maxvalue = config['DEFAULT']['max_items']
-#MAXITEMS = int(maxvalue)
 
 
 def generate_number_words():
@@ -86,4 +79,4 @@ def parse_list(text):
     if current_item:
         processed_items.append(current_item.strip())
 
-    return "\n".join(processed_items)
+    return processed_items
