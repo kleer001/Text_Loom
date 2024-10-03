@@ -223,12 +223,10 @@ class Parm:
             list_length = len(input_list)
             print(f"$$ Input list found: {input_list} (Length: {list_length})")
             
-            # Prevent division by zero or invalid list length cases
             if list_length == 0:
                 print(f"$$ Warning: Empty input list for {expression}")
                 return expression
-            
-            # Determine index based on the expression
+
             if expression == "$$N":
                 index = loop_number % list_length
                 print(f"$$ Resolved index for $$N: {index}")
@@ -239,19 +237,12 @@ class Parm:
                 print(f"$$ Warning: Malformed $$ expression: {expression}")
                 return expression
 
-            # Return the value from the input list at the resolved index
             replacement_value = str(input_list[index])
             print(f"Replacing {expression} with: {replacement_value}")
             return replacement_value
 
-        # Refined regex to match only $$N or $$<number>
         pattern = r"\$\$N|\$\$(\d+)"
-        #print(f"Initial input value: {value}")
-
-        # Perform the replacement with a safeguard to avoid loops
         result = re.sub(pattern, replace, value)
-
-        #print(f"Final expanded value: {result}")
         return result
 
 

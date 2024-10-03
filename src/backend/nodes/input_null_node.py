@@ -84,7 +84,6 @@ class InputNullNode(Node):
 
         self._last_cook_time = (time.time() - start_time) * 1000
 
-    # ... (rest of the class remains the same)
     def needs_to_cook(self) -> bool:
         if super().needs_to_cook():
             return True
