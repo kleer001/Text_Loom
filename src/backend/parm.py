@@ -184,16 +184,19 @@ class Parm:
             raise OperationFailed("Invalid menu format")
 
 
-    def _get_patterns(selected_patterns: Optional[List[str]] = None) -> str:
+    def _get_patterns(self, selected_patterns: Optional[Union[str, List[str]]] = None) -> str:
         patterns = self.__patterns
         if selected_patterns is None:
             return '|'.join(patterns.values())
+        elif isinstance(selected_patterns, str):
+            if selected_patterns not in patterns:
+                raise ValueError(f"Invalid pattern key: {selected_patterns}")
+            return patterns[selected_patterns]
         else:
             invalid_keys = set(selected_patterns) - set(patterns.keys())
             if invalid_keys:
                 raise ValueError(f"Invalid pattern key(s): {', '.join(invalid_keys)}")
             return '|'.join(patterns[key] for key in selected_patterns)
-
 
     def eval(self) -> Any:
         if self._type == ParameterType.STRINGLIST:
@@ -240,36 +243,8 @@ class Parm:
             #base global far aka $FOO
             return re.sub(r'\$[A-Z]{2,}', replace_global, container)
 
-        pattern = self._get_patterns("GLOBAL")
+        pattern = self._get_patterns('GLOBAL')
         result = re.sub(pattern, replace_container, value)
-        return result
-
-
-
-    def _expand_globals(self, value: str) -> str:
-        def replace(match):
-            full_match = match.group(0)
-            global_var = match.group(1) or match.group(2) or match.group(3)
-            
-            print(f"🌐 Processing global variable: {global_var}")
-            
-            if not GlobalStore.has(global_var):
-                print(f"🌐 Warning: Global variable {global_var} not found")
-                return full_match
-            
-            replacement_value = str(GlobalStore.get(global_var))
-            print(f"🌐 Replacing {global_var} with: {replacement_value}")
-            
-            # If the match was within backticks or ${}, we need to preserve the surrounding syntax
-            if match.group(1):  # backticks
-                return f"`{replacement_value}`"
-            elif match.group(3):  # ${}
-                return f"${{{replacement_value}}}"
-            else:  # $$M case or standalone
-                return replacement_value
-
-        pattern = self._get_patterns("GLOBAL")
-        result = re.sub(pattern, replace, value)
         return result
 
 
@@ -309,11 +284,8 @@ class Parm:
 
     def is_expression(self) -> bool:
         """Returns True if the parameter contains one or more valid functions accoring to self.__patterns ."""
-        all_patterns = _get_patterns()
+        #all_patterns = self._get_patterns()
         return bool(re.search(r"`[^`]*`|\$\$N|\$\$M([-+*/%]?\d+)|\$\$(\d+)", self._value))
-
-    def _expand_globals(self, value: str) -> str:
-
 
     def _expand_dollar_signs(self, value: str) -> str:
         def safe_eval(expression: str, loop_number: int) -> int:
