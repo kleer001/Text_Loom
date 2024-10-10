@@ -9,6 +9,8 @@ from typing import Dict, Tuple, Union, Callable
 from typing import List, Optional
 from base_classes import OperationFailed
 from loop_manager import *
+from global_store import GlobalStore
+
 
 """Defines parameter types and the Parm class for node-based operations.
 Provides functionality for parameter management, evaluation, and script execution."""
@@ -29,6 +31,30 @@ class Parm:
     Represents a parameter with various types and associated operations.
     Handles parameter value setting, evaluation, and script execution for node interactions.
     """
+
+    __patterns = {
+        # Global variables in various contexts
+        # All global varaible must be two or more caplital letters
+        # Examples: `function($FOO)`, $$M+$FOO, ${$FOO * 5}, ${$FOO}, `$FOO`
+        'GLOBAL': r"`[^`]*\$[A-Z]{2,}[^`]*`|\$\$M\S*\$[A-Z]{2,}|\$\{[^}]*\$[A-Z]{2,}[^}]*\}",
+        
+        # simple loop number
+        # Matches $$N - represents the current loop number
+        'NLOOP': r"\$\$N",
+        
+        # math loop number
+        # Matches $$M followed by an optional arithmetic operation and a number
+        # Examples: $$M+5, $$M-3, $$M*2, $$M/4, $$M%3
+        'MLOOP': r"\$\$M([-+*/%]?\d+)",
+        
+        # Explicit number for input list item
+        # Matches $$ followed by one or more digits
+        # Example: $$1, $$42, $$100
+        'NUMBER': r"\$\$(\d+)",
+                
+        # Backticks for python code
+        'BACKTICK': r"`([^`]+)`"
+    }
 
     def __init__(self, name: str, parm_type: ParameterType, node: "Node"):
         self._name: str = name
@@ -136,6 +162,18 @@ class Parm:
         except:
             raise OperationFailed("Invalid menu format")
 
+
+    def _get_patterns(selected_patterns: Optional[List[str]] = None) -> str:
+        patterns = self.__patterns
+        if selected_patterns is None:
+            return '|'.join(patterns.values())
+        else:
+            invalid_keys = set(selected_patterns) - set(patterns.keys())
+            if invalid_keys:
+                raise ValueError(f"Invalid pattern key(s): {', '.join(invalid_keys)}")
+            return '|'.join(patterns[key] for key in selected_patterns)
+
+
     def eval(self) -> Any:
         # print(f"Debug~ Evaluating parameter {self._name} : {self._value}")
 
@@ -158,16 +196,41 @@ class Parm:
             raise OperationFailed(f"Unsupported parameter type: {self._type}")
 
     def _expand_and_evaluate(self, value: str) -> str:
-        """Expands dollar signs and evaluates backticks until no more changes occur."""
-        previous_value = None
         current_value = value
 
-        # while current_value != previous_value:
-        #     previous_value = current_value
+        current_value = self._expand_globals(current_value)
         current_value = self._expand_dollar_signs(current_value)
         current_value = self._eval_backticks(current_value)
 
         return current_value
+    
+
+    def expand_global_variables(self, value: str) -> str:
+        def replace(match):
+            full_match = match.group(0)
+            global_var = match.group(1) or match.group(2) or match.group(3)
+            
+            print(f"$$ Processing global variable: {global_var}")
+            
+            if not GlobalStore.has(global_var):
+                print(f"$$ Warning: Global variable {global_var} not found")
+                return full_match
+            
+            replacement_value = str(GlobalStore.get(global_var))
+            print(f"Replacing {global_var} with: {replacement_value}")
+            
+            # If the match was within backticks or ${}, we need to preserve the surrounding syntax
+            if match.group(1):  # backticks
+                return f"`{replacement_value}`"
+            elif match.group(3):  # ${}
+                return f"${{{replacement_value}}}"
+            else:  # $$M case or standalone
+                return replacement_value
+
+        pattern = self._get_patterns("GLOBAL")
+        result = re.sub(pattern, replace, value)
+        return result
+
 
     def _eval_backticks(self, value: str) -> str:
         """Evaluates expressions within backticks."""
@@ -204,8 +267,12 @@ class Parm:
             raise OperationFailed("Parameter does not contain an expression")
 
     def is_expression(self) -> bool:
-        """Returns True if the parameter contains one or more valid functions in backticks."""
+        """Returns True if the parameter contains one or more valid functions accoring to self.__patterns ."""
+        all_patterns = _get_patterns()
         return bool(re.search(r"`[^`]*`|\$\$N|\$\$M([-+*/%]?\d+)|\$\$(\d+)", self._value))
+
+    def _expand_globals(self, value: str) -> str:
+
 
     def _expand_dollar_signs(self, value: str) -> str:
         def safe_eval(expression: str, loop_number: int) -> int:
