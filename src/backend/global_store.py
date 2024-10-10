@@ -1,23 +1,37 @@
 from typing import Any, Dict
+import warnings
 
 class GlobalStore:
     """
     A Singleton class for storing and managing key-value pairs globally.
-    All methods do what they say on the tin. 
+    All key names must be at least two characters long and in all caps.
     """
 
     _instance: Dict[str, Any] = {}
 
     @classmethod
+    def _validate_key(cls, key: str) -> None:
+        if len(key) < 2 or not key.isupper():
+            warning_message = (
+                f"🗝️ Warning: Invalid key format '{key}'. "
+                "Keys must be at least two characters long and in all caps."
+            )
+            warnings.warn(warning_message, UserWarning)
+            raise ValueError("Invalid key")
+
+    @classmethod
     def set(cls, key: str, value: Any) -> None:
+        cls._validate_key(key)
         cls._instance[key] = value
 
     @classmethod
     def get(cls, key: str) -> Any:
-        return cls._instance[key]
+        cls._validate_key(key)
+        return cls._instance.get(key)
 
     @classmethod
     def cut(cls, key: str) -> None:
+        cls._validate_key(key)
         cls._instance.pop(key, None)
 
     @classmethod
@@ -26,4 +40,5 @@ class GlobalStore:
 
     @classmethod
     def has(cls, key: str) -> bool:
+        cls._validate_key(key)
         return key in cls._instance
