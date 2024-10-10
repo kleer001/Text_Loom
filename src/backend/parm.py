@@ -33,26 +33,47 @@ class Parm:
     """
 
     __patterns = {
-        # Global variables in various contexts
+        # please pay special attention to the order of the patterns when used in a group as this
+        # is how if and case control flow statements will filter them.
+        # The default positions are noted below. 
+        # Evenatually we will refactor them to be one offs and will no longer need to count them
+        #     --------------
+        # ~ Global variables in various contexts ~
         # All global varaible must be two or more caplital letters
         # Examples: `function($FOO)`, $$M+$FOO, ${$FOO * 5}, ${$FOO}, `$FOO`
+        #
+        # MATCH 1,2,3 (with the global variable $FOO
+        # 1 = `$FOO` , 2 = $$M*3+$FOO , 3 = ${ $FOO }
+        #
         'GLOBAL': r"`[^`]*\$[A-Z]{2,}[^`]*`|\$\$M\S*\$[A-Z]{2,}|\$\{[^}]*\$[A-Z]{2,}[^}]*\}",
         
-        # simple loop number
+        # ~ Simple loop number ~
         # Matches $$N - represents the current loop number
+        #
+        # MATCH 4
+        #
         'NLOOP': r"\$\$N",
         
-        # math loop number
+        # ~ Math loop number ~
         # Matches $$M followed by an optional arithmetic operation and a number
         # Examples: $$M+5, $$M-3, $$M*2, $$M/4, $$M%3
+        #
+        # MATCH 5
+        #
         'MLOOP': r"\$\$M([-+*/%]?\d+)",
         
-        # Explicit number for input list item
+        # ~ Explicit Number for input list item ~
         # Matches $$ followed by one or more digits
         # Example: $$1, $$42, $$100
+        #
+        # MATCH 6
+        #
         'NUMBER': r"\$\$(\d+)",
                 
-        # Backticks for python code
+        # ~ Backticks for python code ~
+        #
+        # MATCH 7
+        #
         'BACKTICK': r"`([^`]+)`"
     }
 
@@ -122,7 +143,7 @@ class Parm:
         if self._type != ParameterType.BUTTON:
             raise OperationFailed("Parameter is not a button.")
 
-        expanded_script = self._expand_dollar_signs(self._script_callback)
+        expanded_script = self._expand_dollar_signs(self._script_callback) #This looks old and broken 
         if self._check_script_safety(expanded_script):
             try:
                 result = eval(expanded_script, {"__builtins__": {}}, arguments)
@@ -175,8 +196,6 @@ class Parm:
 
 
     def eval(self) -> Any:
-        # print(f"Debug~ Evaluating parameter {self._name} : {self._value}")
-
         if self._type == ParameterType.STRINGLIST:
             return [self._expand_and_evaluate(str(item)) for item in self._value]
         elif self._type == ParameterType.INT:
@@ -197,27 +216,49 @@ class Parm:
 
     def _expand_and_evaluate(self, value: str) -> str:
         current_value = value
-
         current_value = self._expand_globals(current_value)
         current_value = self._expand_dollar_signs(current_value)
         current_value = self._eval_backticks(current_value)
-
         return current_value
     
 
-    def expand_global_variables(self, value: str) -> str:
+    def _expand_globals(self, value: str) -> str:
+        def replace_global(match):
+            global_var = match.group(0)
+            print(f"🌐 Processing global variable: {global_var}")
+            
+            if not GlobalStore.has(global_var):
+                print(f"🌐 Warning: Global variable {global_var} not found")
+                return global_var
+            
+            replacement_value = str(GlobalStore.get(global_var))
+            print(f"🌐 Replacing {global_var} with: {replacement_value}")
+            return replacement_value
+
+        def replace_container(match):
+            container = match.group(0)
+            #base global far aka $FOO
+            return re.sub(r'\$[A-Z]{2,}', replace_global, container)
+
+        pattern = self._get_patterns("GLOBAL")
+        result = re.sub(pattern, replace_container, value)
+        return result
+
+
+
+    def _expand_globals(self, value: str) -> str:
         def replace(match):
             full_match = match.group(0)
             global_var = match.group(1) or match.group(2) or match.group(3)
             
-            print(f"$$ Processing global variable: {global_var}")
+            print(f"🌐 Processing global variable: {global_var}")
             
             if not GlobalStore.has(global_var):
-                print(f"$$ Warning: Global variable {global_var} not found")
+                print(f"🌐 Warning: Global variable {global_var} not found")
                 return full_match
             
             replacement_value = str(GlobalStore.get(global_var))
-            print(f"Replacing {global_var} with: {replacement_value}")
+            print(f"🌐 Replacing {global_var} with: {replacement_value}")
             
             # If the match was within backticks or ${}, we need to preserve the surrounding syntax
             if match.group(1):  # backticks
@@ -337,14 +378,22 @@ class Parm:
 
 
     def _check_script_safety(self, script: str) -> bool:
-        allowed_modules = {"os", "math", "time"}  # Add more as needed
+        allowed_modules = {
+            "math",
+            "datetime",
+            "random"
+        }
+
         allowed_functions = {
-            "open",
-            "read",
-            "write",
-            "join",
-            "split",
-        }  # Add more as needed
+            "len", "str.lower", "str.upper", "str.strip", "str.replace", "str.split", "str.join",
+            "int", "float", "str", "bool",
+            "abs", "round", "min", "max", "sum",
+            "sorted", "reversed", "list", "tuple", "set", "dict",
+            "range", "enumerate", "zip",
+            "isinstance", "type",
+            "True", "False", "None",
+            "print"
+        }
 
         try:
             tree = ast.parse(script)
