@@ -4,6 +4,8 @@ from bandit.core import manager
 from typing import Dict, Tuple, Union, Any
 import re
 import operator
+import builtins
+import math, datetime, random
 from enum import Enum
 from typing import Dict, Tuple, Union, Callable
 from typing import List, Optional
@@ -196,7 +198,9 @@ class Parm:
             invalid_keys = set(selected_patterns) - set(patterns.keys())
             if invalid_keys:
                 raise ValueError(f"Invalid pattern key(s): {', '.join(invalid_keys)}")
-            return '|'.join(patterns[key] for key in selected_patterns)
+            pattern_return = '|'.join(patterns[key] for key in selected_patterns)
+            print("returning pattern ",pattern_return)
+            return pattern_return
 
     def eval(self) -> Any:
         if self._type == ParameterType.STRINGLIST:
@@ -220,21 +224,23 @@ class Parm:
     def _expand_and_evaluate(self, value: str) -> str:
         current_value = value
         current_value = self._expand_globals(current_value)
+        current_value = self._clean_globals(current_value)
         current_value = self._expand_dollar_signs(current_value)
         current_value = self._eval_backticks(current_value)
         return current_value
-    
 
     def _expand_globals(self, value: str) -> str:
+        global_store = GlobalStore()
         def replace_global(match):
             global_var = match.group(0)
+            global_var = global_var[1:] 
             print(f"🌐 Processing global variable: {global_var}")
             
-            if not GlobalStore.has(global_var):
+            if not global_store.has(global_var):
                 print(f"🌐 Warning: Global variable {global_var} not found")
                 return global_var
             
-            replacement_value = str(GlobalStore.get(global_var))
+            replacement_value = str(global_store.get(global_var))
             print(f"🌐 Replacing {global_var} with: {replacement_value}")
             return replacement_value
 
@@ -247,21 +253,73 @@ class Parm:
         result = re.sub(pattern, replace_container, value)
         return result
 
+    def _clean_globals(self, value: str) -> str: 
+        pattern = r'\$\{(.*?)\}'
+        return re.sub(pattern, r'\1', value)
+
+
+    def create_safe_globals(self):
+        # List of allowed builtin function names
+        allowed_builtins = [
+            'len', 'abs', 'round', 'min', 'max', 'sum',
+            'sorted', 'reversed', 'list', 'tuple', 'set', 'dict',
+            'range', 'enumerate', 'zip',
+            'isinstance', 'type',
+            'int', 'float', 'str', 'bool',
+            'print', 'True', 'False', 'None'
+        ]
+
+        # Create safe_builtins dictionary efficiently
+        safe_builtins = {name: getattr(builtins, name) for name in allowed_builtins}
+
+        # Create safe_modules dictionary
+        safe_modules = {
+            'math': math,
+            'datetime': datetime,
+            'random': random
+        }
+
+        # Combine safe_builtins and safe_modules
+        return {'__builtins__': safe_builtins, **safe_modules}
+
+    def _check_script_safety(self, script: str) -> bool:
+        allowed_modules = {"math", "datetime", "random"}
+        allowed_functions = set(self.create_safe_globals()['__builtins__'].keys()) | {"str.lower", "str.upper", "str.strip", "str.replace", "str.split", "str.join"}
+
+        try:
+            tree = ast.parse(script)
+            for node in ast.walk(tree):
+                if isinstance(node, ast.Import):
+                    for alias in node.names:
+                        if alias.name not in allowed_modules:
+                            return False
+                elif isinstance(node, ast.ImportFrom):
+                    if node.module not in allowed_modules:
+                        return False
+                elif isinstance(node, ast.Call):
+                    if isinstance(node.func, ast.Name):
+                        if node.func.id not in allowed_functions:
+                            return False
+                elif isinstance(node, ast.Attribute):
+                    if node.attr not in allowed_functions:
+                        return False
+            return True
+        except SyntaxError:
+            return False
+
 
     def _eval_backticks(self, value: str) -> str:
         """Evaluates expressions within backticks."""
 
         def evaluate_expression(match):
-            expr = match.group(1)
-            try:
-                if self._check_script_safety(expr):
-                    result = eval(expr, {"__builtins__": {}}, {})
-                    return str(result)
-                else:
-                    raise OperationFailed(f"Expression failed safety check: {expr}")
-            except Exception as e:
-                print(f"Error evaluating expression '{expr}': {str(e)}")
-                return match.group(0)
+            script = match.group(1)
+            if self._check_script_safety(script):
+                safe_globals = self.create_safe_globals()
+                safe_locals = {}
+                exec(script, safe_globals, safe_locals)
+                return safe_locals
+            else:
+                raise ValueError("Script contains unsafe operations")
 
         return re.sub(r"`([^`]+)`", evaluate_expression, value)
 
@@ -284,8 +342,9 @@ class Parm:
 
     def is_expression(self) -> bool:
         """Returns True if the parameter contains one or more valid functions accoring to self.__patterns ."""
-        #all_patterns = self._get_patterns()
-        return bool(re.search(r"`[^`]*`|\$\$N|\$\$M([-+*/%]?\d+)|\$\$(\d+)", self._value))
+        all_patterns = self._get_patterns()
+        return bool(re.search(all_patterns, self._value))
+        #return bool(re.search(r"`[^`]*`|\$\$N|\$\$M([-+*/%]?\d+)|\$\$(\d+)", self._value))
 
     def _expand_dollar_signs(self, value: str) -> str:
         def safe_eval(expression: str, loop_number: int) -> int:
@@ -348,42 +407,3 @@ class Parm:
         result = re.sub(pattern, replace, value)
         return result
 
-
-    def _check_script_safety(self, script: str) -> bool:
-        allowed_modules = {
-            "math",
-            "datetime",
-            "random"
-        }
-
-        allowed_functions = {
-            "len", "str.lower", "str.upper", "str.strip", "str.replace", "str.split", "str.join",
-            "int", "float", "str", "bool",
-            "abs", "round", "min", "max", "sum",
-            "sorted", "reversed", "list", "tuple", "set", "dict",
-            "range", "enumerate", "zip",
-            "isinstance", "type",
-            "True", "False", "None",
-            "print"
-        }
-
-        try:
-            tree = ast.parse(script)
-            for node in ast.walk(tree):
-                if isinstance(node, ast.Import):
-                    for alias in node.names:
-                        if alias.name not in allowed_modules:
-                            return False
-                elif isinstance(node, ast.ImportFrom):
-                    if node.module not in allowed_modules:
-                        return False
-                elif isinstance(node, ast.Call):
-                    if isinstance(node.func, ast.Name):
-                        if node.func.id not in allowed_functions:
-                            return False
-                elif isinstance(node, ast.Attribute):
-                    if node.attr not in allowed_functions:
-                        return False
-            return True
-        except SyntaxError:
-            return False

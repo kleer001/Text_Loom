@@ -6,23 +6,24 @@ from global_store import GlobalStore
 
 globals = GlobalStore()
 
-#set global variables 
+# set global variables 
 globals.set("AB", 6)
 globals.set("FOO", "apples")
 globals.set("BAR", 69)
+
+print("Globals are: " , globals.list())
+
 # Create nodes
 text1 = Node.create_node(NodeType.TEXT, node_name="text1")
 
 # Set the parameters for text nodes
-text1._parms["text_string"].set("Filler Text ${$FOO and $BAR}")
+text1._parms["text_string"].set("Filler Text ${$FOO and $BAR} AND printing -> `print(\"$FOO\")` ")
 # Connect nodes
 #text1.set_input(0, text2)
 
 #print_node_info(text1)
 #print_node_info(text2)
 
-print(":: EVAL ::")
-texteval = text1.cook()
 print_node_info(text1)
 evaltext = text1._parms["text_string"].eval()
 print("text1 evals to: \n",evaltext)

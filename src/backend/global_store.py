@@ -1,6 +1,7 @@
 from typing import Any, Dict
 import warnings
 
+
 class GlobalStore:
     """
     A Singleton class for storing and managing key-value pairs globally.
@@ -9,7 +10,7 @@ class GlobalStore:
 
     _instance: Dict[str, Any] = {}
 
-    @classmethod
+    #@classmethod
     def _validate_key(cls, key: str) -> None:
         if len(key) < 2 or not key.isupper():
             warning_message = (
@@ -19,26 +20,26 @@ class GlobalStore:
             warnings.warn(warning_message, UserWarning)
             raise ValueError("Invalid key")
 
-    @classmethod
+    #@classmethod
     def set(cls, key: str, value: Any) -> None:
         cls._validate_key(key)
         cls._instance[key] = value
 
-    @classmethod
+    #@classmethod
     def get(cls, key: str) -> Any:
         cls._validate_key(key)
         return cls._instance.get(key)
 
-    @classmethod
+    #@classmethod
     def cut(cls, key: str) -> None:
         cls._validate_key(key)
         cls._instance.pop(key, None)
 
-    @classmethod
+    #@classmethod
     def list(cls) -> Dict[str, Any]:
         return dict(cls._instance)
 
-    @classmethod
+    #@classmethod
     def has(cls, key: str) -> bool:
         cls._validate_key(key)
         return key in cls._instance
