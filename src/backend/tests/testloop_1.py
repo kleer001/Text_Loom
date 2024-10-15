@@ -1,4 +1,9 @@
-import os
+import os, sys
+
+# Add the parent directory to sys.path
+parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(parent_dir)
+
 from base_classes import NodeEnvironment, Node, NodeType
 from print_node_info import print_node_info
 from nodes.looper_node import *

@@ -1,4 +1,9 @@
-import os
+import os, sys
+
+# Add the parent directory to sys.path
+parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(parent_dir)
+
 from base_classes import NodeEnvironment, Node, NodeType
 from print_node_info import print_node_info
 from nodes.looper_node import *
@@ -14,12 +19,13 @@ text4 = Node.create_node(NodeType.TEXT, node_name="text3", parent_path="/looper1
 merge1 = Node.create_node(NodeType.MERGE, node_name="merge1", parent_path="/looper1")
 
 # Set the parameters for text nodes
-text1._parms["text_string"].set("I have $$M+1 ")
+text1._parms["text_string"].set("I have $$N")
 text1._parms["pass_through"].set(False)
 
+
 text2._parms["text_string"].set(" 2 Apples ")
-text3._parms["text_string"].set(" 3 Cherries ")
-text4._parms["text_string"].set(" 4 Eggplants ")
+text3._parms["text_string"].set(" 3 Cherries")
+text4._parms["text_string"].set(" 4 Eggplants")
 # Set merge node parameter
 merge1._parms["single_string"].set(False)
 

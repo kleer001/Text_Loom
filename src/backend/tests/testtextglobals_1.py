@@ -1,4 +1,10 @@
+import sys
 import os
+
+# Add the parent directory to sys.path
+parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(parent_dir)
+
 from base_classes import NodeEnvironment, Node, NodeType
 from print_node_info import print_node_info
 from nodes.looper_node import *
@@ -9,7 +15,7 @@ globals = GlobalStore()
 # set global variables 
 globals.set("AB", 6)
 globals.set("FOO", "apples")
-globals.set("BAR", 69)
+globals.set("BAR", 42)
 
 print("Globals are: " , globals.list())
 
@@ -17,7 +23,7 @@ print("Globals are: " , globals.list())
 text1 = Node.create_node(NodeType.TEXT, node_name="text1")
 
 # Set the parameters for text nodes
-text1._parms["text_string"].set("Filler Text ${$FOO and $BAR} AND printing -> `print(\"$FOO\")` ")
+text1._parms["text_string"].set("Filler Text ${$FOO and $BAR} AND printing -> `ascii(\"$FOO\")` ")
 # Connect nodes
 #text1.set_input(0, text2)
 

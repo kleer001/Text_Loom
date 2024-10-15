@@ -264,7 +264,7 @@ class Parm:
             'len', 'abs', 'round', 'min', 'max', 'sum',
             'sorted', 'reversed', 'list', 'tuple', 'set', 'dict',
             'range', 'enumerate', 'zip',
-            'isinstance', 'type',
+            'isinstance', 'type', 'ascii',
             'int', 'float', 'str', 'bool',
             'print', 'True', 'False', 'None'
         ]
@@ -316,8 +316,9 @@ class Parm:
             if self._check_script_safety(script):
                 safe_globals = self.create_safe_globals()
                 safe_locals = {}
-                exec(script, safe_globals, safe_locals)
-                return safe_locals
+                exec_return = eval(script, safe_globals, safe_locals)
+                print("EVAL ", script," RETURNS ", exec_return)
+                return exec_return
             else:
                 raise ValueError("Script contains unsafe operations")
 
@@ -347,7 +348,7 @@ class Parm:
         #return bool(re.search(r"`[^`]*`|\$\$N|\$\$M([-+*/%]?\d+)|\$\$(\d+)", self._value))
 
     def _expand_dollar_signs(self, value: str) -> str:
-        def safe_eval(expression: str, loop_number: int) -> int:
+        def evaluate_arithmetic(expression: str, loop_number: int) -> int:
             ops = {
                 '+': operator.add,
                 '-': operator.sub,
@@ -355,16 +356,19 @@ class Parm:
                 '/': operator.truediv,
                 '%': operator.mod
             }
-            if expression[0] in ops:
-                op = ops[expression[0]]
-                try:
-                    return op(loop_number, int(expression[1:]))
-                except ValueError:
-                    print(f"$$ Warning: Invalid arithmetic expression: {expression}")
+            
+            tokens = re.findall(r'[-+*/%]|\d+', expression)
+            result = loop_number if tokens[0] in ops else int(tokens[0])
+            
+            for i in range(0, len(tokens) - 1, 2):
+                op, value = tokens[i], int(tokens[i + 1])
+                if op in ops:
+                    result = ops[op](result, value)
+                else:
+                    print(f"$$ Warning: Invalid operator: {op}")
                     return loop_number
-            else:
-                print(f"$$ Warning: Unsupported operation in expression: {expression}")
-                return loop_number
+            
+            return result
 
         def replace(match):
             expression = match.group(0)
@@ -389,7 +393,7 @@ class Parm:
                 index = loop_number % list_length
                 print(f"$$ Resolved index for $$N: {index}")
             elif match.group(1):  # $$M expression
-                arithmetic_result = safe_eval(match.group(1), loop_number)
+                arithmetic_result = evaluate_arithmetic(match.group(1), loop_number)
                 index = arithmetic_result % list_length
                 print(f"$$ Resolved index for {expression}: {index} (Arithmetic result: {arithmetic_result})")
             elif match.group(2):  # $$<number> expression
@@ -403,7 +407,7 @@ class Parm:
             print(f"Replacing {expression} with: {replacement_value}")
             return replacement_value
 
-        pattern = r"\$\$N|\$\$M([-+*/%]?\d+)|\$\$(\d+)"
+        pattern = r"\$\$N|\$\$M([-+*/%\d]+)|\$\$(\d+)"
         result = re.sub(pattern, replace, value)
         return result
 

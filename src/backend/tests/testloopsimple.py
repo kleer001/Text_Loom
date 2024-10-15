@@ -1,4 +1,10 @@
 import os
+import sys 
+
+# Add the parent directory to sys.path
+parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(parent_dir)
+
 from base_classes import NodeEnvironment, Node, NodeType
 from print_node_info import print_node_info
 from nodes.looper_node import *
@@ -33,4 +39,3 @@ print_node_info(text1)
 print_node_info(looper1._output_node)
 print_node_info(looper1)
 
-print("looper evals to : ",looper1._output_node.eval())
