@@ -1,5 +1,11 @@
+import os, sys 
+
+# Add the parent directory to sys.path
+parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(parent_dir)
 # testing intigration of make_list and looper and query and file_out
 
+#PSEUDO CODE# Obviously
 
 create text_chars type text
 text_chars parm text "please give me a simple list of five stereotypical modern japanese characters from every day life."
