@@ -52,7 +52,9 @@ print("::LOOP EVALS TO::\n", loopeval)
 # print_node_info(looper1._input_node)
 #print_node_info(merge1)
 # print_node_info(text1)
-print_node_info(looper1._output_node)
-# print_node_info(looper1)
+# print_node_info(looper1._output_node)
+
+# looper1out = looper1.eval()
+# print_node_info(looper1out)
 
 # print("looper evals to : ", looper1._output_node.eval())

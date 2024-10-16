@@ -36,7 +36,7 @@ text4.set_input(0, merge1, "output")
 #text2.set_input(0,looper1._input_node, "output")
 #text3.set_input(0,looper1._input_node)
 
-looper1._output_node.set_input(0,text4,"output")
+looper1._output_node.set_input(0, text4, "output")
 
 print_node_info(text1)
 print_node_info(text2)
@@ -52,7 +52,7 @@ loopeval = looper1.eval()
 
 
 print_node_info(merge1)
-print("merged output = ",merge1._merged_output)
+print("merged output = ", merge1._merged_output)
 print_node_info(text4)
 print_node_info(looper1._input_node)
 print_node_info(looper1._output_node)
