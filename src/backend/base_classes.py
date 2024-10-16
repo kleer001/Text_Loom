@@ -133,6 +133,9 @@ class NodeEnvironment:
     def node_from_name(cls, node_name: str) -> Optional['Node']:
         if node_name in cls.nodes:
             return cls.nodes[node_name]
+        for path, node in cls.nodes.items(): #because of synsugar to work with only names, not paths
+            if node_name == path.split('/')[-1]:
+                return node
         return None
 
 

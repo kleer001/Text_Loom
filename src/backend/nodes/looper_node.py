@@ -111,10 +111,13 @@ class LooperNode(Node):
             self.add_error(f"Error during iteration: {str(e)}")
             self.set_state(NodeState.UNCOOKED)
 
+
         self._last_cook_time = (time.time() - start_time) * 1000  # Convert to milliseconds
         
         if self.state() == NodeState.COOKING:
             self.set_state(NodeState.UNCHANGED)
+
+        self._output = self._parms["staging_data"].raw_value()
 
 
     def _perform_iterations(self):
@@ -178,12 +181,10 @@ class LooperNode(Node):
         try:
             # Create InputNull node
             input_node_name = "inputNullNode"
-            input_node_path = f"{self.path()}/{input_node_name}"
             self._input_node = Node.create_node(NodeType.INPUT_NULL, node_name=input_node_name, parent_path=self.path())
 
             # Create OutputNull node
             output_node_name = "outputNullNode"
-            output_node_path = f"{self.path()}/{output_node_name}"
             self._output_node = Node.create_node(NodeType.OUTPUT_NULL, node_name=output_node_name, parent_path=self.path())
             
             # Set input_node's in_node parameter to this looper node's path
@@ -198,6 +199,11 @@ class LooperNode(Node):
         except Exception as e:
             self.add_error(f"Failed to create internal nodes: {str(e)}")
 
+    def connect_loop_in(self, node: 'Node'):
+        node.set_input(0, self._input_node, "output")
+
+    def connect_loop_out(self, node: 'Node'):
+        self._output_node.set_input(0, node, "output")
 
     def __del__(self):
         # Ensure the callback is unregistered when the LooperNode is deleted
