@@ -761,14 +761,14 @@ class Node(MobileItem):
             # Once all dependencies are processed, add the current node to the cook list
             if node.needs_to_cook():
                 nodes_to_cook.append(node)
-                print(f"Adding {node.name()} to the cook list from {self.name()}")
-            else:
-                print(f"{node.name()} does not need to cook from {self.name()}")
+                #print(f"Adding {node.name()} to the cook list from {self.name()}")
+            #else:
+                #print(f"{node.name()} does not need to cook from {self.name()}")
 
         # Start the DFS from the current node's inputs
         for input_node in self.input_nodes():
             dfs(input_node)
-        print("nodes to cook: \n",nodes_to_cook)
+        #print("nodes to cook: \n",nodes_to_cook)
         return nodes_to_cook  # Return the nodes in the correct order (DFS ensures furthest nodes first)
 
 

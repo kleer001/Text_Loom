@@ -199,7 +199,7 @@ class Parm:
             if invalid_keys:
                 raise ValueError(f"Invalid pattern key(s): {', '.join(invalid_keys)}")
             pattern_return = '|'.join(patterns[key] for key in selected_patterns)
-            print("returning pattern ",pattern_return)
+            #print("returning pattern ",pattern_return)
             return pattern_return
 
     def eval(self) -> Any:
@@ -234,14 +234,14 @@ class Parm:
         def replace_global(match):
             global_var = match.group(0)
             global_var = global_var[1:] 
-            print(f"🌐 Processing global variable: {global_var}")
+            #print(f"🌐 Processing global variable: {global_var}")
             
             if not global_store.has(global_var):
-                print(f"🌐 Warning: Global variable {global_var} not found")
+                #print(f"🌐 Warning: Global variable {global_var} not found")
                 return global_var
             
             replacement_value = str(global_store.get(global_var))
-            print(f"🌐 Replacing {global_var} with: {replacement_value}")
+            #print(f"🌐 Replacing {global_var} with: {replacement_value}")
             return replacement_value
 
         def replace_container(match):
@@ -317,7 +317,7 @@ class Parm:
                 safe_globals = self.create_safe_globals()
                 safe_locals = {}
                 exec_return = eval(script, safe_globals, safe_locals)
-                print("EVAL ", script," RETURNS ", exec_return)
+                #print("EVAL ", script," RETURNS ", exec_return)
                 return exec_return
             else:
                 raise ValueError("Script contains unsafe operations")
@@ -365,7 +365,7 @@ class Parm:
                 if op in ops:
                     result = ops[op](result, value)
                 else:
-                    print(f"$$ Warning: Invalid operator: {op}")
+                    #print(f"$$ Warning: Invalid operator: {op}")
                     return loop_number
             
             return result
@@ -374,33 +374,33 @@ class Parm:
             expression = match.group(0)
             loop_number = loop_manager.get_current_loop(self.node().path()) - 1
             
-            print(f"$$ Processing expression: {expression}")
-            print(f"$$ Current loop number: {loop_number}")
+            #print(f"$$ Processing expression: {expression}")
+            #print(f"$$ Current loop number: {loop_number}")
             
             if not self.node().inputs():
-                print(f"$$ Warning: No valid input list found for {expression}")
+                #print(f"$$ Warning: No valid input list found for {expression}")
                 return expression
             
             input_list = self.node().inputs()[0].output_node().eval()
             list_length = len(input_list)
-            print(f"$$ Input list found: {input_list} (Length: {list_length})")
+            #print(f"$$ Input list found: {input_list} (Length: {list_length})")
             
             if list_length == 0:
-                print(f"$$ Warning: Empty input list for {expression}")
+                #print(f"$$ Warning: Empty input list for {expression}")
                 return expression
             
             if expression == "$$N":
                 index = loop_number % list_length
-                print(f"$$ Resolved index for $$N: {index}")
+                #print(f"$$ Resolved index for $$N: {index}")
             elif match.group(1):  # $$M expression
                 arithmetic_result = evaluate_arithmetic(match.group(1), loop_number)
                 index = arithmetic_result % list_length
-                print(f"$$ Resolved index for {expression}: {index} (Arithmetic result: {arithmetic_result})")
+                #print(f"$$ Resolved index for {expression}: {index} (Arithmetic result: {arithmetic_result})")
             elif match.group(2):  # $$<number> expression
                 index = (int(match.group(2)) - 1) % list_length
-                print(f"$$ Resolved index for {expression}: {index}")
+                #print(f"$$ Resolved index for {expression}: {index}")
             else:
-                print(f"$$ Warning: Malformed $$ expression: {expression}")
+                #print(f"$$ Warning: Malformed $$ expression: {expression}")
                 return expression
             
             replacement_value = str(input_list[index])
