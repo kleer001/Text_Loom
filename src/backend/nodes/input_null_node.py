@@ -42,12 +42,13 @@ class InputNullNode(Node):
 
         try:
             in_node_path = self._parms["in_node"].eval()
-            self.add_error(f"Input node path: {in_node_path}")
+            #self.add_error(f"Input node path: {in_node_path}")
 
             if not in_node_path:
                 raise ValueError("Input node path is empty")
 
             in_node = NodeEnvironment.nodes.get(in_node_path)
+            
             if not in_node:
                 raise ValueError(f"Invalid node path: {in_node_path}")
 
@@ -57,9 +58,12 @@ class InputNullNode(Node):
                 self._output = []
                 self.set_state(NodeState.COOKED)
                 return
+            # THIS IS THE SACRED WAY OF GETTING INPUT DATA #
+            input_connection = in_node.inputs()[0]
+            input_data = input_connection.output_node().eval()
+            # NEVER FORGET , NEVER STRAY FROM THE PATH OR BE LOST#
 
-            input_data = in_node.inputs()[0].output_data()
-            self.add_error(f"Retrieved input data: {type(input_data)} - {input_data[:100] if input_data else 'None'}")
+            #self.add_error(f"Retrieved input data: {type(input_data)} - {input_data[:100] if input_data else 'None'}")
 
             if input_data is None:
                 self.add_warning("Input data is None, setting empty list as output")
@@ -72,7 +76,7 @@ class InputNullNode(Node):
             else:
                 self._parms["in_data"].set(input_data)
                 self._output = input_data
-                self.add_error(f"Set output: {type(self._output)} - {self._output[:100]}")
+                #self.add_error(f"Set output: {type(self._output)} - {self._output[:100]}")
 
             self.set_state(NodeState.COOKED)
 

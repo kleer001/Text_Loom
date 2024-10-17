@@ -36,7 +36,8 @@ class LoopManager:
         loop_key = f"loop_{looper_path}"
         current_loop = self._loops.get(loop_key)
         print(f"♺ Get_Current_LOOP: Returning {current_loop} for {path} with {current_loop}")
-        print_calfun()
+        if current_loop == None: #because if we don't it'll error out if we don't cook the loop, better to have something than error out
+            return 0
         return current_loop
 
     def set_loop(self, looper_name: str, value: Optional[int]) -> None:

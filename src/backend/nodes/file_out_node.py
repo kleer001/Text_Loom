@@ -1,6 +1,7 @@
 import os
 import hashlib
 import time
+import ast
 from typing import List, Dict, Any
 from base_classes import Node, NodeType, NodeState
 from parm import Parm, ParameterType
@@ -59,7 +60,7 @@ class FileOutNode(Node):
                 raise ValueError("No input connected to FileOutNode")
 
             input_data = self.inputs()[0].output_node().eval()
-            print(f"Debug: Input data received: {input_data}")
+            #print(f"Debug: Input data received: {input_data}")
 
             if not isinstance(input_data, list) or not all(isinstance(item, str) for item in input_data):
                 raise TypeError("Input data must be a list of strings")

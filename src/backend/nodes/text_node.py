@@ -33,7 +33,7 @@ class TextNode(Node):
 
         # Set default value
         self._parms["text_string"].set("")
-        self._parms["pass_through"].set("True")
+        self._parms["pass_through"].set(True)
     
     def _internal_cook(self, force: bool = False) -> None:
         
@@ -94,8 +94,8 @@ class TextNode(Node):
             return True
 
     def eval(self) -> List[str]:
-        # if self.state() != NodeState.UNCHANGED or self.needs_to_cook():
-        #     self.cook()
+        if self.state() != NodeState.UNCHANGED or self.needs_to_cook():
+            self.cook()
         return self._output
     
     def _calculate_hash(self, content: str) -> str:
