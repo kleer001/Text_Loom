@@ -1,4 +1,6 @@
 import os
+import codecs
+import re
 import hashlib
 import time
 import ast
@@ -37,16 +39,37 @@ class FileOutNode(Node):
         self._parms: Dict[str, Parm] = {
             "file_name": Parm("file_name", ParameterType.STRING, self),
             "file_text": Parm("file_text", ParameterType.STRING, self),
-            "refresh": Parm("refresh", ParameterType.BUTTON, self)
+            "refresh": Parm("refresh", ParameterType.BUTTON, self),
+            "format_output": Parm("format_output", ParameterType.TOGGLE, self),
         }
 
         # Set default values
         self._parms["file_name"].set("./output.txt")
         self._parms["file_text"].set("")
-
+        self._parms["format_output"].set(True)
         # Set up refresh button callback
         self._parms["refresh"].set_script_callback("self.node().refresh()")
 
+
+
+    ESCAPE_SEQUENCE_RE = re.compile(r'''
+        ( \\U........      # 8-digit hex escapes
+        | \\u....          # 4-digit hex escapes
+        | \\x..            # 2-digit hex escapes
+        | \\[0-7]{1,3}     # Octal escapes
+        | \\N\{[^}]+\}     # Unicode characters by name
+        | \\[\\'"abfnrtv]  # Single-character escapes
+        )''', re.UNICODE | re.VERBOSE)
+
+    def decode_escapes(self, s: str):
+        def decode_match(match):
+            try:
+                return codecs.decode(match.group(0), 'unicode-escape')
+            except UnicodeDecodeError:
+                # In case we matched the wrong thing after a double-backslash
+                return match.group(0)
+
+        return ESCAPE_SEQUENCE_RE.sub(decode_match, s)
 
     def _internal_cook(self, force: bool = False) -> None:
         
@@ -65,7 +88,12 @@ class FileOutNode(Node):
             if not isinstance(input_data, list) or not all(isinstance(item, str) for item in input_data):
                 raise TypeError("Input data must be a list of strings")
 
-            content = "\n".join(input_data)
+            content = "\n\n\n".join(input_data)
+            if (self._parms["format_output"].eval()):
+                # overly manual, but what people would want
+                content = content.replace("[", "").replace("]", "")
+                content = content.encode('utf-8').decode('unicode_escape')
+
             self._parms["file_text"].set(content)
 
             full_file_path = self._parms["file_name"].eval()
@@ -75,6 +103,7 @@ class FileOutNode(Node):
             if force or new_hash != self._file_hash:
                 os.makedirs(os.path.dirname(full_file_path), exist_ok=True)
                 with open(full_file_path, 'w') as file:
+
                     file.write(content)
                 self._file_hash = new_hash
                 print(f"File written successfully: {full_file_path}")
