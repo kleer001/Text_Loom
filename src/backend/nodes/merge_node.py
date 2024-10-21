@@ -39,6 +39,14 @@ class MergeNode(Node):
         merge_node.set_input(f"input{i}", input_node, "output")
 
     # You can use any Python list operations to reorder the inputs as needed
+
+    Parms: 
+
+    single_string = boolian, merges input strings into a single string item list
+
+    insert_string = string, the string to be inserted ahead of each string list item. N is replaced with the index number of the string list item (starting with 1). This string is surrounded by a complementary (and hard coded) pair of new line escaped characters
+    
+    use_insert = boolian, inserts the insert_string at the head of each item in the list as they're merged together
     """
 
 
@@ -51,39 +59,49 @@ class MergeNode(Node):
 
         # Initialize parameters
         self._parms: Dict[str, Parm] = {
-            "single_string": Parm("single_string", ParameterType.TOGGLE, self)
+            "single_string": Parm("single_string", ParameterType.TOGGLE, self),
+            "use_insert": Parm("use_insert", ParameterType.TOGGLE, self),
+            "insert_string": Parm("insert_string", ParameterType.STRING, self)
         }
         # Set default value
         self._parms["single_string"].set(True)
+        self._parms["use_insert"].set(False)
+        self._parms["insert_string"].set("##N")
 
     def _internal_cook(self, force: bool = False) -> None:
         self.set_state(NodeState.COOKING)
         self._cook_count += 1
         start_time = time.time()
 
-        try:
-            input_data = []
-            for input_connection in self.inputs():
-                node_data = input_connection.output_node().eval()
-                if not isinstance(node_data, list) or not all(isinstance(item, str) for item in node_data):
-                    raise TypeError(f"Input from {input_connection.output_node().name()} must be a list of strings")
-                input_data.extend(node_data)
+        input_data = []
 
-            single_string = self._parms["single_string"].eval()
+        for input_connection in self.inputs():
+            node_data = input_connection.output_node().eval()
+            if not isinstance(node_data, list) or not all(isinstance(item, str) for item in node_data):
+                raise TypeError(f"Input from {input_connection.output_node().name()} must be a list of strings")
+            input_data.extend(node_data)
 
-            if single_string:
-                self._merged_output = ["".join(input_data)]
-            else:
-                self._merged_output = input_data
+        use_insert = self._parms["use_insert"].eval()
+        if use_insert is True:
+            insert_string_raw = self._parms["insert_string"].eval()
+            print("INPUT DATA ", input_data)
+            temp_data = []
+            for num_in, in_d in enumerate(input_data):
+                insert_string = insert_string_raw.replace("N", str(num_in + 1))
+                next_item = "\n" + insert_string + "\n" + in_d
+                print("NEXT ITEM ", next_item)
+                temp_data.append(next_item)
+            input_data = temp_data
+        single_string = self._parms["single_string"].eval()
+        print("SINGLE STRING ", single_string)
+        if single_string:
+            self._merged_output = ["".join(input_data)]
+        else:
+            print("NOT SINGLE STRING ")
+            self._merged_output = input_data
 
-            self.set_state(NodeState.UNCHANGED)
-
-        except Exception as e:
-            self.add_error(f"Error in MergeNode cook: {str(e)}")
-            self.set_state(NodeState.UNCOOKED)
-
+        self.set_state(NodeState.UNCHANGED)
         self._last_cook_time = (time.time() - start_time) * 1000  # Convert to milliseconds
-
         
     def input_names(self) -> Dict[str, str]:
         return {f"input{i}": f"Input {i}" for i in range(len(self.inputs()))}
@@ -98,8 +116,9 @@ class MergeNode(Node):
         return {"output": "List[str]"}
 
     def eval(self) -> List[str]:
-        # if self.state() != NodeState.UNCHANGED:
-        #     self.cook()
+        if self.state() != NodeState.UNCHANGED:
+            self.cook()
+        print("WHAT POPS OUT ! ", self._merged_output)
         return self._merged_output
 
     def needs_to_cook(self) -> bool:
