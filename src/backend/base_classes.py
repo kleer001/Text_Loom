@@ -583,16 +583,21 @@ class Node(MobileItem):
             raise ValueError(f"Parent path '{parent_path}' does not exist.")
 
         base_name = node_name or f"{node_type.value}"
-        new_name = base_name
-        counter = 1
-
-        while f"{parent_path}/{new_name}" in NodeEnvironment.nodes:
-            match = re.match(r"(.+)_(\d+)$", new_name)
-            if match:
-                base_name, counter = match.groups()
-                counter = int(counter) + 1
-            new_name = f"{base_name}_{counter}"
-            counter += 1
+        
+        # Check if the base_name already ends with a number
+        if re.search(r'_\d+$', base_name):
+            new_name = base_name  # Use the name as-is if it already ends with a number
+        else:
+            counter = 1
+            # Generate a unique name by checking existing nodes
+            while True:
+                new_name = f"{base_name}_{counter}"
+                new_path = f"{parent_path.rstrip('/')}/{new_name}"
+                
+                if new_path not in NodeEnvironment.nodes:
+                    break
+                    
+                counter += 1
 
         new_path = f"{parent_path.rstrip('/')}/{new_name}"
 
@@ -606,8 +611,7 @@ class Node(MobileItem):
 
             new_node = node_class(new_name, new_path, node_type)
             new_node._session_id = new_node._generate_unique_session_id()
-            NodeEnvironment.add_node(new_node)  # Use the new add_node method
-            #print("Created new node: ",new_node.name(), new_node, " - at: ", parent_path)
+            NodeEnvironment.add_node(new_node)
 
             # Call post-registration initialization
             if hasattr(new_node.__class__, 'post_registration_init'):
