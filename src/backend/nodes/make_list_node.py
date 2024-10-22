@@ -48,7 +48,8 @@ class MakeListNode(Node):
         # Process only the first item in the input list
         first_item = input_data[0]
         parsed_list = parse_list(first_item)
-
+        print("::PARSED LIST OF LENGTH ", len(parsed_list))
+        
         # Apply limit if enabled
         if self._parms["limit"].eval():
             max_items = self._parms["max_list"].eval()

@@ -36,6 +36,7 @@ class LooperNode(Node):
             "min": Parm("min", ParameterType.INT, self),
             "max": Parm("max", ParameterType.INT, self),
             "step": Parm("step", ParameterType.INT, self),
+            "step_from_input": Parm("step_from_input", ParameterType.TOGGLE, self),
             "use_test": Parm("use_test", ParameterType.TOGGLE, self),
             "test_number": Parm("test_number", ParameterType.INT, self),
             "input_hook": Parm("input_hook", ParameterType.STRING, self),
@@ -49,12 +50,13 @@ class LooperNode(Node):
         self._parms["min"].set(1)
         self._parms["max"].set(3)
         self._parms["step"].set(1)
+        self._parms["step_from_input"].set(False)
         self._parms["use_test"].set(False)
         self._parms["test_number"].set(1)
         self._parms["input_hook"].set("")
         self._parms["output_hook"].set("")
         self._parms["staging_data"].set([])
-        self._parms["timeout_limit"].set(180.0)  # 3 minutes in seconds
+        self._parms["timeout_limit"].set(300.0)  # 5 minutes in seconds
         self._parms["data_limit"].set(200 * 1024 * 1024)  # 200MB in bytes
 
     @classmethod
@@ -130,6 +132,13 @@ class LooperNode(Node):
         use_test = self._parms["use_test"].eval()
         test_number = self._parms["test_number"].eval()
         timeout_limit = self._parms["timeout_limit"].eval()
+
+        step_ref = self._parms["step_from_input"].eval()
+        if step_ref is True:
+            input_steps = len(self.inputs()[0].output_node().eval())
+            max_val = input_steps
+            print("RUNNING LOOP FROM INPUT, num = ", step)
+            #print("INPUTS ARE ", self.inputs()[0].output_node().eval())
 
         if use_test:
             iteration_range = [test_number]
