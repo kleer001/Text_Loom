@@ -84,7 +84,6 @@ class MergeNode(Node):
         use_insert = self._parms["use_insert"].eval()
         if use_insert is True:
             insert_string_raw = self._parms["insert_string"].eval()
-            print("INPUT DATA ", input_data)
             temp_data = []
             for num_in, in_d in enumerate(input_data):
                 insert_string = insert_string_raw.replace("N", str(num_in + 1))
@@ -93,11 +92,9 @@ class MergeNode(Node):
                 temp_data.append(next_item)
             input_data = temp_data
         single_string = self._parms["single_string"].eval()
-        print("SINGLE STRING ", single_string)
         if single_string:
             self._merged_output = ["".join(input_data)]
         else:
-            print("NOT SINGLE STRING ")
             self._merged_output = input_data
 
         self.set_state(NodeState.UNCHANGED)
@@ -118,7 +115,6 @@ class MergeNode(Node):
     def eval(self) -> List[str]:
         if self.state() != NodeState.UNCHANGED:
             self.cook()
-        print("WHAT POPS OUT ! ", self._merged_output)
         return self._merged_output
 
     def needs_to_cook(self) -> bool:
