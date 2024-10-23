@@ -1,8 +1,8 @@
 # ***Text Loom:*** **The unlimited power to procedurally create your text!**
 
 
-<center> 
-# :thread: :pencil:
+ # :thread: :pencil:
+
 
 ## :speech_balloon: What? 
 Text Loom is a workspace to create generalized networks to manage lists and build on them in a way that is stable and  **reliable**. All from the comfort of your favorite local LLM API.
