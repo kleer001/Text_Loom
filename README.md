@@ -35,7 +35,7 @@ Text Loom is a workspace to create generalized networks to manage lists and buil
 
 
 
-
+'''mermaid
 
 stateDiagram-v2
     Normal: Normal Mode
@@ -73,3 +73,5 @@ stateDiagram-v2
         selected node, available commands,
         and context help
     end note
+
+'''
