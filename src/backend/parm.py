@@ -49,6 +49,7 @@ class Parm:
         #
         'GLOBAL': r"`[^`]*\$[A-Z]{2,}[^`]*`|\$\$M\S*\$[A-Z]{2,}|\$\{[^}]*\$[A-Z]{2,}[^}]*\}",
         
+        
         # ~ Simple loop number ~
         # Matches $$N - represents the current loop number
         #
@@ -76,7 +77,14 @@ class Parm:
         #
         # MATCH 7
         #
-        'BACKTICK': r"`([^`]+)`"
+        'BACKTICK': r"`([^`]+)`",
+
+        # ~ loop number its self~
+        # Matches $$L - represents the current loop number
+        #
+        # MATCH 8
+        #
+        'NLOOP': r"\$\$L",
     }
 
     def __init__(self, name: str, parm_type: ParameterType, node: "Node"):
@@ -223,6 +231,7 @@ class Parm:
 
     def _expand_and_evaluate(self, value: str) -> str:
         current_value = value
+        current_value = self._expand_loop_number(current_value)
         current_value = self._expand_globals(current_value)
         current_value = self._clean_globals(current_value)
         current_value = self._expand_dollar_signs(current_value)
@@ -347,6 +356,11 @@ class Parm:
         return bool(re.search(all_patterns, self._value))
         #return bool(re.search(r"`[^`]*`|\$\$N|\$\$M([-+*/%]?\d+)|\$\$(\d+)", self._value))
 
+    def _expand_loop_number(self, value: str) -> str: 
+        loop_number = loop_manager.get_current_loop(self.node().path()) - 1
+        result = value.replace("$$L", str(loop_number))
+        return result
+
     def _expand_dollar_signs(self, value: str) -> str:
         def evaluate_arithmetic(expression: str, loop_number: int) -> int:
             ops = {
@@ -373,9 +387,6 @@ class Parm:
         def replace(match):
             expression = match.group(0)
             loop_number = loop_manager.get_current_loop(self.node().path()) - 1
-            
-            #print(f"$$ Processing expression: {expression}")
-            #print(f"$$ Current loop number: {loop_number}")
             
             if not self.node().inputs():
                 #print(f"$$ Warning: No valid input list found for {expression}")

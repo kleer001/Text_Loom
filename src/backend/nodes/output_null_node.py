@@ -29,11 +29,13 @@ class OutputNullNode(Node):
 
         # Initialize parameters
         self._parms: Dict[str, Parm] = {
-            "out_data": Parm("out_data", ParameterType.STRINGLIST, self)
+            "out_data": Parm("out_data", ParameterType.STRINGLIST, self),
+            "feedback_mode": Parm("feedback_mode", ParameterType.TOGGLE, self),
         }
 
         # Set default value
         self._parms["out_data"].set([])
+        self._parms["feedback_mode"].set(False)
         
     def _internal_cook(self) -> None:
         """
@@ -57,6 +59,8 @@ class OutputNullNode(Node):
                 raise TypeError("Input data must be a list of strings")
             else:
                 new_data = self._parms["out_data"].raw_value().append(input_data)
+                if(self._parms["feedback_mode"].eval() is True):
+                    new_data = self._parms["out_data"].set(input_data)
                 self._parms["out_data"].set(new_data)
                 self._output = input_data
                 print ("from- ",self.name()," set output: ",self._output)
@@ -74,6 +78,7 @@ class OutputNullNode(Node):
         return hashlib.md5(content.encode()).hexdigest()
 
     def eval(self) -> List[str]:
+        # always cook because we always want output for each iteration
         # if self.state() != NodeState.UNCHANGED:
         #     self.cook()
         return self._output
