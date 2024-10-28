@@ -1,0 +1,445 @@
+{
+  "version": 0.01,
+  "timestamp": "2024-10-28T15:10:26.328466",
+  "nodes": {
+    "/looper1": {
+      "_node_type": "looper",
+      "_path": "/looper1",
+      "_name": "looper1",
+      "_selected": false,
+      "_color": "(1.0, 1.0, 1.0)",
+      "_position": [
+        0.0,
+        0.0
+      ],
+      "_session_id": 2747356041102548635,
+      "_children": [
+        {
+          "_type": "Node",
+          "path": "/looper1/inputNullNode_1",
+          "name": "inputNullNode_1"
+        },
+        {
+          "_type": "Node",
+          "path": "/looper1/outputNullNode_1",
+          "name": "outputNullNode_1"
+        },
+        {
+          "_type": "Node",
+          "path": "/looper1/inputNullNode_1",
+          "name": "inputNullNode_1"
+        },
+        {
+          "_type": "Node",
+          "path": "/looper1/outputNullNode_1",
+          "name": "outputNullNode_1"
+        }
+      ],
+      "_depth": 2,
+      "_inputs": {},
+      "_outputs": {},
+      "_state": "NodeState.UNCHANGED",
+      "_errors": [],
+      "_warnings": [
+        "Iteration 1 created a blank value.",
+        "Iteration 2 created a blank value.",
+        "Iteration 3 created a blank value."
+      ],
+      "_is_time_dependent": false,
+      "_last_cook_time": 1.0132789611816406,
+      "_cook_count": 1,
+      "_input_node": {
+        "_type": "Node",
+        "path": "/looper1/inputNullNode_1",
+        "name": "inputNullNode_1"
+      },
+      "_output_node": {
+        "_type": "Node",
+        "path": "/looper1/outputNullNode_1",
+        "name": "outputNullNode_1"
+      },
+      "_internal_nodes_created": false,
+      "_output": [
+        "['I have I have $$N']",
+        "['I have I have $$N']",
+        "['I have I have $$N']"
+      ],
+      "_parms": {
+        "min": {
+          "_name": "min",
+          "_type": "int",
+          "_script_callback": "",
+          "_value": 1
+        },
+        "max": {
+          "_name": "max",
+          "_type": "int",
+          "_script_callback": "",
+          "_value": 3
+        },
+        "step": {
+          "_name": "step",
+          "_type": "int",
+          "_script_callback": "",
+          "_value": 1
+        },
+        "max_from_input": {
+          "_name": "max_from_input",
+          "_type": "toggle",
+          "_script_callback": "",
+          "_value": false
+        },
+        "feedback_mode": {
+          "_name": "feedback_mode",
+          "_type": "toggle",
+          "_script_callback": "",
+          "_value": false
+        },
+        "use_test": {
+          "_name": "use_test",
+          "_type": "toggle",
+          "_script_callback": "",
+          "_value": false
+        },
+        "test_number": {
+          "_name": "test_number",
+          "_type": "int",
+          "_script_callback": "",
+          "_value": 1
+        },
+        "input_hook": {
+          "_name": "input_hook",
+          "_type": "string",
+          "_script_callback": "",
+          "_value": ""
+        },
+        "output_hook": {
+          "_name": "output_hook",
+          "_type": "string",
+          "_script_callback": "",
+          "_value": ""
+        },
+        "staging_data": {
+          "_name": "staging_data",
+          "_type": "stringList",
+          "_script_callback": "",
+          "_value": [
+            "['I have I have $$N']",
+            "['I have I have $$N']",
+            "['I have I have $$N']"
+          ]
+        },
+        "timeout_limit": {
+          "_name": "timeout_limit",
+          "_type": "float",
+          "_script_callback": "",
+          "_value": 300.0
+        },
+        "data_limit": {
+          "_name": "data_limit",
+          "_type": "int",
+          "_script_callback": "",
+          "_value": 209715200
+        }
+      },
+      "_connections": []
+    },
+    "/looper1/inputNullNode_1": {
+      "_node_type": "input_null",
+      "_path": "/looper1/inputNullNode_1",
+      "_name": "inputNullNode_1",
+      "_selected": false,
+      "_color": "(1.0, 1.0, 1.0)",
+      "_position": [
+        0.0,
+        0.0
+      ],
+      "_session_id": 3088057236660783609,
+      "_children": [],
+      "_depth": 3,
+      "_inputs": {},
+      "_outputs": {},
+      "_state": "NodeState.UNCOOKED",
+      "_errors": [],
+      "_warnings": [],
+      "_is_time_dependent": false,
+      "_last_cook_time": 0.0,
+      "_cook_count": 0,
+      "_input_hash": null,
+      "_last_input_size": 0,
+      "_output": null,
+      "_parms": {
+        "in_node": {
+          "_name": "in_node",
+          "_type": "string",
+          "_script_callback": "",
+          "_value": "/looper1"
+        },
+        "in_data": {
+          "_name": "in_data",
+          "_type": "stringList",
+          "_script_callback": "",
+          "_value": []
+        },
+        "feedback_mode": {
+          "_name": "feedback_mode",
+          "_type": "toggle",
+          "_script_callback": "",
+          "_value": false
+        }
+      },
+      "_connections": []
+    },
+    "/looper1/outputNullNode_1": {
+      "_node_type": "output_null",
+      "_path": "/looper1/outputNullNode_1",
+      "_name": "outputNullNode_1",
+      "_selected": false,
+      "_color": "(1.0, 1.0, 1.0)",
+      "_position": [
+        0.0,
+        0.0
+      ],
+      "_session_id": 1535483102074652096,
+      "_children": [],
+      "_depth": 3,
+      "_outputs": {},
+      "_state": "NodeState.UNCOOKED",
+      "_errors": [],
+      "_warnings": [],
+      "_is_time_dependent": true,
+      "_last_cook_time": 0.011682510375976562,
+      "_cook_count": 3,
+      "_input_hash": null,
+      "_last_input_size": 0,
+      "_parms": {
+        "out_data": {
+          "_name": "out_data",
+          "_type": "stringList",
+          "_script_callback": "",
+          "_value": [
+            [
+              "I have $$N"
+            ],
+            [
+              "I have $$N"
+            ],
+            [
+              "I have $$N"
+            ]
+          ]
+        },
+        "feedback_mode": {
+          "_name": "feedback_mode",
+          "_type": "toggle",
+          "_script_callback": "",
+          "_value": false
+        }
+      },
+      "_connections": [
+        {
+          "input_index": 0,
+          "output_node_path": "/looper1/text1",
+          "output_index": 0
+        }
+      ]
+    },
+    "/looper1/text1": {
+      "_node_type": "text",
+      "_path": "/looper1/text1",
+      "_name": "text1",
+      "_selected": false,
+      "_color": "(1.0, 1.0, 1.0)",
+      "_position": [
+        0.0,
+        0.0
+      ],
+      "_session_id": 32860615466742880,
+      "_children": [],
+      "_depth": 3,
+      "_state": "NodeState.UNCHANGED",
+      "_errors": [],
+      "_warnings": [],
+      "_is_time_dependent": false,
+      "_last_cook_time": 0.011682510375976562,
+      "_cook_count": 1,
+      "_input_hash": null,
+      "_param_hash": "1de17e2f267a64ddbf71a85409dbbc76",
+      "_output": [
+        "I have $$N"
+      ],
+      "_parms": {
+        "text_string": {
+          "_name": "text_string",
+          "_type": "string",
+          "_script_callback": "",
+          "_value": "I have $$N"
+        },
+        "pass_through": {
+          "_name": "pass_through",
+          "_type": "toggle",
+          "_script_callback": "",
+          "_value": false
+        }
+      },
+      "_connections": [
+        {
+          "input_index": 0,
+          "output_node_path": "/looper1/merge1",
+          "output_index": 0
+        }
+      ]
+    },
+    "/looper1/text2": {
+      "_node_type": "text",
+      "_path": "/looper1/text2",
+      "_name": "text2",
+      "_selected": false,
+      "_color": "(1.0, 1.0, 1.0)",
+      "_position": [
+        0.0,
+        0.0
+      ],
+      "_session_id": 2357606983137677165,
+      "_children": [],
+      "_depth": 3,
+      "_inputs": {},
+      "_state": "NodeState.UNCHANGED",
+      "_errors": [],
+      "_warnings": [],
+      "_is_time_dependent": false,
+      "_last_cook_time": 0.30422210693359375,
+      "_cook_count": 1,
+      "_input_hash": "d751713988987e9331980363e24189ce",
+      "_param_hash": "39111cb04e7c4027b81233aa5a0377f0",
+      "_output": [
+        " 2 Apples "
+      ],
+      "_parms": {
+        "text_string": {
+          "_name": "text_string",
+          "_type": "string",
+          "_script_callback": "",
+          "_value": " 2 Apples "
+        },
+        "pass_through": {
+          "_name": "pass_through",
+          "_type": "toggle",
+          "_script_callback": "",
+          "_value": true
+        }
+      },
+      "_connections": []
+    },
+    "/looper1/text3": {
+      "_node_type": "text",
+      "_path": "/looper1/text3",
+      "_name": "text3",
+      "_selected": false,
+      "_color": "(1.0, 1.0, 1.0)",
+      "_position": [
+        0.0,
+        0.0
+      ],
+      "_session_id": 4285011007314518208,
+      "_children": [],
+      "_depth": 3,
+      "_inputs": {},
+      "_state": "NodeState.UNCHANGED",
+      "_errors": [],
+      "_warnings": [],
+      "_is_time_dependent": false,
+      "_last_cook_time": 0.012874603271484375,
+      "_cook_count": 1,
+      "_input_hash": "d751713988987e9331980363e24189ce",
+      "_param_hash": "2785ce59ffd48b6fe785bb00b6de1b7a",
+      "_output": [
+        " 4 Eggplants"
+      ],
+      "_parms": {
+        "text_string": {
+          "_name": "text_string",
+          "_type": "string",
+          "_script_callback": "",
+          "_value": " 4 Eggplants"
+        },
+        "pass_through": {
+          "_name": "pass_through",
+          "_type": "toggle",
+          "_script_callback": "",
+          "_value": true
+        }
+      },
+      "_connections": []
+    },
+    "/looper1/merge1": {
+      "_node_type": "merge",
+      "_path": "/looper1/merge1",
+      "_name": "merge1",
+      "_selected": false,
+      "_color": "(1.0, 1.0, 1.0)",
+      "_position": "merge",
+      "_session_id": 3134197601129539189,
+      "_children": [],
+      "_depth": 3,
+      "_state": "NodeState.UNCHANGED",
+      "_errors": [],
+      "_warnings": [],
+      "_is_time_dependent": false,
+      "_last_cook_time": 0.017881393432617188,
+      "_cook_count": 1,
+      "_merged_output": [
+        " 2 Apples ",
+        " 3 Cherries",
+        " 4 Eggplants"
+      ],
+      "_parms": {
+        "single_string": {
+          "_name": "single_string",
+          "_type": "toggle",
+          "_script_callback": "",
+          "_value": false
+        },
+        "use_insert": {
+          "_name": "use_insert",
+          "_type": "toggle",
+          "_script_callback": "",
+          "_value": false
+        },
+        "insert_string": {
+          "_name": "insert_string",
+          "_type": "string",
+          "_script_callback": "",
+          "_value": "##N"
+        }
+      },
+      "_connections": [
+        {
+          "input_index": 0,
+          "output_node_path": "/looper1/text2",
+          "output_index": 0
+        },
+        {
+          "input_index": 1,
+          "output_node_path": "/looper1/text3",
+          "output_index": 0
+        },
+        {
+          "input_index": 2,
+          "output_node_path": "/looper1/text3",
+          "output_index": 0
+        }
+      ]
+    }
+  },
+  "globals": {
+    "AB": 6,
+    "FOO": "apples",
+    "BAR": 42
+  },
+  "undo_state": {
+    "redo_stack": [],
+    "_enabled": true,
+    "_memory_limit": 10485760
+  }
+}

@@ -69,13 +69,12 @@ class UndoManager:
     def getRedoText(self) -> str:
         return self.redo_stack[-1][2] if self.redo_stack else "No redo available"
 
-    def exportStack(self, filename: str):
+    def exportStack(self) -> str:
         data = {
             "undo_stack": [(func.__name__, args, desc) for func, args, desc in self.undo_stack],
             "redo_stack": [(func.__name__, args, desc) for func, args, desc in self.redo_stack]
         }
-        with open(filename, 'w') as f:
-            json.dump(data, f)
+        return data
 
     def importStack(self, filename: str):
         with open(filename, 'r') as f:

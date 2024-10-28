@@ -36,7 +36,8 @@ class LooperNode(Node):
             "min": Parm("min", ParameterType.INT, self),
             "max": Parm("max", ParameterType.INT, self),
             "step": Parm("step", ParameterType.INT, self),
-            "step_from_input": Parm("step_from_input", ParameterType.TOGGLE, self),
+            "max_from_input": Parm("max_from_input", ParameterType.TOGGLE, self),
+            "feedback_mode": Parm("feedback_mode", ParameterType.TOGGLE, self),
             "use_test": Parm("use_test", ParameterType.TOGGLE, self),
             "test_number": Parm("test_number", ParameterType.INT, self),
             "input_hook": Parm("input_hook", ParameterType.STRING, self),
@@ -50,7 +51,8 @@ class LooperNode(Node):
         self._parms["min"].set(1)
         self._parms["max"].set(3)
         self._parms["step"].set(1)
-        self._parms["step_from_input"].set(False)
+        self._parms["max_from_input"].set(False)
+        self._parms["feedback_mode"].set(False)
         self._parms["use_test"].set(False)
         self._parms["test_number"].set(1)
         self._parms["input_hook"].set("")
@@ -132,8 +134,11 @@ class LooperNode(Node):
         use_test = self._parms["use_test"].eval()
         test_number = self._parms["test_number"].eval()
         timeout_limit = self._parms["timeout_limit"].eval()
+        feedback_mode = self._parms["feedback_mode"].eval()
+        self._input_node._parms["feedback_mode"].set(feedback_mode)
+        self._output_node._parms["feedback_mode"].set(feedback_mode)
 
-        step_ref = self._parms["step_from_input"].eval()
+        step_ref = self._parms["max_from_input"].eval()
         if step_ref is True:
             input_steps = len(self.inputs()[0].output_node().eval())
             max_val = input_steps
@@ -152,10 +157,7 @@ class LooperNode(Node):
                 self.add_warning(f"Iteration timeout reached after {timeout_limit} seconds.")
                 break
 
-            # Set loop number for this iteration
             loop_manager.set_loop(self.path(), i)
-
-            # Get output from internal outputNode
             output_value = self._output_node.cook()
             
             if output_value in (None, "", "  "):
@@ -163,7 +165,6 @@ class LooperNode(Node):
         
         accumulated = self._output_node._parms["out_data"].eval()
         self._parms["staging_data"].set(accumulated)
-        # Clean up this loop's variable after iterations are complete
         loop_manager.set_loop(self.path(), value=None)
         print("∞ loop: end of loop reached, cleaning up\n")
 

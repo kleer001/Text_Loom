@@ -8,7 +8,7 @@ from pathlib import Path, PurePosixPath
 from typing import Any, ClassVar, Dict, List, Callable
 from typing import Optional, Set, Tuple, Sequence, Union
 import time
-from UndoManager import UndoManager
+from undo_manager import UndoManager
 
 
 
@@ -96,9 +96,7 @@ class NodeEnvironment:
         try:
             local_vars = {}
             exec(code, self.get_namespace(), local_vars)
-            # Update the current namespace with any new variables
             self.globals.update(local_vars)
-            # Return the last defined variable or expression result
             return local_vars.get('_') if '_' in local_vars else None
         except Exception as e:
             print(f"Error: {str(e)}")
@@ -539,14 +537,13 @@ class Node(MobileItem):
         self._depth = self._calculate_depth()
         self._inputs: Dict[str, NodeConnection] = {}
         self._outputs: Dict[str, List[NodeConnection]] = {}
-#        self._comment: str = ""
         self._state: NodeState = NodeState.UNCOOKED
         self._errors: List[str] = []
         self._warnings: List[str] = []
-        self._is_time_dependent = False  # New attribute for time-dependent nodes
-        self._last_cook_time = 0.0  # New attribute for last cook duration
-        self._cook_count = 0  # New attribute for cooking count
-        # self._messages: List[str] = []
+        self._is_time_dependent = False 
+        self._last_cook_time = 0.0
+        self._cook_count = 0 
+
 
     def node_path(self) -> str:
         """Returns the current location in the hierarchy of the workspace."""
@@ -585,7 +582,7 @@ class Node(MobileItem):
         base_name = node_name or f"{node_type.value}"
         
         # Check if the base_name already ends with a number
-        if re.search(r'_\d+$', base_name):
+        if re.search(r'_?\d+$', base_name):
             new_name = base_name  # Use the name as-is if it already ends with a number
         else:
             counter = 1
@@ -651,7 +648,7 @@ class Node(MobileItem):
         """Returns a tuple of the nodes connected to this node's output."""
         return tuple(conn.input_node() for conns in self._outputs.values() for conn in conns)
 
-    def set_input(self, input_index: int, input_node: "Node", output_index: str = "output") -> None:
+    def set_input(self, input_index: int, input_node: "Node", output_index: int = 0) -> None:
         """Connects an input of this node to an output of another node."""
         if hasattr(self, 'SINGLE_INPUT') and self.SINGLE_INPUT and self._inputs:
             self.add_warning(f"Node type {self.__class__.__name__} accepts only one input. Existing input will be replaced.")

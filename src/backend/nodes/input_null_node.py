@@ -1,8 +1,10 @@
 import hashlib
 import time
+import os
 from typing import List, Dict, Any, Optional
 from base_classes import Node, NodeType, NodeState, NodeEnvironment
 from parm import Parm, ParameterType
+from loop_manager import LoopManager, loop_manager
 
 class InputNullNode(Node):
     """
@@ -28,12 +30,14 @@ class InputNullNode(Node):
         # Initialize parameters
         self._parms: Dict[str, Parm] = {
             "in_node": Parm("in_node", ParameterType.STRING, self),
-            "in_data": Parm("in_data", ParameterType.STRINGLIST, self)
+            "in_data": Parm("in_data", ParameterType.STRINGLIST, self),
+            "feedback_mode": Parm("feedback_mode", ParameterType.TOGGLE, self),
         }
 
         # Set default values
         self._parms["in_node"].set("")
         self._parms["in_data"].set([])
+        self._parms["feedback_mode"].set(False)
 
     def _internal_cook(self, force: bool = False) -> None:
         self.set_state(NodeState.COOKING)
@@ -73,10 +77,16 @@ class InputNullNode(Node):
                 raise TypeError(f"Input data must be a list, got {type(input_data)}")
             elif not all(isinstance(item, str) for item in input_data):
                 raise TypeError("All items in input data must be strings")
-            else:
+            else:    
+                loopnumber = loopmanager.get_loop_number(self.path)
+                if(self._parms["feedback_mode"].eval() is True and loopnumber > 1):
+                    parent_looper_name = os.path.dirname(self.path)
+                    parent_looper = NodeEnvironment.node_from_name(parent_looper_name)
+                    input_data = parent_looper._output_node._parms["out_data"].eval()
                 self._parms["in_data"].set(input_data)
                 self._output = input_data
-                #self.add_error(f"Set output: {type(self._output)} - {self._output[:100]}")
+
+    
 
             self.set_state(NodeState.COOKED)
 
