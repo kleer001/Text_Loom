@@ -55,7 +55,7 @@ class MergeNode(Node):
     def __init__(self, name: str, path: str, position: List[float]):
         super().__init__(name, path, position, NodeType.MERGE)
         self._is_time_dependent = False
-        self._merged_output: List[str] = []
+        self._output: List[str] = []
 
         # Initialize parameters
         self._parms: Dict[str, Parm] = {
@@ -93,9 +93,9 @@ class MergeNode(Node):
             input_data = temp_data
         single_string = self._parms["single_string"].eval()
         if single_string:
-            self._merged_output = ["".join(input_data)]
+            self._output = ["".join(input_data)]
         else:
-            self._merged_output = input_data
+            self._output = input_data
 
         self.set_state(NodeState.UNCHANGED)
         self._last_cook_time = (time.time() - start_time) * 1000  # Convert to milliseconds
@@ -115,7 +115,7 @@ class MergeNode(Node):
     def eval(self) -> List[str]:
         if self.state() != NodeState.UNCHANGED:
             self.cook()
-        return self._merged_output
+        return self._output
 
     def needs_to_cook(self) -> bool:
         if super().needs_to_cook():
@@ -123,7 +123,7 @@ class MergeNode(Node):
 
         # Check if inputs have changed
         current_inputs = self.input_nodes()
-        if len(current_inputs) != len(self._merged_output):
+        if len(current_inputs) != len(self._output):
             return True
 
         for input_node in current_inputs:

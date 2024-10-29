@@ -537,12 +537,19 @@ class Node(MobileItem):
         self._depth = self._calculate_depth()
         self._inputs: Dict[str, NodeConnection] = {}
         self._outputs: Dict[str, List[NodeConnection]] = {}
+        self._output = None
         self._state: NodeState = NodeState.UNCOOKED
         self._errors: List[str] = []
         self._warnings: List[str] = []
         self._is_time_dependent = False 
         self._last_cook_time = 0.0
         self._cook_count = 0 
+        self._file_hash = None
+        self._param_hash = None
+        self._last_input_size = 0
+        self._input_node = None #For looper node
+        self._output_node = None #For looper node
+        self._internal_nodes_created = False #For looper node
 
 
     def node_path(self) -> str:
