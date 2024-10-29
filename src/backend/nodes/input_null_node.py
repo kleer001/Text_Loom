@@ -27,6 +27,7 @@ class InputNullNode(Node):
         self._input_hash = None
         self._last_input_size = 0
         self._output = None
+        self._parent_looper = True
         # Initialize parameters
         self._parms: Dict[str, Parm] = {
             "in_node": Parm("in_node", ParameterType.STRING, self),

@@ -1,15 +1,26 @@
-import json
 from typing import Any, Dict, List, Optional, Set
 from pathlib import Path, PurePosixPath
-import inspect
 from datetime import datetime
+import json
 from base_classes import NodeEnvironment, Node, NodeConnection, NodeType
 from undo_manager import UndoManager
 from global_store import GlobalStore
-import traceback 
 from parm import Parm, ParameterType
+import traceback
+import inspect
 
 VERSION = 0.01
+
+NODE_ATTRIBUTES = [
+    'name', 'path', 'selected', 'color', 'position', 'session_id', 'node_type',
+    'children', 'depth', 'inputs', 'outputs', 'state', 'errors', 'warnings',
+    'is_time_dependent', 'last_cook_time', 'cook_count', 'file_hash',
+    'param_hash', 'last_input_size', 'input_node', 'output_node',
+    'internal_nodes_created', 'parent_looper'
+]
+
+PARM_ATTRIBUTES = ['name', 'type', 'node', 'script_callback', 'value']
+
 
 class NodeEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -23,52 +34,194 @@ class NodeEncoder(json.JSONEncoder):
             return str(obj)
         if isinstance(obj, NodeType):
             return obj.value
+        if _is_method_or_callable(obj):
+            return None
         return super().default(obj)
 
-def _get_serializable_attrs(obj: Any) -> dict:
-    attrs = {}
-    for key, value in obj.__dict__.items():
+def _is_method_or_callable(obj: Any) -> bool:
+    return (inspect.ismethod(obj) or 
+        inspect.isfunction(obj) or 
+        callable(obj) or 
+        isinstance(obj, (type, property)))
+
+def _clean_for_json(obj: Any) -> Any:
+    if isinstance(obj, dict):
+        return {k: _clean_for_json(v) for k, v in obj.items() 
+                if not _is_method_or_callable(v)}
+    elif isinstance(obj, list):
+        return [_clean_for_json(item) for item in obj 
+                if not _is_method_or_callable(item)]
+    elif isinstance(obj, (str, int, float, bool, type(None))):
+        return obj
+    elif _is_method_or_callable(obj):
+        return None
+    else:
         try:
-            # Skip private attributes and known non-serializable types
-            if key.startswith('__') or callable(value):
-                continue
-                
-            if isinstance(value, (str, int, float, bool, type(None))):
-                attrs[key] = value
-            elif isinstance(value, (list, dict)):
-                # Use the custom encoder for lists and dicts
-                attrs[key] = json.loads(json.dumps(value, cls=NodeEncoder))
-            elif isinstance(value, PurePosixPath):
-                attrs[key] = str(value)
-            elif isinstance(value, Node):
-                attrs[key] = {
-                    "_type": "Node",
-                    "path": str(value.path()),
-                    "name": value.name()
-                }
-            elif isinstance(value, NodeType):
-                attrs[key] = value.value
-            else:
-                # For unknown types, store string representation
-                attrs[key] = str(value)
-        except Exception:
-            continue
-    return attrs
+            return json.loads(json.dumps(obj, cls=NodeEncoder))
+        except:
+            return str(obj)
+
+def _apply_node_data(node: Node, node_data: dict) -> None:
+    try:
+        for attr in NODE_ATTRIBUTES:
+            if attr in node_data:
+                value = node_data[attr]
+                if not inspect.ismethod(getattr(node, attr, None)):
+                    setattr(node, attr, value)
+        
+        if '_parms' in node_data and hasattr(node, '_parms'):
+            for parm_name, parm_data in node_data['_parms'].items():
+                try:
+                    node._parms[parm_name] = _deserialize_parm(parm_data, node)
+                except Exception as e:
+                    print(f"Error deserializing parm {parm_name}")
+                    traceback.print_exc()
+                    continue
+    except Exception as e:
+        print(f"Error applying node data to {node.path()}")
+        traceback.print_exc()
 
 def _serialize_parm(parm: Parm) -> dict:
-    return {
-        "_name": parm._name,
-        "_type": parm._type.value,
-        "_script_callback": parm._script_callback,
-        "_value": parm._value
-    }
+    try:
+        return {
+            "_name": parm._name,
+            "_type": parm._type.value,
+            "_node": str(parm._node.path()) if parm._node else None,
+            "_script_callback": parm._script_callback,
+            "_value": parm._value
+        }
+    except Exception as e:
+        print(f"Error in _serialize_parm")
+        traceback.print_exc()
+        return {}
 
-def _deserialize_parm(parm_data: dict, node: "Node") -> Parm:
-    parm_type = ParameterType(parm_data["_type"])
-    parm = Parm(parm_data["_name"], parm_type, node)
-    parm._script_callback = parm_data["_script_callback"]
-    parm._value = parm_data["_value"]
-    return parm
+def _deserialize_parm(parm_data: dict, node: Node) -> Parm:
+    try:
+        parm_type = ParameterType(parm_data["_type"])
+        parm = Parm(parm_data["_name"], parm_type, node)
+        parm._script_callback = parm_data["_script_callback"]
+        parm._value = parm_data["_value"]
+        return parm
+    except Exception as e:
+        print(f"Error in _deserialize_parm")
+        traceback.print_exc()
+        raise
+
+
+def _serialize_node(node: Node) -> dict:
+    try:
+        node_data = {
+            "_node_type": node.type().value,
+            "_path": str(node.path()),
+            "_name": node.name(),
+            "_is_internal": hasattr(node, '_parent_looper') and bool(node._parent_looper)
+        }
+        
+        for attr in NODE_ATTRIBUTES:
+            try:
+                if hasattr(node, attr):
+                    value = getattr(node, attr)
+                    if not _is_method_or_callable(value):
+                        node_data[attr] = _clean_for_json(value)
+            except Exception as e:
+                print(f"Error serializing attribute {attr} for node {node.path()}")
+                traceback.print_exc()
+                continue
+        
+        if hasattr(node, '_parms'):
+            node_data['_parms'] = {}
+            for name, parm in node._parms.items():
+                try:
+                    if not _is_method_or_callable(parm):
+                        node_data['_parms'][name] = _serialize_parm(parm)
+                except Exception as e:
+                    print(f"Error serializing parm {name} for node {node.path()}")
+                    traceback.print_exc()
+                    continue
+        
+        if hasattr(node, '_inputs'):
+            node_data['_connections'] = []
+            for input_idx, connection in node._inputs.items():
+                try:
+                    if connection and connection.output_node():
+                        conn_data = {
+                            "input_index": input_idx,
+                            "output_node_path": str(connection.output_node().path()),
+                            "input_node_path": str(node.path()),
+                            "output_index": connection.output_index()
+                        }
+                        node_data['_connections'].append(_clean_for_json(conn_data))
+                except Exception as e:
+                    print(f"Error serializing connection {input_idx} for node {node.path()}")
+                    traceback.print_exc()
+                    continue
+        
+        return node_data
+        
+    except Exception as e:
+        print(f"Error in _serialize_node for {node.path()}")
+        traceback.print_exc()
+        return {}
+
+def _deserialize_node(node_data: dict, env: NodeEnvironment) -> Optional[Node]:
+    try:
+        node_type = node_data.get("_node_type")
+        if not node_type:
+            return None
+        
+        node_name = Path(node_data["_path"]).name
+        parent_path = str(Path(node_data["_path"]).parent)
+        node_enum = getattr(NodeType, node_type.split('.')[-1].upper())
+        
+        node = Node.create_node(node_enum, node_name, parent_path)
+        print("CREATED NODE : ", node)
+        if not node:
+            return None
+        
+        for attr in NODE_ATTRIBUTES:
+            try:
+                if attr in node_data:
+                    value = node_data[attr]
+                    if not inspect.ismethod(getattr(node, attr, None)):
+                        setattr(node, attr, value)
+            except Exception as e:
+                print(f"Error deserializing attribute {attr}")
+                traceback.print_exc()
+                continue
+        
+        if '_parms' in node_data and hasattr(node, '_parms'):
+            for parm_name, parm_data in node_data['_parms'].items():
+                try:
+                    node._parms[parm_name] = _deserialize_parm(parm_data, node)
+                except Exception as e:
+                    print(f"Error deserializing parm {parm_name}")
+                    traceback.print_exc()
+                    continue
+        
+        return node
+        
+    except Exception as e:
+        print(f"Error in _deserialize_node")
+        traceback.print_exc()
+        return None
+
+
+
+def _restore_connections(node: Node, connections_data: List[dict]) -> None:
+    for conn_data in connections_data:
+        try:
+            output_node = NodeEnvironment.node_from_name(conn_data["output_node_path"])
+            if not output_node:
+                continue
+            
+            input_idx = int(conn_data["input_index"])
+            output_idx = int(conn_data["output_index"])
+            node.set_input(input_idx, output_node, output_idx)
+            
+        except Exception as e:
+            print(f"Error restoring connection")
+            traceback.print_exc()
+
 
 def save_flowstate(filepath: str) -> bool:
     try:
@@ -81,68 +234,39 @@ def save_flowstate(filepath: str) -> bool:
             "undo_state": None
         }
         
-        # Save nodes in topological order
         sorted_nodes = sorted(env.nodes.items(), key=lambda x: len(str(x[0]).split('/')))
         
         for node_path, node in sorted_nodes:
             try:
-                # Get basic node data
-                node_data = {
-                    "_node_type": node.type().value,
-                    "_path": str(node.path()),
-                    "_name": node.name(),
-                }
-                
-                # Add serializable attributes
-                node_data.update(_get_serializable_attrs(node))
-                
-                # Handle parameters
-                if hasattr(node, '_parms'):
-                    node_data['_parms'] = {
-                        name: _serialize_parm(parm)
-                        for name, parm in node._parms.items()
-                    }
-                
-                # Handle connections
-                if hasattr(node, '_inputs'):
-                    node_data['_connections'] = []
-                    for input_idx, connection in node._inputs.items():
-                        if connection and connection.output_node():
-                            node_data['_connections'].append({
-                                "input_index": input_idx,
-                                "output_node_path": str(connection.output_node().path()),
-                                "output_index": connection.output_index()
-                            })
-                
-                save_data["nodes"][str(node_path)] = node_data
-                
+                save_data["nodes"][str(node_path)] = _serialize_node(node)
             except Exception as e:
-                print(f"Warning: Failed to save node {node_path}: {str(e)}")
+                print(f"Error saving node {node_path}")
                 traceback.print_exc()
                 continue
         
-        # Save globals
         try:
             global_store = GlobalStore()
-            save_data["globals"] = global_store.list()
-        except Exception as e:
-            print(f"Warning: Failed to save globals: {str(e)}")
+            save_data["globals"] = _clean_for_json(global_store.list())
             
-        # Save undo state
-        try:
             undo_manager = UndoManager()
-            save_data["undo_state"] = _get_serializable_attrs(undo_manager)
+            save_data["undo_state"] = _clean_for_json({
+                "undo_stack": undo_manager.undo_stack,
+                "redo_stack": undo_manager.redo_stack,
+                "_enabled": undo_manager._enabled,
+                "_memory_limit": undo_manager._memory_limit  # Fixed: using private variable
+            })
         except Exception as e:
-            print(f"Warning: Failed to save undo state: {str(e)}")
+            print(f"Error saving state")
+            traceback.print_exc()
         
-        # Write to file using custom encoder
         with open(filepath, 'w', encoding='utf-8') as f:
             json.dump(save_data, f, cls=NodeEncoder, indent=2)
         
+        print("💾 Flowstate saved 💾 ")
         return True
         
     except Exception as e:
-        print(f"Error saving flowstate: {str(e)}")
+        print(f"Error saving flowstate")
         traceback.print_exc()
         return False
 
@@ -151,90 +275,74 @@ def load_flowstate(filepath: str) -> bool:
         with open(filepath, 'r', encoding='utf-8') as f:
             save_data = json.load(f)
         
-        file_version = save_data.get("version", 0)
-        if file_version > VERSION:
-            print(f"Warning: File version {file_version} is newer than current version {VERSION}")
-        
         env = NodeEnvironment.get_instance()
         NodeEnvironment.nodes.clear()
         
-        # First pass: Create nodes
-        for node_path, node_data in sorted(save_data["nodes"].items(), key=lambda x: len(x[0].split('/'))):
+        # First pass: Create non-internal nodes
+        sorted_nodes = sorted(save_data["nodes"].items(), key=lambda x: len(x[0].split('/')))
+        for node_path, node_data in sorted_nodes:
+            if node_data.get("_is_internal", False):
+                continue
+                
             try:
-                # Extract node type
-                node_type = node_data.get("_node_type")
-                if not node_type:
-                    print(f"Warning: Missing node type for {node_path}")
+                node = _deserialize_node(node_data, env)
+                if not node:
+                    print(f"Failed to create node {node_path}")
                     continue
                 
-                # Create node
-                node_name = Path(node_path).name
-                parent_path = str(Path(node_path).parent)
-                node_enum = getattr(NodeType, node_type.split('.')[-1].upper())
-                
-                new_node = Node.create_node(node_enum, node_name, parent_path)
-                if not new_node:
-                    print(f"Warning: Failed to create node {node_path}")
-                    continue
-                
-                # Restore basic attributes
-                for key, value in node_data.items():
-                    if key not in ['_parms', '_connections', '_inputs', '_outputs']:
-                        setattr(new_node, key, value)
-                
-                # Restore parameters
-                if '_parms' in node_data and hasattr(new_node, '_parms'):
-                    for parm_name, parm_data in node_data['_parms'].items():
-                        new_node._parms[parm_name] = _deserialize_parm(parm_data, new_node)
-                
+                # For looper nodes, get references to internal nodes once created
+                if node.type() == NodeType.LOOPER and node._internal_nodes_created:
+                    input_path = str(node.input_node.path())
+                    output_path = str(node.output_node.path())
+                    
+                    # Apply saved data to internal nodes if it exists
+                    if input_path in save_data["nodes"]:
+                        _apply_node_data(node.input_node, save_data["nodes"][input_path])
+                    if output_path in save_data["nodes"]:
+                        _apply_node_data(node.output_node, save_data["nodes"][output_path])
+                    
             except Exception as e:
-                print(f"Warning: Failed to load node {node_path}: {str(e)}")
+                print(f"Error creating node {node_path}")
                 traceback.print_exc()
                 continue
         
-        # Second pass: Restore connections
+        # Second pass: Restore all connections
         for node_path, node_data in save_data["nodes"].items():
-            if '_connections' not in node_data:
-                continue
-                
-            current_node = NodeEnvironment.node_from_name(node_path)
-            if not current_node:
-                continue
-                
-            for conn_data in node_data['_connections']:
-                try:
-                    output_node = NodeEnvironment.node_from_name(conn_data["output_node_path"])
-                    if not output_node:
-                        print(f"Warning: Could not find output node {conn_data['output_node_path']}")
-                        continue
+            try:
+                if '_connections' not in node_data:
+                    continue
                     
-                    input_idx = int(conn_data["input_index"])
-                    output_idx = int(conn_data["output_index"])
-                    current_node.set_input(input_idx, output_node, output_idx)
-                    
-                except Exception as e:
-                    print(f"Warning: Failed to restore connection for {node_path}: {str(e)}")
-                    traceback.print_exc()
+                current_node = NodeEnvironment.node_from_name(node_path)
+                if current_node:
+                    _restore_connections(current_node, node_data['_connections'])
+            except Exception as e:
+                print(f"Error restoring connections for node {node_path}")
+                traceback.print_exc()
+                continue
         
-        # Restore state
+        # Restore global state
         try:
             if "globals" in save_data:
                 global_store = GlobalStore()
                 for key, value in save_data["globals"].items():
                     global_store.set(key, value)
-                    
+            
             if "undo_state" in save_data:
+                undo_data = save_data["undo_state"]
                 undo_manager = UndoManager()
-                for key, value in save_data["undo_state"].items():
-                    setattr(undo_manager, key, value)
-                    
+                undo_manager.undo_stack = undo_data["undo_stack"]
+                undo_manager.redo_stack = undo_data["redo_stack"]
+                undo_manager._enabled = undo_data["_enabled"]
+                undo_manager._memory_limit = undo_data["_memory_limit"]  # Fixed: using private variable
+                
         except Exception as e:
-            print(f"Warning: Failed to restore state: {str(e)}")
+            print(f"Error restoring state")
             traceback.print_exc()
         
+        print("💾 Flowstate Loaded 💾 ")
         return True
         
     except Exception as e:
-        print(f"Error loading flowstate: {str(e)}")
+        print(f"Error loading flowstate")
         traceback.print_exc()
         return False
