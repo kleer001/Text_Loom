@@ -40,8 +40,8 @@ class LooperNode(Node):
             "feedback_mode": Parm("feedback_mode", ParameterType.TOGGLE, self),
             "use_test": Parm("use_test", ParameterType.TOGGLE, self),
             "test_number": Parm("test_number", ParameterType.INT, self),
-            "input_hook": Parm("input_hook", ParameterType.STRING, self),
-            "output_hook": Parm("output_hook", ParameterType.STRING, self),
+            "input_hook": Parm("input_hook", ParameterType.STRING, self), #WHY?
+            "output_hook": Parm("output_hook", ParameterType.STRING, self), #WHY?
             "staging_data": Parm("staging_data", ParameterType.STRINGLIST, self),
             "timeout_limit": Parm("timeout_limit", ParameterType.FLOAT, self),
             "data_limit": Parm("data_limit", ParameterType.INT, self),

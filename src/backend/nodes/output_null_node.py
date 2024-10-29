@@ -26,6 +26,7 @@ class OutputNullNode(Node):
         self._is_time_dependent = True
         self._input_hash = None
         self._last_input_size = 0
+        self._parent_looper = True
 
         # Initialize parameters
         self._parms: Dict[str, Parm] = {

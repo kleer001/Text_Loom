@@ -550,6 +550,7 @@ class Node(MobileItem):
         self._input_node = None #For looper node
         self._output_node = None #For looper node
         self._internal_nodes_created = False #For looper node
+        self._parent_looper = False
 
 
     def node_path(self) -> str:

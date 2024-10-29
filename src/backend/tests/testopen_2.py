@@ -11,20 +11,12 @@ from global_store import GlobalStore
 # from undo_manager import UndoManager
 
 # Set up save file
-file_path = os.path.abspath("save_file.json")
+file_path = os.path.abspath("save_file_2.json")
 
 load_flowstate(filepath=file_path)
 
-global_store = GlobalStore()
+text1 = NodeEnvironment.node_from_name("text1")
+print_node_info(text1)
 
-print("Globals are: " , global_store.list())
-
-print(NodeEnvironment.list_nodes())
-
-looper1 = NodeEnvironment.node_from_name("looper1")
-print("\n:: LOOPER EVAL::")
-loopeval = looper1.eval()
-print("::LOOP EVALS TO::\n", loopeval)
-
-
-
+text2 = NodeEnvironment.node_from_name("text2")
+print_node_info(text2)
