@@ -6,6 +6,7 @@ from base_classes import NodeEnvironment, Node, NodeType
 from print_node_info import print_node_info
 from nodes.looper_node import *
 from global_store import GlobalStore
+from flowstate_manager import *
 
 globals = GlobalStore()
 
@@ -32,5 +33,8 @@ evaltext = text1._parms["text_string"].eval()
 print("text1 evals to: \n",evaltext)
 
 
+# Set up save file
+file_path = os.path.abspath("save_file_globaltest.json")
 
+save_flowstate(filepath=file_path)
 
