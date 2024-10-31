@@ -1,0 +1,45 @@
+{
+  "version": 0.01,
+  "timestamp": "2024-10-30T09:50:56.673975",
+  "nodes": {
+    "/text1": {
+      "_node_type": "text",
+      "_path": "/text1",
+      "_name": "text1",
+      "_is_internal": false,
+      "_parms": {
+        "text_string": {
+          "_name": "text_string",
+          "_type": "string",
+          "_node": "/text1",
+          "_script_callback": "",
+          "_value": "Filler Text ${$FOO and $BAR} AND printing -> `ascii(\"$FOO\")` "
+        },
+        "pass_through": {
+          "_name": "pass_through",
+          "_type": "toggle",
+          "_node": "/text1",
+          "_script_callback": "",
+          "_value": true
+        }
+      },
+      "_connections": []
+    }
+  },
+  "globals": {
+    "AB": 6,
+    "FOO": "apples",
+    "BAR": 42
+  },
+  "undo_state": {
+    "undo_stack": [
+      [
+        null,
+        []
+      ]
+    ],
+    "redo_stack": [],
+    "_enabled": true,
+    "_memory_limit": 10485760
+  }
+}

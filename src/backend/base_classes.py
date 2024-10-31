@@ -532,6 +532,7 @@ class Node(MobileItem):
         self, name: str, path: str, position: List[float], node_type: NodeType
     ):
         super().__init__(name, path, position)
+        #any possible Node attribute should be here, for reasons of clarity
         self._node_type: NodeType = node_type
         self._children: List["Node"] = []
         self._depth = self._calculate_depth()
