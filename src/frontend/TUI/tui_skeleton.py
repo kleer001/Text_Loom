@@ -1,5 +1,6 @@
 import curses
 import enum
+from cursor_base import *
 
 class EditorState(enum.Enum):
     NORMAL = "NORMAL"
@@ -7,13 +8,13 @@ class EditorState(enum.Enum):
     WINDOW = "WINDOW"
 
 class Mode(enum.Enum):
-    NODE = "Node"
-    PARM = "Parm"
-    GLOBAL = "Global"
-    FILE = "File"
-    HELP = "Help"
-    KEYMAP = "Keymap"
-    STATUS = "Status"
+    NODE = "Node" #wasd/arrow/hjkl movement etc... 
+    PARM = "Parm" #line base key:value boxes, 1 per line (keys cannot be changed)
+    GLOBAL = "Global" #line based key:value boxes, 1 per line
+    FILE = "File" #up/down/enter/backspace
+    HELP = "Help" #no input
+    KEYMAP = "Keymap" #line based key:value boxes, 1 per line
+    STATUS = "Status" #no input
 
 class Event(enum.Enum):
     MODE_CHANGE = "mode_change"
@@ -73,11 +74,13 @@ class ModeLine:
         self._update_text()
 
     def _update_text(self):
-        self.text = f"[{self.editor_state.value}] [{self.mode.value}] {self.path} ({self.buffer_name}) | Debug: {self.debug_info}"
+        # Update ModeLine class _update_text method
+        self.text = f"[{self.editor_state.value}] | [{self.mode.value}] {self.path} ({self.buffer_name}) | Debug: {self.debug_info}"
 
 class Editor:
     def __init__(self):
         self.current_mode = Mode.NODE
+        self.space_pressed = False
         self.path = "/"
         self.buffer_name = "untitled"
         self.debug_info = ""
@@ -93,17 +96,62 @@ class Editor:
         self.focused_window = 0
         self.cursor_y = 1
         self.cursor_x = 0
+        self.cursors = []
+        self.current_cursor = None
+        self.buffer_contents = {}
+        self.mode_buffers = {}
 
-    def run(self, stdscr):
-        curses.curs_set(1)
+    def initialize(self, stdscr):
         self.setup_colors()
         self.setup_windows(stdscr)
-        self.highlight_focused_window()
+        self._setup_cursors()
+        self._initialize_buffers()
 
-        while True:
-            self.update_mode_line(stdscr)
-            key = stdscr.getch()
-            self.handle_keypress(stdscr, key)
+    def _initialize_buffers(self):
+        for window in self.windows:
+            self.buffer_contents[window] = []
+            for mode in Mode:
+                if window not in self.mode_buffers:
+                    self.mode_buffers[window] = {}
+                self.mode_buffers[window][mode] = []
+
+    def _save_current_buffer(self):
+        window = self.windows[self.focused_window]
+        height, width = window.getmaxyx()
+        buffer_content = []
+        for y in range(height):
+            line = []
+            for x in range(width):
+                try:
+                    char = window.inch(y, x)
+                    char_str = chr(char & curses.A_CHARTEXT)
+                    attrs = char & curses.A_ATTRIBUTES
+                    line.append((char_str, attrs))
+                except curses.error:
+                    break
+            buffer_content.append(line)
+        self.mode_buffers[window][self.current_mode] = buffer_content
+
+    def _restore_buffer(self, mode):
+        window = self.windows[self.focused_window]
+        window.clear()
+        if window in self.mode_buffers and mode in self.mode_buffers[window]:
+            buffer_content = self.mode_buffers[window][mode]
+            for y, line in enumerate(buffer_content):
+                for x, (char, attrs) in enumerate(line):
+                    try:
+                        window.addch(y, x, ord(char), attrs)
+                    except curses.error:
+                        break
+        window.refresh()
+
+    def clear_current_buffer(self):
+        window = self.windows[self.focused_window]
+        window.clear()
+        window.refresh()
+        if window in self.mode_buffers:
+            self.mode_buffers[window][self.current_mode] = []
+
 
     def setup_colors(self):
         curses.start_color()
@@ -117,24 +165,34 @@ class Editor:
         self.main_window = stdscr.subwin(curses.LINES - 1, curses.COLS, 1, 0)
         self.mode_line_window = stdscr.subwin(1, curses.COLS, 0, 0)
         self.mode_line_window.bkgd(curses.color_pair(1))
-        self.main_window.addstr(0, 0, "Welcome.")
         self.main_window.refresh()
         self.mode_line_window.refresh()
         self.windows.append(self.main_window)
+        self._setup_cursors()
+        self._initialize_buffers()
+        self.highlight_focused_window()
+
+    def _setup_cursors(self):
+        self.cursors = [NodeCursor(window) for window in self.windows]
+        if self.cursors:
+            self.current_cursor = self.cursors[self.focused_window]
+        else:
+            self.current_cursor = None
 
     def cycle_focus(self):
+        if self.current_cursor:
+            self.current_cursor.clear_cursor()
         self.focused_window = (self.focused_window + 1) % len(self.windows)
+        self.current_cursor = self.cursors[self.focused_window]
         self.highlight_focused_window()
-        self.cursor_y = 1
-        self.cursor_x = 0
-        self.move_cursor()
+        self._restore_buffer(self.current_mode)
+        self.current_cursor.move_absolute(1, 0)
+        self.current_cursor.render()
 
     def highlight_focused_window(self):
         for idx, window in enumerate(self.windows):
-            if idx == self.focused_window:
-                window.bkgd(curses.color_pair(3))
-            else:
-                window.bkgd(curses.color_pair(2))
+            color_pair = curses.color_pair(3 if idx == self.focused_window else 2)
+            window.bkgd(' ', color_pair)
             window.refresh()
 
     def update_mode_line(self, stdscr):
@@ -144,25 +202,71 @@ class Editor:
         self.mode_line_window.refresh()
 
     def move_cursor(self):
+        if not self.current_cursor:
+            return
         window = self.windows[self.focused_window]
         height, width = window.getmaxyx()
-        self.cursor_y = max(1, min(self.cursor_y, height - 2))
-        self.cursor_x = max(1, min(self.cursor_x, width - 2))
-        window.move(self.cursor_y, self.cursor_x)
-        window.refresh()
+        self.current_cursor.max_y = height - 1
+        self.current_cursor.max_x = width - 1
+        self.current_cursor.render()
 
+    def handle_mode_switch(self, key):
+        key_name = curses.keyname(key).decode('utf-8')
+        
+        if key_name == ' ':
+            self.space_pressed = True
+            return True
+            
+        if not self.space_pressed:
+            return False
+            
+        self.space_pressed = False
+        
+        mode_keys = {
+            'n': Mode.NODE,
+            'p': Mode.PARM,
+            'g': Mode.GLOBAL,
+            'f': Mode.FILE,
+            'h': Mode.HELP,
+            'k': Mode.KEYMAP,
+            't': Mode.STATUS
+        }
+        
+        if key_name in mode_keys:
+            old_mode = self.current_mode
+            self._save_current_buffer()
+            self.clear_current_buffer()
+            self.current_mode = mode_keys[key_name]
+            self._restore_buffer(self.current_mode)
+            self.dispatcher.dispatch(Event.MODE_CHANGE, self.current_mode)
+            
+            if self.current_mode == Mode.HELP:
+                self.load_help_file()
+            elif self.current_mode == Mode.NODE:
+                self.setup_test_nodes()
+            
+            self.debug_info = f"Switched from {old_mode.value} to {self.current_mode.value}"
+            self.dispatcher.dispatch(Event.DEBUG_INFO, self.debug_info)
+            return True
+            
+        return False
 
     def handle_keypress(self, stdscr, key):
-        if self.editor_state == EditorState.INSERT:
-            if key == 27:  # Escape key
-                self.exit_insert_mode()
-            else:
-                self.handle_insert_mode(key)
-        elif self.editor_state == EditorState.NORMAL:
-            self.handle_normal_mode(key)
-        elif self.editor_state == EditorState.WINDOW:
+        if self.editor_state == EditorState.WINDOW:
+            self.current_cursor.set_style(CursorStyle.BLOCK)
             self.handle_window_mode(key, stdscr)
-
+        elif self.editor_state == EditorState.INSERT:
+            self.current_cursor.set_style(CursorStyle.VERTICAL)
+            if not self.editor_state == EditorState.WINDOW:
+                if not self.current_cursor.handle_key(key):
+                    self.handle_insert_mode(key)
+        elif self.editor_state == EditorState.NORMAL:
+            self.current_cursor.set_style(CursorStyle.BLOCK)
+            if not self.handle_mode_switch(key):
+                if not self.editor_state == EditorState.WINDOW:
+                    if not self.current_cursor.handle_key(key):
+                        self.handle_normal_mode(key)
+        
         self.update_mode_line(stdscr)
 
     def exit_insert_mode(self):
@@ -209,41 +313,61 @@ class Editor:
         self.debug_info = f"Key pressed in WINDOW mode: {chr(key) if key < 256 else key}"
         self.dispatcher.dispatch(Event.DEBUG_INFO, self.debug_info)
 
-
     def split_window(self, stdscr, orientation):
         height, width = stdscr.getmaxyx()
         current_window = self.windows[self.focused_window]
         current_height, current_width = current_window.getmaxyx()
-
+        begin_y, begin_x = current_window.getbegyx()
+        
+        modeline_offset = 1 if begin_y == 1 else 0
+        
         if orientation == 'horizontal':
-            if current_height > 6:  # Ensure enough space for both windows
+            if current_height > 6:
                 new_height = current_height // 2
                 try:
-                    current_window.resize(new_height - 1, current_width - 2)
-                    new_window = stdscr.subwin(current_height - new_height - 1, current_width - 2, 
-                            current_window.getbegyx()[0] + new_height, current_window.getbegyx()[1] + 1)
+                    current_window.resize(new_height, current_width)
+                    
+                    gutter = stdscr.subwin(1, current_width, begin_y + new_height, begin_x)
+                    gutter.bkgd(' ', curses.A_REVERSE)
+                    gutter.refresh()
+                    
+                    new_window = stdscr.subwin(
+                        current_height - new_height - modeline_offset,
+                        current_width,
+                        begin_y + new_height + 1,
+                        begin_x
+                    )
                     self.windows.append(new_window)
+                    self._initialize_buffers()
                 except curses.error:
-                    return  # If resize fails, don't create a new window
+                    return
+        
         elif orientation == 'vertical':
-            if current_width > 10:  # Ensure enough space for both windows
+            if current_width > 10:
                 new_width = current_width // 2
                 try:
-                    current_window.resize(current_height - 2, new_width - 2)
-                    new_window = stdscr.subwin(current_height - 2, current_width - new_width - 2, 
-                            current_window.getbegyx()[0] + 1, current_window.getbegyx()[1] + new_width)
+                    current_window.resize(current_height, new_width)
+                    
+                    gutter = stdscr.subwin(current_height, 1, begin_y, begin_x + new_width)
+                    gutter.bkgd(' ', curses.A_REVERSE)
+                    gutter.refresh()
+                    
+                    new_window = stdscr.subwin(
+                        current_height - modeline_offset,
+                        current_width - new_width - 1,
+                        begin_y,
+                        begin_x + new_width + 1
+                    )
                     self.windows.append(new_window)
+                    self._initialize_buffers()
                 except curses.error:
-                    return  # If resize fails, don't create a new window
+                    return
 
         if len(self.windows) > self.focused_window + 1:
-            self.focused_window = len(self.windows) - 1
-            for idx, window in enumerate(self.windows):
-                window.clear()
-                window.box()
-                window.addstr(0, 2, f" Window {idx + 1} ")
-                window.refresh()
-
+            new_cursor = NodeCursor(self.windows[-1])
+            self.cursors.append(new_cursor)
+            self.current_cursor = new_cursor
+        
         self.highlight_focused_window()
         self.cursor_y = 1
         self.cursor_x = 1
@@ -252,16 +376,118 @@ class Editor:
         self.dispatcher.dispatch(Event.WINDOW_SPLIT, None)
         self.update_mode_line(stdscr)
 
-
-
     def resize_windows(self, stdscr):
         for win in self.windows:
             win.clear()
             win.refresh()
         self.update_mode_line(stdscr)
 
+    def load_help_file(self):
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        help_path = os.path.join(os.path.dirname(os.path.dirname(current_dir)), 'help.md')
+        
+        try:
+            with open(help_path, 'r') as f:
+                content = f.read()
+                window = self.windows[self.focused_window]
+                window.clear()
+                
+                y = 0
+                for line in content.split('\n'):
+                    try:
+                        window.addstr(y, 0, line)
+                        y += 1
+                    except curses.error:
+                        break
+                        
+                window.refresh()
+        except FileNotFoundError:
+            self.debug_info = f"help.md not found at {help_path}"
+            self.dispatcher.dispatch(Event.DEBUG_INFO, self.debug_info)
+
+
+    def setup_test_nodes(self):
+        window = self.windows[self.focused_window]
+        
+        # Level 0 nodes (Cities)
+        cities = [
+            (2, 2, "Tokyo"),
+            (4, 2, "Paris"),
+            (6, 2, "London"),
+            (8, 2, "New York")
+        ]
+        
+        # Level 1 nodes (Foods)
+        foods = [
+            (2, 15, "Ramen"),
+            (4, 15, "Baguette"),
+            (6, 15, "Tea"),
+            (8, 15, "Pizza")
+        ]
+        
+        # Level 2 nodes (Restaurants)
+        restaurants = [
+            (2, 30, "Ichiran"),
+            (4, 30, "Le Cheval d'Or"),
+            (6, 30, "The Wolseley"),
+            (8, 30, "Grimaldi's")
+        ]
+        
+        # Add all nodes to the window and register them
+        for y, x, text in cities:
+            try:
+                window.addstr(y, x, text)
+                self.current_cursor.register_node(y, x, 0, len(text))
+            except curses.error:
+                pass
+                
+        for y, x, text in foods:
+            try:
+                window.addstr(y, x, text)
+                self.current_cursor.register_node(y, x, 1, len(text))
+            except curses.error:
+                pass
+                
+        for y, x, text in restaurants:
+            try:
+                window.addstr(y, x, text)
+                self.current_cursor.register_node(y, x, 2, len(text))
+            except curses.error:
+                pass
+                
+        # Draw some connecting lines
+        for y in range(2, 9, 2):
+            try:
+                window.addstr(y, 12, "──")
+                window.addstr(y, 25, "──")
+            except curses.error:
+                pass
+        
+        window.refresh()
+        
+        # Set initial cursor position
+        self.current_cursor.move_absolute(2, 2)
+
+    def run(self, stdscr):
+        curses.curs_set(0)
+        self.setup_colors()
+        self.setup_windows(stdscr)
+        self.highlight_focused_window()
+        self.setup_test_nodes()
+        
+        # Initial mode dispatch
+        self.dispatcher.dispatch(Event.MODE_CHANGE, self.current_mode)
+        self.debug_info = f"Started in {self.current_mode.value} mode"
+        self.dispatcher.dispatch(Event.DEBUG_INFO, self.debug_info)
+
+        while True:
+            self.update_mode_line(stdscr)
+            key = stdscr.getch()
+            self.handle_keypress(stdscr, key)
+
 def main(stdscr):
     editor = Editor()
+    editor.initialize(stdscr)
     editor.run(stdscr)
 
 if __name__ == "__main__":
