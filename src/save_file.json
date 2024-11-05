@@ -1,6 +1,6 @@
 {
   "version": 0.01,
-  "timestamp": "2024-10-29T13:44:59.565959",
+  "timestamp": "2024-11-05T11:57:42.334144",
   "nodes": {
     "/looper1": {
       "_node_type": "looper",
@@ -76,11 +76,7 @@
           "_type": "stringList",
           "_node": "/looper1",
           "_script_callback": "",
-          "_value": [
-            "['I have I have $$N']",
-            "['I have I have $$N']",
-            "['I have I have $$N']"
-          ]
+          "_value": []
         },
         "timeout_limit": {
           "_name": "timeout_limit",
@@ -233,12 +229,35 @@
           "_type": "string",
           "_node": "/looper1/text3",
           "_script_callback": "",
-          "_value": " 4 Eggplants"
+          "_value": " 3 Cherries"
         },
         "pass_through": {
           "_name": "pass_through",
           "_type": "toggle",
           "_node": "/looper1/text3",
+          "_script_callback": "",
+          "_value": true
+        }
+      },
+      "_connections": []
+    },
+    "/looper1/text4": {
+      "_node_type": "text",
+      "_path": "/looper1/text4",
+      "_name": "text4",
+      "_is_internal": false,
+      "_parms": {
+        "text_string": {
+          "_name": "text_string",
+          "_type": "string",
+          "_node": "/looper1/text4",
+          "_script_callback": "",
+          "_value": " 4 Eggplants"
+        },
+        "pass_through": {
+          "_name": "pass_through",
+          "_type": "toggle",
+          "_node": "/looper1/text4",
           "_script_callback": "",
           "_value": true
         }
@@ -288,7 +307,7 @@
         },
         {
           "input_index": 2,
-          "output_node_path": "/looper1/text3",
+          "output_node_path": "/looper1/text4",
           "input_node_path": "/looper1/merge1",
           "output_index": 0
         }
