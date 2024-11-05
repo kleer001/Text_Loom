@@ -1,6 +1,29 @@
 import curses
 import enum
 from cursor_base import *
+import logging
+import time
+from functools import wraps
+
+file_path = os.path.abspath("editor_timing.log")
+
+def setup_debug_logging():
+    logging.basicConfig(
+        filename=file_path,
+        level=logging.DEBUG,
+        format='%(asctime)s.%(msecs)03d %(message)s',
+        datefmt='%H:%M:%S'
+    )
+
+def log_timing(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        start = time.perf_counter()
+        result = func(*args, **kwargs)
+        end = time.perf_counter()
+        logging.debug(f'{func.__name__}: {(end - start) * 1000:.2f}ms')
+        return result
+    return wrapper
 
 class EditorState(enum.Enum):
     NORMAL = "NORMAL"
@@ -32,9 +55,14 @@ class EventDispatcher:
     def subscribe(self, event_type, listener):
         self.listeners[event_type].append(listener)
 
+    @log_timing
     def dispatch(self, event_type, data=None):
+        logging.debug(f'Dispatching event: {event_type}')
         for listener in self.listeners[event_type]:
+            start = time.perf_counter()
             listener(data)
+            end = time.perf_counter()
+            logging.debug(f'Event listener took: {(end - start) * 1000:.2f}ms')
 
 class ModeLine:
     def __init__(self, event_dispatcher: EventDispatcher):
@@ -65,7 +93,9 @@ class ModeLine:
         self.buffer_name = buffer_name
         self._update_text()
 
+    @log_timing
     def _handle_state_change(self, editor_state):
+        logging.debug(f'Handling state change to: {editor_state}')
         self.editor_state = editor_state
         self._update_text()
 
@@ -73,9 +103,51 @@ class ModeLine:
         self.debug_info = debug_info
         self._update_text()
 
+    @log_timing
     def _update_text(self):
+        logging.debug('Updating mode line text')
         # Update ModeLine class _update_text method
         self.text = f"[{self.editor_state.value}] | [{self.mode.value}] {self.path} ({self.buffer_name}) | Debug: {self.debug_info}"
+
+class EditorStateManager:
+    def __init__(self, editor):
+        self.editor = editor
+        self.pending_updates = set()
+        
+    def transition_to(self, new_state):
+        """Fast state transition with batched updates"""
+        old_state = self.editor.editor_state
+        self.editor.editor_state = new_state
+        
+        # Update cursor style immediately
+        if self.editor.current_cursor:
+            if new_state == EditorState.INSERT:
+                self.editor.current_cursor.set_style(CursorStyle.VERTICAL)
+            else:
+                self.editor.current_cursor.set_style(CursorStyle.BLOCK)
+        
+        # Queue required updates
+        self.pending_updates.add(('state', new_state))
+        
+        # Dispatch events in batch
+        self._process_updates()
+        
+    def _process_updates(self):
+        """Process all pending updates at once"""
+        if not self.pending_updates:
+            return
+            
+        # Group similar updates
+        state_updates = [u for u in self.pending_updates if u[0] == 'state']
+        
+        # Only dispatch the most recent state change
+        if state_updates:
+            _, latest_state = state_updates[-1]
+            self.editor.dispatcher.dispatch(Event.EDITOR_STATE_CHANGE, latest_state)
+            self.editor.debug_info = f"Transitioned to {latest_state.value} mode"
+            self.editor.dispatcher.dispatch(Event.DEBUG_INFO, self.editor.debug_info)
+        
+        self.pending_updates.clear()
 
 class Editor:
     def __init__(self):
@@ -99,7 +171,9 @@ class Editor:
         self.cursors = []
         self.current_cursor = None
         self.buffer_contents = {}
-        self.mode_buffers = {}
+        self.mode_buffers = {}        
+        self.state_manager = EditorStateManager(self) 
+        setup_debug_logging()
 
     def initialize(self, stdscr):
         self.setup_colors()
@@ -195,7 +269,9 @@ class Editor:
             window.bkgd(' ', color_pair)
             window.refresh()
 
+    @log_timing
     def update_mode_line(self, stdscr):
+        logging.debug('Starting mode line update')
         mode_line_content = self.mode_line.text
         self.mode_line_window.clear()
         self.mode_line_window.addstr(0, 0, mode_line_content)
@@ -250,23 +326,25 @@ class Editor:
             return True
             
         return False
-
+    
+    @log_timing
     def handle_keypress(self, stdscr, key):
-        if self.editor_state == EditorState.WINDOW:
-            self.current_cursor.set_style(CursorStyle.BLOCK)
-            self.handle_window_mode(key, stdscr)
-        elif self.editor_state == EditorState.INSERT:
-            self.current_cursor.set_style(CursorStyle.VERTICAL)
-            if not self.editor_state == EditorState.WINDOW:
-                if not self.current_cursor.handle_key(key):
-                    self.handle_insert_mode(key)
-        elif self.editor_state == EditorState.NORMAL:
-            self.current_cursor.set_style(CursorStyle.BLOCK)
-            if not self.handle_mode_switch(key):
-                if not self.editor_state == EditorState.WINDOW:
-                    if not self.current_cursor.handle_key(key):
-                        self.handle_normal_mode(key)
+        logging.debug(f'Starting keypress handler with key: {key}')
+        # Simplified keypress handling
+        if key == 27 and self.editor_state == EditorState.INSERT:  # ESC in INSERT mode
+            self.state_manager.transition_to(EditorState.NORMAL)
+            return
+            
+        handlers = {
+            EditorState.WINDOW: self._handle_window_state,
+            EditorState.INSERT: self._handle_insert_state,
+            EditorState.NORMAL: self._handle_normal_state
+        }
         
+        handler = handlers.get(self.editor_state)
+        if handler:
+            handler(key, stdscr)
+            
         self.update_mode_line(stdscr)
 
     def exit_insert_mode(self):
@@ -275,7 +353,9 @@ class Editor:
         self.debug_info = "Exited Insert Mode"
         self.dispatcher.dispatch(Event.DEBUG_INFO, self.debug_info)
 
+    @log_timing
     def handle_insert_mode(self, key):
+        logging.debug('Entering insert mode handler')
         window = self.windows[self.focused_window]
         if key == 10:  # Enter key
             window.addstr("\n")
@@ -284,6 +364,34 @@ class Editor:
         else:
             window.addstr(chr(key) if key < 256 else "")
         window.refresh()
+
+    def _handle_normal_state(self, key, stdscr):
+        if not self.handle_mode_switch(key):
+            if key == ord('i'):
+                self.state_manager.transition_to(EditorState.INSERT)
+            elif key == 23:  # Ctrl+w
+                self.state_manager.transition_to(EditorState.WINDOW)
+            elif self.current_cursor:
+                self.current_cursor.handle_key(key)
+
+    def _handle_insert_state(self, key, stdscr):
+        if self.current_cursor and not self.current_cursor.handle_key(key):
+            self.handle_insert_mode(key)
+
+    def _handle_window_state(self, key, stdscr):
+        if key == 27:  # ESC
+            self.state_manager.transition_to(EditorState.NORMAL)
+        else:
+            self.handle_window_mode(key, stdscr)
+
+    @log_timing
+    def exit_insert_mode(self):
+        logging.debug('Starting exit from insert mode')
+        self.editor_state = EditorState.NORMAL
+        self.dispatcher.dispatch(Event.EDITOR_STATE_CHANGE, self.editor_state)
+        self.debug_info = "Exited Insert Mode"
+        self.dispatcher.dispatch(Event.DEBUG_INFO, self.debug_info)
+        logging.debug('Finished exit from insert mode')
 
     def handle_normal_mode(self, key):
         if key == ord('i'):
@@ -486,6 +594,7 @@ class Editor:
             self.handle_keypress(stdscr, key)
 
 def main(stdscr):
+    setup_debug_logging()
     editor = Editor()
     editor.initialize(stdscr)
     editor.run(stdscr)
