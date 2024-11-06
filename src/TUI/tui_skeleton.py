@@ -5,7 +5,11 @@ import logging
 import time
 from functools import wraps
 
-file_path = os.path.abspath("editor_timing.log")
+from events import Event
+from window_mode import WindowMode 
+from palette import initialize_colors, MODELINE, ACTIVE_WINDOW, INACTIVE_WINDOW, GUTTER
+
+file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "editor_timing.log")
 
 def setup_debug_logging():
     logging.basicConfig(
@@ -28,7 +32,6 @@ def log_timing(func):
 class EditorState(enum.Enum):
     NORMAL = "NORMAL"
     INSERT = "INSERT"
-    WINDOW = "WINDOW"
 
 class Mode(enum.Enum):
     NODE = "Node" #wasd/arrow/hjkl movement etc... 
@@ -38,15 +41,8 @@ class Mode(enum.Enum):
     HELP = "Help" #no input
     KEYMAP = "Keymap" #line based key:value boxes, 1 per line
     STATUS = "Status" #no input
-
-class Event(enum.Enum):
-    MODE_CHANGE = "mode_change"
-    PATH_CHANGE = "path_change"
-    BUFFER_CHANGE = "buffer_change"
-    WINDOW_SPLIT = "window_split"
-    WINDOW_CLOSE = "window_close"
-    EDITOR_STATE_CHANGE = "editor_state_change"
-    DEBUG_INFO = "debug_info"
+    WINDOW = "Window" #modify window layout
+    INSERT = "Insert" #put in text
 
 class EventDispatcher:
     def __init__(self):
@@ -159,27 +155,31 @@ class Editor:
         self.windows = []
         self.dispatcher = EventDispatcher()
         self.mode_line = ModeLine(self.dispatcher)
-        self.palette = [
-            ("modeline", "color_white", "color_blue"),
-            ("default", "color_black", "color_white"),
-        ]
         self.insert_mode = False
         self.editor_state = EditorState.NORMAL
         self.focused_window = 0
         self.cursor_y = 1
         self.cursor_x = 0
+        self.cursor_class = NodeCursor if self.current_mode == Mode.NODE else CursorManager
         self.cursors = []
         self.current_cursor = None
         self.buffer_contents = {}
         self.mode_buffers = {}        
         self.state_manager = EditorStateManager(self) 
-        setup_debug_logging()
+        self.window_mode = WindowMode(self)
+
+
+        
 
     def initialize(self, stdscr):
-        self.setup_colors()
+        self.window_mode.initialize(stdscr)
+        os.environ.setdefault('ESCDELAY', '25')
+        self.setup_colors()  # Colors are set up first
+        self.window_mode = WindowMode(self)  # Then create window mode
         self.setup_windows(stdscr)
         self._setup_cursors()
-        self._initialize_buffers()
+        self._initialize_buffers()    
+        
 
     def _initialize_buffers(self):
         for window in self.windows:
@@ -229,9 +229,7 @@ class Editor:
 
     def setup_colors(self):
         curses.start_color()
-        for idx, (name, fg, bg) in enumerate(self.palette):
-            curses.init_pair(idx + 1, getattr(curses, fg.upper()), getattr(curses, bg.upper()))
-        curses.init_pair(3, curses.COLOR_BLACK, curses.COLOR_CYAN)  # Focused window color
+        initialize_colors()
 
 
     def setup_windows(self, stdscr):
@@ -241,6 +239,8 @@ class Editor:
         self.mode_line_window.bkgd(curses.color_pair(1))
         self.main_window.refresh()
         self.mode_line_window.refresh()
+        logging.debug("Initial setup - adding main_window to windows list")
+        self.windows = []  # Ensure we start fresh
         self.windows.append(self.main_window)
         self._setup_cursors()
         self._initialize_buffers()
@@ -253,10 +253,22 @@ class Editor:
         else:
             self.current_cursor = None
 
+    @log_timing
     def cycle_focus(self):
+        logging.debug("=== Window Cycling Debug Info ===")
+        logging.debug(f'Current focused window: {self.focused_window}')
+        logging.debug(f'Total windows: {len(self.windows)}')
+        logging.debug(f'Total cursors: {len(self.cursors)}')
+        for idx, win in enumerate(self.windows):
+            begin_y, begin_x = win.getbegyx()
+            height, width = win.getmaxyx()
+            logging.debug(f'Window {idx}: pos({begin_y},{begin_x}) size({height},{width})')
+        
         if self.current_cursor:
             self.current_cursor.clear_cursor()
         self.focused_window = (self.focused_window + 1) % len(self.windows)
+        logging.debug(f'New focused window: {self.focused_window}')
+        
         self.current_cursor = self.cursors[self.focused_window]
         self.highlight_focused_window()
         self._restore_buffer(self.current_mode)
@@ -265,7 +277,7 @@ class Editor:
 
     def highlight_focused_window(self):
         for idx, window in enumerate(self.windows):
-            color_pair = curses.color_pair(3 if idx == self.focused_window else 2)
+            color_pair = curses.color_pair(ACTIVE_WINDOW if idx == self.focused_window else INACTIVE_WINDOW)
             window.bkgd(' ', color_pair)
             window.refresh()
 
@@ -326,25 +338,52 @@ class Editor:
             return True
             
         return False
-    
+
     @log_timing
     def handle_keypress(self, stdscr, key):
         logging.debug(f'Starting keypress handler with key: {key}')
-        # Simplified keypress handling
-        if key == 27 and self.editor_state == EditorState.INSERT:  # ESC in INSERT mode
-            self.state_manager.transition_to(EditorState.NORMAL)
-            return
-            
-        handlers = {
-            EditorState.WINDOW: self._handle_window_state,
-            EditorState.INSERT: self._handle_insert_state,
-            EditorState.NORMAL: self._handle_normal_state
+        
+        # Regular mode switches
+        mode_switches = {
+            14: Mode.NODE,     # Ctrl+n
+            16: Mode.PARM,     # Ctrl+p
+            7:  Mode.GLOBAL,   # Ctrl+g
+            6:  Mode.FILE,     # Ctrl+f
+            8:  Mode.HELP,     # Ctrl+h
+            11: Mode.KEYMAP,   # Ctrl+k
+            20: Mode.STATUS,   # Ctrl+t
+            23: Mode.WINDOW,   # Ctrl+w
+            9:  Mode.INSERT    # Ctrl+i
         }
         
-        handler = handlers.get(self.editor_state)
-        if handler:
-            handler(key, stdscr)
+        if key in mode_switches:
+            old_mode = self.current_mode
+            self._save_current_buffer()
+            self.clear_current_buffer()
+            self.current_mode = mode_switches[key]
+            self._restore_buffer(self.current_mode)
+            self.dispatcher.dispatch(Event.MODE_CHANGE, self.current_mode)
             
+            match self.current_mode:
+                case Mode.HELP:
+                    self.load_help_file()
+                case Mode.NODE:
+                    self.setup_test_nodes()
+                case Mode.WINDOW:
+                    self.debug_info = "Entered WINDOW Mode - s:hsplit v:vsplit w:cycle"
+                    self.dispatcher.dispatch(Event.DEBUG_INFO, self.debug_info)
+                    
+            return
+
+        # Handle window mode commands
+        if self.current_mode == Mode.WINDOW:
+            self.window_mode.handle_key(key, stdscr)
+            return
+        
+        # Handle mode-specific key events
+        if self.current_cursor:
+            self.current_cursor.handle_key(key)
+        
         self.update_mode_line(stdscr)
 
     def exit_insert_mode(self):
@@ -378,20 +417,12 @@ class Editor:
         if self.current_cursor and not self.current_cursor.handle_key(key):
             self.handle_insert_mode(key)
 
-    def _handle_window_state(self, key, stdscr):
-        if key == 27:  # ESC
-            self.state_manager.transition_to(EditorState.NORMAL)
-        else:
-            self.handle_window_mode(key, stdscr)
-
-    @log_timing
     def exit_insert_mode(self):
-        logging.debug('Starting exit from insert mode')
         self.editor_state = EditorState.NORMAL
         self.dispatcher.dispatch(Event.EDITOR_STATE_CHANGE, self.editor_state)
         self.debug_info = "Exited Insert Mode"
         self.dispatcher.dispatch(Event.DEBUG_INFO, self.debug_info)
-        logging.debug('Finished exit from insert mode')
+        
 
     def handle_normal_mode(self, key):
         if key == ord('i'):
@@ -404,22 +435,6 @@ class Editor:
             self.dispatcher.dispatch(Event.EDITOR_STATE_CHANGE, self.editor_state)
             self.debug_info = "Entered WINDOW Mode"
             self.dispatcher.dispatch(Event.DEBUG_INFO, self.debug_info)
-
-    def handle_window_mode(self, key, stdscr):
-        if key == ord('s'):
-            self.split_window(stdscr, 'horizontal')
-        elif key == ord('v'):
-            self.split_window(stdscr, 'vertical')
-        elif key == ord('w'):
-            self.cycle_focus()
-        elif key == 27:  # Escape key
-            self.editor_state = EditorState.NORMAL
-            self.dispatcher.dispatch(Event.EDITOR_STATE_CHANGE, self.editor_state)
-            self.debug_info = "Exited WINDOW Mode"
-            self.dispatcher.dispatch(Event.DEBUG_INFO, self.debug_info)
-
-        self.debug_info = f"Key pressed in WINDOW mode: {chr(key) if key < 256 else key}"
-        self.dispatcher.dispatch(Event.DEBUG_INFO, self.debug_info)
 
     def split_window(self, stdscr, orientation):
         height, width = stdscr.getmaxyx()
@@ -445,6 +460,8 @@ class Editor:
                         begin_y + new_height + 1,
                         begin_x
                     )
+                    new_window.bkgd(' ', curses.color_pair(2))  # unfocused color
+                    new_window.refresh()
                     self.windows.append(new_window)
                     self._initialize_buffers()
                 except curses.error:
@@ -466,6 +483,8 @@ class Editor:
                         begin_y,
                         begin_x + new_width + 1
                     )
+                    new_window.bkgd(' ', curses.color_pair(2))  # unfocused color
+                    new_window.refresh()
                     self.windows.append(new_window)
                     self._initialize_buffers()
                 except curses.error:
