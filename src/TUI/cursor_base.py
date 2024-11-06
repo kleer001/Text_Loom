@@ -1,6 +1,7 @@
 from enum import Enum, auto
 import curses
 import os
+from palette import ACTIVE_WINDOW, INACTIVE_WINDOW, CURSOR_HIGHLIGHT
 
 class CursorStyle(Enum):
     BLOCK = auto()
@@ -18,12 +19,11 @@ class CursorManager:
         self.scroll_y = 0
         self.style = CursorStyle.BLOCK
         self._setup_colors()
-        
+
     def _setup_colors(self):
-        curses.init_pair(10, curses.COLOR_BLACK, curses.COLOR_WHITE)
-        curses.init_pair(11, curses.COLOR_WHITE, curses.COLOR_BLACK)
-        self.highlight_pair = curses.color_pair(10)
-        self.normal_pair = curses.color_pair(11)
+        # Remove the init_pair calls since they're now in palette.py
+        self.highlight_pair = curses.color_pair(CURSOR_HIGHLIGHT)
+        self.normal_pair = curses.color_pair(ACTIVE_WINDOW)  # Use the active window color
     
     def set_style(self, style: CursorStyle):
         self.style = style
