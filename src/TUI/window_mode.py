@@ -257,10 +257,25 @@ class WindowMode:
 
             self._redistribute_all_space()
             self._update_current_cursor()
-            self._redraw_gutters()
             
+            # Clear the old window before deletion
             current_window.clear()
+            current_window.refresh()
             del current_window
+            
+            # Full refresh sequence
+            self.editor.stdscr.clear()
+            self.editor.stdscr.refresh()
+            
+            for window in self.editor.windows:
+                window.clear()
+                window.refresh()
+            
+            self._redraw_gutters()
+            self.editor.highlight_focused_window()
+            
+            # Ensure mode line is refreshed
+            self.editor.mode_line_window.refresh()
             
             return True
 
@@ -331,6 +346,10 @@ class WindowMode:
         if self.stdscr is None:
             self.stdscr = stdscr
             
+        if key == 27 or key == 23:  # ESC or Ctrl-W
+            self._exit_window_mode()
+            return
+            
         key_name = curses.keyname(key).decode('utf-8') if key != ord('=') else '='
         
         key_handlers = {
@@ -351,6 +370,9 @@ class WindowMode:
         handler = key_handlers.get(key_name)
         if handler:
             handler()
+            
+    def _exit_window_mode(self) -> None:
+        self.editor._exit_window_mode()  # Delegate to the editor
 
     def resize_window(self, dimension: str, delta: int) -> bool:
         if self._resize_lock or not self.editor.windows:
