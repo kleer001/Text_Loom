@@ -98,10 +98,11 @@ class ModeLine:
         self.text = ""
         self._dirty = True
         
-        for event in (Event.MODE_CHANGE, Event.PATH_CHANGE, 
-                     Event.BUFFER_CHANGE, Event.EDITOR_STATE_CHANGE, 
-                     Event.DEBUG_INFO):
-            event_dispatcher.subscribe(event, self._mark_dirty)
+        event_dispatcher.subscribe(Event.MODE_CHANGE, self.handle_mode_change)
+        event_dispatcher.subscribe(Event.PATH_CHANGE, self.handle_path_change)
+        event_dispatcher.subscribe(Event.BUFFER_CHANGE, self.handle_buffer_change)
+        event_dispatcher.subscribe(Event.EDITOR_STATE_CHANGE, self.handle_state_change)
+        event_dispatcher.subscribe(Event.DEBUG_INFO, self.handle_debug_info)
 
     def _mark_dirty(self, _: Any) -> None:
         self._dirty = True
@@ -111,29 +112,31 @@ class ModeLine:
         if not self._dirty:
             return
             
-        self.text = (f"[{self.editor_state.value}] | [{self.mode.value}] "
-                    f"{self.path} ({self.buffer_name}) | {self.debug_info}")
+        self.text = (f"[{self.editor_state.value}] | "
+                f"[{self.mode.value}] "
+                f"{self.path} ({self.buffer_name}) | "
+                f"Debug: {self.debug_info}")
         self._dirty = False
 
     def handle_mode_change(self, mode: Mode) -> None:
         self.mode = mode
-        self._mark_dirty(None)
+        self._dirty = True
 
     def handle_path_change(self, path: str) -> None:
         self.path = path
-        self._mark_dirty(None)
+        self._dirty = True
 
     def handle_buffer_change(self, buffer_name: str) -> None:
         self.buffer_name = buffer_name
-        self._mark_dirty(None)
+        self._dirty = True
 
     def handle_state_change(self, editor_state: EditorState) -> None:
         self.editor_state = editor_state
-        self._mark_dirty(None)
+        self._dirty = True
 
     def handle_debug_info(self, debug_info: str) -> None:
         self.debug_info = debug_info
-        self._mark_dirty(None)
+        self._dirty = True
 
 class EditorStateManager:
     def __init__(self, editor):
@@ -236,7 +239,15 @@ class Editor:
         self.dispatcher.subscribe(Event.WINDOW_CHANGED, self._handle_window_change)
 
     def _handle_sigint(self, sig, frame):
-        raise SystemExit
+        self.cleanup()
+        sys.exit(0)
+
+    def cleanup(self):
+        try:
+            curses.endwin()
+            cleanup_terminal()
+        except Exception as e:
+            logging.error(f"Cleanup failed: {e}")
 
     def initialize(self, stdscr) -> None:
         signal.signal(signal.SIGINT, self._handle_sigint)
@@ -279,7 +290,6 @@ class Editor:
             if window not in self.mode_buffers:
                 self.mode_buffers[window] = {mode: [] for mode in Mode}
 
-    @log_timing
     def handle_keypress(self, stdscr, key: int) -> None:
         current_time = time.time()
         if current_time - self._last_key_time > 0.5:
@@ -289,6 +299,11 @@ class Editor:
         if key == curses.KEY_RESIZE:
             self._resize_pending = True
             return
+
+        # Add handling for Ctrl-Q (17 is ASCII DC1, Ctrl-Q)
+        if key == 17:
+            self.cleanup()
+            sys.exit(0)
 
         self.dispatcher.start_batch()
         try:
@@ -453,16 +468,18 @@ class Editor:
 
     def _transition_to_window_mode(self) -> None:
         old_mode = self.current_mode
-        self._save_current_buffer()
-        self.current_mode = Mode.WINDOW
-        self.state_manager.transition_to(EditorState.WINDOW)
         
         self.dispatcher.start_batch()
         try:
+            self._save_current_buffer()
+            self.current_mode = Mode.WINDOW
+            self.state_manager.transition_to(EditorState.WINDOW)
+            
             self.dispatcher.dispatch(Event.MODE_CHANGE, self.current_mode)
             self.debug_info = (f"Window Mode - s:hsplit v:vsplit w:cycle q:close "
-                             f"=:equalize _|:maximize <> -+:resize")
+                            f"=:equalize _|:maximize <> -+:resize")
             self.dispatcher.dispatch(Event.DEBUG_INFO, self.debug_info)
+            self._restore_buffer(self.current_mode)
         finally:
             self.dispatcher.end_batch()
 
@@ -532,6 +549,24 @@ class Editor:
             
         return self._perform_mode_switch(mode_keys[key_name])
 
+    def _transition_to_normal_mode(self) -> None:
+        self.state_manager.transition_to(EditorState.NORMAL)
+
+    def _exit_window_mode(self) -> None:
+        self.dispatcher.start_batch()
+        try:
+            self._save_current_buffer()
+            prev_mode = Mode.NODE  # Or we could track previous mode if needed
+            self.current_mode = prev_mode
+            self.state_manager.transition_to(EditorState.NORMAL)
+            
+            self.dispatcher.dispatch(Event.MODE_CHANGE, self.current_mode)
+            self.debug_info = f"Exited window mode"
+            self.dispatcher.dispatch(Event.DEBUG_INFO, self.debug_info)
+            self._restore_buffer(self.current_mode)
+        finally:
+            self.dispatcher.end_batch()
+
     def _perform_mode_switch(self, new_mode: Mode) -> bool:
         if new_mode == self.current_mode:
             return True
@@ -587,28 +622,55 @@ class Editor:
     def _setup_test_nodes(self) -> None:
         window = self.windows[self.focused_window]
         
-        nodes = [
-            # Level 0 nodes (Cities)
-            [(2, 2, "Tokyo"), (4, 2, "Paris"), (6, 2, "London"), (8, 2, "New York")],
-            # Level 1 nodes (Foods)
-            [(2, 15, "Ramen"), (4, 15, "Baguette"), (6, 15, "Tea"), (8, 15, "Pizza")],
-            # Level 2 nodes (Restaurants)
-            [(2, 30, "Ichiran"), (4, 30, "Le Cheval d'Or"), 
-             (6, 30, "The Wolseley"), (8, 30, "Grimaldi's")]
+        # Level 0 nodes (Cities)
+        cities = [
+            (2, 2, "Tokyo"),
+            (4, 2, "Paris"),
+            (6, 2, "London"),
+            (8, 2, "New York")
+        ]
+        
+        # Level 1 nodes (Foods)
+        foods = [
+            (2, 15, "Ramen"),
+            (4, 15, "Baguette"),
+            (6, 15, "Tea"),
+            (8, 15, "Pizza")
+        ]
+        
+        # Level 2 nodes (Restaurants)
+        restaurants = [
+            (2, 30, "Ichiran"),
+            (4, 30, "Le Cheval d'Or"),
+            (6, 30, "The Wolseley"),
+            (8, 30, "Grimaldi's")
         ]
         
         try:
-            for level, level_nodes in enumerate(nodes):
-                for y, x, text in level_nodes:
-                    window.addstr(y, x, text)
-                    self.current_cursor.register_node(y, x, level, len(text))
+            # Add all nodes to the window and register them
+            for y, x, text in cities:
+                window.addstr(y, x, text)
+                self.current_cursor.register_node(y, x, 0, len(text))
                     
+            for y, x, text in foods:
+                window.addstr(y, x, text)
+                self.current_cursor.register_node(y, x, 1, len(text))
+                    
+            for y, x, text in restaurants:
+                window.addstr(y, x, text)
+                self.current_cursor.register_node(y, x, 2, len(text))
+                    
+            # Draw connecting lines
             for y in range(2, 9, 2):
                 window.addstr(y, 12, "──")
                 window.addstr(y, 25, "──")
-                
+            
             window.refresh()
+            
+            # Set initial cursor position
             self.current_cursor.move_absolute(2, 2)
+            self.current_cursor.highlight_current_node()
+            
         except curses.error:
             logging.error("Failed to setup test nodes")
 
