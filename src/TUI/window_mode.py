@@ -162,6 +162,70 @@ class Frame:
             
         return validation_errors
 
+<<<<<<< HEAD
+=======
+    def redistribute_space(self, y: int, x: int, height: int, width: int) -> bool:
+        if height < self.MIN_SIZE or width < self.MIN_SIZE:
+            return False
+
+        if self.window:
+            try:
+                self.window.mvwin(y, x)
+                self.window.resize(height, width)
+                return True
+            except curses.error:
+                return False
+
+        if not (self.left and self.right and self.split_type):
+            return False
+
+        if self.split_type == SplitType.HORIZONTAL:
+            left_height = height // 2
+            right_height = height - left_height - self.MIN_GUTTER
+            
+            return (self.left.redistribute_space(y, x, left_height, width) and
+                self.right.redistribute_space(y + left_height + self.MIN_GUTTER, 
+                                            x, right_height, width))
+
+        if self.split_type == SplitType.VERTICAL:
+            left_width = width // 2
+            right_width = width - left_width - self.MIN_GUTTER
+            
+            return (self.left.redistribute_space(y, x, height, left_width) and
+                self.right.redistribute_space(y, 
+                                            x + left_width + self.MIN_GUTTER,
+                                            height, right_width))
+
+        return False
+    def collect_dimensions(self) -> list[tuple]:
+        dimensions = []
+        if self.window:
+            y, x = self.window.getbegyx()
+            height, width = self.window.getmaxyx()
+            dimensions.append((self.window, y, x, height, width))
+        if self.left:
+            dimensions.extend(self.left.collect_dimensions())
+        if self.right:
+            dimensions.extend(self.right.collect_dimensions())
+        return dimensions
+
+    def find_frame_by_window(self, target_window) -> Optional['Frame']:
+        if self.window == target_window:
+            return self
+            
+        for child in (self.left, self.right):
+            if child:
+                found = child.find_frame_by_window(target_window)
+                if found:
+                    return found
+        return None
+
+    def get_sibling(self) -> Optional['Frame']:
+        if not self.parent:
+            return None
+        return self.parent.right if self.parent.left is self else self.parent.left
+
+>>>>>>> 6a811bf (refactoring away from curses to textual still struggling on)
     def ensure_consistent_tree(self) -> bool:
         validation_errors = self.validate_tree()
         if validation_errors:
@@ -627,7 +691,209 @@ class WindowMode:
             self.editor.current_cursor = self.editor.cursors[self.editor.focused_window]
             self.editor.dispatcher.dispatch(Event.WINDOW_CHANGED, None)
 
+<<<<<<< HEAD
     def cycle_focus(self):
+=======
+    def handle_key(self, key: int, stdscr) -> None:
+        if self.stdscr is None:
+            self.stdscr = stdscr
+            
+        if key == 27 or key == 23:  # ESC or Ctrl-W
+            self._exit_window_mode()
+            return
+            
+        key_name = curses.keyname(key).decode('utf-8') if key != ord('=') else '='
+        
+        key_handlers = {
+            's': lambda: self.split_window(SplitType.HORIZONTAL),
+            'v': lambda: self.split_window(SplitType.VERTICAL),
+            'w': self.cycle_focus,
+            'q': self.close_window,
+            'c': self.close_window,
+            '=': self.equalize_windows,
+            '_': lambda: self.maximize_dimension('height'),
+            '|': lambda: self.maximize_dimension('width'),
+            '+': lambda: self.resize_window('height', 1),
+            '-': lambda: self.resize_window('height', -1),
+            '>': lambda: self.resize_window('width', 1),
+            '<': lambda: self.resize_window('width', -1)
+        }
+        
+        handler = key_handlers.get(key_name)
+        if handler:
+            handler()
+            
+    def _exit_window_mode(self) -> None:
+        self.editor._exit_window_mode()  # Delegate to the editor
+
+    def resize_window(self, dimension: str, delta: int) -> bool:
+        if self._resize_lock or not self.editor.windows:
+            return False
+
+        try:
+            self._resize_lock = True
+            current = self.editor.windows[self.editor.focused_window]
+            current_frame = self.root_frame.find_frame_by_window(current)
+            
+            if not current_frame or not current_frame.parent:
+                return False
+
+            sibling = current_frame.get_sibling()
+            if not sibling or not sibling.window:
+                return False
+
+            split_type = current_frame.parent.split_type
+            if ((dimension == 'height' and split_type != SplitType.HORIZONTAL) or
+                (dimension == 'width' and split_type != SplitType.VERTICAL)):
+                return False
+
+            current_size = current.getmaxyx()[0 if dimension == 'height' else 1]
+            sibling_size = sibling.window.getmaxyx()[0 if dimension == 'height' else 1]
+
+            min_size = self.MIN_HEIGHT if dimension == 'height' else self.MIN_WIDTH
+            if (current_size + delta < min_size or sibling_size - delta < min_size):
+                return False
+
+            self._save_layout_state()
+            
+            screen_height, screen_width = self.stdscr.getmaxyx()
+            y, x = current.getbegyx()
+            height, width = current.getmaxyx()
+            sibling_y, sibling_x = sibling.window.getbegyx()
+            sibling_height, sibling_width = sibling.window.getmaxyx()
+
+            try:
+                self.stdscr.erase()
+                
+                if dimension == 'height':
+                    new_height = height + delta
+                    new_sibling_height = sibling_height - delta
+                    
+                    if y < sibling_y:
+                        current.resize(new_height, width)
+                        sibling.window.mvwin(y + new_height + self.GUTTER_SIZE, sibling_x)
+                        sibling.window.resize(new_sibling_height, sibling_width)
+                    else:
+                        current.resize(new_height, width)
+                        current.mvwin(sibling_y + new_sibling_height + self.GUTTER_SIZE, x)
+                        sibling.window.resize(new_sibling_height, sibling_width)
+                else:
+                    new_width = width + delta
+                    new_sibling_width = sibling_width - delta
+                    
+                    if x < sibling_x:
+                        current.resize(height, new_width)
+                        sibling.window.mvwin(sibling_y, x + new_width + self.GUTTER_SIZE)
+                        sibling.window.resize(sibling_height, new_sibling_width)
+                    else:
+                        current.resize(height, new_width)
+                        current.mvwin(y, sibling_x + new_sibling_width + self.GUTTER_SIZE)
+                        sibling.window.resize(sibling_height, new_sibling_width)
+
+                self.stdscr.refresh()
+                
+                for win in self.editor.windows:
+                    win.redrawwin()
+                    win.noutrefresh()
+                
+                self._redraw_gutters()
+                curses.doupdate()
+                
+                return True
+
+            except Exception:
+                self._restore_layout()
+                return False
+
+        finally:
+            self._resize_lock = False
+
+
+
+    def maximize_dimension(self, dimension: str) -> bool:
+        if not self.editor.windows:
+            return False
+
+        try:
+            self._save_layout_state()
+            current = self.editor.windows[self.editor.focused_window]
+            current_frame = self.root_frame.find_frame_by_window(current)
+            
+            if not current_frame:
+                return False
+
+            screen_height, screen_width = self.stdscr.getmaxyx()
+            max_height = screen_height - 1  # Reserve status line
+            siblings = self._collect_siblings(current_frame, dimension)
+
+            if dimension == 'height':
+                for sibling, _ in siblings:
+                    if sibling.window:
+                        sibling.window.resize(self.MIN_HEIGHT, sibling.window.getmaxyx()[1])
+                current.resize(max_height - (len(siblings) * (self.MIN_HEIGHT + self.GUTTER_SIZE)),
+                             current.getmaxyx()[1])
+            else:
+                for sibling, _ in siblings:
+                    if sibling.window:
+                        sibling.window.resize(sibling.window.getmaxyx()[0], self.MIN_WIDTH)
+                current.resize(current.getmaxyx()[0],
+                             screen_width - (len(siblings) * (self.MIN_WIDTH + self.GUTTER_SIZE)))
+
+            self._redraw_gutters()
+            return True
+
+        except curses.error:
+            self._restore_layout()
+            return False
+
+    def equalize_windows(self) -> bool:
+        if not self.root_frame:
+            return False
+
+        try:
+            self._save_layout_state()
+            screen_height, screen_width = self.stdscr.getmaxyx()
+            
+            def equalize_dimension(frame: Frame, available: int, dimension: str) -> bool:
+                if frame.window:
+                    return True
+                    
+                if not frame.left or not frame.right:
+                    return False
+                    
+                space_per_child = (available - self.GUTTER_SIZE) // 2
+                
+                if dimension == 'height' and frame.split_type == SplitType.HORIZONTAL:
+                    if not self._resize_frame_height(frame.left, space_per_child):
+                        return False
+                    if not self._resize_frame_height(frame.right, space_per_child):
+                        return False
+                        
+                elif dimension == 'width' and frame.split_type == SplitType.VERTICAL:
+                    if not self._resize_frame_width(frame.left, space_per_child):
+                        return False
+                    if not self._resize_frame_width(frame.right, space_per_child):
+                        return False
+                        
+                return (equalize_dimension(frame.left, space_per_child, dimension) and
+                        equalize_dimension(frame.right, space_per_child, dimension))
+
+            success = (equalize_dimension(self.root_frame, screen_height - 1, 'height') and
+                      equalize_dimension(self.root_frame, screen_width, 'width'))
+                      
+            if success:
+                self._redraw_gutters()
+                return True
+                
+            self._restore_layout()
+            return False
+
+        except curses.error:
+            self._restore_layout()
+            return False
+
+    def cycle_focus(self) -> None:
+>>>>>>> 6a811bf (refactoring away from curses to textual still struggling on)
         if not self.editor.windows:
             return
 
@@ -643,6 +909,7 @@ class WindowMode:
             self.editor.current_cursor.move_absolute(1, 0)
             self.editor.current_cursor.render()
 
+<<<<<<< HEAD
         def maximize_dimension(self, dimension: str) -> bool:
             if not self.editor.windows:
                 return False
@@ -747,6 +1014,22 @@ class WindowMode:
             if not self.root_frame:
                 return
                 
+=======
+    def _get_window_edges(self, window) -> dict:
+        screen_height, screen_width = self.stdscr.getmaxyx()
+        y, x = window.getbegyx()
+        height, width = window.getmaxyx()
+        
+        return {
+            'left': x == 0,
+            'right': x + width >= screen_width - 1,
+            'top': y == 1,  # 1 because of modeline
+            'bottom': y + height >= screen_height - 1
+        }
+
+    def _redraw_gutters(self) -> None:
+        try:
+>>>>>>> 6a811bf (refactoring away from curses to textual still struggling on)
             screen_height, screen_width = self.stdscr.getmaxyx()
             usable_height = screen_height - 1
 
@@ -794,17 +1077,123 @@ class WindowMode:
                     x = child_x
                     next_x = x + 1
 
+<<<<<<< HEAD
             return y, x
+=======
+    def _fix_gutters(self) -> None:
+        try:
+            screen_height, screen_width = self.stdscr.getmaxyx()
+            max_height = screen_height - 1
+            
+            for window in self.editor.windows:
+                y, x = window.getbegyx()
+                height, width = window.getmaxyx()
+                
+                # Ensure gutter size is exactly GUTTER_SIZE
+                if x + width < screen_width - 1:  # Not rightmost
+                    if x + width + self.GUTTER_SIZE > screen_width:
+                        width = screen_width - x - self.GUTTER_SIZE
+                        window.resize(height, width)
+                        
+                if y + height < max_height:  # Not bottommost
+                    if y + height + self.GUTTER_SIZE > max_height:
+                        height = max_height - y - self.GUTTER_SIZE
+                        window.resize(height, width)
+                        
+            self._redraw_gutters()
+            
+        except curses.error as e:
+            logging.error(f"Gutter fix failed: {e}")
+
+    def _can_resize(self, frame: Frame, sibling: Frame, dimension: str, delta: int) -> bool:
+        if not frame.parent or not sibling:
+            return False
+            
+        # Check if we're resizing in the correct split orientation
+        if (dimension == 'height' and frame.parent.split_type != SplitType.HORIZONTAL) or \
+        (dimension == 'width' and frame.parent.split_type != SplitType.VERTICAL):
+            return False
+
+        current = frame.window.getmaxyx()
+        sibling_size = sibling.window.getmaxyx()
+        
+        if dimension == 'height':
+            current_size = current[0]
+            sibling_size = sibling_size[0]
+        else:
+            current_size = current[1]
+            sibling_size = sibling_size[1]
+>>>>>>> 6a811bf (refactoring away from curses to textual still struggling on)
 
         def _check_frame_heights(self, frame: Frame, height: int) -> bool:
             if frame.height != height:
                 return False
 
+<<<<<<< HEAD
             if frame.split_type == SplitType.HORIZONTAL:
                 for child in (frame.left, frame.right):
                     if child.height != height:
                         return False
             return True
+=======
+    def _apply_resize(self, current_window, sibling_window, dimension: str, delta: int, split_type: SplitType) -> bool:
+        try:
+            current_edges = self._get_window_edges(current_window)
+            sibling_edges = self._get_window_edges(sibling_window)
+            
+            current_y, current_x = current_window.getbegyx()
+            sibling_y, sibling_x = sibling_window.getbegyx()
+            current_height, current_width = current_window.getmaxyx()
+            sibling_height, sibling_width = sibling_window.getmaxyx()
+
+            if dimension == 'width' and split_type == SplitType.VERTICAL:
+                # If current window is anchored to left edge, only move sibling
+                if current_edges['left']:
+                    current_window.resize(current_height, current_width + delta)
+                    sibling_window.mvwin(sibling_y, sibling_x + delta)
+                    sibling_window.resize(sibling_height, sibling_width - delta)
+                # If current window is anchored to right edge, only move sibling left
+                elif current_edges['right']:
+                    current_window.resize(current_height, current_width + delta)
+                    sibling_window.resize(sibling_height, sibling_width - delta)
+                # If sibling is anchored, resize without moving
+                elif sibling_edges['right']:
+                    current_window.resize(current_height, current_width + delta)
+                    sibling_window.resize(sibling_height, sibling_width - delta)
+                # Normal case - middle windows
+                else:
+                    current_window.resize(current_height, current_width + delta)
+                    sibling_window.mvwin(sibling_y, sibling_x + delta)
+                    sibling_window.resize(sibling_height, sibling_width - delta)
+                    
+            elif dimension == 'height' and split_type == SplitType.HORIZONTAL:
+                # If current window is anchored to top, only move sibling
+                if current_edges['top']:
+                    current_window.resize(current_height + delta, current_width)
+                    sibling_window.mvwin(sibling_y + delta, sibling_x)
+                    sibling_window.resize(sibling_height - delta, sibling_width)
+                # If current window is anchored to bottom, only move sibling up
+                elif current_edges['bottom']:
+                    current_window.resize(current_height + delta, current_width)
+                    sibling_window.resize(sibling_height - delta, sibling_width)
+                # If sibling is anchored, resize without moving
+                elif sibling_edges['bottom']:
+                    current_window.resize(current_height + delta, current_width)
+                    sibling_window.resize(sibling_height - delta, sibling_width)
+                # Normal case - middle windows
+                else:
+                    current_window.resize(current_height + delta, current_width)
+                    sibling_window.mvwin(sibling_y + delta, sibling_x)
+                    sibling_window.resize(sibling_height - delta, sibling_width)
+            
+            current_window.refresh()
+            sibling_window.refresh()
+            return True
+            
+        except curses.error as e:
+            logging.error(f"Resize failed: {e}")
+            return False
+>>>>>>> 6a811bf (refactoring away from curses to textual still struggling on)
 
         def _check_frame_widths(self, frame: Frame, width: int) -> bool:
             if frame.width != width:
