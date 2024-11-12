@@ -1,0 +1,20 @@
+ModeLine {
+    dock: bottom;
+    height: 1;
+    background: #5f87af;
+    color: #d7d7d7;
+    padding: 0 1;
+}
+
+#content {
+    height: 100%;
+    background: #303030;
+    color: #d7d7d7;
+    border: solid #444444;
+    padding: 1;
+}
+
+Screen {
+    background: #1c1c1c;
+    color: #d7d7d7;
+}
