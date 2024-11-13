@@ -2,7 +2,7 @@ from typing import ClassVar, Dict
 from pathlib import Path
 import logging
 from datetime import datetime
-
+import os 
 from textual import work
 from textual.app import App, ComposeResult
 from textual.binding import Binding
@@ -17,13 +17,11 @@ from textual.widgets import Static
 from dataclasses import dataclass
 from enum import Enum, auto
 
-logging.basicConfig(
-    filename=f"logs/tui_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log",
-    level=logging.DEBUG,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
+from node_window import NodeWindow
 
-logger = logging.getLogger(__name__)
+from logging_config import get_logger
+
+logger = get_logger('tui.main')
 
 class Mode(Enum):
     NODE = auto()
@@ -38,16 +36,6 @@ class Mode(Enum):
     def __str__(self) -> str:
         return self.name.title()
 
-
-class NodeWindow(Static):
-    DEFAULT_CSS = """
-    NodeWindow {
-        width: 100%;
-        height: 100%;
-        background: white;
-        border: solid $background;
-    }
-    """
 
 class ParameterWindow(Static):
     DEFAULT_CSS = """
@@ -118,26 +106,7 @@ class MainLayout(Grid):
         yield ParameterWindow()
 
 class MainContent(Static):
-    DEFAULT_CSS = """
-    MainContent {
-        width: 100%;
-        height: 87.5%;
-        background: $surface;
-        padding: 0;
-    }
-    
-    StatusWindow {
-        height: 50%;
-    }
-    
-    OutputWindow {
-        height: 37.5%;
-    }
-    
-    GlobalWindow {
-        height: 12.5%;
-    }
-    """
+
 
     def compose(self) -> ComposeResult:
         yield MainLayout()
@@ -163,7 +132,7 @@ class HelpWindow(Static):
         
     def _load_help_text(self) -> None:
         try:
-            help_path = Path("help_tui.md")
+            help_path = Path("TUI/help_tui.md")
             if not help_path.exists():
                 error_msg = f"Help file not found at {help_path.absolute()}"
                 logger.error(error_msg)
@@ -234,6 +203,9 @@ class ModeLine(Static):
         self.update(f"[{self.mode}] {self.path} | {self.debug_info}")
 
 class TUIApp(App[None]):
+    def __init__(self):
+        super().__init__()
+        self.logger = get_logger('tui.app')
     CSS = """
     Screen {
         layout: vertical;
@@ -290,7 +262,7 @@ class TUIApp(App[None]):
         yield ModeLine()
 
     def on_mount(self) -> None:
-        logger.info("Starting TUI application")
+        self.logger.info("Application started")
         try:
             self.mode_line = self.query_one(ModeLine)
             self.help_window = self.query_one(HelpWindow)

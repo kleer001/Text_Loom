@@ -1,14 +1,14 @@
 import sys
 import os
 
-current_dir = os.path.dirname(os.path.abspath(__file__))
-src_dir = os.path.abspath(os.path.join(current_dir, '..', '..'))
-backend_dir = os.path.join(src_dir, 'backend')
-nodes_dir = os.path.join(backend_dir, 'nodes')
+# current_dir = os.path.dirname(os.path.abspath(__file__))
+# src_dir = os.path.abspath(os.path.join(current_dir, '..', '..'))
+# backend_dir = os.path.join(src_dir, 'backend')
+# nodes_dir = os.path.join(backend_dir, 'nodes')
 
-sys.path.insert(0, src_dir)
-sys.path.insert(0, backend_dir)
-sys.path.insert(0, nodes_dir)
+# sys.path.insert(0, src_dir)
+# sys.path.insert(0, backend_dir)
+# sys.path.insert(0, nodes_dir)
 
 from core.base_classes import NodeEnvironment, NodeType, generate_node_types, Node
 from core.flowstate_manager import load_flowstate
