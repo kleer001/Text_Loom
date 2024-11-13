@@ -11,12 +11,14 @@ from textual.message import Message
 from textual.reactive import reactive
 from textual.widgets import Static
 from textual.css.query import NoMatches
+from textual.containers import Grid, Horizontal, Vertical
+from textual.widgets import Static
 
 from dataclasses import dataclass
 from enum import Enum, auto
 
 logging.basicConfig(
-    filename=f"tui_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log",
+    filename=f"logs/tui_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log",
     level=logging.DEBUG,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
@@ -36,14 +38,110 @@ class Mode(Enum):
     def __str__(self) -> str:
         return self.name.title()
 
+
+class NodeWindow(Static):
+    DEFAULT_CSS = """
+    NodeWindow {
+        width: 100%;
+        height: 100%;
+        background: white;
+        border: solid $background;
+    }
+    """
+
+class ParameterWindow(Static):
+    DEFAULT_CSS = """
+    ParameterWindow {
+        width: 100%;
+        height: 100%;
+        background: cornsilk;
+        border: solid $background;
+    }
+    """
+
+class StatusWindow(Static):
+    DEFAULT_CSS = """
+    StatusWindow {
+        width: 100%;
+        height: 50%;
+        background: gainsboro;
+        border: solid $background;
+    }
+    """
+
+class OutputWindow(Static):
+    DEFAULT_CSS = """
+    OutputWindow {
+        width: 100%;
+        height: 37.5%;
+        background: azure;
+        border: solid $background;
+    }
+    """
+
+class GlobalWindow(Static):
+    DEFAULT_CSS = """
+    GlobalWindow {
+        width: 100%;
+        height: 12.5%;
+        background: honeydew;
+        border: solid $background;
+    }
+    """
+
+class MainLayout(Grid):
+    DEFAULT_CSS = """
+    MainLayout {
+        height: 100%;
+        width: 100%;
+        grid-size: 3 1;
+        grid-columns: 1fr 2fr 2fr;
+        grid-rows: 1fr;
+        grid-gutter: 1;
+        background: $surface;
+    }
+    
+    Vertical {
+        height: 100%;
+        width: 100%;
+    }
+    """
+
+    def compose(self) -> ComposeResult:
+        yield NodeWindow()
+        
+        with Vertical():
+            yield StatusWindow()
+            yield OutputWindow()
+            yield GlobalWindow()
+            
+        yield ParameterWindow()
+
 class MainContent(Static):
     DEFAULT_CSS = """
     MainContent {
         width: 100%;
         height: 87.5%;
-        background: red;
+        background: $surface;
+        padding: 0;
+    }
+    
+    StatusWindow {
+        height: 50%;
+    }
+    
+    OutputWindow {
+        height: 37.5%;
+    }
+    
+    GlobalWindow {
+        height: 12.5%;
     }
     """
+
+    def compose(self) -> ComposeResult:
+        yield MainLayout()
+
 
 class HelpWindow(Static):
     DEFAULT_CSS = """
@@ -52,7 +150,7 @@ class HelpWindow(Static):
         height: 12.5%;
         color: white;
         padding: 0 1;
-        background: blue;
+        background: #4B0082;
         overflow-y: scroll;
     }
     """
@@ -151,6 +249,18 @@ class TUIApp(App[None]):
 
     ModeLine {
         height: 1;
+    }
+    
+    NodeWindow {
+        width: 1fr;
+    }
+    
+    ParameterWindow {
+        width: 2fr;
+    }
+    
+    .middle-section {
+        width: 2fr;
     }
     """
 
