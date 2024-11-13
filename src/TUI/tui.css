@@ -1,20 +1,18 @@
-ModeLine {
-    dock: bottom;
-    height: 1;
-    background: #5f87af;
-    color: #d7d7d7;
-    padding: 0 1;
-}
+from textual.app import App
 
-#content {
-    height: 100%;
-    background: #303030;
-    color: #d7d7d7;
-    border: solid #444444;
-    padding: 1;
-}
+class TUI(App):
+    CSS = """
+    Screen {
+        layers: base overlay notifications;
+    }
 
-Screen {
-    background: #1c1c1c;
-    color: #d7d7d7;
-}
+    ModeLine {
+        dock: bottom;
+        width: 100%;
+        height: 1;
+        border: none;
+        background: $modeline;
+        color: $text;
+        padding: 0 1;
+    }
+    """
