@@ -13,7 +13,7 @@ from core.flowstate_manager import load_flowstate
 from network_visualizer import layout_network, render_layout, LayoutEntry
 from logging_config import get_logger
 
-logger = get_logger('tui.node')
+logger = get_logger('node')
 
 @dataclass
 class NodeData:
