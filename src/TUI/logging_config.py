@@ -32,11 +32,11 @@ class SingletonLogger:
             logger.addHandler(file_handler)
             
             # Console handler
-            console_handler = logging.StreamHandler()
-            console_handler.setLevel(logging.INFO)  # Less verbose for console
-            console_formatter = logging.Formatter('%(name)s - %(levelname)s - %(message)s')
-            console_handler.setFormatter(console_formatter)
-            logger.addHandler(console_handler)
+            # console_handler = logging.StreamHandler()
+            # console_handler.setLevel(logging.INFO)  # Less verbose for console
+            # console_formatter = logging.Formatter('%(name)s - %(levelname)s - %(message)s')
+            # console_handler.setFormatter(console_formatter)
+            # logger.addHandler(console_handler)
         
         # Suppress asyncio and other library logging
         logging.getLogger('asyncio').setLevel(logging.WARNING)
