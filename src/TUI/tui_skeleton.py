@@ -17,7 +17,8 @@ from textual.widgets import Static
 from dataclasses import dataclass
 from enum import Enum, auto
 
-from node_window import NodeWindow
+from node_window import NodeWindow, NodeSelected
+from parameter_window import ParameterWindow
 
 from logging_config import get_logger
 
@@ -35,17 +36,6 @@ class Mode(Enum):
 
     def __str__(self) -> str:
         return self.name.title()
-
-
-class ParameterWindow(Static):
-    DEFAULT_CSS = """
-    ParameterWindow {
-        width: 100%;
-        height: 100%;
-        background: cornsilk;
-        border: solid $background;
-    }
-    """
 
 class StatusWindow(Static):
     DEFAULT_CSS = """
@@ -104,6 +94,9 @@ class MainLayout(Grid):
             yield GlobalWindow()
             
         yield ParameterWindow()
+
+    def on_node_selected(self, event: NodeSelected) -> None:
+        self.query_one(ParameterWindow).on_node_selected(event)
 
 class MainContent(Static):
 
