@@ -1,34 +1,47 @@
-from typing import Optional, List, Dict
+from typing import Optional, List, Dict, Callable
 from dataclasses import dataclass
-from textual.widgets import Static
-from textual.containers import ScrollableContainer, Vertical
+from enum import Enum
+
+from textual.widgets import Static, Input
+from textual.containers import ScrollableContainer, Vertical, Horizontal
 from textual.scroll_view import ScrollView
 from textual.message import Message
 from textual.binding import Binding
 from textual.reactive import reactive
+from textual.events import Focus, Blur
 
 from rich.text import Text
 from rich.style import Style
 
 from core.base_classes import NodeEnvironment, Node
+from core.parm import ParameterType
 from node_window import NodeSelected
 from logging_config import get_logger
 
 logger = get_logger('parameter')
 
-PARAMETER_SET_BG = "$boost"
-PARAMETER_SET_BORDER = "$primary"
+PARAMETER_SET_BG = "#1E1E1E"  # Dark background
+PARAMETER_SET_BORDER = "#4A4A4A"  # Subtle border color
 TITLE_COLOR = "white"
 PARAM_NAME_COLOR = "red"
 PARAM_VALUE_COLOR = "green"
 PARAM_VALUE_BG = "silver"
 PARAM_VALUE_SELECTED_COLOR = "blue"
 PARAM_VALUE_SELECTED_BG = "#336666"
-PARAM_VALUE_EDITING_BG = "$accent"
-PARAM_VALUE_EDITING_COLOR = "$text"
-PARAMETER_WINDOW_BG = "$boost"
-PARAMETER_WINDOW_BORDER = "$background"
-PARAMETER_WINDOW_FOCUS_BORDER = "$accent"
+PARAM_VALUE_EDITING_BG = "#2C2C2C"  # Slightly lighter than background
+PARAM_VALUE_EDITING_COLOR = "#E0E0E0"  # Light grey text
+PARAMETER_WINDOW_BG = "#1E1E1E"  # Dark background
+PARAMETER_WINDOW_BORDER = "#2C2C2C"  # Slightly lighter than background
+PARAMETER_WINDOW_FOCUS_BORDER = "#5294E2"  # Bright blue for focus
+PARAM_LABEL_BG = "grey"
+PARAM_LABEL_COLOR = "#B0B0B0"  # Light grey for labels
+PARAM_INPUT_BG = "#2C2C2C"  # Slightly lighter than background
+PARAM_INPUT_COLOR = "#E0E0E0"  # Light grey text
+PARAM_INPUT_SELECTED_BG = "#3A3A3A"  # Lighter than normal input background
+PARAM_INPUT_SELECTED_COLOR = "white"
+PARAM_INPUT_INVALID_BG = "#8B0000"  # Dark red for errors
+PARAM_INPUT_BORDER = "#4A4A4A"  # Subtle border color
+PARAM_INPUT_SELECTED_BORDER = "#5294E2"  # Bright blue for selected input
 
 class ScrollMessage(Message):
     def __init__(self, direction: int):
@@ -41,7 +54,119 @@ class Parameter:
     value: str
     type: str
 
-class ParameterSet(Static):
+class ParameterRow(Horizontal):
+    """A row containing a parameter label and input field."""
+    
+    DEFAULT_CSS = f"""
+    ParameterRow {{
+        height: 3;
+        margin: 0;
+        padding: 0;
+        width: 100%;
+    }}
+    
+    ParameterRow Label {{
+        padding: 1 1;
+        background: {PARAM_LABEL_BG};
+        color: {PARAM_LABEL_COLOR};
+        min-width: 20;
+    }}
+    
+    ParameterRow Input {{
+        padding: 0 1;
+        background: {PARAM_INPUT_BG};
+        color: {PARAM_INPUT_COLOR};
+        border: none;
+        width: 100%;
+    }}
+    
+    ParameterRow Input:focus {{
+        background: {PARAM_INPUT_SELECTED_BG};
+        color: {PARAM_INPUT_SELECTED_COLOR};
+        border: tall {PARAM_INPUT_SELECTED_BORDER};
+    }}
+    """
+
+    is_selected = reactive(False)
+    name = reactive("")
+    value = reactive("")
+    param_type = reactive("")
+    
+    def __init__(
+        self,
+        name: str,
+        value: str,
+        param_type: ParameterType,  # Changed to accept ParameterType
+        on_change: Optional[Callable[[str], None]] = None
+    ):
+        super().__init__()
+        self.name = name
+        self.value = value
+        self.param_type = param_type.value  # Store the string value
+        self.on_change = on_change
+        self._previous_value = value
+
+    def compose(self):
+        yield Static(f"{self.name}:", classes="label")
+        yield Input(
+            value=self.value,
+            id=f"input_{self.name}"
+        )
+
+    def _get_validator(self) -> str:
+        """Return regex pattern for input validation based on parameter type."""
+        if self.param_type == ParameterType.INT.value:
+            return r"-?\d*"
+        elif self.param_type == ParameterType.FLOAT.value:
+            return r"-?\d*\.?\d*"
+        elif self.param_type == ParameterType.TOGGLE.value:
+            return r"[TtFfYyNn]|true|false|yes|no|0|1"
+        # String and menu types accept any input
+        return None
+
+    def on_input_changed(self, event: Input.Changed) -> None:
+        """Handle input changes and validate the new value."""
+        if not self._validate_input(event.value):
+            # Revert to previous valid value
+            input_widget = self.query_one(Input)
+            input_widget.value = self._previous_value
+            return
+            
+        self._previous_value = event.value
+        if self.on_change:
+            self.on_change(event.value)
+
+    def _validate_input(self, value: str) -> bool:
+        """Validate the input value based on parameter type."""
+        if not value:
+            return True
+            
+        try:
+            if self.param_type == ParameterType.INT.value:
+                if value != "-":  # Allow minus sign for negative numbers
+                    int(value)
+            elif self.param_type == ParameterType.FLOAT.value:
+                if value not in ("-", "."):  # Allow minus sign and decimal point
+                    float(value)
+            elif self.param_type == ParameterType.TOGGLE.value:
+                return value.lower() in ("true", "false", "1", "0", "yes", "no", "t", "f", "y", "n")
+            return True
+        except ValueError:
+            return False
+
+    def watch_is_selected(self, selected: bool) -> None:
+        """Handle selection state changes."""
+        input_widget = self.query_one(Input)
+        if selected:
+            input_widget.styles.background = PARAM_INPUT_SELECTED_BG
+            input_widget.styles.color = PARAM_INPUT_SELECTED_COLOR
+        else:
+            input_widget.styles.background = PARAM_INPUT_BG
+            input_widget.styles.color = PARAM_INPUT_COLOR
+
+class ParameterSet(Vertical):
+    """A container for a node's parameters with title and parameter rows."""
+    
     DEFAULT_CSS = f"""
     ParameterSet {{
         width: 100%;
@@ -50,149 +175,108 @@ class ParameterSet(Static):
         padding: 0 1;
         height: auto;
     }}
-    .title {{
+    
+    ParameterSet Title {{
         color: {TITLE_COLOR};
         text-style: bold;
-        padding-bottom: 1;
-    }}
-    .param-name {{
-        color: {PARAM_NAME_COLOR};
-        background: {PARAM_VALUE_BG};
-        text-style: bold;
-    }}
-    .param-value {{
-        color: {PARAM_VALUE_COLOR};
-    }}
-    .param-value-selected {{
-        color: {PARAM_VALUE_SELECTED_COLOR};
-        background: {PARAM_VALUE_SELECTED_BG};
-    }}
-    .param-value-editing {{
-        background: {PARAM_VALUE_EDITING_BG};
-        color: {PARAM_VALUE_EDITING_COLOR};
+        padding: 1 0;
     }}
     """
 
     def __init__(self, node: Node):
         super().__init__()
         self.node = node
-        self.parameters: List[Parameter] = []
-        self.selected_index: Optional[int] = None
-        self.is_editing: bool = False
-        self.is_active: bool = False 
-        self._load_parameters()
+        self.current_index: Optional[int] = None
+        self.parameter_rows: List[ParameterRow] = []
 
-    def _load_parameters(self) -> None:
-        try:
-            self.parameters = []
-            for parm_name, parm in self.node._parms.items():
-                self.parameters.append(Parameter(
-                    name=parm_name,
-                    value=str(parm._value),
-                    type=parm._type
-                ))
-            self._refresh_display()
-        except Exception as e:
-            logger.info(f"Error loading parameters: {str(e)}")
+    def compose(self):
+        """Create the title and parameter rows."""
+        yield Static(self.node.name(), classes="title")
+        
+        # Create parameter rows
+        for parm_name, parm in self.node._parms.items():
+            row = ParameterRow(
+                name=parm_name,
+                value=str(parm._value),
+                param_type=parm._type,
+                on_change=self._create_change_handler(parm_name)
+            )
+            self.parameter_rows.append(row)
+            yield row
 
-    def reset_selection(self) -> None:
-        """Reset the selection state of this parameter set."""
-        self.selected_index = -1  # No selection
-        self.is_editing = False
-        self._refresh_display()
-
-    def _refresh_display(self) -> None:
-        text = Text()
-        text.append(f"{self.node.name()}\n", style=f"{TITLE_COLOR} bold")
-
-        for i, param in enumerate(self.parameters):
-            text.append(f"{param.name}: ", Style(color=PARAM_NAME_COLOR, bold=True))
-
-            value_style = PARAM_VALUE_COLOR
-            display_value = param.value
-
-            if i == self.selected_index:
-                if self.is_editing:
-                    value_style = f"{PARAM_VALUE_EDITING_COLOR} on {PARAM_VALUE_EDITING_BG}"
-                    parent_window = self.screen.query_one(ParameterWindow)
-                    display_value = parent_window.editing_value if parent_window.editing_value != "" else "_"
-                else:
-                    value_style = f"{PARAM_VALUE_SELECTED_COLOR} on {PARAM_VALUE_SELECTED_BG}"
-
-            text.append(f"{display_value}\n", style=value_style)
-
-        self.update(text)
-
-    def set_active(self, active: bool) -> None:
-        self.is_active = active
-        self._refresh_display()
-
-    def move_selection(self, direction: int) -> Optional[int]:
-        if self.is_editing:
-            self.is_editing = False
-            self._refresh_display()
-            return None
-
-        new_index = (self.selected_index or 0) + direction
-        if 0 <= new_index < len(self.parameters):
-            self.selected_index = new_index
-            self._refresh_display()
-            return None
-        return direction
-
-    def reset_selection(self):
-        self.selected_index = None
-        self.is_editing = False
-        self._refresh_display()
-
-    def start_editing(self) -> None:
-        self.is_editing = True
-        self._refresh_display()
-
-    def apply_edit(self, new_value: str) -> None:
-        try:
-            if self.selected_index is None:
-                return
-                
-            param = self.parameters[self.selected_index]
-            parm = self.node._parms[param.name]
-            
-            if not new_value and parm._type.lower() in ('string', 'stringlist', 'button'):
-                typed_value = ""
-            else:
-                typed_value = self._convert_value(new_value, parm._type)
-                
-            if typed_value is not None:  # None indicates conversion failure
-                parm.set(typed_value)
-                param.value = str(typed_value)  # Update the displayed value
-                logger.info(f"Successfully updated parameter {param.name} to {typed_value}")
-            else:
-                logger.warning(f"Failed to convert value {new_value} for parameter {param.name}")
-        except Exception as e:
-            logger.error(f"Error applying parameter edit: {str(e)}")
-
+    def _create_change_handler(self, parm_name: str) -> Callable[[str], None]:
+        """Create a change handler for a specific parameter."""
+        def handle_change(new_value: str) -> None:
+            try:
+                parm = self.node._parms[parm_name]
+                parm.set(self._convert_value(new_value, parm._type))
+                logger.info(f"Parameter {parm_name} updated to {new_value}")
+            except Exception as e:
+                logger.error(f"Error updating parameter {parm_name}: {str(e)}")
+        return handle_change
 
     def _convert_value(self, value: str, param_type: str) -> any:
-        try:
-            param_type = param_type.lower()
-            if param_type == 'int':
-                return int(value)
-            elif param_type == 'float':
-                return float(value)
-            elif param_type == 'toggle':
-                return value.lower() in ('true', '1', 'yes', 'on')
-            elif param_type in ('string', 'menu', 'stringlist'):
-                return value
-            elif param_type == 'button':
-                return None  # Buttons don't have a value to set
-            else:
-                logger.warning(f"Unknown parameter type: {param_type}")
-                return value
-        except ValueError as e:
-            logger.error(f"Error converting value: {str(e)}")
+        """Convert string value to appropriate type."""
+        param_type = param_type.lower()
+        if param_type == "int":
+            return int(value)
+        elif param_type == "float":
+            return float(value)
+        elif param_type == "toggle":
+            return value.lower() in ("true", "1", "yes", "y", "on", "t")
+        elif param_type in ("string", "menu", "stringlist"):
+            return value
+        elif param_type == "button":
             return None
+        logger.warning(f"Unknown parameter type: {param_type}")
+        return value
+
+    def select_parameter(self, index: int) -> None:
+        """Select a parameter row and ensure only one is selected."""
+        if not (0 <= index < len(self.parameter_rows)):
+            return
+            
+        # Deselect current parameter if any
+        if self.current_index is not None:
+            self.parameter_rows[self.current_index].is_selected = False
+            
+        # Select new parameter
+        self.current_index = index
+        self.parameter_rows[index].is_selected = True
         
+    def select_next(self) -> Optional[int]:
+        """Select next parameter, return overflow if beyond last parameter."""
+        if self.current_index is None:
+            self.select_parameter(0)
+            return None
+            
+        next_index = self.current_index + 1
+        if next_index < len(self.parameter_rows):
+            self.select_parameter(next_index)
+            return None
+        return 1  # Indicate overflow
+        
+    def select_previous(self) -> Optional[int]:
+        """Select previous parameter, return overflow if beyond first parameter."""
+        if self.current_index is None:
+            self.select_parameter(0)
+            return None
+            
+        prev_index = self.current_index - 1
+        if prev_index >= 0:
+            self.select_parameter(prev_index)
+            return None
+        return -1  # Indicate underflow
+
+    def reset_selection(self) -> None:
+        """Clear all parameter selections."""
+        if self.current_index is not None:
+            self.parameter_rows[self.current_index].is_selected = False
+        self.current_index = None
+
 class ParameterWindow(ScrollableContainer):
+    """Main container for parameter sets with keyboard navigation."""
+
     DEFAULT_CSS = f"""
     ParameterWindow {{
         width: 100%;
@@ -200,19 +284,22 @@ class ParameterWindow(ScrollableContainer):
         background: {PARAMETER_WINDOW_BG};
         border: solid {PARAMETER_WINDOW_BORDER};
     }}
+    
     ParameterWindow:focus {{
         border: double {PARAMETER_WINDOW_FOCUS_BORDER};
     }}
+    
+    ParameterWindow #parameter_stack {{
+        width: 100%;
+        height: auto;
+    }}
     """
-
-
 
     BINDINGS = [
         Binding("up", "move_up", "Move Up"),
         Binding("down", "move_down", "Move Down"),
-        Binding("enter", "noop", "Edit Value"),
-        Binding("escape", "noop", "Cancel Edit"),
-        Binding("ctrl+enter", "noop", "Accept Edit"),
+        Binding("enter", "edit_value", "Edit Value"),
+        Binding("escape", "cancel_edit", "Cancel Edit"),
         Binding("pageup", "scroll_up", "Scroll Up"),
         Binding("pagedown", "scroll_down", "Scroll Down"),
     ]
@@ -221,27 +308,28 @@ class ParameterWindow(ScrollableContainer):
         super().__init__()
         self.parameter_sets: List[ParameterSet] = []
         self.current_set_index: int = -1
-        self.editing_value: str = ""
-        self.stack: Optional[Vertical] = None
         self.node_to_param_set: Dict[str, ParameterSet] = {}
-        
-
+        self.is_editing: bool = False
 
     def compose(self):
+        """Create the main vertical stack for parameter sets."""
         yield Vertical(id="parameter_stack")
 
-    def on_focus(self) -> None:
-        if self.parameter_sets and all(ps.selected_index is None for ps in self.parameter_sets):
-            self.parameter_sets[0].selected_index = 0
-            self.current_set_index = 0
-            self.parameter_sets[0]._refresh_display()
-
     def on_mount(self) -> None:
+        """Handle component mounting."""
         self.stack = self.query_one("#parameter_stack")
         logger.info("Parameter window mounted")
 
+    def on_focus(self) -> None:
+        """Handle window receiving focus."""
+        if self.parameter_sets and not self.is_editing:
+            # Select first parameter of first set if nothing is selected
+            if self.current_set_index == -1:
+                self.current_set_index = 0
+                self.parameter_sets[0].select_parameter(0)
+
     def on_node_selected(self, event: NodeSelected) -> None:
-        logger.info(f"Node selected event received: {event.node_path}")
+        """Handle node selection events."""
         try:
             node = NodeEnvironment.get_instance().node_from_name(event.node_path)
             if node:
@@ -253,149 +341,97 @@ class ParameterWindow(ScrollableContainer):
             logger.error(f"Error handling node selection: {str(e)}")
 
     def _process_parameter_set(self, node: Node) -> None:
-        node_key = node.name() 
+        """Process a node and create or update its parameter set."""
+        node_key = node.name()
 
+        # Remove existing parameter set if it exists
         if node_key in self.node_to_param_set:
             old_param_set = self.node_to_param_set[node_key]
             self.parameter_sets.remove(old_param_set)
             old_param_set.remove()
             logger.info(f"Removed old parameter set for {node_key}")
 
+        # Create new parameter set
         new_param_set = ParameterSet(node)
-        
         self.parameter_sets.insert(0, new_param_set)
         self.stack.mount(new_param_set, before=0)
         self.node_to_param_set[node_key] = new_param_set
+        
+        # Update selection
         self.current_set_index = 0
+        new_param_set.select_parameter(0)
+        self.focus()  # Ensure window has focus for navigation
 
         logger.info(f"Added/Updated parameter set for {node_key}, total sets: {len(self.parameter_sets)}")
 
-    def _add_parameter_set(self, node: Node) -> None:
-        param_set = ParameterSet(node)
-        
-        for ps in self.parameter_sets:
-            ps.reset_selection()
-
-        self.parameter_sets.insert(0, param_set)
-        self.stack.mount(param_set, before=0)
-        self.current_set_index = 0
-        
-        param_set.selected_index = 0
-        param_set._refresh_display()
-
-        logger.info(f"Added parameter set for {node.name()}, total sets: {len(self.parameter_sets)}")
-
-    def on_key(self, event) -> None:
-        if not self.parameter_sets or self.current_set_index < 0:
-            return
-            
-        current_set = self.parameter_sets[self.current_set_index]
-        if current_set.selected_index is None:
-            return
-            
-        param = current_set.parameters[current_set.selected_index]
-        
-        if current_set.is_editing:
-            if event.key == "escape":
-                current_set.is_editing = False
-                self.editing_value = ""
-                current_set._refresh_display()
-                return
-                
-            if event.key == "enter" and event.control:
-                if self._validate_input(self.editing_value, param.type):
-                    current_set.apply_edit(self.editing_value)
-                    self.editing_value = ""
-                    current_set.is_editing = False
-                    current_set._refresh_display()
-                else:
-                    # Optionally add error feedback here
-                    logger.warning(f"Invalid input for parameter type {param.type}: {self.editing_value}")
-                return
-                
-            if event.is_printable:
-                self.editing_value += event.character
-                current_set._refresh_display()
-            elif event.key == "backspace":
-                self.editing_value = self.editing_value[:-1]
-                current_set._refresh_display()
-        elif event.key == "enter":
-            current_set.is_editing = True
-            self.editing_value = param.value  # Initialize with current value
-            current_set._refresh_display()
-
-    def _validate_input(self, value: str, param_type: str) -> bool:
-        if not value and param_type.lower() not in ('string', 'stringlist', 'button'):
-            return False
-            
-        try:
-            param_type = param_type.lower()
-            if param_type == "int":
-                int(value)
-            elif param_type == "float":
-                float(value)
-            elif param_type == "toggle":
-                return value.lower() in ('true', 'false', '1', '0', 'yes', 'no', 'on', 'off')
-            elif param_type in ('string', 'stringlist', 'menu'):
-                return True
-            elif param_type == "button":
-                return True
-            return True
-        except ValueError:
-            return False
-
     def action_move_up(self) -> None:
-        if not self.parameter_sets:
+        """Handle up arrow key."""
+        if not self.parameter_sets or self.is_editing:
             return
+
         current_set = self.parameter_sets[self.current_set_index]
-        if current_set.is_editing:
-            return
-        result = current_set.move_selection(-1)
+        result = current_set.select_previous()
+        
         if result is not None and self.current_set_index > 0:
+            # Move to previous parameter set
             current_set.reset_selection()
             self.current_set_index -= 1
             new_set = self.parameter_sets[self.current_set_index]
-            new_set.selected_index = len(new_set.parameters) - 1
-            new_set._refresh_display()
+            new_set.select_parameter(len(new_set.parameter_rows) - 1)
 
     def action_move_down(self) -> None:
-        if not self.parameter_sets:
+        """Handle down arrow key."""
+        if not self.parameter_sets or self.is_editing:
             return
+
         current_set = self.parameter_sets[self.current_set_index]
-        if current_set.is_editing:
-            return
-        result = current_set.move_selection(1)
+        result = current_set.select_next()
+        
         if result is not None and self.current_set_index < len(self.parameter_sets) - 1:
+            # Move to next parameter set
             current_set.reset_selection()
             self.current_set_index += 1
             new_set = self.parameter_sets[self.current_set_index]
-            new_set.selected_index = 0
-            new_set._refresh_display()
+            new_set.select_parameter(0)
+
+    def action_edit_value(self) -> None:
+        """Start editing the selected parameter value."""
+        if not self.parameter_sets or self.is_editing:
+            return
+
+        current_set = self.parameter_sets[self.current_set_index]
+        if current_set.current_index is not None:
+            self.is_editing = True
+            # Focus the input widget of the selected parameter row
+            current_row = current_set.parameter_rows[current_set.current_index]
+            input_widget = current_row.query_one(Input)
+            input_widget.focus()
+
+    def action_cancel_edit(self) -> None:
+        """Cancel editing and return focus to navigation."""
+        if self.is_editing:
+            self.is_editing = False
+            self.focus()  # Return focus to window for navigation
+
+    def on_input_submitted(self, event: Input.Submitted) -> None:
+        """Handle input submission (Enter pressed while editing)."""
+        self.is_editing = False
+        self.focus()  # Return focus to window for navigation
 
     def action_scroll_up(self) -> None:
+        """Handle page up scrolling."""
         stack = self.query_one("#parameter_stack")
-        current_offset = stack.styles.offset.y.value if stack.styles.offset.y else 0
-        new_offset = min(0, current_offset + 1)  # Add 1 to move up
-        logger.info(f"Scrolling up: current offset={current_offset}, new offset={new_offset}")
-        stack.styles.offset = (0, int(new_offset))
+        current_offset = stack.styles.offset.y or 0
+        new_offset = min(0, current_offset + self.size.height // 2)
+        stack.styles.offset = (0, new_offset)
 
     def action_scroll_down(self) -> None:
+        """Handle page down scrolling."""
         stack = self.query_one("#parameter_stack")
         viewport_height = self.size.height
-        content_height = self.get_total_content_height()
-        max_scroll = -(content_height - viewport_height)  # Negative because we're moving up
+        content_height = sum(ps.size.height for ps in self.parameter_sets)
+        max_scroll = -(content_height - viewport_height)
         
-        current_offset = stack.styles.offset.y.value if stack.styles.offset.y else 0
-        new_offset = max(max_scroll, current_offset - 1)  # Subtract 1 to move down
-        logger.info(f"Scrolling down: current offset={current_offset}, new offset={new_offset}, max_scroll={max_scroll}")
-        stack.styles.offset = (0, int(new_offset))
-
-    def get_total_content_height(self) -> int:
-        total_height = 0
-        for ps in self.parameter_sets:
-            total_height += ps.size.height
-            logger.info(f"Parameter set {ps.node.name()} height: {ps.size.height}")
-        return total_height
-
-
-    
+        current_offset = stack.styles.offset.y or 0
+        new_offset = max(max_scroll, current_offset - self.size.height // 2)
+        stack.styles.offset = (0, new_offset)
