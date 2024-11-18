@@ -10,8 +10,8 @@ import os
 
 from core.base_classes import NodeEnvironment
 from core.flowstate_manager import load_flowstate
-from network_visualizer import layout_network, render_layout, LayoutEntry
-from logging_config import get_logger
+from TUI.network_visualizer import layout_network, render_layout, LayoutEntry
+from TUI.logging_config import get_logger
 
 logger = get_logger('node')
 

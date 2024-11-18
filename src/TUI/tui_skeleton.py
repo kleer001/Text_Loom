@@ -5,6 +5,7 @@ from datetime import datetime
 import os 
 from textual import work
 from textual.app import App, ComposeResult
+from textual.screen import Screen
 from textual.binding import Binding
 from textual.containers import Container
 from textual.message import Message
@@ -17,10 +18,10 @@ from textual.widgets import Static
 from dataclasses import dataclass
 from enum import Enum, auto
 
-from node_window import NodeWindow, NodeSelected
-from parameter_window import ParameterWindow
+from TUI.node_window import NodeWindow, NodeSelected
+from TUI.parameter_window import ParameterWindow
 
-from logging_config import get_logger
+from TUI.logging_config import get_logger
 
 logger = get_logger('tui.main')
 
@@ -67,6 +68,72 @@ class GlobalWindow(Static):
     }
     """
 
+class FileScreen(Screen):
+    BINDINGS = [
+        Binding("escape", "app.pop_screen", "Back")
+    ]
+
+    def __init__(self):
+        super().__init__()
+        self.logger = get_logger('tui.file_screen')
+
+    DEFAULT_CSS = """
+    FileScreen {
+        align: center middle;
+        background: $boost;
+        width: 100%;
+        height: 100%;
+    }
+
+    .file-content {
+        width: 100%;
+        height: 100%;
+        content-align: center middle;
+        background: $panel;
+    }
+    """
+
+    def compose(self) -> ComposeResult:
+        with Container(classes="file-content"):
+            yield Static("File Browser (Placeholder)")
+
+    def on_mount(self) -> None:
+        self.logger.info("FileScreen mounted")
+
+
+
+class KeymapScreen(Screen):
+    BINDINGS = [
+        Binding("escape", "app.pop_screen", "Back")
+    ]
+
+    def __init__(self):
+        super().__init__()
+        self.logger = get_logger('tui.keymap_screen')
+
+    DEFAULT_CSS = """
+    KeymapScreen {
+        align: center middle;
+        background: $boost;
+        width: 100%;
+        height: 100%;
+    }
+
+    .keymap-content {
+        width: 100%;
+        height: 100%;
+        content-align: center middle;
+        background: $panel;
+    }
+    """
+
+    def compose(self) -> ComposeResult:
+        with Container(classes="keymap-content"):
+            yield Static("Keymap Browser (Placeholder)")
+
+    def on_mount(self) -> None:
+        self.logger.info("KeymapScreen mounted")
+
 class MainLayout(Grid):
     DEFAULT_CSS = """
     MainLayout {
@@ -99,10 +166,11 @@ class MainLayout(Grid):
         self.query_one(ParameterWindow).on_node_selected(event)
 
 class MainContent(Static):
-
-
     def compose(self) -> ComposeResult:
         yield MainLayout()
+
+    def on_mount(self) -> None:
+        self.query_one(NodeWindow).focus()
 
 
 class HelpWindow(Static):
@@ -199,6 +267,8 @@ class TUIApp(App[None]):
     def __init__(self):
         super().__init__()
         self.logger = get_logger('tui.app')
+        self.current_mode = Mode.NODE
+
     CSS = """
     Screen {
         layout: vertical;
@@ -230,6 +300,9 @@ class TUIApp(App[None]):
     """
 
     BINDINGS = [
+
+        #Binding("tab", "", ""),  #DISABLED
+
         Binding("ctrl+n", "switch_mode('NODE')", "Node Mode"),
         Binding("ctrl+a", "switch_mode('PARAMETER')", "Parameter Mode"),
         Binding("ctrl+g", "switch_mode('GLOBAL')", "Global Mode"),
@@ -259,31 +332,65 @@ class TUIApp(App[None]):
         try:
             self.mode_line = self.query_one(ModeLine)
             self.help_window = self.query_one(HelpWindow)
+            self.install_screen(FileScreen(), name="file")
+            self.install_screen(KeymapScreen(), name="keymap")
         except NoMatches as e:
             error_msg = "Failed to initialize required components"
-            logger.error(error_msg, exc_info=True)
+            self.logger.error(error_msg, exc_info=True)
             self.exit(message=error_msg)
         self._update_mode_display()
-
-    def _update_mode_display(self) -> None:
-        self.mode_line.mode = self.current_mode
-        self.mode_line.debug_info = f"Switched to {self.current_mode}"
-        self.help_window.current_section = str(self.current_mode)
-        logger.debug(f"Updated display for mode: {self.current_mode}")
 
     def action_switch_mode(self, mode_name: str) -> None:
         try:
             new_mode = Mode[mode_name]
             if new_mode != self.current_mode:
-                logger.info(f"Switching mode from {self.current_mode} to {new_mode}")
+                self.logger.info(f"Switching mode from {self.current_mode} to {new_mode}")
                 self.current_mode = new_mode
                 self._update_mode_display()
+                self._handle_mode_focus(new_mode)
                 self.post_message(self.ModeChanged(self.current_mode))
         except KeyError:
             error_msg = f"Invalid mode: {mode_name}"
-            logger.error(error_msg)
+            self.logger.error(error_msg)
             self.mode_line.debug_info = error_msg
 
+    def _handle_mode_focus(self, mode: Mode) -> None:
+        self.logger.info(f"Handling focus for mode: {mode}")
+        
+        try:
+            if mode == Mode.FILE:
+                self.push_screen("file")
+                return
+            elif mode == Mode.KEYMAP:
+                self.push_screen("keymap")
+                return
+
+            widget_map = {
+                Mode.NODE: NodeWindow,
+                Mode.PARAMETER: ParameterWindow,
+                Mode.GLOBAL: GlobalWindow,
+                Mode.STATUS: StatusWindow,
+                Mode.OUTPUT: OutputWindow,
+            }
+
+            if mode in widget_map:
+                widget_class = widget_map[mode]
+                try:
+                    widget = self.query_one(widget_class)
+                    self.logger.info(f"Focusing {widget_class.__name__}")
+                    widget.focus()
+                except NoMatches:
+                    self.logger.error(f"Could not find widget for mode {mode}")
+
+        except Exception as e:
+            self.logger.error(f"Error in _handle_mode_focus: {str(e)}", exc_info=True)
+
+    def _update_mode_display(self) -> None:
+        self.mode_line.mode = self.current_mode
+        self.mode_line.debug_info = f"Switched to {self.current_mode}"
+        self.help_window.current_section = str(self.current_mode)
+        self.logger.debug(f"Updated display for mode: {self.current_mode}")
+ 
 if __name__ == "__main__":
     app = TUIApp()
     app.run()
