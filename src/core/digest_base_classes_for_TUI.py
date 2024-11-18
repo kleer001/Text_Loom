@@ -70,6 +70,8 @@ class Node:
     def name(self) -> str:
         return self._name
 
+    def create_node(cls, node_type: NodeType, node_name: Optional[str] = None, parent_path: str = "/") -> "Node":
+
     def set_name(self, name: str) -> None:
         self._name = name
 

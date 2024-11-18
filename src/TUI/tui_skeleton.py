@@ -301,7 +301,7 @@ class TUIApp(App[None]):
 
     BINDINGS = [
 
-        #Binding("tab", "", ""),  #DISABLED
+        Binding("tab", "", ""),  #DISABLED
 
         Binding("ctrl+n", "switch_mode('NODE')", "Node Mode"),
         Binding("ctrl+a", "switch_mode('PARAMETER')", "Parameter Mode"),
