@@ -320,9 +320,43 @@ class MobileItem(NetworkEntity):
         return self._name
 
     def set_name(self, name: str) -> None:
-        """Set the name of the item. Args: name (str): The new name for the item."""
-        # Update the name
-        self._name = name
+        """
+        Set the name of the item with uniqueness validation.
+        
+        Args:
+            name (str): The new name for the item
+            
+        Raises:
+            ValueError: If the name would create a duplicate in the current path
+        """
+        current_path = str(self._path.parent())
+        base_name = name
+        
+        if re.search(r'_?\d+$', base_name):
+            new_name = base_name
+        else:
+            counter = 1
+            while True:
+                new_name = f"{base_name}_{counter}"
+                new_path = f"{current_path.rstrip('/')}/{new_name}"
+                
+                # Skip the current node when checking for duplicates
+                if new_path not in NodeEnvironment.nodes or \
+                NodeEnvironment.nodes[new_path] is self:
+                    break
+                    
+                counter += 1
+        
+        # Update the name and path
+        self._name = new_name
+        self._path = InternalPath(f"{current_path.rstrip('/')}/{new_name}")
+        
+        # Update node registry if this is a Node
+        if isinstance(self, Node):
+            old_path = str(self._path)
+            if old_path in NodeEnvironment.nodes:
+                del NodeEnvironment.nodes[old_path]
+            NodeEnvironment.nodes[str(self._path)] = self
 
 
     def path(self) -> str:

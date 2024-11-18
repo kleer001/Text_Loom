@@ -2,10 +2,13 @@ import sys, os
 parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(parent_dir)
 
-from core.base_classes import NodeEnvironment, Node, NodeType
+from core.base_classes import NodeEnvironment, Node, NodeType, generate_node_types
 from core.print_node_info import print_node_info
-from core.nodes.looper_node import *
+from core.looper_node import *
 
+nodeTypes = generate_node_types()
+
+print(nodeTypes)
 
 # Create nodes
 text1 = Node.create_node(NodeType.TEXT, node_name="text1")

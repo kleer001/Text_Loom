@@ -1,14 +1,15 @@
 from typing import Optional, List
 from dataclasses import dataclass
-from textual.widgets import Static
+from textual.widgets import Static, OptionList
 from textual.message import Message
 from textual.binding import Binding
-from textual.containers import ScrollableContainer
+from textual.containers import ScrollableContainer, Vertical
+from textual.screen import ModalScreen, Screen
 from textual.geometry import Region
 from rich.text import Text
 import os
 
-from core.base_classes import NodeEnvironment
+from core.base_classes import NodeEnvironment, NodeState, generate_node_types, Node, NodeType
 from core.flowstate_manager import load_flowstate
 from TUI.network_visualizer import layout_network, render_layout, LayoutEntry
 from TUI.logging_config import get_logger
@@ -31,6 +32,56 @@ class NodeContent(Static):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.cursor_line = 0
+
+
+class NodeTypeSelected(Message):
+    def __init__(self, node_type: str) -> None:
+        self.node_type = node_type
+        super().__init__()
+
+class NodeTypeSelector(ModalScreen):
+    DEFAULT_CSS = """
+    NodeTypeSelector {
+        align: center middle;
+    }
+
+    Vertical {
+        width: 40;
+        height: auto;
+        border: thick $primary;
+        background: $surface;
+    }
+
+    OptionList {
+        height: auto;
+        max-height: 20;
+    }
+    """
+
+    BINDINGS = [
+        Binding("escape", "cancel", "Cancel"),
+    ]
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.node_types = generate_node_types()
+        logger.debug("NodeTypeSelector initialized")
+
+    def compose(self):
+        with Vertical():
+            type_list = sorted(self.node_types.keys())
+            logger.debug(f"Available node types: {type_list}")
+            yield OptionList(*type_list)
+
+    def on_option_list_option_selected(self, event: OptionList.OptionSelected):
+        logger.debug(f"Option selected: {event.option.prompt}")
+        self.app.pop_screen()
+        logger.debug(f"Posting NodeTypeSelected message with type: {event.option.prompt}")
+        self.app.query_one(NodeWindow).post_message(NodeTypeSelected(event.option.prompt))
+
+    def action_cancel(self):
+        logger.debug("Selection cancelled")
+        self.app.pop_screen()
 
 class NodeWindow(ScrollableContainer):
     DEFAULT_CSS = """
@@ -56,7 +107,57 @@ class NodeWindow(ScrollableContainer):
         Binding("down", "move_cursor_down", "Move Down"),
         Binding("enter", "select_node", "Select Node"),
         Binding("space", "toggle_node", "Expand/Collapse Node"),
+        Binding("a", "add_node", "Add Node"),
     ]
+
+    # def watch_node_type_selected(self, message: NodeTypeSelected) -> None:
+    #     """Watch for NodeTypeSelected messages"""
+    #     logger.debug(f"NodeWindow received NodeTypeSelected message: {message.node_type}")
+    #     self._create_new_node(message.node_type)
+
+    def on_node_type_selected(self, message: NodeTypeSelected) -> None:
+        logger.debug(f"NodeWindow received NodeTypeSelected message: {message.node_type}")
+        self._create_new_node(message.node_type)
+
+    def _create_new_node(self, node_type_str: str) -> None:
+        logger.debug(f"_create_new_node called with node_type_str: {node_type_str}")
+        try:
+            reference_path = "/"
+            if 0 <= self._selected_line < len(self._node_data):
+                reference_path = os.path.dirname(self._node_data[self._selected_line].path)
+            
+            logger.debug(f"Creating node of type {node_type_str} with parent path {reference_path}")
+            node_type = getattr(NodeType, node_type_str)
+            new_node = Node.create_node(node_type, parent_path=reference_path)
+            
+            if new_node:
+                logger.debug(f"Successfully created node: {new_node.path()}")
+                self._refresh_layout()
+                for i, node_data in enumerate(self._node_data):
+                    if node_data.path == new_node.path():
+                        self._selected_line = i
+                        self._ensure_line_visible(i)
+                        break
+            else:
+                logger.error("Node creation failed: create_node returned None")
+        except Exception as e:
+            logger.error(f"Failed to create node: {str(e)}", exc_info=True)
+
+    def action_add_node(self) -> None:
+        if not self._initialized or not self._env:
+            logger.debug("Add node called but environment not initialized")
+            return
+        logger.debug("Showing node type selector")
+        self.app.push_screen(NodeTypeSelector())
+
+    def _get_state_indicator(self, node_state: NodeState) -> str:
+        """Get the character indicator for a node's state."""
+        return {
+            NodeState.COOKED: "◆",
+            NodeState.COOKING: "◇",
+            NodeState.UNCOOKED: "▪",
+            NodeState.UNCHANGED: "▫",
+        }[node_state]
 
     def __init__(self) -> None:
         super().__init__()
@@ -70,9 +171,11 @@ class NodeWindow(ScrollableContainer):
         yield self.content
 
     def on_mount(self) -> None:
+        logger.debug("NodeWindow mounted")
         self._initialize_network()
 
     def _initialize_network(self) -> None:
+        logger.debug("Initializing network")
         try:
             file_path = os.path.abspath("save_file.json")
             logger.info(f"Loading flowstate from {file_path}")
@@ -95,10 +198,12 @@ class NodeWindow(ScrollableContainer):
             self.content.update(f"[red]{error_msg}")
 
     def _refresh_layout(self) -> None:
+        logger.debug("Refreshing layout")
         if not self._initialized or not self._env:
             return
 
         try:
+            self._env = NodeEnvironment.get_instance()
             layout_entries = layout_network(self._env)
             self._node_data = []
             rendered_text = Text()
@@ -112,7 +217,9 @@ class NodeWindow(ScrollableContainer):
                     indent_level=entry.indent
                 ))
 
-                line = " " * entry.indent + node.name()
+                state_indicator = self._get_state_indicator(node.state())
+                line = " " * entry.indent + f"{state_indicator} {node.name()}"
+
                 if node._inputs:
                     connections = []
                     for idx, conn in sorted(node._inputs.items()):
@@ -125,6 +232,7 @@ class NodeWindow(ScrollableContainer):
                 rendered_text.append(line + "\n", style=style)
 
             self.content.update(rendered_text)
+            self.content.refresh()
             logger.debug(f"Refreshed layout with {len(self._node_data)} nodes")
 
         except Exception as e:
