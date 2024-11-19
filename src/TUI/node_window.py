@@ -113,9 +113,9 @@ class DeleteConfirmation(ModalScreen[bool]):
             yield Static("Y/N")
 
     def on_key(self, event):
-        if event.key == "y":
+        if event.key.lower() == "y":
             self.dismiss(True)
-        elif event.key == "n" or event.key == "escape":
+        elif event.key.lower() == "n" or event.key == "escape":
             self.dismiss(False)
 
 class NodeWindow(ScrollableContainer):
@@ -189,22 +189,22 @@ class NodeWindow(ScrollableContainer):
     def action_delete_node(self) -> None:
         if not self._initialized:
             return
-            
         if 0 <= self._selected_line < len(self._node_data):
             node_data = self._node_data[self._selected_line]
             logger.debug(f"Delete requested for node: {node_data.path}")
             
-            result = self.app.push_screen_wait(DeleteConfirmation(node_data.name))
-            
-            if result:
-                try:
-                    node = self._env.node_from_name(node_data.path)
-                    if node:
-                        node.destroy()
-                        logger.info(f"Deleted node: {node_data.path}")
-                        self._refresh_layout()
-                except Exception as e:
-                    logger.error(f"Error deleting node: {str(e)}", exc_info=True)
+            def delete_node(confirmed: bool):
+                if confirmed:
+                    try:
+                        node = self._env.node_from_name(node_data.path)
+                        if node:
+                            node.destroy()
+                            logger.info(f"Deleted node: {node_data.path}")
+                            self._refresh_layout()
+                    except Exception as e:
+                        logger.error(f"Error deleting node: {str(e)}", exc_info=True)
+
+            self.app.push_screen(DeleteConfirmation(node_data.name), delete_node)
 
 
     def _get_state_indicator(self, node_state: NodeState) -> str:
