@@ -566,7 +566,14 @@ class NodeConnection(NetworkEntity):
         )
 
 class NodeState(Enum):
-    COOKING = "cooking"
+    COOKING = "cooking"# def destroy(self) -> None:
+    #     """Deletes this node and its connections."""
+    #     for connection in list(self.inputs()) + list(self.outputs()):
+    #         self._remove_connection(connection)
+    #     NodeEnvironment.remove_node(self.node_path())
+        # if self.parent():
+        #     self.parent()._children.remove(self)
+        # TODO Add undo logic
     UNCHANGED = "unchanged"
     UNCOOKED = "uncooked"
     COOKED = "cooked"
@@ -683,24 +690,26 @@ class Node(MobileItem):
             raise AttributeError(f"Could not find node class for node type: {node_type.value}")
         # TODO Add undo logic
 
-    # def destroy(self) -> None:
-    #     """Deletes this node and its connections."""
-    #     for connection in list(self.inputs()) + list(self.outputs()):
-    #         self._remove_connection(connection)
-    #     NodeEnvironment.remove_node(self.node_path())
-        # if self.parent():
-        #     self.parent()._children.remove(self)
-        # TODO Add undo logic
 
     def destroy(self) -> None:
-        input_connections = list(self._inputs.values())
-        for input_conn in input_connections:
-            self._remove_connection(input_conn)
-            
-        for output_conns in self._outputs.values():
-            for output_conn in list(output_conns):
-                self._remove_connection(output_conn)
-                
+        for conn in list(self._inputs.values()):
+            output_node = conn.output_node()
+            output_idx = conn.output_index()
+            if output_idx in output_node._outputs:
+                if conn in output_node._outputs[output_idx]:
+                    output_node._outputs[output_idx].remove(conn)
+            del self._inputs[conn.input_index()]
+            del conn
+        
+        for output_idx, conns in list(self._outputs.items()):
+            for conn in list(conns):
+                input_node = conn.input_node()
+                input_idx = conn.input_index()
+                if input_idx in input_node._inputs:
+                    del input_node._inputs[input_idx]
+                del conn
+            self._outputs[output_idx].clear()
+        
         NodeEnvironment.remove_node(self.node_path())
 
     def type(self) -> NodeType:
@@ -734,6 +743,19 @@ class Node(MobileItem):
         print("New Connection: from input ", self.name(), " to output: ", input_node.name())
         self._inputs[input_index] = connection
         input_node._outputs.setdefault(output_index, []).append(connection)
+        # TODO Add undo logic
+
+    def set_next_input(self, input_node: "Node", output_index: int = 0) -> None:
+        if hasattr(self, 'SINGLE_INPUT') and self.SINGLE_INPUT:
+            self.set_input(0, input_node, output_index)
+            return
+            
+        if not self._inputs:
+            self.set_input(0, input_node, output_index)
+            return
+            
+        max_index = max(self._inputs.keys())
+        self.set_input(max_index + 1, input_node, output_index)
         # TODO Add undo logic
 
     def remove_input(self, input_index: str) -> None:
