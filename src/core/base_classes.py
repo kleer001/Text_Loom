@@ -370,6 +370,22 @@ class MobileItem(NetworkEntity):
                 del NodeEnvironment.nodes[old_path]
             NodeEnvironment.nodes[str(self._path)] = self
 
+    def rename(self, new_name: str) -> bool:
+        current_path = str(self._path.parent())
+        new_path = f"{current_path.rstrip('/')}/{new_name}"
+
+        if new_path in NodeEnvironment.nodes and NodeEnvironment.nodes[new_path] is not self:
+            return False
+        
+        old_path = str(self._path)
+        self._name = new_name
+        self._path = InternalPath(new_path)
+
+        if old_path in NodeEnvironment.nodes:
+            del NodeEnvironment.nodes[old_path]
+        NodeEnvironment.nodes[str(self._path)] = self
+
+        return True
 
     def path(self) -> str:
         """Get the full path of the item in the internal network."""
