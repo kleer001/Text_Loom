@@ -667,15 +667,25 @@ class Node(MobileItem):
             raise AttributeError(f"Could not find node class for node type: {node_type.value}")
         # TODO Add undo logic
 
-    def destroy(self) -> None:
-        """Deletes this node and its connections."""
-        for connection in list(self.inputs()) + list(self.outputs()):
-            self._remove_connection(connection)
-        NodeEnvironment.remove_node(self.node_path())
+    # def destroy(self) -> None:
+    #     """Deletes this node and its connections."""
+    #     for connection in list(self.inputs()) + list(self.outputs()):
+    #         self._remove_connection(connection)
+    #     NodeEnvironment.remove_node(self.node_path())
         # if self.parent():
         #     self.parent()._children.remove(self)
         # TODO Add undo logic
 
+    def destroy(self) -> None:
+        input_connections = list(self._inputs.values())
+        for input_conn in input_connections:
+            self._remove_connection(input_conn)
+            
+        for output_conns in self._outputs.values():
+            for output_conn in list(output_conns):
+                self._remove_connection(output_conn)
+                
+        NodeEnvironment.remove_node(self.node_path())
 
     def type(self) -> NodeType:
         """Returns the NodeType for this node."""
