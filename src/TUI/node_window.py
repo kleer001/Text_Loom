@@ -10,6 +10,7 @@ from textual.geometry import Region, Size
 from rich.text import Text
 import os
 from collections import namedtuple
+from enum import Enum, auto
 
 from core.base_classes import NodeEnvironment, NodeState, generate_node_types, Node, NodeType
 from core.flowstate_manager import load_flowstate
@@ -36,6 +37,12 @@ class NodeContent(Static):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.cursor_line = 0
+
+class ConnectionMode(Enum):
+    NONE = auto()
+    INPUT = auto()
+    OUTPUT = auto()
+
 
 
 class NodeTypeSelected(Message):
@@ -205,15 +212,22 @@ class NodeWindow(ScrollableContainer):
     BINDINGS = [
         Binding("up", "move_cursor_up", "Move Up"),
         Binding("down", "move_cursor_down", "Move Down"),
-        Binding("enter", "select_node", "Select Node"),
+        Binding("enter", "select_or_connect_node", "Select/Connect Node"),
         Binding("space", "toggle_node", "Expand/Collapse Node"),
         Binding("a", "add_node", "Add Node"),
         Binding("d", "delete_node", "Delete Node"),
         Binding("r", "rename_node", "Rename Node"),
+        Binding("i", "start_input_connection", "Input Connection"),
+        Binding("o", "start_output_connection", "Output Connection"),
+        Binding("escape", "cancel_connection", "Cancel Connection"),
     ]
 
-    def _get_state_indicator(self, node_state: NodeState) -> str:
-        """Get the character indicator for a node's state."""
+    def _get_state_indicator(self, node_state: NodeState, node_path: str) -> str:
+        if (self._connection_mode != ConnectionMode.NONE and 
+            self._source_node and 
+            self._source_node.path() == node_path):
+            return "↑" if self._connection_mode == ConnectionMode.INPUT else "↓"
+            
         return {
             NodeState.COOKED: "◆",
             NodeState.COOKING: "◇",
@@ -230,6 +244,78 @@ class NodeWindow(ScrollableContainer):
         self.content = NodeContent()
         self._rename_input: Optional[RenameInput] = None
         self._node_position: Optional[Point] = None
+        self._connection_mode = ConnectionMode.NONE
+        self._source_node: Optional[Node] = None
+
+    def action_start_input_connection(self) -> None:
+        if not self._initialized or self._selected_line >= len(self._node_data):
+            return
+            
+        if self._connection_mode == ConnectionMode.NONE:
+            node_data = self._node_data[self._selected_line]
+            source_node = self._env.node_from_name(node_data.path)
+            if source_node:
+                self._connection_mode = ConnectionMode.INPUT
+                self._source_node = source_node
+                logger.debug(f"Started input connection from {source_node.path()}")
+                self._refresh_layout()
+
+    def action_start_output_connection(self) -> None:
+        if not self._initialized or self._selected_line >= len(self._node_data):
+            return
+            
+        if self._connection_mode == ConnectionMode.NONE:
+            node_data = self._node_data[self._selected_line]
+            source_node = self._env.node_from_name(node_data.path)
+            if source_node:
+                self._connection_mode = ConnectionMode.OUTPUT
+                self._source_node = source_node
+                logger.debug(f"Started output connection from {source_node.path()}")
+                self._refresh_layout()
+
+    def action_cancel_connection(self) -> None:
+        if self._connection_mode != ConnectionMode.NONE:
+            self._connection_mode = ConnectionMode.NONE
+            self._source_node = None
+            logger.debug("Cancelled connection")
+            self._refresh_layout()
+
+    def action_select_or_connect_node(self) -> None:
+        if self._connection_mode != ConnectionMode.NONE:
+            self.action_complete_connection()
+        else:
+            self.action_select_node()
+
+    def action_complete_connection(self) -> None:
+        if not self._initialized or not self._source_node:
+            return
+
+        if self._selected_line >= len(self._node_data):
+            return
+
+        target_data = self._node_data[self._selected_line]
+        target_node = self._env.node_from_name(target_data.path)
+        
+        if not target_node:
+            return
+
+        try:
+            if self._connection_mode == ConnectionMode.INPUT:
+                self._source_node.set_next_input(target_node)
+                logger.info(f"Connected input of {self._source_node.path()} to output of {target_node.path()}")
+            else:  # OUTPUT mode
+                target_node.set_next_input(self._source_node)
+                logger.info(f"Connected input of {target_node.path()} to output of {self._source_node.path()}")
+                
+            self._connection_mode = ConnectionMode.NONE
+            self._source_node = None
+            self._refresh_layout()
+            
+        except Exception as e:
+            logger.error(f"Error creating connection: {str(e)}", exc_info=True)
+            self._connection_mode = ConnectionMode.NONE
+            self._source_node = None
+            self._refresh_layout()
 
     def on_node_type_selected(self, message: NodeTypeSelected) -> None:
         logger.debug(f"NodeWindow received NodeTypeSelected message: {message.node_type}")
@@ -355,7 +441,7 @@ class NodeWindow(ScrollableContainer):
                     indent_level=entry.indent
                 ))
 
-                state_indicator = self._get_state_indicator(node.state())
+                state_indicator = self._get_state_indicator(node.state(), node.path())
                 line = " " * entry.indent + f"{state_indicator} {node.name()}"
 
                 if node._inputs:
