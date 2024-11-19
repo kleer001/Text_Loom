@@ -136,7 +136,19 @@ class NodeEnvironment:
             if node_name == path.split('/')[-1]:
                 return node
         return None
+    
+    @classmethod
+    def remove_node(cls, node_path: str) -> None:
+        if node_path == "/":
+            return
 
+        nodes_to_remove = [path for path in cls.nodes.keys() if path.startswith(node_path)]
+        
+        for path in nodes_to_remove:
+            node = cls.nodes.pop(path)
+            node.destroy()
+
+        
 
 
 class NetworkItemType(Enum):
@@ -659,8 +671,9 @@ class Node(MobileItem):
         """Deletes this node and its connections."""
         for connection in list(self.inputs()) + list(self.outputs()):
             self._remove_connection(connection)
-        if self.parent():
-            self.parent()._children.remove(self)
+        NodeEnvironment.remove_node(self.node_path())
+        # if self.parent():
+        #     self.parent()._children.remove(self)
         # TODO Add undo logic
 
 

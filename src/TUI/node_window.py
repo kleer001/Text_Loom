@@ -83,6 +83,41 @@ class NodeTypeSelector(ModalScreen):
         logger.debug("Selection cancelled")
         self.app.pop_screen()
 
+class DeleteConfirmation(ModalScreen[bool]):
+    DEFAULT_CSS = """
+    DeleteConfirmation {
+        align: center middle;
+    }
+
+    Vertical {
+        width: 40;
+        height: auto;
+        border: thick $primary;
+        background: $surface;
+        padding: 1;
+    }
+
+    Static {
+        text-align: center;
+        width: 100%;
+    }
+    """
+
+    def __init__(self, node_name: str):
+        super().__init__()
+        self.node_name = node_name
+
+    def compose(self):
+        with Vertical():
+            yield Static(f"Delete node '{self.node_name}'?")
+            yield Static("Y/N")
+
+    def on_key(self, event):
+        if event.key == "y":
+            self.dismiss(True)
+        elif event.key == "n" or event.key == "escape":
+            self.dismiss(False)
+
 class NodeWindow(ScrollableContainer):
     DEFAULT_CSS = """
     NodeWindow {
@@ -108,6 +143,7 @@ class NodeWindow(ScrollableContainer):
         Binding("enter", "select_node", "Select Node"),
         Binding("space", "toggle_node", "Expand/Collapse Node"),
         Binding("a", "add_node", "Add Node"),
+        Binding("d", "delete_node", "Delete Node"),
     ]
 
     # def watch_node_type_selected(self, message: NodeTypeSelected) -> None:
@@ -149,6 +185,27 @@ class NodeWindow(ScrollableContainer):
             return
         logger.debug("Showing node type selector")
         self.app.push_screen(NodeTypeSelector())
+
+    def action_delete_node(self) -> None:
+        if not self._initialized:
+            return
+            
+        if 0 <= self._selected_line < len(self._node_data):
+            node_data = self._node_data[self._selected_line]
+            logger.debug(f"Delete requested for node: {node_data.path}")
+            
+            result = self.app.push_screen_wait(DeleteConfirmation(node_data.name))
+            
+            if result:
+                try:
+                    node = self._env.node_from_name(node_data.path)
+                    if node:
+                        node.destroy()
+                        logger.info(f"Deleted node: {node_data.path}")
+                        self._refresh_layout()
+                except Exception as e:
+                    logger.error(f"Error deleting node: {str(e)}", exc_info=True)
+
 
     def _get_state_indicator(self, node_state: NodeState) -> str:
         """Get the character indicator for a node's state."""
