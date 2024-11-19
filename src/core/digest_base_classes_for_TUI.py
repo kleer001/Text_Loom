@@ -14,42 +14,7 @@ def generate_node_types():
 
 NodeType = Enum("NodeType", generate_node_types(), type=NodeType)
 
-class NodeEnvironment:
-    _instance = None
-    nodes: Dict[str, 'Node'] = {}
 
-    @classmethod
-    def get_instance(cls):
-        if cls._instance is None:
-            cls._instance = cls()
-        return cls._instance
-
-    @classmethod
-    def list_nodes(cls) -> list[str]:
-        return list(cls.nodes.keys())
-
-    @classmethod
-    def node_exists(cls, node_name: str) -> bool:
-        return node_name in cls.nodes
-
-    @classmethod
-    def add_node(cls, node: 'Node'):
-        if cls.get_instance()._creating_node:
-            return
-        cls.get_instance()._creating_node = True
-        cls.nodes[node.path()] = node
-        if hasattr(node.__class__, 'post_registration_init'):
-            node.__class__.post_registration_init(node)
-        cls.get_instance()._creating_node = False
-
-    @classmethod
-    def node_from_name(cls, node_name: str) -> Optional['Node']:
-        if node_name in cls.nodes:
-            return cls.nodes[node_name]
-        for path, node in cls.nodes.items():
-            if node_name == path.split('/')[-1]:
-                return node
-        return None
 
 class NodeState(Enum):
     COOKING = "cooking"

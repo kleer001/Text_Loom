@@ -1,13 +1,15 @@
 from typing import Optional, List
 from dataclasses import dataclass
-from textual.widgets import Static, OptionList
-from textual.message import Message
+from textual.widgets import Static, OptionList, Input
+from textual.keys    import Keys
 from textual.binding import Binding
 from textual.containers import ScrollableContainer, Vertical
 from textual.screen import ModalScreen, Screen
-from textual.geometry import Region
+from textual.message import Message
+from textual.geometry import Region, Size
 from rich.text import Text
 import os
+from collections import namedtuple
 
 from core.base_classes import NodeEnvironment, NodeState, generate_node_types, Node, NodeType
 from core.flowstate_manager import load_flowstate
@@ -15,6 +17,8 @@ from TUI.network_visualizer import layout_network, render_layout, LayoutEntry
 from TUI.logging_config import get_logger
 
 logger = get_logger('node')
+
+Point = namedtuple('Point', ['x', 'y'])
 
 @dataclass
 class NodeData:
@@ -118,6 +122,67 @@ class DeleteConfirmation(ModalScreen[bool]):
         elif event.key.lower() == "n" or event.key == "escape":
             self.dismiss(False)
 
+class RenameInput(Input):
+    DEFAULT_CSS = """
+    RenameInput {
+        height: 3;
+        background: $surface;
+        border: none;
+        padding: 0;
+    }
+    """
+    
+    def __init__(self, original_node_path: str):
+        super().__init__()
+        self.original_node_path = original_node_path
+            
+    def on_input_submitted(self, event: Input.Submitted) -> None:
+        if not self.value:
+            self.remove()
+            return
+
+        try:
+            old_node = NodeEnvironment.get_instance().node_from_name(self.original_node_path)
+            if not old_node:
+                self.remove()
+                return
+            
+            old_path = old_node.path()
+            old_name = os.path.basename(old_path)
+            new_path = old_path.replace(old_name, self.value)
+
+            if NodeEnvironment.get_instance().node_exists(new_path):
+                logger.warning(f"Failed to rename node: name '{new_path}' already exists")
+                self.remove()
+                return
+            
+            logger.info(f"Renaming node from {old_path} to {new_path}")
+            env = NodeEnvironment.get_instance()
+            nodes_to_update = []
+            
+            for path, node in env.nodes.items():
+                if path == old_path or path.startswith(f"{old_path}/"):
+                    nodes_to_update.append(node)
+                    logger.info(f"Will update node: {path}")
+            
+            for node in nodes_to_update:
+                old_node_path = node.path()
+                new_node_path = old_node_path.replace(old_path, new_path)
+                logger.info(f"Updating node path from {old_node_path} to {new_node_path}")
+                env.nodes[new_node_path] = node
+                if old_node_path in env.nodes:
+                    del env.nodes[old_node_path]
+                if(node.rename(os.path.basename(new_node_path))):
+                    logger.info(f"Successfully renamed node from {self.original_node_path} to {new_node_path}")
+                else:
+                    logger.warning(f"Failed to rename node: name '{self.value}' already exists") 
+
+        except Exception as e:
+            logger.error(f"Error renaming node: {str(e)}", exc_info=True)
+        
+        self.remove()
+        self.app.query_one(NodeWindow)._refresh_layout()
+
 class NodeWindow(ScrollableContainer):
     DEFAULT_CSS = """
     NodeWindow {
@@ -144,12 +209,27 @@ class NodeWindow(ScrollableContainer):
         Binding("space", "toggle_node", "Expand/Collapse Node"),
         Binding("a", "add_node", "Add Node"),
         Binding("d", "delete_node", "Delete Node"),
+        Binding("r", "rename_node", "Rename Node"),
     ]
 
-    # def watch_node_type_selected(self, message: NodeTypeSelected) -> None:
-    #     """Watch for NodeTypeSelected messages"""
-    #     logger.debug(f"NodeWindow received NodeTypeSelected message: {message.node_type}")
-    #     self._create_new_node(message.node_type)
+    def _get_state_indicator(self, node_state: NodeState) -> str:
+        """Get the character indicator for a node's state."""
+        return {
+            NodeState.COOKED: "◆",
+            NodeState.COOKING: "◇",
+            NodeState.UNCOOKED: "▪",
+            NodeState.UNCHANGED: "▫",
+        }[node_state]
+
+    def __init__(self) -> None:
+        super().__init__()
+        self._node_data: List[NodeData] = []
+        self._selected_line: int = 0
+        self._env: Optional[NodeEnvironment] = None
+        self._initialized: bool = False
+        self.content = NodeContent()
+        self._rename_input: Optional[RenameInput] = None
+        self._node_position: Optional[Point] = None
 
     def on_node_type_selected(self, message: NodeTypeSelected) -> None:
         logger.debug(f"NodeWindow received NodeTypeSelected message: {message.node_type}")
@@ -206,23 +286,24 @@ class NodeWindow(ScrollableContainer):
 
             self.app.push_screen(DeleteConfirmation(node_data.name), delete_node)
 
+    def action_rename_node(self) -> None:
+        if not self._initialized or self._selected_line >= len(self._node_data):
+            return
 
-    def _get_state_indicator(self, node_state: NodeState) -> str:
-        """Get the character indicator for a node's state."""
-        return {
-            NodeState.COOKED: "◆",
-            NodeState.COOKING: "◇",
-            NodeState.UNCOOKED: "▪",
-            NodeState.UNCHANGED: "▫",
-        }[node_state]
+        node_data = self._node_data[self._selected_line]
+        indent_offset = node_data.indent_level + 2
+        #I wish I knew why this needed to be so fiddly
+        #EYEBALLED IT! But it works. Hahaha! 
+        relative_y = (- len(self._node_data) * 2) + 4 + self._selected_line 
 
-    def __init__(self) -> None:
-        super().__init__()
-        self._node_data: List[NodeData] = []
-        self._selected_line: int = 0
-        self._env: Optional[NodeEnvironment] = None
-        self._initialized: bool = False
-        self.content = NodeContent()
+        self._rename_input = RenameInput(node_data.path)
+        self.mount(self._rename_input)
+        
+        self._rename_input.styles.width = self.content.size.width - indent_offset
+        self._rename_input.styles.height = 3
+        self._rename_input.styles.offset = (indent_offset, relative_y)
+        self._rename_input.value = node_data.name
+        self._rename_input.focus()
 
     def compose(self):
         yield self.content
