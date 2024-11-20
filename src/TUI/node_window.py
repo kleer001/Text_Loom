@@ -12,10 +12,13 @@ import os
 from collections import namedtuple
 from enum import Enum, auto
 
+from TUI.parameter_window import ParameterChanged
 from core.base_classes import NodeEnvironment, NodeState, generate_node_types, Node, NodeType
 from core.flowstate_manager import load_flowstate
 from TUI.network_visualizer import layout_network, render_layout, LayoutEntry
 from TUI.logging_config import get_logger
+
+from TUI.messages import NodeSelected, NodeTypeSelected, OutputMessage
 
 logger = get_logger('node')
 
@@ -28,10 +31,6 @@ class NodeData:
     line_number: int
     indent_level: int
 
-class NodeSelected(Message):
-    def __init__(self, node_path: str) -> None:
-        self.node_path = node_path
-        super().__init__()
 
 class NodeContent(Static):
     def __init__(self, *args, **kwargs):
@@ -43,12 +42,6 @@ class ConnectionMode(Enum):
     INPUT = auto()
     OUTPUT = auto()
 
-
-
-class NodeTypeSelected(Message):
-    def __init__(self, node_type: str) -> None:
-        self.node_type = node_type
-        super().__init__()
 
 class NodeTypeSelector(ModalScreen):
     DEFAULT_CSS = """
@@ -213,16 +206,21 @@ class NodeWindow(ScrollableContainer):
         Binding("up", "move_cursor_up", "Move Up"),
         Binding("down", "move_cursor_down", "Move Down"),
         Binding("enter", "select_or_connect_node", "Select/Connect Node"),
+        Binding("p", "select_node", "Select Node Parameters"),
         Binding("space", "toggle_node", "Expand/Collapse Node"),
         Binding("a", "add_node", "Add Node"),
         Binding("d", "delete_node", "Delete Node"),
         Binding("r", "rename_node", "Rename Node"),
         Binding("i", "start_input_connection", "Input Connection"),
         Binding("o", "start_output_connection", "Output Connection"),
+        Binding("e", "get_output", "Get Node Output"),
         Binding("escape", "cancel_connection", "Cancel Connection"),
+        Binding("C", "cook_node", "Cook Node"),
     ]
 
     def _get_state_indicator(self, node_state: NodeState, node_path: str) -> str:
+        if self._cooking_node == node_path:
+            return "◇"
         if (self._connection_mode != ConnectionMode.NONE and 
             self._source_node and 
             self._source_node.path() == node_path):
@@ -246,6 +244,44 @@ class NodeWindow(ScrollableContainer):
         self._node_position: Optional[Point] = None
         self._connection_mode = ConnectionMode.NONE
         self._source_node: Optional[Node] = None
+        self._cooking: bool = False
+        self._cooking_node: Optional[str] = None
+        self._refresh_timer: Optional[Timer] = None
+
+    def on_parameter_changed(self, message: ParameterChanged) -> None:
+            try:
+                node = self._env.node_from_name(message.node_path)
+                if node:
+                    self._refresh_layout()
+                    logger.info(f"Refreshed network after parameter change: {message.param_name}={message.new_value}")
+            except Exception as e:
+                logger.error(f"Error handling parameter change: {str(e)}", exc_info=True)
+
+    def action_get_output(self) -> None:
+        if not self._initialized or self._selected_line >= len(self._node_data):
+            logger.debug("Not initialized or invalid line selected")
+            return
+            
+        try:
+            node_data = self._node_data[self._selected_line]
+            node = self._env.node_from_name(node_data.path)
+            if node:
+                logger.debug(f"Getting output from node: {node_data.path}")
+                output_data = node.get_output()
+                
+                if output_data is None:
+                    logger.debug("Node returned None output")
+                    self.parent.post_message(OutputMessage(["NO OUTPUT FROM NODE"]))
+                    return
+                    
+                if not isinstance(output_data, list):
+                    output_data = [str(output_data)]
+                    
+                logger.debug(f"Posted output message with {len(output_data)} lines: {output_data}")
+                self.parent.post_message(OutputMessage(output_data))
+                
+        except Exception as e:
+            logger.error(f"Error getting node output: {str(e)}", exc_info=True)
 
     def action_start_input_connection(self) -> None:
         if not self._initialized or self._selected_line >= len(self._node_data):
@@ -397,6 +433,7 @@ class NodeWindow(ScrollableContainer):
     def on_mount(self) -> None:
         logger.debug("NodeWindow mounted")
         self._initialize_network()
+        self.border_title = "Node Network"
 
     def _initialize_network(self) -> None:
         logger.debug("Initializing network")
@@ -422,7 +459,6 @@ class NodeWindow(ScrollableContainer):
             self.content.update(f"[red]{error_msg}")
 
     def _refresh_layout(self) -> None:
-        logger.debug("Refreshing layout")
         if not self._initialized or not self._env:
             return
 
@@ -452,17 +488,29 @@ class NodeWindow(ScrollableContainer):
                     if connections:
                         line += f" <- " + ", ".join(connections)
 
-                style = "reverse" if i == self._selected_line else ""
-                rendered_text.append(line + "\n", style=style)
+                style = []
+                if i == self._selected_line:
+                    style.append("reverse")
+                if node.path() == self._cooking_node:
+                    style.append("underline")
+                
+                rendered_text.append(line + "\n", style=" ".join(style) if style else "")
 
             self.content.update(rendered_text)
             self.content.refresh()
-            logger.debug(f"Refreshed layout with {len(self._node_data)} nodes")
 
         except Exception as e:
             error_msg = f"Error refreshing layout: {str(e)}"
             logger.error(error_msg, exc_info=True)
             self.content.update(f"[red]{error_msg}")
+
+    async def _refresh_states(self) -> None:
+        self._refresh_timer = self.set_timer(0.1, self._refresh_layout)
+
+    def _stop_refresh(self) -> None:
+        if self._refresh_timer:
+            self._refresh_timer.stop()
+            self._refresh_timer = None
 
     def _ensure_line_visible(self, line_number: int) -> None:
         region = Region(0, line_number, self.size.width, 1)
@@ -497,3 +545,45 @@ class NodeWindow(ScrollableContainer):
             return
         # Future implementation for expanding/collapsing node hierarchies
         pass
+
+    async def action_cook_node(self) -> None:
+        if not self._initialized or self._cooking:
+            return
+
+        if self._selected_line >= len(self._node_data):
+            return
+
+        try:
+            node_data = self._node_data[self._selected_line]
+            node = self._env.node_from_name(node_data.path)
+            
+            if not node:
+                return
+
+            self._cooking = True
+            self._cooking_node = node.path()
+            
+            # Start the refresh timer
+            self._refresh_timer = self.set_timer(0.1, self._refresh_layout)
+            
+            # Use regular worker for sync function
+            def do_eval():
+                return node.eval()
+                
+            worker = self.app.run_worker(do_eval, thread=True)
+            result = await worker.wait()
+            
+            # Post the output
+            self.app.post_message(OutputMessage(result))
+
+        except Exception as e:
+            error_msg = f"Error cooking node: {str(e)}"
+            logger.error(error_msg, exc_info=True)
+            self.app.post_message(OutputMessage([f"Error: {error_msg}"]))
+        
+        finally:
+            if self._refresh_timer:
+                self._refresh_timer.stop()
+            self._cooking = False
+            self._cooking_node = None
+            self._refresh_layout()
