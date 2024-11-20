@@ -942,6 +942,10 @@ class Node(MobileItem):
         
         pass
 
+    def get_output(self):
+        #simple output regardless of change
+        return self._output
+
     def __repr__(self) -> str:
         """Returns a string representation of the Node."""
         return (

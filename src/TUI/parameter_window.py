@@ -16,8 +16,8 @@ from rich.style import Style
 
 from core.base_classes import NodeEnvironment, Node
 from core.parm import ParameterType
-from node_window import NodeSelected
-from logging_config import get_logger
+from TUI.logging_config import get_logger
+from TUI.messages import ParameterChanged, ScrollMessage, NodeSelected, NodeTypeSelected
 
 logger = get_logger('parameter')
 
@@ -59,10 +59,6 @@ PARAM_VALUE_BG = "#2B333B"           # Slate blue-grey (matching input bg)
 PARAM_VALUE_SELECTED_COLOR = "#F3D6D6"  # Soft pink (matching selected)
 PARAM_VALUE_SELECTED_BG = "#4A3B41"    # Muted burgundy (matching selected)
 
-class ScrollMessage(Message):
-    def __init__(self, direction: int):
-        self.direction = direction
-        super().__init__()
 
 @dataclass
 class Parameter:
@@ -208,11 +204,16 @@ class ParameterSet(Vertical):
             yield row
 
     def _create_change_handler(self, parm_name: str) -> Callable[[str], None]:
-        """Create a change handler for a specific parameter."""
         def handle_change(new_value: str) -> None:
             try:
                 parm = self.node._parms[parm_name]
                 parm.set(self._convert_value(new_value, parm._type))
+                self.post_message(ParameterChanged(
+                    self.node.path(),
+                    parm_name,
+                    new_value,
+                    parm._type
+                ))
                 logger.info(f"Parameter {parm_name} updated to {new_value}")
             except Exception as e:
                 logger.error(f"Error updating parameter {parm_name}: {str(e)}")
@@ -318,6 +319,7 @@ class ParameterWindow(ScrollableContainer):
     def on_mount(self) -> None:
         self.stack = self.query_one("#parameter_stack")
         logger.info("Parameter window mounted")
+        self.border_title = "Parameter"
 
     def on_focus(self) -> None:
         if self.parameter_sets and not self.is_editing:
