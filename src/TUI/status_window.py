@@ -1,4 +1,4 @@
-from textual.widgets import Static, Label
+from textual.widgets import Static
 from textual.app import ComposeResult
 from textual.containers import ScrollableContainer
 from textual.binding import Binding
@@ -7,7 +7,12 @@ from .logging_config import get_logger
 import sys
 from io import StringIO
 from threading import Lock
-import time
+
+import TUI.palette as pal
+
+logger = get_logger('status')
+
+
 
 class CapturedOutput:
     def __init__(self):
@@ -30,15 +35,16 @@ class StatusWindow(ScrollableContainer):
         Binding("ctrl+l", "clear", "Clear Output")
     ]
     
-    DEFAULT_CSS = """
-    StatusWindow {
+    DEFAULT_CSS = f"""
+    StatusWindow {{
         width: 100%;
-        height: 50%;
-        background: $surface-lighten-2;
-        border: solid $background;
+        height: 30%;
+        background: {pal.STATUS_WIN_BACKGROUND};
+        border: {pal.STATUS_WIN_BORDER} {pal.STATUS_WIN_BORDER_COLOR};
+        color: {pal.STATUS_WIN_TEXT};
         padding: 0 1;
         overflow-y: scroll;
-    }
+    }}
     """
     
     def __init__(self):

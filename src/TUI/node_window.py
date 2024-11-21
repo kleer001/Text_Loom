@@ -17,8 +17,8 @@ from core.base_classes import NodeEnvironment, NodeState, generate_node_types, N
 from core.flowstate_manager import load_flowstate
 from TUI.network_visualizer import layout_network, render_layout, LayoutEntry
 from TUI.logging_config import get_logger
-
 from TUI.messages import NodeSelected, NodeTypeSelected, OutputMessage
+import TUI.palette as pal
 
 logger = get_logger('node')
 
@@ -44,22 +44,23 @@ class ConnectionMode(Enum):
 
 
 class NodeTypeSelector(ModalScreen):
-    DEFAULT_CSS = """
-    NodeTypeSelector {
+    DEFAULT_CSS = f"""
+    NodeTypeSelector {{
         align: center middle;
-    }
+    }}
 
-    Vertical {
+    Vertical {{
         width: 40;
         height: auto;
-        border: thick $primary;
-        background: $surface;
-    }
+        border: {pal.NODE_BORDER_MODAL} {pal.NODE_MODAL_BORDER};
+        background: {pal.NODE_MODAL_SURFACE};
+        color: {pal.NODE_MODAL_TEXT};
+    }}
 
-    OptionList {
+    OptionList {{
         height: auto;
         max-height: 20;
-    }
+    }}
     """
 
     BINDINGS = [
@@ -88,23 +89,24 @@ class NodeTypeSelector(ModalScreen):
         self.app.pop_screen()
 
 class DeleteConfirmation(ModalScreen[bool]):
-    DEFAULT_CSS = """
-    DeleteConfirmation {
+    DEFAULT_CSS = f"""
+    DeleteConfirmation {{
         align: center middle;
-    }
+    }}
 
-    Vertical {
+    Vertical {{
         width: 40;
         height: auto;
-        border: thick $primary;
-        background: $surface;
+        border: {pal.NODE_BORDER_MODAL} {pal.NODE_MODAL_BORDER};
+        background: {pal.NODE_MODAL_SURFACE};
+        color: {pal.NODE_MODAL_TEXT};
         padding: 1;
-    }
+    }}
 
-    Static {
+    Static {{
         text-align: center;
         width: 100%;
-    }
+    }}
     """
 
     def __init__(self, node_name: str):
@@ -123,13 +125,14 @@ class DeleteConfirmation(ModalScreen[bool]):
             self.dismiss(False)
 
 class RenameInput(Input):
-    DEFAULT_CSS = """
-    RenameInput {
+    DEFAULT_CSS = f"""
+    RenameInput {{
         height: 3;
-        background: $surface;
+        background: {pal.NODE_INPUT_BACKGROUND};
+        color: {pal.NODE_INPUT_TEXT}
         border: none;
         padding: 0;
-    }
+    }}
     """
     
     def __init__(self, original_node_path: str):
@@ -184,23 +187,24 @@ class RenameInput(Input):
         self.app.query_one(NodeWindow)._refresh_layout()
 
 class NodeWindow(ScrollableContainer):
-    DEFAULT_CSS = """
-    NodeWindow {
-        width: 100%;
-        height: 100%;
-        background: $boost;
-        border: solid $background;
-    }
-    
-    NodeWindow:focus {
-        border: double $accent;
-    }
-    
-    NodeContent {
-        width: 100%;
-        padding: 0 1;
-    }
-    """
+    DEFAULT_CSS = f"""
+        NodeWindow {{
+            width: 100%;
+            height: 100%;
+            background: {pal.NODE_WIN_BACKGROUND};
+            border: {pal.NODE_BORDER_NORMAL} {pal.NODE_WIN_BORDER};
+            color: {pal.NODE_MODAL_TEXT};
+        }}
+
+        NodeWindow:focus {{
+            border: {pal.NODE_BORDER_FOCUS} {pal.NODE_WIN_BORDER_FOCUS};
+        }}
+
+        NodeContent {{
+            width: 100%;
+            padding: 0 1;
+        }}
+        """
 
     BINDINGS = [
         Binding("up", "move_cursor_up", "Move Up"),
@@ -414,7 +418,6 @@ class NodeWindow(ScrollableContainer):
 
         node_data = self._node_data[self._selected_line]
         indent_offset = node_data.indent_level + 2
-        #I wish I knew why this needed to be so fiddly
         #EYEBALLED IT! But it works. Hahaha! 
         relative_y = (- len(self._node_data) * 2) + 4 + self._selected_line 
 
@@ -573,7 +576,6 @@ class NodeWindow(ScrollableContainer):
             worker = self.app.run_worker(do_eval, thread=True)
             result = await worker.wait()
             
-            # Post the output
             self.app.post_message(OutputMessage(result))
 
         except Exception as e:

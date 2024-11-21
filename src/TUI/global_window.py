@@ -4,30 +4,28 @@ from textual.binding import Binding
 from rich.text import Text
 
 from core.global_store import GlobalStore
+import TUI.palette as pal
 
-BACKGROUND_COLOR = "#E6E6FA"
-HEADER_COLOR = "#FFE15D"
-TABLE_COLOR = "#98FF98"
-INPUT_COLOR = "#87CEEB"
-ERROR_COLOR = "#FF9999"
-TEXT_COLOR = "#2E4052"
-BORDER_COLOR = "#FFB6C1"
+from TUI.logging_config import get_logger
+
+logger = get_logger('global')
+
 
 class GlobalWindow(Container):
     DEFAULT_CSS = f"""
     GlobalWindow {{
         width: 100%;
-        height: 12.5%;
-        background: {BACKGROUND_COLOR};
-        border: heavy {BORDER_COLOR};
+        height: 20%;
+        background: {pal.GLOBAL_WIN_BACKGROUND_COLOR};
+        border: heavy {pal.GLOBAL_WIN_BORDER_COLOR};
         layout: vertical;
     }}
 
     DataTable {{
         width: 100%;
         height: 1fr;
-        background: {TABLE_COLOR};
-        color: {TEXT_COLOR};
+        background: {pal.GLOBAL_WIN_TABLE_COLOR};
+        color: {pal.GLOBAL_WIN_TEXT_COLOR};
         overflow: auto scroll;
         scrollbar-gutter: stable;
     }}
@@ -36,9 +34,9 @@ class GlobalWindow(Container):
         width: 100%;
         height: 3;
         dock: top;
-        background: {INPUT_COLOR};
-        color: {TEXT_COLOR};
-        border: solid {BORDER_COLOR};
+        background: {pal.GLOBAL_WIN_INPUT_COLOR};
+        color: {pal.GLOBAL_WIN_TEXT_COLOR};
+        border: solid {pal.GLOBAL_WIN_BORDER_COLOR};
     }}
     """
 
@@ -59,6 +57,7 @@ class GlobalWindow(Container):
     def on_mount(self):
         self.table.add_column(" ", key="key")
         self.table.add_column(" ", key="value")
+        self.border_title = "Globals"    
         self.refresh_table()
 
     def refresh_table(self):
@@ -73,28 +72,54 @@ class GlobalWindow(Container):
             self.table.add_row(key, str(value))
 
     def flash_error(self):
-        self.input.styles.background = ERROR_COLOR
-        self.call_after(0.25, setattr, self.input.styles, "background", INPUT_COLOR)
+        logger.debug("Starting flash_error")
+        try:
+            self.input.styles.background = pal.GLOBAL_WIN_ERROR_COLOR
+            logger.debug("Set error background")
+            self.app.set_timer(0.25, self.reset_background)
+            logger.debug("Scheduled reset")
+        except Exception as e:
+            logger.debug(f"Flash error failed: {str(e)}")
+
+    def reset_background(self):
+        logger.debug("Resetting background")
+        try:
+            self.input.styles.background = None  # This removes our override and falls back to CSS
+            logger.debug("Background reset complete")
+        except Exception as e:
+            logger.debug(f"Reset background failed: {str(e)}")
 
     def action_reset_input(self):
         self.input.value = ""
 
     def on_input_submitted(self, event: Input.Submitted):
-        if ":" not in event.value:
-            self.flash_error()
-            return
-            
-        key, value = event.value.split(":", 1)
-        key = "".join(c for c in key.upper() if c.isupper())
-        value = value.strip()
+        logger.debug(f"Input submitted with value: {event.value}")
         
-        if len(key) < 2:
+        if ":" not in event.value:
+            logger.debug("No colon found in input")
             self.flash_error()
+            self.input.value = ""
             return
             
         try:
+            key, value = event.value.split(":", 1)
+            logger.debug(f"Split input into key: {key}, value: {value}")
+            
+            key = "".join(c for c in key.upper() if c.isupper())
+            value = value.strip()
+            logger.debug(f"Processed key: {key}, processed value: {value}")
+            
+            if len(key) < 2:
+                logger.debug("Key length less than 2")
+                self.flash_error()
+                self.input.value = ""
+                return
+                
             GlobalStore().set(key, value)
+            logger.debug("Successfully set global value")
             self.refresh_table()
             self.input.value = ""
-        except ValueError:
+        except Exception as e:
+            logger.debug(f"Exception occurred: {str(e)}")
             self.flash_error()
+            self.input.value = ""

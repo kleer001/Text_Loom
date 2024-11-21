@@ -1,18 +1,21 @@
 from textual.widgets import Static
 from textual.message import Message
-from .messages import OutputMessage
-from .logging_config import get_logger
+from TUI.messages import OutputMessage
+from TUI.logging_config import get_logger
+import TUI.palette as pal
+
+
 
 class OutputWindow(Static):
-    DEFAULT_CSS = """
-    OutputWindow {
+    DEFAULT_CSS = f"""
+    OutputWindow {{
         width: 100%;
-        height: 37.5%;
-        background: azure;
-        border: solid $background;
-        color: black;
+        height: 50%;
+        background: {pal.OUTPUT_WIN_BACKGROUND};
+        border: {pal.OUTPUT_WIN_BORDER} {pal.OUTPUT_WIN_BORDER_COLOR};
+        color: {pal.OUTPUT_WIN_TEXT};
         padding: 1;
-    }
+    }}
     """
     
     def __init__(self):
