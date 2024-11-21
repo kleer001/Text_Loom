@@ -25,7 +25,7 @@ class KeymapScreen(Screen):
     KeymapScreen {{
         align: center middle;
         background: {pal.KEYMAP_SCR_BACKGROUND};
-        color: {pal.KEYMAP_SCR_TEXT}
+        color: {pal.KEYMAP_SCR_TEXT};
         width: 100%;
         height: 100%;
     }}

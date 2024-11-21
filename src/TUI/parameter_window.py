@@ -238,7 +238,7 @@ class ParameterSet(Vertical):
 
 class ParameterWindow(ScrollableContainer):
     """Main container for parameter sets with keyboard navigation."""
-
+    
     DEFAULT_CSS = f"""
     ParameterWindow {{
         width: 100%;
@@ -265,6 +265,8 @@ class ParameterWindow(ScrollableContainer):
         Binding("pageup", "scroll_up", "Scroll Up"),
         Binding("pagedown", "scroll_down", "Scroll Down"),
     ]
+    
+    can_focus = True
 
     def __init__(self):
         super().__init__()

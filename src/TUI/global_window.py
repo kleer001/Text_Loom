@@ -49,10 +49,14 @@ class GlobalWindow(Container):
         self.table = DataTable(show_header=False, zebra_stripes=True)
         self.input = Input(placeholder="Enter KEY:VALUE")
 
+    can_focus = True
+
     def compose(self):
         yield self.input
         yield self.table
-        
+    
+    def on_focus(self) -> None:
+        self.input.focus()
 
     def on_mount(self):
         self.table.add_column(" ", key="key")

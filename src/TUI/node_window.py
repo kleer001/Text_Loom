@@ -252,6 +252,8 @@ class NodeWindow(ScrollableContainer):
         self._cooking_node: Optional[str] = None
         self._refresh_timer: Optional[Timer] = None
 
+    can_focus = True
+
     def on_parameter_changed(self, message: ParameterChanged) -> None:
             try:
                 node = self._env.node_from_name(message.node_path)
