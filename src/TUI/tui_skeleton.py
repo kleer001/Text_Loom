@@ -216,10 +216,14 @@ class TUIApp(App[None]):
         
         try:
             if mode == Mode.FILE:
-                self.push_screen("file")
+                self.logger.debug("Attempting to push file screen")
+                result = self.push_screen("file")
+                self.logger.debug(f"Push screen result: {result}")
                 return
             elif mode == Mode.KEYMAP:
-                self.push_screen("keymap")
+                self.logger.debug("Attempting to push keymap screen")
+                result = self.push_screen("keymap")
+                self.logger.debug(f"Push screen result: {result}")
                 return
 
             widget_map = {
