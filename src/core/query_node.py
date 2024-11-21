@@ -33,7 +33,7 @@ class QueryNode(Node):
         # Set default values
         self._parms["limit"].set("True")
         self._parms["response"].set([])
-        self._parms["llm_name"].set("None")
+        self._parms["llm_name"].set("Ollama")
 
         # Set button callbacks
         self._parms["find_llm"].set_script_callback(self._find_llm_callback)

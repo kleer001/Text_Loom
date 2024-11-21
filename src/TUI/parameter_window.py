@@ -18,46 +18,9 @@ from core.base_classes import NodeEnvironment, Node
 from core.parm import ParameterType
 from TUI.logging_config import get_logger
 from TUI.messages import ParameterChanged, ScrollMessage, NodeSelected, NodeTypeSelected
+import TUI.palette as pal
 
 logger = get_logger('parameter')
-
-# Base colors - Rich dark background with subtle warmth
-PARAMETER_SET_BG = "#1A1816"         # Deep charcoal with a hint of warmth
-PARAMETER_SET_BORDER = "#2D2520"     # Warm dark brown border
-PARAMETER_WINDOW_BG = "#1A1816"      # Match the set background
-PARAMETER_WINDOW_BORDER = "#2D2520"  # Match the set border
-
-# Title and focus elements - Warm highlights
-TITLE_COLOR = "#E8C5A5"              # Warm cream
-PARAMETER_WINDOW_FOCUS_BORDER = "#D35F3C"  # Warm terracotta/orange - festive!
-
-# Parameter labels - Muted but readable
-PARAM_LABEL_BG = "#2D2520"           # Warm dark brown
-PARAM_LABEL_COLOR = "#B5947A"        # Muted copper
-
-# Input fields - Cool contrast to the warm backgrounds
-PARAM_INPUT_BG = "#2B333B"           # Cool slate blue-grey
-PARAM_INPUT_COLOR = "#D6E5F3"        # Ice blue text
-PARAM_INPUT_BORDER = "#3D4D5C"       # Deeper slate blue
-
-# Selected states - Festive highlights
-PARAM_INPUT_SELECTED_BG = "#4A3B41"  # Muted burgundy
-PARAM_INPUT_SELECTED_COLOR = "#F3D6D6"  # Soft pink
-PARAM_INPUT_SELECTED_BORDER = "#8B4E55"  # Rich cranberry
-
-# Editing states
-PARAM_VALUE_EDITING_BG = "#2F3B35"   # Forest green undertones
-PARAM_VALUE_EDITING_COLOR = "#C5E8D6"  # Mint green text
-
-# Error states - Traditional but softer
-PARAM_INPUT_INVALID_BG = "#5C3636"   # Muted red
-
-# Legacy colors (if still needed)
-PARAM_NAME_COLOR = "#B5947A"         # Muted copper (matching label color)
-PARAM_VALUE_COLOR = "#D6E5F3"        # Ice blue (matching input color)
-PARAM_VALUE_BG = "#2B333B"           # Slate blue-grey (matching input bg)
-PARAM_VALUE_SELECTED_COLOR = "#F3D6D6"  # Soft pink (matching selected)
-PARAM_VALUE_SELECTED_BG = "#4A3B41"    # Muted burgundy (matching selected)
 
 
 @dataclass
@@ -78,23 +41,23 @@ class ParameterRow(Horizontal):
     
     ParameterRow > Static {{
         width: 20;
-        background: {PARAM_LABEL_BG};
-        color: {PARAM_LABEL_COLOR};
+        background: {pal.PARAM_LABEL_BG};
+        color: {pal.PARAM_LABEL_COLOR};
         padding: 0 1;
     }}
     
     ParameterRow > Input {{
         width: 1fr;
-        background: {PARAM_INPUT_BG};
-        color: {PARAM_INPUT_COLOR};
+        background: {pal.PARAM_INPUT_BG};
+        color: {pal.PARAM_INPUT_COLOR};
         border: none;
         padding: 0 1;
     }}
     
     ParameterRow > Input:focus {{
-        background: {PARAM_INPUT_SELECTED_BG};
-        color: {PARAM_INPUT_SELECTED_COLOR};
-        border: tall {PARAM_INPUT_SELECTED_BORDER};
+        background: {pal.PARAM_INPUT_SELECTED_BG};
+        color: {pal.PARAM_INPUT_SELECTED_COLOR};
+        border: tall {pal.PARAM_INPUT_SELECTED_BORDER};
     }}
     """
 
@@ -112,9 +75,9 @@ class ParameterRow(Horizontal):
     ):
         super().__init__()
         self.name = name
-        self._original_value = str(value)  # Keep the original value for escape
-        self.value = str(value)            # Current accepted value
-        self._editing = False              # Are we in edit mode?
+        self._original_value = str(value)  
+        self.value = str(value)            
+        self._editing = False              
         self.param_type = param_type.value
         self.on_change = on_change
         logger.info(f"ParameterRow.__init__: name={name}, value={value}")
@@ -130,7 +93,6 @@ class ParameterRow(Horizontal):
         if not self._editing:
             input_widget = self.query_one(Input)
             self._editing = True
-            # Clear the input for new value
             input_widget.value = ""
             logger.info(f"Focus: Cleared input for editing. Original value: {self._original_value}")
 
@@ -163,8 +125,8 @@ class ParameterRow(Horizontal):
 
     def watch_is_selected(self, selected: bool) -> None:
         input_widget = self.query_one(Input)
-        input_widget.styles.background = PARAM_INPUT_SELECTED_BG if selected else PARAM_INPUT_BG
-        input_widget.styles.color = PARAM_INPUT_SELECTED_COLOR if selected else PARAM_INPUT_COLOR
+        input_widget.styles.background = pal.PARAM_INPUT_SELECTED_BG if selected else pal.PARAM_INPUT_BG
+        input_widget.styles.color = pal.PARAM_INPUT_SELECTED_COLOR if selected else pal.PARAM_INPUT_COLOR
 
 class ParameterSet(Vertical):
     """A container for a node's parameters with title and parameter rows."""
@@ -172,14 +134,14 @@ class ParameterSet(Vertical):
     DEFAULT_CSS = f"""
     ParameterSet {{
         width: 100%;
-        background: {PARAMETER_SET_BG};
-        border-bottom: solid {PARAMETER_SET_BORDER};
+        background: {pal.PARAM_SET_BG};
+        border-bottom: solid {pal.PARAM_SET_BORDER};
         padding: 0 1;
         height: auto;
     }}
     
     ParameterSet .title {{
-        color: {TITLE_COLOR};
+        color: {pal.PARAM_TITLE_COLOR};
         text-style: bold;
         padding: 1 0;
     }}
@@ -238,11 +200,9 @@ class ParameterSet(Vertical):
         if not (0 <= index < len(self.parameter_rows)):
             return
             
-        # Deselect current parameter if any
         if self.current_index is not None:
             self.parameter_rows[self.current_index].is_selected = False
             
-        # Select new parameter
         self.current_index = index
         self.parameter_rows[index].is_selected = True
         
@@ -283,12 +243,12 @@ class ParameterWindow(ScrollableContainer):
     ParameterWindow {{
         width: 100%;
         height: 100%;
-        background: {PARAMETER_WINDOW_BG};
-        border: solid {PARAMETER_WINDOW_BORDER};
+        background: {pal.PARAM_WINDOW_BG};
+        border: solid {pal.PARAM_WINDOW_BORDER};
     }}
     
     ParameterWindow:focus {{
-        border: double {PARAMETER_WINDOW_FOCUS_BORDER};
+        border: double {pal.PARAM_WINDOW_FOCUS_BORDER};
     }}
     
     ParameterWindow #parameter_stack {{
@@ -323,7 +283,6 @@ class ParameterWindow(ScrollableContainer):
 
     def on_focus(self) -> None:
         if self.parameter_sets and not self.is_editing:
-            # Select first parameter of first set if nothing is selected
             if self.current_set_index == -1:
                 self.current_set_index = 0
                 self.parameter_sets[0].select_parameter(0)
@@ -354,7 +313,6 @@ class ParameterWindow(ScrollableContainer):
             self.current_set_index = 0
             new_param_set.select_parameter(0)
 
-            # Ensure we're at the top when adding new parameter sets
             stack = self.query_one("#parameter_stack")
             stack.styles.offset = (0, 0)
 
@@ -362,16 +320,13 @@ class ParameterWindow(ScrollableContainer):
         except Exception as e:
             logger.error(f"Error processing parameter set: {str(e)}")
 
-
     def action_move_up(self) -> None:
         if not self.parameter_sets or self.is_editing:
             return
-
         current_set = self.parameter_sets[self.current_set_index]
         result = current_set.select_previous()
         
         if result is not None and self.current_set_index > 0:
-            # Move to previous parameter set
             current_set.reset_selection()
             self.current_set_index -= 1
             new_set = self.parameter_sets[self.current_set_index]
@@ -385,7 +340,6 @@ class ParameterWindow(ScrollableContainer):
         result = current_set.select_next()
         
         if result is not None and self.current_set_index < len(self.parameter_sets) - 1:
-            # Move to next parameter set
             current_set.reset_selection()
             self.current_set_index += 1
             new_set = self.parameter_sets[self.current_set_index]
@@ -398,7 +352,6 @@ class ParameterWindow(ScrollableContainer):
         current_set = self.parameter_sets[self.current_set_index]
         if current_set.current_index is not None:
             self.is_editing = True
-            # Focus the input widget of the selected parameter row
             current_row = current_set.parameter_rows[current_set.current_index]
             input_widget = current_row.query_one(Input)
             input_widget.focus()
@@ -406,35 +359,11 @@ class ParameterWindow(ScrollableContainer):
     def action_cancel_edit(self) -> None:
         if self.is_editing:
             self.is_editing = False
-            self.focus()  # Return focus to window for navigation
+            self.focus()
 
     def on_input_submitted(self, event: Input.Submitted) -> None:
         self.is_editing = False
-        self.focus()  # Return focus to window for navigation
-
-    # def action_scroll_up(self) -> None:
-    #     stack = self.query_one("#parameter_stack")
-    #     current_offset = stack.styles.offset
-    #     current_y_offset = current_offset.y if current_offset else 0
-    #     new_y_offset = min(0, current_y_offset + 1)
-    #     if new_y_offset != current_y_offset:
-    #         stack.styles.offset = (current_offset.x if current_offset else 0, new_y_offset)
-
-    # def action_scroll_down(self) -> None:
-    #     stack = self.query_one("#parameter_stack")
-    #     viewport_height = self.size.height
-    #     content_height = sum(ps.size.height for ps in self.parameter_sets)
-        
-    #     if content_height <= viewport_height:
-    #         return
-            
-    #     max_scroll = -(content_height - viewport_height)
-    #     current_offset = stack.styles.offset
-    #     current_y_offset = current_offset.y if current_offset else 0
-    #     new_y_offset = max(max_scroll, current_y_offset - 1)
-        
-    #     if new_y_offset != current_y_offset:
-    #         stack.styles.offset = (current_offset.x if current_offset else 0, new_y_offset)
+        self.focus()
 
     def action_scroll_up(self) -> None:
         self.scroll_up()

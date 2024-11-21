@@ -20,13 +20,21 @@ from enum import Enum, auto
 
 from TUI.node_window import NodeWindow, NodeSelected
 from TUI.parameter_window import ParameterWindow
-from TUI.logging_config import get_logger
 from TUI.messages import OutputMessage
 from TUI.output_window import OutputWindow
 from TUI.status_window import StatusWindow
 from TUI.global_window import GlobalWindow
+from TUI.help_window import HelpWindow
+from TUI.file_screen import FileScreen
+from TUI.keymap_screen import KeymapScreen 
+import TUI.palette as pal
+
+
+from TUI.logging_config import get_logger
 
 logger = get_logger('tui.main')
+
+
 
 class Mode(Enum):
     NODE = auto()
@@ -41,99 +49,34 @@ class Mode(Enum):
     def __str__(self) -> str:
         return self.name.title()
 
-class FileScreen(Screen):
-    BINDINGS = [
-        Binding("escape", "app.pop_screen", "Back")
-    ]
-
-    def __init__(self):
-        super().__init__()
-        self.logger = get_logger('tui.file_screen')
-
-    DEFAULT_CSS = """
-    FileScreen {
-        align: center middle;
-        background: $boost;
-        width: 100%;
-        height: 100%;
-    }
-
-    .file-content {
-        width: 100%;
-        height: 100%;
-        content-align: center middle;
-        background: $panel;
-    }
-    """
-
-    def compose(self) -> ComposeResult:
-        with Container(classes="file-content"):
-            yield Static("File Browser (Placeholder)")
-
-    def on_mount(self) -> None:
-        self.logger.info("FileScreen mounted")
-
-
-
-class KeymapScreen(Screen):
-    BINDINGS = [
-        Binding("escape", "app.pop_screen", "Back")
-    ]
-
-    def __init__(self):
-        super().__init__()
-        self.logger = get_logger('tui.keymap_screen')
-
-    DEFAULT_CSS = """
-    KeymapScreen {
-        align: center middle;
-        background: $boost;
-        width: 100%;
-        height: 100%;
-    }
-
-    .keymap-content {
-        width: 100%;
-        height: 100%;
-        content-align: center middle;
-        background: $panel;
-    }
-    """
-
-    def compose(self) -> ComposeResult:
-        with Container(classes="keymap-content"):
-            yield Static("Keymap Browser (Placeholder)")
-
-    def on_mount(self) -> None:
-        self.logger.info("KeymapScreen mounted")
-
 class MainLayout(Grid):
-    DEFAULT_CSS = """
-    MainLayout {
+    DEFAULT_CSS = f"""
+    MainLayout {{
         height: 100%;
         width: 100%;
         grid-size: 3 1;
         grid-columns: 1fr 2fr 2fr;
         grid-rows: 1fr;
-        grid-gutter: 1;
-        background: $surface;
-    }
+        grid-gutter: 0;
+        background: {pal.MAIN_WIN_BACKGROUND};
+        color: {pal.MAIN_WIN_TEXT};
+    }}
     
-    Vertical {
+    Vertical {{
         height: 100%;
         width: 100%;
-    }
+    }}
     """
 
     def compose(self) -> ComposeResult:
         yield NodeWindow()
-        
-        with Vertical():
-            yield StatusWindow()
-            yield OutputWindow()
-            yield GlobalWindow()
-            
         yield ParameterWindow()
+        with Vertical():
+            yield GlobalWindow()
+            yield OutputWindow()
+            yield StatusWindow()
+            
+        
 
     def on_node_selected(self, event: NodeSelected) -> None:
         self.query_one(ParameterWindow).on_node_selected(event)
@@ -150,79 +93,15 @@ class MainContent(Static):
     def on_mount(self) -> None:
         self.query_one(NodeWindow).focus()
 
-
-class HelpWindow(Static):
-    DEFAULT_CSS = """
-    HelpWindow {
-        width: 100%;
-        height: 12.5%;
-        color: white;
-        padding: 0 1;
-        background: #4B0082;
-        overflow-y: scroll;
-    }
-    """
-
-    help_sections: Dict[str, str] = {}
-    current_section = reactive("")
-
-    def on_mount(self) -> None:
-        self._load_help_text()
-        
-    def _load_help_text(self) -> None:
-        try:
-            help_path = Path("TUI/help_tui.md")
-            if not help_path.exists():
-                error_msg = f"Help file not found at {help_path.absolute()}"
-                logger.error(error_msg)
-                self.update(f"[Error: {error_msg}]")
-                return
-
-            current_section = ""
-            current_content = []
-            
-            with help_path.open() as f:
-                logger.info(f"Loading help text from {help_path.absolute()}")
-                for line_num, line in enumerate(f, 1):
-                    line = line.strip()
-                    if line.startswith('[') and line.endswith(']'):
-                        if current_section:
-                            logger.debug(f"Adding section {current_section} with {len(current_content)} lines")
-                            self.help_sections[current_section] = "\n".join(current_content)
-                        current_section = line[1:-1].upper()
-                        current_content = []
-                        logger.debug(f"Found new section {current_section} at line {line_num}")
-                    elif current_section:
-                        current_content.append(line)
-
-            if current_section and current_content:
-                logger.debug(f"Adding final section {current_section} with {len(current_content)} lines")
-                self.help_sections[current_section] = "\n".join(current_content)
-
-            logger.info(f"Loaded {len(self.help_sections)} help sections: {list(self.help_sections.keys())}")
-
-        except Exception as e:
-            error_msg = f"Error loading help: {str(e)}"
-            logger.error(error_msg, exc_info=True)
-            self.update(f"[Error: {error_msg}]")
-
-    def watch_current_section(self) -> None:
-        section = self.current_section.upper()
-        content = self.help_sections.get(section, "")
-        if not content:
-            logger.warning(f"No help content found for section: {section}")
-            content = f"No help available for {section}"
-        self.update(content)
-
 class ModeLine(Static):
-    DEFAULT_CSS = """
-    ModeLine {
+    DEFAULT_CSS = f"""
+    ModeLine {{
         width: 100%;
         height: 1;
-        background: blue;
-        color: white;
+        background: {pal.MODELINE_BACKGROUND};
+        color: {pal.MODELINE_TEXT};
         padding: 0 1;
-    }
+    }}
     """
 
     mode = reactive(Mode.NODE)
