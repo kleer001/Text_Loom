@@ -28,26 +28,23 @@ from TUI.help_window import HelpWindow
 from TUI.file_screen import FileScreen
 from TUI.keymap_screen import KeymapScreen 
 import TUI.palette as pal
-
+from TUI.screens_registry import (
+    Mode, 
+    get_screen_registry,
+    MAIN_SCREEN,
+    FILE_SCREEN,
+    KEYMAP_SCREEN,
+    ModeChanged
+)
 
 from TUI.logging_config import get_logger
 
 logger = get_logger('tui.main')
 
 
-
-class Mode(Enum):
-    NODE = auto()
-    PARAMETER = auto()
-    GLOBAL = auto()
-    FILE = auto()
-    HELP = auto()
-    KEYMAP = auto()
-    STATUS = auto()
-    OUTPUT = auto()
-
-    def __str__(self) -> str:
-        return self.name.title()
+@dataclass
+class ModeChanged(Message):
+    mode: Mode
 
 class MainLayout(Grid):
     DEFAULT_CSS = f"""
@@ -121,10 +118,21 @@ class ModeLine(Static):
         self.update(f"[{self.mode}] {self.path} | {self.debug_info}")
 
 class TUIApp(App[None]):
-    def __init__(self):
-        super().__init__()
-        self.logger = get_logger('tui.app')
-        self.current_mode = Mode.NODE
+
+    SCREENS = get_screen_registry(FileScreen, KeymapScreen)
+
+    BINDINGS = [
+        Binding("tab", "", ""),  #DISABLED
+        Binding("ctrl+n", "switch_mode('NODE')", "Node Mode"),
+        Binding("ctrl+a", "switch_mode('PARAMETER')", "Parameter Mode"),
+        Binding("ctrl+g", "switch_mode('GLOBAL')", "Global Mode"),
+        Binding("ctrl+f", "switch_mode('FILE')", "File Mode"),
+        Binding("ctrl+e", "switch_mode('HELP')", "Help Mode"),
+        Binding("ctrl+k", "switch_mode('KEYMAP')", "Keymap Mode"),
+        Binding("ctrl+t", "switch_mode('STATUS')", "Status Mode"),
+        Binding("ctrl+o", "switch_mode('OUTPUT')", "Output Mode"),
+        Binding("ctrl+q", "quit", "Quit"),
+    ]
 
     CSS = """
     Screen {
@@ -156,29 +164,15 @@ class TUIApp(App[None]):
     }
     """
 
-    BINDINGS = [
-
-        Binding("tab", "", ""),  #DISABLED
-
-        Binding("ctrl+n", "switch_mode('NODE')", "Node Mode"),
-        Binding("ctrl+a", "switch_mode('PARAMETER')", "Parameter Mode"),
-        Binding("ctrl+g", "switch_mode('GLOBAL')", "Global Mode"),
-        Binding("ctrl+f", "switch_mode('FILE')", "File Mode"),
-        Binding("ctrl+e", "switch_mode('HELP')", "Help Mode"),
-        Binding("ctrl+k", "switch_mode('KEYMAP')", "Keymap Mode"),
-        Binding("ctrl+t", "switch_mode('STATUS')", "Status Mode"),
-        Binding("ctrl+o", "switch_mode('OUTPUT')", "Output Mode"),
-        Binding("ctrl+q", "quit", "Quit"),
-    ]
-
     mode_line: ClassVar[ModeLine]
     help_window: ClassVar[HelpWindow]
     current_mode: reactive[Mode] = reactive(Mode.NODE)
 
-    @dataclass
-    class ModeChanged(Message):
-        mode: Mode
-        
+    def __init__(self):
+        super().__init__()
+        self.logger = get_logger('tui.app')
+        self.current_mode = Mode.NODE
+
     def compose(self) -> ComposeResult:
         yield MainContent()
         yield HelpWindow()
@@ -189,42 +183,45 @@ class TUIApp(App[None]):
         try:
             self.mode_line = self.query_one(ModeLine)
             self.help_window = self.query_one(HelpWindow)
-            self.install_screen(FileScreen(), name="file")
-            self.install_screen(KeymapScreen(), name="keymap")
         except NoMatches as e:
-            error_msg = "Failed to initialize required components"
-            self.logger.error(error_msg, exc_info=True)
-            self.exit(message=error_msg)
+            self.logger.error("Failed to initialize components", exc_info=True)
+            self.exit(message="Failed to initialize components")
         self._update_mode_display()
 
     def action_switch_mode(self, mode_name: str) -> None:
         try:
             new_mode = Mode[mode_name]
+            self.logger.info(f"Attempting to switch mode from {self.current_mode} to {new_mode}")
             if new_mode != self.current_mode:
-                self.logger.info(f"Switching mode from {self.current_mode} to {new_mode}")
                 self.current_mode = new_mode
                 self._update_mode_display()
                 self._handle_mode_focus(new_mode)
-                self.post_message(self.ModeChanged(self.current_mode))
+                self.post_message(ModeChanged(self.current_mode))  # Updated to use imported ModeChanged
+                self.logger.info(f"Mode switched successfully to {new_mode}")
         except KeyError:
             error_msg = f"Invalid mode: {mode_name}"
             self.logger.error(error_msg)
             self.mode_line.debug_info = error_msg
+        except Exception as e:
+            self.logger.error(f"Unexpected error in action_switch_mode: {str(e)}", exc_info=True)
+
 
     def _handle_mode_focus(self, mode: Mode) -> None:
         self.logger.info(f"Handling focus for mode: {mode}")
-        
         try:
             if mode == Mode.FILE:
-                self.logger.debug("Attempting to push file screen")
-                result = self.push_screen("file")
-                self.logger.debug(f"Push screen result: {result}")
+                self.logger.debug("Switching to FileScreen")
+                if isinstance(self.screen, Screen) and not isinstance(self.screen, FileScreen):
+                    self.push_screen(FileScreen())
+                    self.logger.info("FileScreen pushed successfully")
                 return
             elif mode == Mode.KEYMAP:
-                self.logger.debug("Attempting to push keymap screen")
-                result = self.push_screen("keymap")
-                self.logger.debug(f"Push screen result: {result}")
+                if isinstance(self.screen, Screen) and not isinstance(self.screen, KeymapScreen):
+                    self.push_screen(KeymapScreen())
                 return
+
+            if isinstance(self.screen, (FileScreen, KeymapScreen)):
+                self.pop_screen()
 
             widget_map = {
                 Mode.NODE: NodeWindow,
@@ -233,7 +230,7 @@ class TUIApp(App[None]):
                 Mode.STATUS: StatusWindow,
                 Mode.OUTPUT: OutputWindow,
             }
-
+            
             if mode in widget_map:
                 widget_class = widget_map[mode]
                 try:
@@ -242,16 +239,33 @@ class TUIApp(App[None]):
                     widget.focus()
                 except NoMatches:
                     self.logger.error(f"Could not find widget for mode {mode}")
-
         except Exception as e:
             self.logger.error(f"Error in _handle_mode_focus: {str(e)}", exc_info=True)
+
+    def action_switch_mode(self, mode_name: str) -> None:
+        try:
+            new_mode = Mode[mode_name]
+            self.logger.info(f"Attempting to switch mode from {self.current_mode} to {new_mode}")
+            
+            self.current_mode = new_mode
+            self._update_mode_display()
+            self._handle_mode_focus(new_mode)
+            self.post_message(ModeChanged(self.current_mode))
+            
+            self.logger.info(f"Mode switched successfully to {new_mode}")
+        except KeyError:
+            error_msg = f"Invalid mode: {mode_name}"
+            self.logger.error(error_msg)
+            self.mode_line.debug_info = error_msg
+        except Exception as e:
+            self.logger.error(f"Unexpected error in action_switch_mode: {str(e)}", exc_info=True) 
 
     def _update_mode_display(self) -> None:
         self.mode_line.mode = self.current_mode
         self.mode_line.debug_info = f"Switched to {self.current_mode}"
         self.help_window.current_section = str(self.current_mode)
         self.logger.debug(f"Updated display for mode: {self.current_mode}")
- 
+
 if __name__ == "__main__":
     app = TUIApp()
     app.run()

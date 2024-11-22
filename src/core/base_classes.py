@@ -148,6 +148,16 @@ class NodeEnvironment:
             node = cls.nodes.pop(path)
             node.destroy()
 
+    @classmethod
+    def flush_all_nodes(cls):
+        nodes_to_remove = [path for path in cls.nodes.keys() if path != "/"]
+        for path in nodes_to_remove:
+            if path in cls.nodes:
+                node = cls.nodes.pop(path)
+                node.destroy()
+        cls.get_instance().current_node = None
+        cls.get_instance().globals = cls.get_instance()._build_globals()
+
         
 
 

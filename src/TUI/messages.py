@@ -1,6 +1,6 @@
 from textual.message import Message
 from core.parm import ParameterType
-
+from dataclasses import dataclass
 
 class NodeSelected(Message):
     def __init__(self, node_path: str) -> None:

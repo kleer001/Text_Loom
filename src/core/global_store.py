@@ -44,3 +44,6 @@ class GlobalStore:
     def has(cls, key: str) -> bool:
         cls._validate_key(key)
         return key in cls._instance
+    
+    def flush_all_globals(cls):
+        cls._instance.clear()
