@@ -14,7 +14,36 @@ def generate_node_types():
 
 NodeType = Enum("NodeType", generate_node_types(), type=NodeType)
 
+class NodeEnvironment:
+    @classmethod
+    def get_instance(cls)
 
+    def __new__(cls)
+
+    def __init__(self)
+
+    def _build_globals(self) -> Dict[str, Any]
+
+    def get_namespace(self)
+
+    def execute(self, code)
+
+    def inspect(self)
+
+    @classmethod
+    def list_nodes(cls) -> list[str]
+
+    @classmethod
+    def node_exists(cls, node_name: str) -> bool
+
+    @classmethod
+    def add_node(cls, node: 'Node')
+
+    @classmethod
+    def node_from_name(cls, node_name: str) -> Optional['Node']
+
+    @classmethod
+    def remove_node(cls, node_path: str) -> None
 
 class NodeState(Enum):
     COOKING = "cooking"
