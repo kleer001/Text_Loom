@@ -28,6 +28,8 @@ from TUI.help_window import HelpWindow
 from TUI.file_screen import FileScreen
 from TUI.keymap_screen import KeymapScreen 
 import TUI.palette as pal
+from core.flowstate_manager import save_flowstate
+
 from TUI.screens_registry import (
     Mode, 
     get_screen_registry,
@@ -122,15 +124,16 @@ class TUIApp(App[None]):
     SCREENS = get_screen_registry(FileScreen, KeymapScreen)
 
     BINDINGS = [
-        Binding("tab", "", ""),  #DISABLED
         Binding("ctrl+n", "switch_mode('NODE')", "Node Mode"),
         Binding("ctrl+a", "switch_mode('PARAMETER')", "Parameter Mode"),
         Binding("ctrl+g", "switch_mode('GLOBAL')", "Global Mode"),
-        Binding("ctrl+f", "switch_mode('FILE')", "File Mode"),
+        Binding("ctrl+o", "open_file", "Open File"),
+        Binding("ctrl+s", "quick_save", "Quick Save"),
+        Binding("ctrl+S", "save_as", "Save As"),
         Binding("ctrl+e", "switch_mode('HELP')", "Help Mode"),
         Binding("ctrl+k", "switch_mode('KEYMAP')", "Keymap Mode"),
         Binding("ctrl+t", "switch_mode('STATUS')", "Status Mode"),
-        Binding("ctrl+o", "switch_mode('OUTPUT')", "Output Mode"),
+        Binding("ctrl+l", "switch_mode('OUTPUT')", "Output Mode"),
         Binding("ctrl+q", "quit", "Quit"),
     ]
 
@@ -167,6 +170,7 @@ class TUIApp(App[None]):
     mode_line: ClassVar[ModeLine]
     help_window: ClassVar[HelpWindow]
     current_mode: reactive[Mode] = reactive(Mode.NODE)
+    current_file: reactive[str] = reactive("")
 
     def __init__(self):
         super().__init__()
@@ -196,7 +200,7 @@ class TUIApp(App[None]):
                 self.current_mode = new_mode
                 self._update_mode_display()
                 self._handle_mode_focus(new_mode)
-                self.post_message(ModeChanged(self.current_mode))  # Updated to use imported ModeChanged
+                self.post_message(ModeChanged(self.current_mode))  
                 self.logger.info(f"Mode switched successfully to {new_mode}")
         except KeyError:
             error_msg = f"Invalid mode: {mode_name}"
@@ -209,18 +213,16 @@ class TUIApp(App[None]):
     def _handle_mode_focus(self, mode: Mode) -> None:
         self.logger.info(f"Handling focus for mode: {mode}")
         try:
-            if mode == Mode.FILE:
-                self.logger.debug("Switching to FileScreen")
-                if isinstance(self.screen, Screen) and not isinstance(self.screen, FileScreen):
-                    self.push_screen(FileScreen())
-                    self.logger.info("FileScreen pushed successfully")
-                return
-            elif mode == Mode.KEYMAP:
+            if mode == Mode.KEYMAP:
+                self.logger.debug("Handling KEYMAP mode")
                 if isinstance(self.screen, Screen) and not isinstance(self.screen, KeymapScreen):
+                    self.logger.debug("Pushing KeymapScreen")
                     self.push_screen(KeymapScreen())
                 return
 
+            self.logger.debug(f"Current screen type: {type(self.screen)}")
             if isinstance(self.screen, (FileScreen, KeymapScreen)):
+                self.logger.debug("Popping special screen")
                 self.pop_screen()
 
             widget_map = {
@@ -234,13 +236,16 @@ class TUIApp(App[None]):
             if mode in widget_map:
                 widget_class = widget_map[mode]
                 try:
+                    self.logger.debug(f"Attempting to focus {widget_class.__name__}")
                     widget = self.query_one(widget_class)
-                    self.logger.info(f"Focusing {widget_class.__name__}")
                     widget.focus()
+                    self.logger.info(f"Successfully focused {widget_class.__name__}")
                 except NoMatches:
                     self.logger.error(f"Could not find widget for mode {mode}")
         except Exception as e:
             self.logger.error(f"Error in _handle_mode_focus: {str(e)}", exc_info=True)
+            raise
+
 
     def action_switch_mode(self, mode_name: str) -> None:
         try:
@@ -265,6 +270,67 @@ class TUIApp(App[None]):
         self.mode_line.debug_info = f"Switched to {self.current_mode}"
         self.help_window.current_section = str(self.current_mode)
         self.logger.debug(f"Updated display for mode: {self.current_mode}")
+    
+    def action_open_file(self) -> None:
+        self.logger.info("action_open_file called")
+        try:
+            self.logger.debug("Creating new FileScreen instance with save_mode=False")
+            file_screen = FileScreen(save_mode=False)
+            self.logger.debug("Pushing FileScreen to screen stack")
+            self.push_screen(file_screen)
+            self.logger.info("FileScreen successfully pushed")
+        except Exception as e:
+            self.logger.error(f"Failed to open file screen: {str(e)}", exc_info=True)
+            raise
+
+    def action_quick_save(self) -> None:
+        self.logger.info("action_quick_save called")
+        self.logger.debug(f"Current file path: {self.current_file}")
+        
+        if self.current_file:
+            try:
+                self.logger.debug(f"Attempting quick save to: {self.current_file}")
+                save_flowstate(self.current_file)
+                self.logger.info("Quick save successful")
+            except Exception as e:
+                self.logger.error(f"Quick save failed: {str(e)}", exc_info=True)
+                self.action_save_as()  # Fallback to save_as if quick save fails
+        else:
+            self.logger.info("No current file path, redirecting to save_as")
+            self.action_save_as()
+
+    def action_save_as(self) -> None:
+        self.logger.info("action_save_as called")
+        try:
+            self.logger.debug("Creating new FileScreen instance with save_mode=True")
+            file_screen = FileScreen(save_mode=True)
+            if self.current_file:
+                file_screen.current_path = self.current_file
+            self.logger.debug("Pushing FileScreen to screen stack")
+            self.push_screen(file_screen)
+            self.logger.info("FileScreen successfully pushed")
+        except Exception as e:
+            self.logger.error(f"Failed to open save as screen: {str(e)}", exc_info=True)
+            raise
+
+
+    def _handle_load(self, path: Path) -> None:
+            self.logger.info(f"Handling load from: {path}")
+            try:
+                if not str(path).endswith('.json'):
+                    self.logger.debug("Not a JSON file, ignoring")
+                    return
+                NodeEnvironment.flush_all_nodes()
+                GlobalStore().flush_all_globals()
+                load_flowstate(str(path))
+                self.current_path = str(path)
+                self.app.current_file = str(path)  # Add this line to track the file in TUIApp
+                self.app.post_message(ModeChanged(Mode.NODE))
+                self.app.pop_screen()
+            except Exception as e:
+                self.logger.error(f"Failed to load file", exc_info=True)
+                raise
+
 
 if __name__ == "__main__":
     app = TUIApp()
