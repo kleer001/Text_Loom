@@ -74,10 +74,22 @@ class FileScreen(Screen):
             yield DirectoryTree(".")
             if self.is_save_mode:
                 self.logger.debug("Save mode active, creating FileMode")
-                yield FileMode()
-            self.logger.info("Compose completed successfully")
+                file_mode = FileMode()
+                yield file_mode
+                self.logger.debug("FileMode yielded")
         except Exception as e:
             self.logger.error("Failed during compose", exc_info=True)
+            raise
+
+    def on_input_submitted(self, event: Input.Submitted) -> None:
+        self.logger.info("Input submitted")
+        try:
+            path_value = event.value.strip()
+            if path_value:
+                self.logger.debug(f"Input submitted with value: {path_value}")
+                self._handle_save(Path(path_value))
+        except Exception as e:
+            self.logger.error("Failed handling input submission", exc_info=True)
             raise
 
     def on_mount(self):
@@ -103,11 +115,14 @@ class FileScreen(Screen):
         try:
             if self.is_save_mode:
                 path_input = self.query_one(Input)
-                if path_input.has_focus:
-                    self._handle_save(Path(path_input.value))
+                path_value = path_input.value.strip()
+                if path_value:
+                    self.logger.debug(f"About to call _handle_save with path: {path_value}")
+                    self._handle_save(Path(path_value))
+                    self.logger.debug("Returned from _handle_save")
                     return
-                    
-            selected_node = self._tree_view.cursor_node  # Changed from self.tree
+                
+            selected_node = self._tree_view.cursor_node
             if selected_node and selected_node.data.is_file:
                 if self.is_save_mode:
                     self._handle_save(selected_node.data.path)
@@ -120,13 +135,16 @@ class FileScreen(Screen):
     def _handle_save(self, path: Path) -> None:
         self.logger.info(f"Handling save to: {path}")
         try:
-            if not str(path).endswith('.json'):
-                path = path.with_suffix('.json')
+            self.logger.debug("About to call save_flowstate")
             save_flowstate(str(path))
-            self.current_path = str(path)
-            self.app.current_file = str(path)  # Update the app's current file path
+            self.logger.debug("save_flowstate completed")
+            self.app.current_file = str(path)
+            self.app.mode_line.path = str(path)
+            self.logger.debug("About to post ModeChanged message")
             self.app.post_message(ModeChanged(Mode.NODE))
+            self.logger.debug("About to pop screen")
             self.app.pop_screen()
+            self.logger.debug("Screen popped")
         except Exception as e:
             self.logger.error(f"Failed to save file", exc_info=True)
             raise
@@ -134,13 +152,11 @@ class FileScreen(Screen):
     def _handle_load(self, path: Path) -> None:
         self.logger.info(f"Handling load from: {path}")
         try:
-            if not str(path).endswith('.json'):
-                self.logger.debug("Not a JSON file, ignoring")
-                return
             NodeEnvironment.flush_all_nodes()
             GlobalStore().flush_all_globals()
             load_flowstate(str(path))
-            self.current_path = str(path)
+            self.app.current_file = str(path)
+            self.app.mode_line.path = str(path)
             self.app.post_message(ModeChanged(Mode.NODE))
             self.app.pop_screen()
         except Exception as e:
@@ -151,7 +167,9 @@ class FileScreen(Screen):
         self.logger.info(f"File selected: {event.path}")
         try:
             if self.is_save_mode:
-                self.query_one(Input).value = str(event.path)
+                path_input = self.query_one(Input)
+                path_input.value = str(event.path)
+                path_input.focus()
             else:
                 self._handle_load(event.path)
         except Exception as e:

@@ -129,7 +129,7 @@ class TUIApp(App[None]):
         Binding("ctrl+g", "switch_mode('GLOBAL')", "Global Mode"),
         Binding("ctrl+o", "open_file", "Open File"),
         Binding("ctrl+s", "quick_save", "Quick Save"),
-        Binding("ctrl+S", "save_as", "Save As"),
+        Binding("ctrl+d", "save_as", "Save As"),
         Binding("ctrl+e", "switch_mode('HELP')", "Help Mode"),
         Binding("ctrl+k", "switch_mode('KEYMAP')", "Keymap Mode"),
         Binding("ctrl+t", "switch_mode('STATUS')", "Status Mode"),
@@ -187,28 +187,12 @@ class TUIApp(App[None]):
         try:
             self.mode_line = self.query_one(ModeLine)
             self.help_window = self.query_one(HelpWindow)
+            self.mode_line.path = "untitled.json"
+            self.current_file = "untitled.json"
         except NoMatches as e:
             self.logger.error("Failed to initialize components", exc_info=True)
             self.exit(message="Failed to initialize components")
         self._update_mode_display()
-
-    def action_switch_mode(self, mode_name: str) -> None:
-        try:
-            new_mode = Mode[mode_name]
-            self.logger.info(f"Attempting to switch mode from {self.current_mode} to {new_mode}")
-            if new_mode != self.current_mode:
-                self.current_mode = new_mode
-                self._update_mode_display()
-                self._handle_mode_focus(new_mode)
-                self.post_message(ModeChanged(self.current_mode))  
-                self.logger.info(f"Mode switched successfully to {new_mode}")
-        except KeyError:
-            error_msg = f"Invalid mode: {mode_name}"
-            self.logger.error(error_msg)
-            self.mode_line.debug_info = error_msg
-        except Exception as e:
-            self.logger.error(f"Unexpected error in action_switch_mode: {str(e)}", exc_info=True)
-
 
     def _handle_mode_focus(self, mode: Mode) -> None:
         self.logger.info(f"Handling focus for mode: {mode}")
@@ -285,19 +269,12 @@ class TUIApp(App[None]):
 
     def action_quick_save(self) -> None:
         self.logger.info("action_quick_save called")
-        self.logger.debug(f"Current file path: {self.current_file}")
-        
-        if self.current_file:
-            try:
-                self.logger.debug(f"Attempting quick save to: {self.current_file}")
-                save_flowstate(self.current_file)
-                self.logger.info("Quick save successful")
-            except Exception as e:
-                self.logger.error(f"Quick save failed: {str(e)}", exc_info=True)
-                self.action_save_as()  # Fallback to save_as if quick save fails
-        else:
-            self.logger.info("No current file path, redirecting to save_as")
-            self.action_save_as()
+        try:
+            save_flowstate(self.current_file)
+            self.mode_line.path = self.current_file
+            self.logger.info(f"Quick saved to: {self.current_file}")
+        except Exception as e:
+            self.logger.error(f"Quick save failed: {str(e)}", exc_info=True)
 
     def action_save_as(self) -> None:
         self.logger.info("action_save_as called")
