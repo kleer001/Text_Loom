@@ -5,8 +5,8 @@ from rich.text import Text
 
 from core.global_store import GlobalStore
 import TUI.palette as pal
-
 from TUI.logging_config import get_logger
+from TUI.messages import GlobalAdded, GlobalChanged, GlobalDeleted
 
 logger = get_logger('global')
 
@@ -118,8 +118,16 @@ class GlobalWindow(Container):
                 self.flash_error()
                 self.input.value = ""
                 return
+
+            store = GlobalStore()
+            if key in store.list():
+                logger.debug(f"Updating existing global: {key}")
+                self.post_message(GlobalChanged(key, value))
+            else:
+                logger.debug(f"Adding new global: {key}")
+                self.post_message(GlobalAdded(key, value))
                 
-            GlobalStore().set(key, value)
+            store.set(key, value)
             logger.debug("Successfully set global value")
             self.refresh_table()
             self.input.value = ""
@@ -127,3 +135,11 @@ class GlobalWindow(Container):
             logger.debug(f"Exception occurred: {str(e)}")
             self.flash_error()
             self.input.value = ""
+
+    def delete_global(self, key: str) -> None:
+        logger.debug(f"Deleting global: {key}")
+        store = GlobalStore()
+        if key in store.list():
+            store.delete(key)
+            self.post_message(GlobalDeleted(key))
+            self.refresh_table()

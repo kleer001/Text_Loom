@@ -3,7 +3,7 @@ from textual.app import ComposeResult
 from textual.containers import ScrollableContainer
 from textual.binding import Binding
 from rich.text import Text
-from .logging_config import get_logger
+from TUI.logging_config import get_logger
 import sys
 from io import StringIO
 from threading import Lock
