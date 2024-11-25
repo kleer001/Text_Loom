@@ -17,7 +17,8 @@ from core.base_classes import NodeEnvironment, NodeState, generate_node_types, N
 from core.flowstate_manager import load_flowstate
 from TUI.network_visualizer import layout_network, render_layout, LayoutEntry
 from TUI.logging_config import get_logger
-from TUI.messages import NodeSelected, NodeTypeSelected, OutputMessage
+from TUI.messages import (NodeAdded, NodeDeleted, ConnectionAdded, 
+ConnectionDeleted, NodeSelected, NodeTypeSelected, OutputMessage)
 import TUI.palette as pal
 
 logger = get_logger('node')
@@ -345,9 +346,11 @@ class NodeWindow(ScrollableContainer):
             if self._connection_mode == ConnectionMode.INPUT:
                 self._source_node.set_next_input(target_node)
                 logger.info(f"Connected input of {self._source_node.path()} to output of {target_node.path()}")
+                self.post_message(ConnectionAdded(target_node.path(), self._source_node.path()))
             else:  # OUTPUT mode
                 target_node.set_next_input(self._source_node)
                 logger.info(f"Connected input of {target_node.path()} to output of {self._source_node.path()}")
+                self.post_message(ConnectionAdded(self._source_node.path(), target_node.path()))
                 
             self._connection_mode = ConnectionMode.NONE
             self._source_node = None
@@ -376,6 +379,7 @@ class NodeWindow(ScrollableContainer):
             
             if new_node:
                 logger.debug(f"Successfully created node: {new_node.path()}")
+                self.post_message(NodeAdded(new_node.path(), node_type_str))
                 self._refresh_layout()
                 for i, node_data in enumerate(self._node_data):
                     if node_data.path == new_node.path():
@@ -394,6 +398,7 @@ class NodeWindow(ScrollableContainer):
         logger.debug("Showing node type selector")
         self.app.push_screen(NodeTypeSelector())
 
+
     def action_delete_node(self) -> None:
         if not self._initialized:
             return
@@ -406,8 +411,23 @@ class NodeWindow(ScrollableContainer):
                     try:
                         node = self._env.node_from_name(node_data.path)
                         if node:
+                            # Get all connections before destroying
+                            connections = []
+                            if hasattr(node, '_inputs'):
+                                for idx, conn in node._inputs.items():
+                                    connections.append((conn.output_node().path(), node.path()))
+                            if hasattr(node, '_outputs'):
+                                for output_node in node._outputs:
+                                    connections.append((node.path(), output_node.path()))
+                            
                             node.destroy()
                             logger.info(f"Deleted node: {node_data.path}")
+                            
+                            # Post messages for node and connection deletions
+                            self.post_message(NodeDeleted(node_data.path))
+                            for from_node, to_node in connections:
+                                self.post_message(ConnectionDeleted(from_node, to_node))
+                            
                             self._refresh_layout()
                     except Exception as e:
                         logger.error(f"Error deleting node: {str(e)}", exc_info=True)

@@ -20,7 +20,19 @@ from enum import Enum, auto
 
 from TUI.node_window import NodeWindow, NodeSelected
 from TUI.parameter_window import ParameterWindow
-from TUI.messages import OutputMessage
+from TUI.messages import (
+    OutputMessage,
+    NodeAdded,
+    NodeDeleted,
+    ConnectionAdded,
+    ConnectionDeleted,
+    ParameterChanged,
+    GlobalAdded,
+    GlobalChanged,
+    GlobalDeleted,
+    NodeSelected
+)
+
 from TUI.output_window import OutputWindow
 from TUI.status_window import StatusWindow
 from TUI.global_window import GlobalWindow
@@ -28,7 +40,10 @@ from TUI.help_window import HelpWindow
 from TUI.file_screen import FileScreen
 from TUI.keymap_screen import KeymapScreen 
 import TUI.palette as pal
-from core.flowstate_manager import save_flowstate
+
+from core.base_classes import NodeEnvironment
+from core.flowstate_manager import save_flowstate, load_flowstate
+from core.global_store import GlobalStore
 
 from TUI.screens_registry import (
     Mode, 
@@ -36,7 +51,6 @@ from TUI.screens_registry import (
     MAIN_SCREEN,
     FILE_SCREEN,
     KEYMAP_SCREEN,
-    ModeChanged
 )
 
 from TUI.logging_config import get_logger
@@ -171,16 +185,33 @@ class TUIApp(App[None]):
     help_window: ClassVar[HelpWindow]
     current_mode: reactive[Mode] = reactive(Mode.NODE)
     current_file: reactive[str] = reactive("")
+    AUTOSAVE_FILE: ClassVar[str] = "autosave.json"  # Added class variable
+
 
     def __init__(self):
-        super().__init__()
         self.logger = get_logger('tui.app')
-        self.current_mode = Mode.NODE
+        self.logger.info("Starting TUIApp initialization")
+        try:
+            super().__init__()
+            self.logger.debug("Super initialization complete")
+            self.current_mode = Mode.NODE
+            self.logger.debug("Mode set to NODE")
+            self.logger.debug("About to check autosave")
+            self._check_autosave()
+            self.logger.info("TUIApp initialization complete")
+        except Exception as e:
+            self.logger.error(f"Failed during TUIApp initialization: {str(e)}", exc_info=True)
+            raise
 
     def compose(self) -> ComposeResult:
         yield MainContent()
         yield HelpWindow()
         yield ModeLine()
+
+
+    def on_mount(self) -> None:
+        super().on_mount()
+        self.logger.info("Application started")
 
     def on_mount(self) -> None:
         self.logger.info("Application started")
@@ -193,6 +224,8 @@ class TUIApp(App[None]):
             self.logger.error("Failed to initialize components", exc_info=True)
             self.exit(message="Failed to initialize components")
         self._update_mode_display()
+        self._check_autosave()
+
 
     def _handle_mode_focus(self, mode: Mode) -> None:
         self.logger.info(f"Handling focus for mode: {mode}")
@@ -269,12 +302,19 @@ class TUIApp(App[None]):
 
     def action_quick_save(self) -> None:
         self.logger.info("action_quick_save called")
-        try:
-            save_flowstate(self.current_file)
-            self.mode_line.path = self.current_file
-            self.logger.info(f"Quick saved to: {self.current_file}")
-        except Exception as e:
-            self.logger.error(f"Quick save failed: {str(e)}", exc_info=True)
+        self.logger.debug(f"Current file path: {self.current_file}")
+        
+        if self.current_file:
+            try:
+                self.logger.debug(f"Quick saving to: {self.current_file}")
+                save_flowstate(self.current_file)
+                self.logger.info("Quick save successful")
+            except Exception as e:
+                self.logger.error(f"Quick save failed: {str(e)}", exc_info=True)
+                self.action_save_as()
+        else:
+            self.logger.info("No current file path, redirecting to save_as")
+            self.action_save_as()
 
     def action_save_as(self) -> None:
         self.logger.info("action_save_as called")
@@ -290,24 +330,91 @@ class TUIApp(App[None]):
             self.logger.error(f"Failed to open save as screen: {str(e)}", exc_info=True)
             raise
 
-
     def _handle_load(self, path: Path) -> None:
-            self.logger.info(f"Handling load from: {path}")
-            try:
-                if not str(path).endswith('.json'):
-                    self.logger.debug("Not a JSON file, ignoring")
-                    return
-                NodeEnvironment.flush_all_nodes()
-                GlobalStore().flush_all_globals()
-                load_flowstate(str(path))
-                self.current_path = str(path)
-                self.app.current_file = str(path)  # Add this line to track the file in TUIApp
-                self.app.post_message(ModeChanged(Mode.NODE))
-                self.app.pop_screen()
-            except Exception as e:
-                self.logger.error(f"Failed to load file", exc_info=True)
-                raise
+        self.logger.info(f"Handling load from: {path}")
+        try:
+            if not str(path).endswith('.json'):
+                self.logger.debug("Not a JSON file, ignoring")
+                return
+            NodeEnvironment.flush_all_nodes()
+            GlobalStore().flush_all_globals()
+            load_flowstate(str(path))
+            self.current_path = str(path)
+            self.current_file = str(path)
+            self.post_message(ModeChanged(Mode.NODE))
+            self.pop_screen()
+        except Exception as e:
+            self.logger.error("Failed to load file", exc_info=True)
+            raise
 
+    def _check_autosave(self) -> None:
+        self.logger.info("Starting autosave check")
+        try:
+            autosave_path = Path(self.AUTOSAVE_FILE)
+            self.logger.debug(f"Checking for autosave at: {autosave_path.absolute()}")
+            
+            if autosave_path.exists():
+                self.logger.info(f"Found autosave file: {self.AUTOSAVE_FILE}")
+                self.logger.debug("Flushing existing nodes")
+                NodeEnvironment.flush_all_nodes()
+                self.logger.debug("Flushing existing globals")
+                GlobalStore().flush_all_globals()
+                self.logger.debug("Loading flowstate from autosave")
+                load_flowstate(self.AUTOSAVE_FILE)
+                self.logger.info("Successfully loaded autosave")
+            else:
+                self.logger.info("No autosave file found")
+        except Exception as e:
+            self.logger.error(f"Failed to check/load autosave: {str(e)}", exc_info=True)
+            raise
+
+    def _perform_autosave(self) -> None:
+        """Perform autosave operation."""
+        self.logger.info("Performing autosave")
+        try:
+            save_flowstate(self.AUTOSAVE_FILE)
+            self.logger.info("Autosave successful")
+        except Exception as e:
+            self.logger.error(f"Autosave failed: {str(e)}", exc_info=True)
+
+
+
+    def _handle_network_change(self, message_type: str) -> None:
+        """Handle any network change by performing autosave."""
+        self.logger.info(f"Network change detected: {message_type}")
+        self._perform_autosave()
+
+    def on_parameter_changed(self, message: ParameterChanged) -> None:
+        self.logger.debug(f"Parameter changed: {message.node_path}.{message.param_name} = {message.new_value}")
+        self._handle_network_change("parameter_change")
+
+    def on_node_added(self, message: NodeAdded) -> None:
+        self.logger.debug(f"Node added: {message.node_path} of type {message.node_type}")
+        self._handle_network_change("node_added")
+
+    def on_node_deleted(self, message: NodeDeleted) -> None:
+        self.logger.debug(f"Node deleted: {message.node_path}")
+        self._handle_network_change("node_deleted")
+
+    def on_connection_added(self, message: ConnectionAdded) -> None:
+        self.logger.debug(f"Connection added: {message.from_node} -> {message.to_node}")
+        self._handle_network_change("connection_added")
+
+    def on_connection_deleted(self, message: ConnectionDeleted) -> None:
+        self.logger.debug(f"Connection deleted: {message.from_node} -> {message.to_node}")
+        self._handle_network_change("connection_deleted")
+
+    def on_global_added(self, message: GlobalAdded) -> None:
+        self.logger.debug(f"Global added: {message.key} = {message.value}")
+        self._handle_network_change("global_added")
+
+    def on_global_changed(self, message: GlobalChanged) -> None:
+        self.logger.debug(f"Global changed: {message.key} = {message.value}")
+        self._handle_network_change("global_changed")
+
+    def on_global_deleted(self, message: GlobalDeleted) -> None:
+        self.logger.debug(f"Global deleted: {message.key}")
+        self._handle_network_change("global_deleted")
 
 if __name__ == "__main__":
     app = TUIApp()
