@@ -42,6 +42,7 @@ class ConnectionMode(Enum):
     NONE = auto()
     INPUT = auto()
     OUTPUT = auto()
+    DELETE = auto()
 
 
 class NodeTypeSelector(ModalScreen):
@@ -218,6 +219,7 @@ class NodeWindow(ScrollableContainer):
         Binding("r", "rename_node", "Rename Node"),
         Binding("i", "start_input_connection", "Input Connection"),
         Binding("o", "start_output_connection", "Output Connection"),
+        Binding("x", "start_delete_connection", "Delete Connection"),
         Binding("e", "get_output", "Get Node Output"),
         Binding("escape", "cancel_connection", "Cancel Connection"),
         Binding("C", "cook_node", "Cook Node"),
@@ -226,11 +228,16 @@ class NodeWindow(ScrollableContainer):
     def _get_state_indicator(self, node_state: NodeState, node_path: str) -> str:
         if self._cooking_node == node_path:
             return "◇"
-        if (self._connection_mode != ConnectionMode.NONE and 
-            self._source_node and 
-            self._source_node.path() == node_path):
-            return "↑" if self._connection_mode == ConnectionMode.INPUT else "↓"
-            
+        if self._connection_mode != ConnectionMode.NONE and self._source_node:
+            if self._connection_mode == ConnectionMode.DELETE:
+                source_node = self._env.node_from_name(self._source_node.path())
+                if source_node and hasattr(source_node, '_inputs'):
+                    for conn in source_node._inputs.values():
+                        if conn.output_node().path() == node_path:
+                            return "←"
+            elif self._source_node.path() == node_path:
+                return "↑" if self._connection_mode == ConnectionMode.INPUT else "↓"
+                
         return {
             NodeState.COOKED: "◆",
             NodeState.COOKING: "◇",
@@ -324,7 +331,9 @@ class NodeWindow(ScrollableContainer):
             self._refresh_layout()
 
     def action_select_or_connect_node(self) -> None:
-        if self._connection_mode != ConnectionMode.NONE:
+        if self._connection_mode == ConnectionMode.DELETE:
+            self.action_delete_connection()
+        elif self._connection_mode != ConnectionMode.NONE:
             self.action_complete_connection()
         else:
             self.action_select_node()
@@ -358,6 +367,67 @@ class NodeWindow(ScrollableContainer):
             
         except Exception as e:
             logger.error(f"Error creating connection: {str(e)}", exc_info=True)
+            self._connection_mode = ConnectionMode.NONE
+            self._source_node = None
+            self._refresh_layout()
+
+    def _get_deletable_connections(self, node) -> list:
+        if not hasattr(node, '_inputs'):
+            return []
+        return [(idx, conn.output_node()) for idx, conn in node._inputs.items()]
+
+    def action_start_delete_connection(self) -> None:
+        if not self._initialized or self._selected_line >= len(self._node_data):
+            logger.debug("Delete connection attempted but not initialized or invalid line")
+            return
+            
+        node_data = self._node_data[self._selected_line]
+        target_node = self._env.node_from_name(node_data.path)
+        
+        if not target_node:
+            logger.debug(f"Node not found for deletion: {node_data.path}")
+            return
+            
+        connections = self._get_deletable_connections(target_node)
+        if not connections:
+            logger.debug(f"No connections available to delete for node: {node_data.path}")
+            return
+            
+        self._connection_mode = ConnectionMode.DELETE
+        self._source_node = target_node
+        
+        valid_lines = self._get_valid_lines_for_delete_mode()
+        if valid_lines:
+            self._selected_line = valid_lines[0]
+            
+        logger.info(f"Entered delete connection mode for node: {node_data.path}")
+        self._refresh_layout()
+        self._ensure_line_visible(self._selected_line)
+
+    def action_delete_connection(self) -> None:
+        if not self._initialized or not self._source_node:
+            return
+
+        if self._selected_line >= len(self._node_data):
+            return
+
+        try:
+            target_data = self._node_data[self._selected_line]
+            source_node = self._source_node
+            
+            for idx, conn in source_node._inputs.items():
+                if conn.output_node().path() == target_data.path:
+                    del source_node._inputs[idx]
+                    logger.info(f"Deleted connection from {target_data.path} to {source_node.path()}")
+                    self.post_message(ConnectionDeleted(target_data.path, source_node.path()))
+                    break
+                    
+            self._connection_mode = ConnectionMode.NONE
+            self._source_node = None
+            self._refresh_layout()
+            
+        except Exception as e:
+            logger.error(f"Error deleting connection: {str(e)}", exc_info=True)
             self._connection_mode = ConnectionMode.NONE
             self._source_node = None
             self._refresh_layout()
@@ -411,19 +481,22 @@ class NodeWindow(ScrollableContainer):
                     try:
                         node = self._env.node_from_name(node_data.path)
                         if node:
-                            # Get all connections before destroying
                             connections = []
                             if hasattr(node, '_inputs'):
                                 for idx, conn in node._inputs.items():
-                                    connections.append((conn.output_node().path(), node.path()))
+                                    if hasattr(conn, 'output_node'):
+                                        out_node = conn.output_node()
+                                        if hasattr(out_node, 'path'):
+                                            connections.append((out_node.path(), node.path()))
+                            
                             if hasattr(node, '_outputs'):
                                 for output_node in node._outputs:
-                                    connections.append((node.path(), output_node.path()))
+                                    if hasattr(output_node, 'path'):
+                                        connections.append((node.path(), output_node.path()))
                             
                             node.destroy()
                             logger.info(f"Deleted node: {node_data.path}")
                             
-                            # Post messages for node and connection deletions
                             self.post_message(NodeDeleted(node_data.path))
                             for from_node, to_node in connections:
                                 self.post_message(ConnectionDeleted(from_node, to_node))
@@ -541,10 +614,28 @@ class NodeWindow(ScrollableContainer):
         region = Region(0, line_number, self.size.width, 1)
         self.scroll_to_region(region)
 
+    def _get_valid_lines_for_delete_mode(self) -> list:
+        if not self._source_node:
+            return []
+        valid_paths = set()
+        for conn in self._source_node._inputs.values():
+            valid_paths.add(conn.output_node().path())
+        return [i for i, data in enumerate(self._node_data) if data.path in valid_paths]
+
     def action_move_cursor_up(self) -> None:
         if not self._initialized:
             return
-        if self._selected_line > 0:
+            
+        if self._connection_mode == ConnectionMode.DELETE:
+            valid_lines = self._get_valid_lines_for_delete_mode()
+            if not valid_lines:
+                return
+            current_idx = valid_lines.index(self._selected_line) if self._selected_line in valid_lines else -1
+            if current_idx > 0:
+                self._selected_line = valid_lines[current_idx - 1]
+                self._refresh_layout()
+                self._ensure_line_visible(self._selected_line)
+        elif self._selected_line > 0:
             self._selected_line -= 1
             self._refresh_layout()
             self._ensure_line_visible(self._selected_line)
@@ -552,7 +643,17 @@ class NodeWindow(ScrollableContainer):
     def action_move_cursor_down(self) -> None:
         if not self._initialized:
             return
-        if self._selected_line < len(self._node_data) - 1:
+            
+        if self._connection_mode == ConnectionMode.DELETE:
+            valid_lines = self._get_valid_lines_for_delete_mode()
+            if not valid_lines:
+                return
+            current_idx = valid_lines.index(self._selected_line) if self._selected_line in valid_lines else -1
+            if current_idx < len(valid_lines) - 1:
+                self._selected_line = valid_lines[current_idx + 1]
+                self._refresh_layout()
+                self._ensure_line_visible(self._selected_line)
+        elif self._selected_line < len(self._node_data) - 1:
             self._selected_line += 1
             self._refresh_layout()
             self._ensure_line_visible(self._selected_line)

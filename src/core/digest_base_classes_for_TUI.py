@@ -105,22 +105,79 @@ class Node:
     def outputs(self) -> Dict[str, List['NodeConnection']]:
         return self._outputs
 
-class NodeConnection:
-    def __init__(self, output_node: Node, input_node: Node, output_index: int, input_index: int):
-        self._output_node = output_node
-        self._input_node = input_node
-        self._output_index = output_index
-        self._input_index = input_index
-        self._selected = False
+class NodeConnection(NetworkEntity):
+    """
+    Represents a connection between two nodes in the network.
 
-    def input_name(self) -> str:
-        return self._input_node.input_names()[self._input_index]
+    This class inherits from NetworkEntity and provides information about
+    the connection between an output of one node and an input of another node.
+    """
+
+    def __init__(
+        self,
+        output_node: "Node",
+        input_node: "Node",
+        output_index: int,
+        input_index: int,
+    ):
+        super().__init__()
+        self._output_node: "Node" = output_node
+        self._input_node: "Node" = input_node
+        self._output_index: int = output_index
+        self._input_index: int = input_index
+        self._selected: bool = False
+
+    def output_node(self) -> "Node":
+        """Returns the node on the output side of this connection."""
+        return self._output_node
+
+    def input_node(self) -> "Node":
+        """Returns the node on the input side of this connection."""
+        return self._input_node
+
+    def output_index(self) -> int:
+        """Returns the index of the output connection on the output node."""
+        return self._output_index
+
+    def input_index(self) -> int:
+        """Returns the index of the input connection on the input node."""
+        return self._input_index
 
     def output_name(self) -> str:
+        """Returns the name of the output connection on the output node."""
         return self._output_node.output_names()[self._output_index]
 
+    def input_name(self) -> str:
+        """Returns the name of the input connection on the input node."""
+        return self._input_node.input_names()[self._input_index]
+
+    def output_data_type(self) -> str:
+        """Returns the data type of the output connection on the output node."""
+        return self._output_node.output_data_types()[self._output_index]
+
+    def input_data_type(self) -> str:
+        """Returns the data type of the input connection on the input node."""
+        return self._input_node.input_data_types()[self._input_index]
+
     def is_selected(self) -> bool:
+        """Returns True if the connection is selected, False otherwise."""
         return self._selected
 
     def set_selected(self, selected: bool = True) -> None:
+        """Selects or deselects this connection."""
         self._selected = selected
+        # TODO Add undo logic
+
+    def network_item_type(self) -> NetworkItemType:
+        """Implement the abstract method from NetworkEntity."""
+        return NetworkItemType.CONNECTION
+
+    def __repr__(self) -> str:
+        """Returns a string representation of the NodeConnection."""
+        return (
+            f"NodeConnection(output_node={self._output_node.name()}, "
+            f"input_node={self._input_node.name()}, "
+            f"output_index={self._output_index}, "
+            f"input_index={self._input_index})"
+        )
+

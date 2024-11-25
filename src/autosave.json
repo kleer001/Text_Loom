@@ -1,6 +1,6 @@
 {
   "version": 0.01,
-  "timestamp": "2024-11-25T10:11:29.309065",
+  "timestamp": "2024-11-25T15:31:03.387987",
   "nodes": {
     "/looper1": {
       "_node_type": "looper",
@@ -203,7 +203,7 @@
           "_type": "toggle",
           "_node": "/looper1/text2",
           "_script_callback": "",
-          "_value": false
+          "_value": true
         }
       },
       "_connections": []
@@ -219,7 +219,7 @@
           "_type": "string",
           "_node": "/looper1/text3",
           "_script_callback": "",
-          "_value": " 3 Cherries"
+          "_value": " 3 Cherries Ha"
         },
         "pass_through": {
           "_name": "pass_through",
@@ -252,14 +252,7 @@
           "_value": true
         }
       },
-      "_connections": [
-        {
-          "input_index": 0,
-          "output_node_path": "/looper1/text3",
-          "input_node_path": "/looper1/text4",
-          "output_index": 0
-        }
-      ]
+      "_connections": []
     },
     "/looper1/merge1": {
       "_node_type": "merge",
@@ -291,20 +284,20 @@
       },
       "_connections": [
         {
-          "input_index": 0,
+          "input_index": 2,
+          "output_node_path": "/looper1/text4",
+          "input_node_path": "/looper1/merge1",
+          "output_index": 0
+        },
+        {
+          "input_index": 3,
           "output_node_path": "/looper1/text2",
           "input_node_path": "/looper1/merge1",
           "output_index": 0
         },
         {
-          "input_index": 1,
+          "input_index": 4,
           "output_node_path": "/looper1/text3",
-          "input_node_path": "/looper1/merge1",
-          "output_index": 0
-        },
-        {
-          "input_index": 2,
-          "output_node_path": "/looper1/text4",
           "input_node_path": "/looper1/merge1",
           "output_index": 0
         }
@@ -314,15 +307,10 @@
   "globals": {
     "AB": 6,
     "FOO": "apples",
-    "BAR": 42,
-    "POO": "sdfsdf"
+    "BAR": 42
   },
   "undo_state": {
     "undo_stack": [
-      [
-        null,
-        []
-      ],
       [
         null,
         []

@@ -566,6 +566,36 @@ class NodeConnection(NetworkEntity):
         """Implement the abstract method from NetworkEntity."""
         return NetworkItemType.CONNECTION
 
+    def remove_connection(self) -> None:
+        output_node = self._output_node
+        input_node = self._input_node
+        output_idx = self._output_index
+        input_idx = self._input_index
+        
+        output_name = self.output_name()
+        input_name = self.input_name()
+        
+        if output_name in output_node.outputs():
+            output_connections = output_node.outputs()[output_name]
+            if self in output_connections:
+                output_connections.remove(self)
+                
+        if input_name in input_node.inputs():
+            if input_node.inputs()[input_name] == self:
+                input_node.inputs()[input_name] = None
+        
+        def restore_connection():
+            if output_name in output_node.outputs():
+                output_node.outputs()[output_name].append(self)
+            if input_name in input_node.inputs():
+                input_node.inputs()[input_name] = self
+        
+        UndoManager().add_action(
+            restore_connection,
+            (),
+            f"Restore connection from {output_node.name()}.{output_name} to {input_node.name()}.{input_name}"
+        )
+
     def __repr__(self) -> str:
         """Returns a string representation of the NodeConnection."""
         return (
@@ -576,14 +606,7 @@ class NodeConnection(NetworkEntity):
         )
 
 class NodeState(Enum):
-    COOKING = "cooking"# def destroy(self) -> None:
-    #     """Deletes this node and its connections."""
-    #     for connection in list(self.inputs()) + list(self.outputs()):
-    #         self._remove_connection(connection)
-    #     NodeEnvironment.remove_node(self.node_path())
-        # if self.parent():
-        #     self.parent()._children.remove(self)
-        # TODO Add undo logic
+    COOKING = "cooking"
     UNCHANGED = "unchanged"
     UNCOOKED = "uncooked"
     COOKED = "cooked"
@@ -742,6 +765,9 @@ class Node(MobileItem):
 
     def set_input(self, input_index: int, input_node: "Node", output_index: int = 0) -> None:
         """Connects an input of this node to an output of another node."""
+        if input_node == self:
+            print(f"Rejected self-connection attempt for node: {self.name()}")
+            return
         if hasattr(self, 'SINGLE_INPUT') and self.SINGLE_INPUT and self._inputs:
             self.add_warning(f"Node type {self.__class__.__name__} accepts only one input. Existing input will be replaced.")
             self._remove_connection(next(iter(self._inputs.values())))
@@ -774,14 +800,17 @@ class Node(MobileItem):
             self._remove_connection(self._inputs[input_index])
         # TODO Add undo logic
 
-    def _remove_connection(self, connection: NodeConnection) -> None:
-        """Removes a connection from both nodes it connects."""
-        if connection.input_index() in self._inputs:
-            del self._inputs[connection.input_index()]
-        if connection.output_index() in connection.output_node()._outputs:
-            connection.output_node()._outputs[connection.output_index()].remove(
-                connection
-            )
+    def remove_connection(self, connection: NodeConnection) -> None:
+        input_name = connection.input_name()
+        output_name = connection.output_name()
+        
+        if connection.input_node() == self:
+            if input_name in self._inputs and self._inputs[input_name] == connection:
+                connection.remove_connection()
+                
+        if connection.output_node() == self:
+            if output_name in self._outputs and connection in self._outputs[output_name]:
+                connection.remove_connection()
         # TODO Add undo logic
 
     def state(self) -> NodeState:
