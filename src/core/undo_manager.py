@@ -1,41 +1,94 @@
 import sys
 import json
+from contextlib import contextmanager
+from typing import Optional, List, Tuple, Callable
+
+
+class UndoGroup:
+    def __init__(self, description: str):
+        self.description = description
+        self.actions: List[Tuple[Callable, tuple, str]] = []
+
+    def add_action(self, action: Callable, args: tuple, description: str):
+        self.actions.append((action, args, description))
+
+    def execute_undo(self):
+        for action, args, _ in reversed(self.actions):
+            action(*args)
+
+    def execute_redo(self):
+        for action, args, _ in self.actions:
+            action(*args)
+
+
 
 class UndoManager:
+
     _instance = None
-    
+
     def __new__(cls):
         if cls._instance is None:
             cls._instance = super(UndoManager, cls).__new__(cls)
             cls._instance.undo_stack = []
             cls._instance.redo_stack = []
             cls._instance._enabled = True
-            cls._instance._memory_limit = 1024 * 1024 * 10  # 10 MB default limit
+            cls._instance._memory_limit = 1024 * 1024 * 10
+            cls._instance._current_group: Optional[UndoGroup] = None
         return cls._instance
 
-    def undo(self):
-        if self._enabled and self.undo_stack:
-            action, args, description = self.undo_stack.pop()
-            action(*args)
-            self.redo_stack.append((action, args, description))
-            self.redo_stack.clear()
-
-    def redo(self):
-        if self._enabled and self.redo_stack:
-            action, args, description = self.redo_stack.pop()
-            action(*args)
-            self.undo_stack.append((action, args, description))
-
     def add_action(self, action, args, description):
-        if self._enabled:
+        if not self._enabled:
+            return
+
+        if self._current_group is not None:
+            self._current_group.add_action(action, args, description)
+        else:
             self.undo_stack.append((action, args, description))
             self.redo_stack.clear()
             self._check_memory_usage()
 
-    def areEnabled(self) -> bool:
+    def undo(self):
+        if not self._enabled or not self.undo_stack:
+            return
+
+        action, args, description = self.undo_stack.pop()
+        if isinstance(action, UndoGroup):
+            action.execute_undo()
+        else:
+            action(*args)
+        self.redo_stack.append((action, args, description))
+
+    def redo(self):
+        if not self._enabled or not self.redo_stack:
+            return
+
+        action, args, description = self.redo_stack.pop()
+        if isinstance(action, UndoGroup):
+            action.execute_redo()
+        else:
+            action(*args)
+        self.undo_stack.append((action, args, description))
+
+    @contextmanager
+    def group(self, description: str):
+        if self._current_group is not None:
+            raise RuntimeError("Nested undo groups are not supported")
+        
+        group = UndoGroup(description)
+        self._current_group = group
+        try:
+            yield group
+        finally:
+            self._current_group = None
+            if self._enabled and group.actions:
+                self.undo_stack.append((group, (), description))
+                self.redo_stack.clear()
+                self._check_memory_usage()
+
+    def are_enabled(self) -> bool:
         return self._enabled
 
-    def areDisabled(self) -> bool:
+    def are_disabled(self) -> bool:
         return not self._enabled
 
     def disable(self) -> bool:
@@ -49,13 +102,13 @@ class UndoManager:
         self._enabled = not self._enabled
         return self._enabled
 
-    def memoryUsage(self) -> int:
+    def memory_usage(self) -> int:
         return sum(sys.getsizeof(item) for item in self.undo_stack + self.redo_stack)
 
-    def memoryUsageLimit(self) -> int:
+    def memory_usage_limit(self) -> int:
         return self._memory_limit
 
-    def setMemoryLimit(self, limit: int):
+    def set_memory_limit(self, limit: int):
         self._memory_limit = limit
         self._check_memory_usage()
 
@@ -63,20 +116,20 @@ class UndoManager:
         self.undo_stack.clear()
         self.redo_stack.clear()
 
-    def getUndoText(self) -> str:
+    def get_undo_text(self) -> str:
         return self.undo_stack[-1][2] if self.undo_stack else "No undo available"
 
-    def getRedoText(self) -> str:
+    def get_redo_text(self) -> str:
         return self.redo_stack[-1][2] if self.redo_stack else "No redo available"
 
-    def exportStack(self) -> str:
+    def export_stack(self) -> str:
         data = {
             "undo_stack": [(func.__name__, args, desc) for func, args, desc in self.undo_stack],
             "redo_stack": [(func.__name__, args, desc) for func, args, desc in self.redo_stack]
         }
         return data
 
-    def importStack(self, filename: str):
+    def import_stack(self, filename: str):
         with open(filename, 'r') as f:
             data = json.load(f)
         # Note: This is a simplified version. In a real implementation,
@@ -84,17 +137,17 @@ class UndoManager:
         self.undo_stack = [(eval(func), args, desc) for func, args, desc in data["undo_stack"]]
         self.redo_stack = [(eval(func), args, desc) for func, args, desc in data["redo_stack"]]
 
-    def getStats(self) -> dict:
+    def get_stats(self) -> dict:
         return {
             "undo_count": len(self.undo_stack),
             "redo_count": len(self.redo_stack),
-            "memory_usage": self.memoryUsage(),
+            "memory_usage": self.memory_usage(),
             "memory_limit": self._memory_limit,
             "enabled": self._enabled
         }
 
     def _check_memory_usage(self):
-        while self.memoryUsage() > self._memory_limit and (self.undo_stack or self.redo_stack):
+        while self.memory_usage() > self._memory_limit and (self.undo_stack or self.redo_stack):
             if self.undo_stack:
                 self.undo_stack.pop(0)
             elif self.redo_stack:
@@ -109,17 +162,17 @@ if __name__ == "__main__":
     um.add_action(lambda x: x, (1,), "Action 1")
     um.add_action(lambda x: x, (2,), "Action 2")
 
-    print(f"Undo text: {um.getUndoText()}")
-    print(f"Redo text: {um.getRedoText()}")
+    print(f"Undo text: {um.get_undo_text()}")
+    print(f"Redo text: {um.get_redo_text()}")
 
-    um.setMemoryLimit(1024 * 1024)  # Set 1MB limit
-    print(f"New memory limit: {um.memoryUsageLimit()} bytes")
+    um.set_memory_limit(1024 * 1024)  # Set 1MB limit
+    print(f"New memory limit: {um.memory_usage_limit()} bytes")
 
-    um.exportStack("undo_stack.json")
+    um.export_stack("undo_stack.json")
     um.clear()
-    um.importStack("undo_stack.json")
+    um.import_stack("undo_stack.json")
 
-    print("Stats:", um.getStats())
+    print("Stats:", um.get_stats())
 
 
 class Node:

@@ -72,6 +72,7 @@ KEYMAPCONTENT_SCR_TEXT = "#222222"    # Main text color
 # Help window - slightly more prominent
 HELP_WIN_BACKGROUND = "#F0F4F8"      # Slightly bluer background
 HELP_WIN_TEXT = "#222222"            # Main text color
+HELP_WIN_HEADER = "#CCCCFF"
 
 # Global window colors
 GLOBAL_WIN_BACKGROUND_COLOR = "#FAFAF8" # Matches main background

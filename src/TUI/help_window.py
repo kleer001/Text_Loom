@@ -7,6 +7,8 @@ from textual.widgets import DataTable
 from textual.widgets import Static
 from textual.containers import Container
 
+from rich.text import Text
+
 from TUI.logging_config import get_logger
 import TUI.palette as pal
 
@@ -26,9 +28,13 @@ class HelpWindow(Container):
         background: {pal.HELP_WIN_BACKGROUND};
         color: {pal.HELP_WIN_TEXT};
     }}
+
+    DataTable > .datatable--cell {{
+        background: {pal.HELP_WIN_BACKGROUND};
+    }}
     
-    DataTable > .datatable--header {{
-        display: none;
+    DataTable > .datatable--header-cell {{
+        background: {pal.HELP_WIN_BACKGROUND};
     }}
     """
 
@@ -44,7 +50,7 @@ class HelpWindow(Container):
         self.table = self.query_one(DataTable)
         self.table.cursor_type = "none"
         self.table.zebra_stripes = True
-        self.table.show_header = False
+        self.table.show_header = True
         self.call_after_refresh(self.update_table)
 
     def update_table(self) -> None:
@@ -92,23 +98,40 @@ class HelpWindow(Container):
             self.current_section = "ERROR"
             self.help_sections["ERROR"] = error_msg
 
-    def _create_table_data(self, content: str) -> List[List[str]]:
-        lines = [line for line in content.split('\n') if line.strip()]
-        if not lines:
-            return [[""]]
-        visible_rows = max(3, self.table.size.height + 1)
-        total_lines = len(lines)
-        min_columns = max(1, (total_lines + visible_rows - 1) // visible_rows)
-        table_data = [[] for _ in range(visible_rows)]
-        for col_idx in range(min_columns):
-            start_idx = col_idx * visible_rows
-            column = lines[start_idx:start_idx + visible_rows]
-            for row_idx, line in enumerate(column):
-                table_data[row_idx].append(line)
-            for row in table_data[len(column):]:
-                row.append("")
-        return table_data
+    def _create_table_data(self, content: str) -> List[List[Text]]:
+        try:
+            lines = [line for line in content.split('\n') if line.strip()]
+            if not lines:
+                return [[Text("")]]
                 
+            visible_rows = max(3, self.table.size.height + 1)
+            total_lines = len(lines)
+            min_columns = max(1, (total_lines + visible_rows - 1) // visible_rows)
+            table_data = [[] for _ in range(visible_rows)]
+            
+            for col_idx in range(min_columns):
+                start_idx = col_idx * visible_rows
+                column = lines[start_idx:start_idx + visible_rows]
+                
+                for row_idx, line in enumerate(column):
+                    colon_idx = line.find(':')
+                    if colon_idx != -1:
+                        styled_text = Text()
+                        styled_text.append(line[:colon_idx], style=f"bold {pal.HELP_WIN_TEXT}")
+                        styled_text.append(line[colon_idx:], style=pal.HELP_WIN_TEXT)
+                    else:
+                        styled_text = Text(line, style=pal.HELP_WIN_TEXT)
+                    table_data[row_idx].append(styled_text)
+                    
+                for row in table_data[len(column):]:
+                    row.append(Text("", style=pal.HELP_WIN_TEXT))
+                    
+            return table_data
+            
+        except Exception as e:
+            logger.error(f"Error creating table data: {str(e)}", exc_info=True)
+            return [[Text("Error formatting help text", style=pal.HELP_WIN_TEXT)]]
+                    
 
     def watch_current_section(self) -> None:
         section = self.current_section.upper()
@@ -116,5 +139,6 @@ class HelpWindow(Container):
         table_data = self._create_table_data(content)
         self.table.clear(columns=True)
         column_count = len(table_data[0]) if table_data else 1
-        self.table.add_columns(*["" for _ in range(column_count)])
+        headers = [Text(f"{section} Mode commands ", style=f"bold {pal.HELP_WIN_HEADER}")] + ["" for _ in range(column_count - 1)]
+        self.table.add_columns(*headers)
         self.table.add_rows(table_data)

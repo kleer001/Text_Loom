@@ -7,14 +7,6 @@ class NodeSelected(Message):
         self.node_path = node_path
         super().__init__()
 
-class ParameterChanged(Message):
-    def __init__(self, node_path: str, param_name: str, new_value: str, param_type: ParameterType) -> None:
-        self.node_path = node_path
-        self.param_name = param_name
-        self.new_value = new_value
-        self.param_type = param_type
-        super().__init__()
-
 class ScrollMessage(Message):
     def __init__(self, direction: int):
         self.direction = direction
@@ -30,6 +22,16 @@ class OutputMessage(Message):
         self.output_data = output_data
         super().__init__()
 
+#PARAMETER CHANGE
+class ParameterChanged(Message):
+    def __init__(self, node_path: str, param_name: str, new_value: str, param_type: ParameterType) -> None:
+        self.node_path = node_path
+        self.param_name = param_name
+        self.new_value = new_value
+        self.param_type = param_type
+        super().__init__()
+
+#NODE CREATION
 class NodeAdded(Message):
     def __init__(self, node_path: str, node_type: str) -> None:
         self.node_path = node_path
@@ -41,6 +43,7 @@ class NodeDeleted(Message):
         self.node_path = node_path
         super().__init__()
 
+#CONNECTIONS
 class ConnectionAdded(Message):
     def __init__(self, from_node: str, to_node: str) -> None:
         self.from_node = from_node
@@ -53,6 +56,7 @@ class ConnectionDeleted(Message):
         self.to_node = to_node
         super().__init__()
 
+#GLOBALS
 class GlobalAdded(Message):
     def __init__(self, key: str, value: any) -> None:
         self.key = key
