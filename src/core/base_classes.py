@@ -820,7 +820,6 @@ class Node(MobileItem):
     def set_state(self, state: NodeState) -> None:
         """Sets the state of the node."""
         self._state = state
-        # TODO Add undo logic
 
     def errors(self) -> Tuple[str, ...]:
         """Returns a tuple of error messages associated with this node."""
@@ -829,12 +828,10 @@ class Node(MobileItem):
     def add_error(self, error: str) -> None:
         """Adds an error message to this node."""
         self._errors.append(error)
-        # TODO Add undo logic
 
     def clear_errors(self) -> None:
         """Clears all error messages from this node."""
         self._errors.clear()
-        # TODO Add undo logic
 
     def warnings(self) -> Tuple[str, ...]:
         """Returns a tuple of warning messages associated with this node."""
@@ -843,12 +840,10 @@ class Node(MobileItem):
     def add_warning(self, warning: str) -> None:
         """Adds a warning message to this node."""
         self._warnings.append(warning)
-        # TODO Add undo logic
 
     def clear_warnings(self) -> None:
         """Clears all warning messages from this node."""
         self._warnings.clear()
-        # TODO Add undo logic
 
     def input_names(self) -> Dict[str, str]:
         """Returns a dictionary of input names for this node type."""
