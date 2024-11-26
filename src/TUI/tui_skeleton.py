@@ -5,8 +5,8 @@ from datetime import datetime
 import os 
 from textual import work
 from textual.app import App, ComposeResult
-from textual.screen import Screen
-from textual.binding import Binding
+from textual.screen import Screen, ModalScreen
+from textual.binding import Binding, BindingType
 from textual.containers import Container
 from textual.message import Message
 from textual.reactive import reactive
@@ -44,6 +44,7 @@ import TUI.palette as pal
 from core.base_classes import NodeEnvironment
 from core.flowstate_manager import save_flowstate, load_flowstate
 from core.global_store import GlobalStore
+from core.undo_manager import UndoManager
 
 from TUI.screens_registry import (
     Mode, 
@@ -116,10 +117,10 @@ class ModeLine(Static):
         padding: 0 1;
     }}
     """
-
     mode = reactive(Mode.NODE)
     path = reactive("untitled")
     debug_info = reactive("")
+    keypress = reactive("")
 
     def watch_mode(self) -> None:
         self._refresh_display()
@@ -130,8 +131,47 @@ class ModeLine(Static):
     def watch_debug_info(self) -> None:
         self._refresh_display()
 
+    def watch_keypress(self) -> None:
+        self._refresh_display()
+
     def _refresh_display(self) -> None:
-        self.update(f"[{self.mode}] {self.path} | {self.debug_info}")
+        display_text = f"[{self.mode}] {self.path}"
+        if self.debug_info:
+            display_text += f" | {self.debug_info}"
+        if self.keypress:
+            display_text += f" | Keys: {self.keypress}"
+        self.update(display_text)
+
+class ClearAllConfirmation(ModalScreen[bool]):
+    DEFAULT_CSS = f"""
+    ClearAllConfirmation {{
+        align: center middle;
+    }}
+    Vertical {{
+        width: 40;
+        height: auto;
+        border: {pal.NODE_BORDER_MODAL} {pal.NODE_MODAL_BORDER};
+        background: {pal.NODE_MODAL_SURFACE};
+        color: {pal.NODE_MODAL_TEXT};
+        padding: 1;
+    }}
+    Static {{
+        text-align: center;
+        width: 100%;
+    }}
+    """
+    
+    def compose(self):
+        with Vertical():
+            yield Static("Clear all nodes and globals?")
+            yield Static("This action cannot be undone")
+            yield Static("Y/N")
+            
+    def on_key(self, event):
+        if event.key.lower() == "y":
+            self.dismiss(True)
+        elif event.key.lower() == "n" or event.key == "escape":
+            self.dismiss(False)
 
 class TUIApp(App[None]):
 
@@ -148,7 +188,10 @@ class TUIApp(App[None]):
         Binding("ctrl+k", "switch_mode('KEYMAP')", "Keymap Mode"),
         Binding("ctrl+t", "switch_mode('STATUS')", "Status Mode"),
         Binding("ctrl+l", "switch_mode('OUTPUT')", "Output Mode"),
+        Binding("ctrl+z", "undo", "Undo"),
+        Binding("ctrl+y", "redo", "Redo"),
         Binding("ctrl+q", "quit", "Quit"),
+        Binding("ctrl+w", "clear_all", "Clear All"),
     ]
 
     CSS = """
@@ -196,7 +239,8 @@ class TUIApp(App[None]):
             self.logger.debug("Super initialization complete")
             self.current_mode = Mode.NODE
             self.logger.debug("Mode set to NODE")
-            self.logger.debug("About to check autosave")
+            self.undo_manager = UndoManager()
+            self.logger.debug("UndoManager initialized")
             self._check_autosave()
             self.logger.info("TUIApp initialization complete")
         except Exception as e:
@@ -226,6 +270,26 @@ class TUIApp(App[None]):
         self._update_mode_display()
         self._check_autosave()
 
+
+    def on_key(self, event) -> None:
+        #self.logger.debug(f"Key event details - key: {event.key}, name: {event.name}, control: {event.control}")
+        #self.logger.debug(f"TUIApp received key event: {event.key} and {event}")
+        #I don't know why but we can't capture the alt key press :(
+        try:
+            mode_line = self.query_one(ModeLine)
+            key_display = []
+            
+            if event.control:
+                key_display.append("ctrl")
+            self.logger.debug(f"Key event details - key: {event.key}, name: {event.name}, control: {event.control}")
+                
+            if event.key not in ["ctrl", "shift", "alt"]:
+                key_display.append(event.key)
+                
+            mode_line.keypress = "+".join(key_display)
+            self.logger.debug(f"Updated modeline keypress to: {mode_line.keypress}")
+        except Exception as e:
+            self.logger.error(f"Error handling key event: {str(e)}", exc_info=True)
 
     def _handle_mode_focus(self, mode: Mode) -> None:
         self.logger.info(f"Handling focus for mode: {mode}")
@@ -378,6 +442,51 @@ class TUIApp(App[None]):
             self.logger.error(f"Autosave failed: {str(e)}", exc_info=True)
 
 
+    def action_clear_all(self) -> None:
+        self.logger.info("Clear all action triggered")
+        def handle_clear_response(clear: bool) -> None:
+            if clear:
+                try:
+                    NodeEnvironment.flush_all_nodes()
+                    GlobalStore().flush_all_globals()
+                    self.undo_manager = UndoManager()
+                    self._perform_autosave()
+                    self.mode_line.debug_info = "Cleared all nodes, globals, and history"
+                    self.logger.info("Successfully cleared all")
+                except Exception as e:
+                    self.logger.error(f"Clear all failed: {str(e)}", exc_info=True)
+                    self.mode_line.debug_info = "Clear all failed"
+
+        self.push_screen(ClearAllConfirmation(), handle_clear_response)
+
+
+    def action_undo(self) -> None:
+        self.logger.info("Undo action triggered")
+        if len(self.undo_manager.undo_stack) == 0:
+            self.mode_line.debug_info = "Nothing to undo"
+            return
+
+        try:
+            self.undo_manager.undo()
+            self._perform_autosave()
+            self.mode_line.debug_info = f"Undo: {self.undo_manager.get_undo_text()}"
+        except Exception as e:
+            self.logger.error(f"Undo failed: {str(e)}", exc_info=True)
+            self.mode_line.debug_info = "Undo failed"
+
+    def action_redo(self) -> None:
+        self.logger.info("Redo action triggered")
+        if len(self.undo_manager.redo_stack) == 0:
+            self.mode_line.debug_info = "Nothing to redo"
+            return
+
+        try:
+            self.undo_manager.redo()
+            self._perform_autosave()
+            self.mode_line.debug_info = f"Redo: {self.undo_manager.get_redo_text()}"
+        except Exception as e:
+            self.logger.error(f"Redo failed: {str(e)}", exc_info=True)
+            self.mode_line.debug_info = "Redo failed"
 
     def _handle_network_change(self, message_type: str) -> None:
         """Handle any network change by performing autosave."""
