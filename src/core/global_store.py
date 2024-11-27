@@ -1,7 +1,5 @@
 from typing import Any, Dict
 import warnings
-from core.undo_manager import UndoManager
-
 
 class GlobalStore:
     _instance: Dict[str, Any] = {}
@@ -25,57 +23,37 @@ class GlobalStore:
 
     @classmethod
     def set(cls, key: str, value: Any) -> None:
+        from core.undo_manager import UndoManager
+        
         cls._validate_key(key)
         exists = key in cls._instance
-        old_value = cls._instance.get(key) if exists else None
-        cls._instance[key] = value
         
+        # Push state before modifying
         if exists:
-            UndoManager().add_action(
-                lambda k, v: cls._instance.__setitem__(k, v),
-                (key, old_value),
-                f"Update global: {key}",
-                lambda k, v: cls._instance.__setitem__(k, v),
-                (key, value)
-            )
+            UndoManager().push_state(f"Update global: {key}")
         else:
-            UndoManager().add_action(
-                lambda k: cls._instance.pop(k, None),
-                (key,),
-                f"Add global: {key}",
-                lambda k, v: cls._instance.__setitem__(k, v),
-                (key, value)
-            )
+            UndoManager().push_state(f"Add global: {key}")
+            
+        # Modify after pushing state
+        cls._instance[key] = value
 
     @classmethod
     def cut(cls, key: str) -> None:
+        from core.undo_manager import UndoManager
+        
         cls._validate_key(key)
         if key in cls._instance:
-            old_value = cls._instance[key]
+            # Push state before modifying
+            UndoManager().push_state(f"Cut global: {key}")
             cls._instance.pop(key)
-            
-            UndoManager().add_action(
-                lambda k, v: cls._instance.__setitem__(k, v),
-                (key, old_value),
-                f"Cut global: {key}",
-                lambda k: cls._instance.pop(k, None),
-                (key,)
-            )
 
     @classmethod
-    def flush_all_globals(cls):
+    def flush_all_globals(cls) -> None:
+        from core.undo_manager import UndoManager
+        
         if cls._instance:
-            old_state = dict(cls._instance)
             cls._instance.clear()
-            
-            UndoManager().add_action(
-                lambda state: cls._instance.update(state),
-                (old_state,),
-                "Flush all globals",
-                lambda: cls._instance.clear(),
-                ()
-            )
-
+            UndoManager().push_state("Flush all globals")
 
     @classmethod
     def get(cls, key: str) -> Any:
@@ -90,4 +68,3 @@ class GlobalStore:
     def has(cls, key: str) -> bool:
         cls._validate_key(key)
         return key in cls._instance
-    

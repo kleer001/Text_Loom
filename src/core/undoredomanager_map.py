@@ -1,12 +1,9 @@
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Set, Tuple, Any, Union, Deque
+from typing import Dict, List, Optional, Set, Tuple, Any, Union
 from enum import Enum
 from pathlib import PurePosixPath
 from collections import deque
 from weakref import WeakSet
-from TUI.logging_config import get_logger
-from core.base_classes import NodeEnvironment, Node, NodeConnection, NodeType, NodeState
-from core.parm import Parm
 
 MAX_STACK_SIZE = 100
 
@@ -58,36 +55,20 @@ class NetworkState:
     restore_order: List[str]
 
 class UndoManager:
-    _instance: Optional['UndoManager'] = None
-    _initialized: bool = False
-    
-    def __new__(cls):
-        if cls._instance is None:
-            cls._instance = super(UndoManager, cls).__new__(cls)
-        return cls._instance
-
     def __init__(self):
-        if not UndoManager._initialized:
-            self.undo_stack: Deque[Tuple[str, NetworkState]] = deque(maxlen=MAX_STACK_SIZE)
-            self.redo_stack: Deque[Tuple[str, NetworkState]] = deque(maxlen=MAX_STACK_SIZE)
-            self._restoring: bool = False
-            self._current_operation: Optional[str] = None
-            self._node_paths_restored: Set[str] = set()
-            self.logger = get_logger('undo')
-            self.logger.info("Initializing UndoManager")
-            UndoManager._initialized = True
+        self.undo_stack: deque[NetworkState] = deque(maxlen=MAX_STACK_SIZE)
+        self.redo_stack: deque[NetworkState] = deque(maxlen=MAX_STACK_SIZE)
+        self._restoring: bool = False
+        self._current_operation: Optional[str] = None
+        self._node_paths_restored: Set[str] = set()
 
     def capture_network_state(self) -> NetworkState:
-        from core.global_store import GlobalStore
-        
-        self.logger.debug("Capturing network state")
         node_order = []
         captured_nodes = {}
         
         for node_path in NodeEnvironment.list_nodes():
             node = NodeEnvironment.node_from_name(node_path)
             if not node:
-                self.logger.debug(f"Skipping non-existent node: {node_path}")
                 continue
 
             node_order.append(node_path)
@@ -150,10 +131,8 @@ class UndoManager:
 
     def restore_network_state(self, state: NetworkState) -> None:
         if self._restoring:
-            self.logger.debug("Already restoring state, skipping")
             return
 
-        self.logger.info("Starting network state restoration")
         self._restoring = True
         self._node_paths_restored.clear()
         
@@ -165,18 +144,12 @@ class UndoManager:
                     self._restore_node(state.nodes[node_path])
             
             self._restore_connections(state)
-            self.logger.info("Network state restoration completed")
             
-        except Exception as e:
-            self.logger.error(f"Error during state restoration: {str(e)}")
-            raise
         finally:
             self._restoring = False
             self._node_paths_restored.clear()
 
     def _restore_global_store(self, state: GlobalStoreState) -> None:
-        from core.global_store import GlobalStore
-        self.logger.debug("Restoring global store")
         GlobalStore.flush_all_globals()
         for key, value in state.store.items():
             GlobalStore.set(key, value)
@@ -185,7 +158,6 @@ class UndoManager:
         if state.path in self._node_paths_restored:
             return
 
-        self.logger.debug(f"Restoring node: {state.path}")
         node = NodeEnvironment.node_from_name(state.path)
         if not node:
             node = Node.create_node(
@@ -216,11 +188,11 @@ class UndoManager:
         self._node_paths_restored.add(state.path)
 
     def _restore_connections(self, state: NetworkState) -> None:
-        self.logger.debug("Restoring node connections")
         for node_state in state.nodes.values():
             node = NodeEnvironment.node_from_name(node_state.path)
             if not node:
                 continue
+
             self._restore_node_connections(node, node_state)
 
     def _restore_node_connections(self, node: 'Node', state: NodeState) -> None:
@@ -255,41 +227,24 @@ class UndoManager:
 
     def push_state(self, operation_name: str = "") -> None:
         if not self._restoring:
-            self.logger.info(f"Pushing new state: {operation_name}")
-            current_state = self.capture_network_state()
-            self.undo_stack.append((operation_name, current_state))
+            state = self.capture_network_state()
+            self.undo_stack.append((operation_name, state))
             self.redo_stack.clear()
 
     def undo(self) -> Optional[str]:
         if not self.undo_stack:
-            self.logger.debug("No states to undo")
             return None
         
-        operation_name, previous_state = self.undo_stack.pop()
-        self.logger.info(f"Undoing operation: {operation_name}")
-        current_state = self.capture_network_state()
-        self.redo_stack.append((operation_name, current_state))
-        self.restore_network_state(previous_state)
+        operation_name, state = self.undo_stack.pop()
+        self.redo_stack.append((operation_name, self.capture_network_state()))
+        self.restore_network_state(state)
         return operation_name
 
     def redo(self) -> Optional[str]:
         if not self.redo_stack:
-            self.logger.debug("No states to redo")
             return None
             
-        operation_name, next_state = self.redo_stack.pop()
-        self.logger.info(f"Redoing operation: {operation_name}")
-        current_state = self.capture_network_state()
-        self.undo_stack.append((operation_name, current_state))
-        self.restore_network_state(next_state)
+        operation_name, state = self.redo_stack.pop()
+        self.undo_stack.append((operation_name, self.capture_network_state()))
+        self.restore_network_state(state)
         return operation_name
-    
-    def get_undo_text(self) -> str:
-        if not self.undo_stack:
-            return "Nothing to undo"
-        return "\n".join(f"{i+1}: {action}" for i, (action, _) in enumerate(reversed(self.undo_stack)))
-
-    def get_redo_text(self) -> str:
-        if not self.redo_stack:
-            return "Nothing to redo"
-        return "\n".join(f"{i+1}: {action}" for i, (action, _) in enumerate(reversed(self.redo_stack)))

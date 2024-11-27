@@ -9,7 +9,6 @@ from typing import Any, ClassVar, Dict, List, Callable, Optional, Tuple
 from typing import Optional, Set, Tuple, Sequence, Union
 import time
 
-from core.undo_manager import UndoManager
 import inspect
 import traceback
 
@@ -309,8 +308,7 @@ class MobileItem(NetworkEntity):
 
 
         MobileItem.all_MobileItems.append(self)
-        UndoManager().undo_stack.append((self.delete, ()))
-        UndoManager().redo_stack.clear()                    
+
 
         super().__init__()
         self._name: str = name
@@ -324,8 +322,6 @@ class MobileItem(NetworkEntity):
         if self in MobileItem.all_MobileItems:
             MobileItem.all_MobileItems.remove(self)
             state = self.__dict__.copy()
-            UndoManager().undo_stack.append((MobileItem.recreate, (state,)))
-            UndoManager().redo_stack.clear()
             del self
 
     @classmethod
@@ -333,8 +329,6 @@ class MobileItem(NetworkEntity):
         new_MobileItem = cls.__new__(cls)
         new_MobileItem.__dict__.update(state)
         cls.all_MobileItems.append(new_MobileItem)
-        UndoManager().undo_stack.append((new_MobileItem.delete, ()))
-        UndoManager().redo_stack.clear()
         return new_MobileItem
 
     def name(self) -> str:
@@ -590,11 +584,7 @@ class NodeConnection(NetworkEntity):
             if input_name in input_node.inputs():
                 input_node.inputs()[input_name] = self
         
-        UndoManager().add_action(
-            restore_connection,
-            (),
-            f"Restore connection from {output_node.name()}.{output_name} to {input_node.name()}.{input_name}"
-        )
+        
 
     def __repr__(self) -> str:
         """Returns a string representation of the NodeConnection."""
