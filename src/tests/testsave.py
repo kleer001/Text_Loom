@@ -52,10 +52,10 @@ print("\n:: LOOPER EVAL::")
 loopeval = looper1.eval()
 print("::LOOP EVALS TO::\n", loopeval)
 
-# # Set up save file
-# file_path = os.path.abspath("save_file.json")
+# Set up save file
+file_path = os.path.abspath("save_file.json")
 
-# save_flowstate(filepath=file_path)
+save_flowstate(filepath=file_path)
 
 # print_node_info(text1)
 # print_node_info(merge1)

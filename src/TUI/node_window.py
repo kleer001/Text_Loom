@@ -530,7 +530,7 @@ class NodeWindow(ScrollableContainer):
 
     def on_mount(self) -> None:
         logger.debug("NodeWindow mounted")
-        self._initialize_network()
+        #self._initialize_network()
         self.border_title = "Node Network"
 
     def _initialize_network(self) -> None:

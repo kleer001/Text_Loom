@@ -239,8 +239,6 @@ class TUIApp(App[None]):
             self.logger.debug("Super initialization complete")
             self.current_mode = Mode.NODE
             self.logger.debug("Mode set to NODE")
-            self.undo_manager = UndoManager()
-            self.logger.debug("UndoManager initialized")
             self._check_autosave()
             self.logger.info("TUIApp initialization complete")
         except Exception as e:
@@ -270,10 +268,13 @@ class TUIApp(App[None]):
         self._update_mode_display()
         self._check_autosave()
 
+    def _refresh_all_windows(self) -> None:
+        main_layout = self.query_one(MainLayout)
+        for window in main_layout.walk_children():
+            if hasattr(window, 'refresh'):
+                window.refresh()
 
     def on_key(self, event) -> None:
-        #self.logger.debug(f"Key event details - key: {event.key}, name: {event.name}, control: {event.control}")
-        #self.logger.debug(f"TUIApp received key event: {event.key} and {event}")
         #I don't know why but we can't capture the alt key press :(
         try:
             mode_line = self.query_one(ModeLine)
@@ -405,11 +406,13 @@ class TUIApp(App[None]):
             load_flowstate(str(path))
             self.current_path = str(path)
             self.current_file = str(path)
+            self._refresh_all_windows()
             self.post_message(ModeChanged(Mode.NODE))
             self.pop_screen()
         except Exception as e:
             self.logger.error("Failed to load file", exc_info=True)
             raise
+
 
     def _check_autosave(self) -> None:
         self.logger.info("Starting autosave check")
@@ -451,6 +454,7 @@ class TUIApp(App[None]):
                     GlobalStore().flush_all_globals()
                     self.undo_manager = UndoManager()
                     self._perform_autosave()
+                    self._refresh_all_windows()
                     self.mode_line.debug_info = "Cleared all nodes, globals, and history"
                     self.logger.info("Successfully cleared all")
                 except Exception as e:
@@ -458,40 +462,50 @@ class TUIApp(App[None]):
                     self.mode_line.debug_info = "Clear all failed"
 
         self.push_screen(ClearAllConfirmation(), handle_clear_response)
+        self._refresh_all_windows()
 
 
     def action_undo(self) -> None:
         self.logger.info("Undo action triggered")
-        if len(self.undo_manager.undo_stack) == 0:
+        undo_manager = UndoManager()
+        
+        self.logger.debug(f"Current undo stack size: {len(undo_manager.undo_stack)}")
+        if undo_manager.undo_stack:
+            self.logger.debug(f"Top of undo stack: {undo_manager.undo_stack[-1]}")
+        
+        if not undo_manager.undo_stack:
             self.mode_line.debug_info = "Nothing to undo"
             return
 
         try:
-            self.undo_manager.undo()
+            undo_manager.undo()
             self._perform_autosave()
-            self.mode_line.debug_info = f"Undo: {self.undo_manager.get_undo_text()}"
+            self.mode_line.debug_info = f"Undo: {undo_manager.get_undo_text()}"
         except Exception as e:
             self.logger.error(f"Undo failed: {str(e)}", exc_info=True)
             self.mode_line.debug_info = "Undo failed"
 
     def action_redo(self) -> None:
         self.logger.info("Redo action triggered")
-        if len(self.undo_manager.redo_stack) == 0:
+        undo_manager = UndoManager()
+        
+        if not undo_manager.redo_stack:
             self.mode_line.debug_info = "Nothing to redo"
             return
 
         try:
-            self.undo_manager.redo()
+            undo_manager.redo()
             self._perform_autosave()
-            self.mode_line.debug_info = f"Redo: {self.undo_manager.get_redo_text()}"
+            self._refresh_all_windows()
+            self.mode_line.debug_info = f"Redo: {undo_manager.get_redo_text()}"
         except Exception as e:
             self.logger.error(f"Redo failed: {str(e)}", exc_info=True)
             self.mode_line.debug_info = "Redo failed"
 
     def _handle_network_change(self, message_type: str) -> None:
-        """Handle any network change by performing autosave."""
         self.logger.info(f"Network change detected: {message_type}")
         self._perform_autosave()
+        self._refresh_all_windows()
 
     def on_parameter_changed(self, message: ParameterChanged) -> None:
         self.logger.debug(f"Parameter changed: {message.node_path}.{message.param_name} = {message.new_value}")

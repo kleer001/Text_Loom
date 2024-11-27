@@ -2,6 +2,7 @@ import sys
 import json
 from contextlib import contextmanager
 from typing import Optional, List, Tuple, Callable, Any, Union
+from TUI.logging_config import get_logger
 
 class UndoGroup:
     def __init__(self, description: str):
@@ -24,19 +25,35 @@ class UndoGroup:
 class UndoManager:
 
     _instance = None
+    _initialized = False
 
     def __new__(cls):
         if cls._instance is None:
             cls._instance = super(UndoManager, cls).__new__(cls)
-            cls._instance.undo_stack = []
-            cls._instance.redo_stack = []
-            cls._instance._enabled = True
-            cls._instance._memory_limit = 1024 * 1024 * 10
-            cls._instance._current_group: Optional[UndoGroup] = None
         return cls._instance
 
+    def __init__(self):
+        self.logger = get_logger('UNDO')
+
+        if not self._initialized:
+            self.undo_stack = []
+            self.redo_stack = []
+            self._enabled = True
+            self._memory_limit = 1024 * 1024 * 10
+            self._current_group = None
+            self._initialized = True
+
+    def _validate_action(self, action, args, description, redo_action=None, redo_args=None) -> bool:
+        if not callable(action) or not isinstance(args, tuple) or not isinstance(description, str):
+            return False
+        if redo_action is not None and not callable(redo_action):
+            return False
+        if redo_args is not None and not isinstance(redo_args, tuple):
+            return False
+        return True
+
     def add_action(self, action, args, description, redo_action=None, redo_args=None):
-        if not self._enabled:
+        if not self._enabled or not self._validate_action(action, args, description, redo_action, redo_args):
             return
 
         if self._current_group is not None:
@@ -49,18 +66,34 @@ class UndoManager:
     def undo(self):
         if not self._enabled or not self.undo_stack:
             return False
-            
-        action, args, description, redo_action, redo_args = self.undo_stack.pop()
-        action(*args)
-        self.redo_stack.append((action, args, description, redo_action, redo_args))
-        return True
-
+                    
+        self.logger.debug(f"Undo stack before pop length: {len(self.undo_stack)}")
+        try:
+            action, args, description, redo_action, redo_args = self.undo_stack.pop()
+            self.logger.debug(f"Popped action: {type(action)}, desc: {description}")
+            action(*args)
+            self.redo_stack.append((action, args, description, redo_action, redo_args))
+            return True
+        except ValueError as e:
+            self.logger.error(f"Invalid stack item format: {e}")
+            return False
+        except Exception as e:
+            self.logger.error(f"Undo execution failed: {e}")
+            return False
+        
     def redo(self):
         if not self._enabled or not self.redo_stack:
             return False
-        undo_action, undo_args, description, redo_action, redo_args = self.redo_stack.pop()
-        redo_action(*redo_args)
-        self.undo_stack.append((undo_action, undo_args, description, redo_action, redo_args))
+
+        action, args, description, redo_action, redo_args = self.redo_stack.pop()
+        
+        if redo_action and redo_args:
+            redo_action(*redo_args)
+            self.undo_stack.append((action, args, description, redo_action, redo_args))
+        else:
+            action(*args)
+            self.undo_stack.append((action, args, description, redo_action, redo_args))
+        
         return True
 
     @contextmanager
@@ -113,12 +146,19 @@ class UndoManager:
     def get_undo_text(self) -> str:
         if not self.undo_stack:
             return "No undo available"
-        return " -> ".join(action[2] for action in reversed(self.undo_stack))
+        try:
+            self.logger.info("Trying undo text method")
+            return " -> ".join(action[2] for action in reversed(self.undo_stack))
+        except Exception as e:
+            return self.logger.error(f"get_undo_text() failed: {e}")
 
     def get_redo_text(self) -> str:
         if not self.redo_stack:
             return "No redo available"
-        return " -> ".join(action[2] for action in self.redo_stack)
+        try:
+            return " -> ".join(action[2] for action in self.redo_stack)
+        except IndexError:
+            return "Invalid redo state"
 
     def export_stack(self) -> dict:
         data = {
