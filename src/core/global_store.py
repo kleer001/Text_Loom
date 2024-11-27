@@ -1,6 +1,6 @@
 from typing import Any, Dict
 import warnings
-from .undo_manager import undoable
+from core.undo_manager import UndoManager
 
 
 class GlobalStore:
@@ -23,21 +23,47 @@ class GlobalStore:
             warnings.warn(warning_message, UserWarning)
             raise ValueError("Invalid key")
 
-    @undoable("Set global value")
     @classmethod
     def set(cls, key: str, value: Any) -> None:
         cls._validate_key(key)
+        old_value = cls._instance.get(key, None)
+        exists = key in cls._instance
+        
+        def undo_func(target_cls, k, existed, old):
+            if existed:
+                target_cls._instance[k] = old
+            else:
+                target_cls._instance.pop(k, None)
+                
         cls._instance[key] = value
+        
+        UndoManager().add_action(
+            undo_func,
+            (cls, key, exists, old_value),
+            f"Set global: {key}",
+            cls.set,
+            (key, value)
+        )
+
+    @classmethod
+    def cut(cls, key: str) -> None:
+        cls._validate_key(key)
+        if key in cls._instance:
+            old_value = cls._instance[key]
+            cls._instance.pop(key)
+            
+            UndoManager().add_action(
+                cls.set,
+                (key, old_value),
+                f"Cut global: {key}",
+                cls.cut,
+                (key,)
+            )
 
     @classmethod
     def get(cls, key: str) -> Any:
         cls._validate_key(key)
         return cls._instance.get(key)
-
-    @classmethod
-    def cut(cls, key: str) -> None:
-        cls._validate_key(key)
-        cls._instance.pop(key, None)
 
     @classmethod
     def list(cls) -> Dict[str, Any]:
@@ -50,4 +76,18 @@ class GlobalStore:
     
     @classmethod
     def flush_all_globals(cls):
-        cls._instance.clear()
+        if cls._instance:
+            old_state = dict(cls._instance)
+            cls._instance.clear()
+            
+            def restore_state(target_cls, state):
+                target_cls._instance.clear()
+                target_cls._instance.update(state)
+            
+            UndoManager().add_action(
+                restore_state,
+                (cls, old_state),
+                "Flush all globals",
+                cls.flush_all_globals,
+                ()
+            )

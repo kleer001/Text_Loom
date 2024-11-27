@@ -2,58 +2,6 @@ import sys
 import json
 from contextlib import contextmanager
 from typing import Optional, List, Tuple, Callable, Any, Union
-from functools import wraps
-from inspect import ismethod, isfunction
-
-def undoable(description: str):
-    def decorator(func: Callable) -> Callable:
-        if isinstance(func, classmethod):
-            f = func.__get__(None, type).__func__
-        else:
-            f = func
-            
-        @wraps(f)
-        def wrapper(cls, *args, **kwargs):
-            manager = UndoManager()
-            
-            if not manager.are_enabled():
-                return f(cls, *args, **kwargs)
-            
-            key = args[0] if args else None
-            old_value = None
-            exists = False
-            
-            if hasattr(cls, '_instance') and isinstance(cls._instance, dict):
-                old_value = cls._instance.get(key, None)
-                exists = key in cls._instance
-
-            result = f(cls, *args, **kwargs)
-            
-            if hasattr(cls, '_instance'):
-                new_value = args[1] if len(args) > 1 else None
-                
-                def undo_func(target_cls, k, existed, old):
-                    if existed:
-                        target_cls._instance[k] = old
-                    else:
-                        target_cls._instance.pop(k, None)
-                        
-                def redo_func(target_cls, k, val):
-                    target_cls._instance[k] = val
-
-                manager.add_action(
-                    undo_func,
-                    (cls, key, exists, old_value),
-                    f"{description}: {key}",
-                    redo_func,
-                    (cls, key, new_value)
-                )
-                
-            return result
-            
-        return classmethod(wrapper)
-            
-    return decorator
 
 class UndoGroup:
     def __init__(self, description: str):
@@ -103,24 +51,15 @@ class UndoManager:
             return False
             
         action, args, description, redo_action, redo_args = self.undo_stack.pop()
-        
-        # Execute undo
         action(*args)
-        
-        # Add to redo stack with original redo info
         self.redo_stack.append((action, args, description, redo_action, redo_args))
         return True
 
     def redo(self):
         if not self._enabled or not self.redo_stack:
             return False
-            
         undo_action, undo_args, description, redo_action, redo_args = self.redo_stack.pop()
-        
-        # Execute redo
         redo_action(*redo_args)
-        
-        # Add back to undo stack
         self.undo_stack.append((undo_action, undo_args, description, redo_action, redo_args))
         return True
 
@@ -172,10 +111,14 @@ class UndoManager:
         self.redo_stack.clear()
 
     def get_undo_text(self) -> str:
-        return self.undo_stack[-1][2] if self.undo_stack else "No undo available"
+        if not self.undo_stack:
+            return "No undo available"
+        return " -> ".join(action[2] for action in reversed(self.undo_stack))
 
     def get_redo_text(self) -> str:
-        return self.redo_stack[-1][2] if self.redo_stack else "No redo available"
+        if not self.redo_stack:
+            return "No redo available"
+        return " -> ".join(action[2] for action in self.redo_stack)
 
     def export_stack(self) -> dict:
         data = {
