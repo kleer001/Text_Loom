@@ -26,24 +26,26 @@ class GlobalStore:
     @classmethod
     def set(cls, key: str, value: Any) -> None:
         cls._validate_key(key)
-        old_value = cls._instance.get(key, None)
         exists = key in cls._instance
-        
-        def undo_func(target_cls, k, existed, old):
-            if existed:
-                target_cls._instance[k] = old
-            else:
-                target_cls._instance.pop(k, None)
-                
+        old_value = cls._instance.get(key) if exists else None
         cls._instance[key] = value
         
-        UndoManager().add_action(
-            undo_func,
-            (cls, key, exists, old_value),
-            f"Set global: {key}",
-            cls.set,
-            (key, value)
-        )
+        if exists:
+            UndoManager().add_action(
+                lambda k, v: cls._instance.__setitem__(k, v),
+                (key, old_value),
+                f"Update global: {key}",
+                lambda k, v: cls._instance.__setitem__(k, v),
+                (key, value)
+            )
+        else:
+            UndoManager().add_action(
+                lambda k: cls._instance.pop(k, None),
+                (key,),
+                f"Add global: {key}",
+                lambda k, v: cls._instance.__setitem__(k, v),
+                (key, value)
+            )
 
     @classmethod
     def cut(cls, key: str) -> None:
@@ -53,12 +55,27 @@ class GlobalStore:
             cls._instance.pop(key)
             
             UndoManager().add_action(
-                cls.set,
+                lambda k, v: cls._instance.__setitem__(k, v),
                 (key, old_value),
                 f"Cut global: {key}",
-                cls.cut,
+                lambda k: cls._instance.pop(k, None),
                 (key,)
             )
+
+    @classmethod
+    def flush_all_globals(cls):
+        if cls._instance:
+            old_state = dict(cls._instance)
+            cls._instance.clear()
+            
+            UndoManager().add_action(
+                lambda state: cls._instance.update(state),
+                (old_state,),
+                "Flush all globals",
+                lambda: cls._instance.clear(),
+                ()
+            )
+
 
     @classmethod
     def get(cls, key: str) -> Any:
@@ -74,20 +91,3 @@ class GlobalStore:
         cls._validate_key(key)
         return key in cls._instance
     
-    @classmethod
-    def flush_all_globals(cls):
-        if cls._instance:
-            old_state = dict(cls._instance)
-            cls._instance.clear()
-            
-            def restore_state(target_cls, state):
-                target_cls._instance.clear()
-                target_cls._instance.update(state)
-            
-            UndoManager().add_action(
-                restore_state,
-                (cls, old_state),
-                "Flush all globals",
-                cls.flush_all_globals,
-                ()
-            )

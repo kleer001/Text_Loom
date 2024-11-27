@@ -3,12 +3,12 @@ from pathlib import Path, PurePosixPath
 from datetime import datetime
 import json
 from .base_classes import NodeEnvironment, Node, NodeConnection, NodeType
-from .undo_manager import UndoManager
 from .global_store import GlobalStore
 from .parm import Parm, ParameterType
 import traceback
 import inspect
 
+SOFTWARE_NAME = "Text Loom"
 VERSION = 0.01
 
 NODE_ATTRIBUTES = [
@@ -227,11 +227,11 @@ def save_flowstate(filepath: str) -> bool:
     try:
         env = NodeEnvironment.get_instance()
         save_data = {
+            "software": SOFTWARE_NAME,
             "version": VERSION,
             "timestamp": datetime.now().isoformat(),
             "nodes": {},
-            "globals": {},
-            "undo_state": None
+            "globals": {}
         }
         
         sorted_nodes = sorted(env.nodes.items(), key=lambda x: len(str(x[0]).split('/')))
@@ -247,14 +247,6 @@ def save_flowstate(filepath: str) -> bool:
         try:
             global_store = GlobalStore()
             save_data["globals"] = _clean_for_json(global_store.list())
-            
-            undo_manager = UndoManager()
-            save_data["undo_state"] = _clean_for_json({
-                "undo_stack": undo_manager.undo_stack,
-                "redo_stack": undo_manager.redo_stack,
-                "_enabled": undo_manager._enabled,
-                "_memory_limit": undo_manager._memory_limit  # Fixed: using private variable
-            })
         except Exception as e:
             print(f"Error saving state")
             traceback.print_exc()
@@ -269,7 +261,7 @@ def save_flowstate(filepath: str) -> bool:
         print(f"Error saving flowstate")
         traceback.print_exc()
         return False
-
+    
 def load_flowstate(filepath: str) -> bool:
     try:
         with open(filepath, 'r', encoding='utf-8') as f:
@@ -278,7 +270,6 @@ def load_flowstate(filepath: str) -> bool:
         env = NodeEnvironment.get_instance()
         NodeEnvironment.nodes.clear()
         
-        # First pass: Create non-internal nodes
         sorted_nodes = sorted(save_data["nodes"].items(), key=lambda x: len(x[0].split('/')))
         for node_path, node_data in sorted_nodes:
             if node_data.get("_is_internal", False):
@@ -290,12 +281,10 @@ def load_flowstate(filepath: str) -> bool:
                     print(f"Failed to create node {node_path}")
                     continue
                 
-                # For looper nodes, get references to internal nodes once created
                 if node.type() == NodeType.LOOPER and node._internal_nodes_created:
                     input_path = str(node.input_node.path())
                     output_path = str(node.output_node.path())
                     
-                    # Apply saved data to internal nodes if it exists
                     if input_path in save_data["nodes"]:
                         _apply_node_data(node.input_node, save_data["nodes"][input_path])
                     if output_path in save_data["nodes"]:
@@ -306,7 +295,6 @@ def load_flowstate(filepath: str) -> bool:
                 traceback.print_exc()
                 continue
         
-        # Second pass: Restore all connections
         for node_path, node_data in save_data["nodes"].items():
             try:
                 if '_connections' not in node_data:
@@ -320,21 +308,12 @@ def load_flowstate(filepath: str) -> bool:
                 traceback.print_exc()
                 continue
         
-        # Restore global state
         try:
             if "globals" in save_data:
                 global_store = GlobalStore()
                 for key, value in save_data["globals"].items():
                     global_store.set(key, value)
             
-            if "undo_state" in save_data:
-                undo_data = save_data["undo_state"]
-                undo_manager = UndoManager()
-                undo_manager.undo_stack = undo_data["undo_stack"]
-                undo_manager.redo_stack = undo_data["redo_stack"]
-                undo_manager._enabled = undo_data["_enabled"]
-                undo_manager._memory_limit = undo_data["_memory_limit"]  # Fixed: using private variable
-                
         except Exception as e:
             print(f"Error restoring state")
             traceback.print_exc()

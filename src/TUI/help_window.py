@@ -12,7 +12,7 @@ from rich.text import Text
 from TUI.logging_config import get_logger
 import TUI.palette as pal
 
-logger = get_logger('help')
+logger = get_logger('help', level=0)
 
 class HelpWindow(Container):
     DEFAULT_CSS = f"""

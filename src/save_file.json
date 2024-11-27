@@ -1,6 +1,7 @@
 {
+  "software": "Text Loom",
   "version": 0.01,
-  "timestamp": "2024-11-05T11:57:42.334144",
+  "timestamp": "2024-11-27T11:39:48.013329",
   "nodes": {
     "/looper1": {
       "_node_type": "looper",
@@ -76,7 +77,11 @@
           "_type": "stringList",
           "_node": "/looper1",
           "_script_callback": "",
-          "_value": []
+          "_value": [
+            "[' 2 Apples ', ' 3 Cherries', ' 4 Eggplants', 'I have  4 Eggplants']",
+            "[' 2 Apples ', ' 3 Cherries', ' 4 Eggplants', 'I have  4 Eggplants']",
+            "[' 2 Apples ', ' 3 Cherries', ' 4 Eggplants', 'I have  4 Eggplants']"
+          ]
         },
         "timeout_limit": {
           "_name": "timeout_limit",
@@ -138,12 +143,21 @@
           "_script_callback": "",
           "_value": [
             [
+              " 2 Apples ",
+              " 3 Cherries",
+              " 4 Eggplants",
               "I have $$N"
             ],
             [
+              " 2 Apples ",
+              " 3 Cherries",
+              " 4 Eggplants",
               "I have $$N"
             ],
             [
+              " 2 Apples ",
+              " 3 Cherries",
+              " 4 Eggplants",
               "I have $$N"
             ]
           ]
@@ -183,7 +197,7 @@
           "_type": "toggle",
           "_node": "/looper1/text1",
           "_script_callback": "",
-          "_value": false
+          "_value": true
         }
       },
       "_connections": [
@@ -318,52 +332,5 @@
     "AB": 6,
     "FOO": "apples",
     "BAR": 42
-  },
-  "undo_state": {
-    "undo_stack": [
-      [
-        null,
-        []
-      ],
-      [
-        null,
-        []
-      ],
-      [
-        null,
-        []
-      ],
-      [
-        null,
-        []
-      ],
-      [
-        null,
-        []
-      ],
-      [
-        null,
-        []
-      ],
-      [
-        null,
-        []
-      ],
-      [
-        null,
-        []
-      ],
-      [
-        null,
-        []
-      ],
-      [
-        null,
-        []
-      ]
-    ],
-    "redo_stack": [],
-    "_enabled": true,
-    "_memory_limit": 10485760
   }
 }
