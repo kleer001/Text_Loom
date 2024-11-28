@@ -468,44 +468,26 @@ class NodeWindow(ScrollableContainer):
         logger.debug("Showing node type selector")
         self.app.push_screen(NodeTypeSelector())
 
-
     def action_delete_node(self) -> None:
-        if not self._initialized:
+        if not self._initialized or self._selected_line >= len(self._node_data):
             return
-        if 0 <= self._selected_line < len(self._node_data):
-            node_data = self._node_data[self._selected_line]
-            logger.debug(f"Delete requested for node: {node_data.path}")
-            
-            def delete_node(confirmed: bool):
-                if confirmed:
-                    try:
-                        node = self._env.node_from_name(node_data.path)
-                        if node:
-                            connections = []
-                            if hasattr(node, '_inputs'):
-                                for idx, conn in node._inputs.items():
-                                    if hasattr(conn, 'output_node'):
-                                        out_node = conn.output_node()
-                                        if hasattr(out_node, 'path'):
-                                            connections.append((out_node.path(), node.path()))
-                            
-                            if hasattr(node, '_outputs'):
-                                for output_node in node._outputs:
-                                    if hasattr(output_node, 'path'):
-                                        connections.append((node.path(), output_node.path()))
-                            
-                            node.destroy()
-                            logger.info(f"Deleted node: {node_data.path}")
-                            
-                            self.post_message(NodeDeleted(node_data.path))
-                            for from_node, to_node in connections:
-                                self.post_message(ConnectionDeleted(from_node, to_node))
-                            
-                            self._refresh_layout()
-                    except Exception as e:
-                        logger.error(f"Error deleting node: {str(e)}", exc_info=True)
 
-            self.app.push_screen(DeleteConfirmation(node_data.name), delete_node)
+        node_data = self._node_data[self._selected_line]
+        logger.debug(f"Delete requested for node: {node_data.path}")
+        
+        def delete_node(confirmed: bool):
+            if confirmed:
+                try:
+                    node = self._env.node_from_name(node_data.path)
+                    if node:
+                        node.destroy()
+                        logger.info(f"Deleted node: {node_data.path}")
+                        self.post_message(NodeDeleted(node_data.path))
+                        self._refresh_layout()
+                except Exception as e:
+                    logger.error(f"Error deleting node: {str(e)}", exc_info=True)
+        self.app.push_screen(DeleteConfirmation(node_data.name), delete_node)
+
 
     def action_rename_node(self) -> None:
         if not self._initialized or self._selected_line >= len(self._node_data):
@@ -530,10 +512,11 @@ class NodeWindow(ScrollableContainer):
 
     def on_mount(self) -> None:
         logger.debug("NodeWindow mounted")
-        #self._initialize_network()
+        self._initialize_network()
         self.border_title = "Node Network"
 
     def _initialize_network(self) -> None:
+        from core.undo_manager import UndoManager
         logger.debug("Initializing network")
         try:
             file_path = os.path.abspath("save_file.json")
@@ -545,7 +528,10 @@ class NodeWindow(ScrollableContainer):
                 self.content.update(f"[red]{error_msg}")
                 return
 
+            UndoManager().flush_all_undos()
+            UndoManager().undo_active = False
             load_flowstate(file_path)
+            UndoManager().undo_active = True        
             self._env = NodeEnvironment.get_instance()
             self._initialized = True
             logger.info("Successfully initialized NodeEnvironment")
@@ -596,6 +582,7 @@ class NodeWindow(ScrollableContainer):
 
             self.content.update(rendered_text)
             self.content.refresh()
+            logger.info("REFRESHED NODE LAYOUT")
 
         except Exception as e:
             error_msg = f"Error refreshing layout: {str(e)}"

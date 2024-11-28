@@ -117,22 +117,26 @@ class Parm:
         return self._node
 
     def set(self, value: Union[int, float, str, List[str], bool]) -> None:
+        from core.undo_manager import UndoManager
+        
         if self._type == ParameterType.STRINGLIST:
             if not isinstance(value, list):
                 raise TypeError(f"Expected list for STRINGLIST, got {type(value)}")
-            self._value = [str(item) for item in value]
+            new_value = [str(item) for item in value]
         elif self._type == ParameterType.INT:
-            self._value = int(value)
+            new_value = int(value)
         elif self._type == ParameterType.FLOAT:
-            self._value = float(value)
+            new_value = float(value)
         elif self._type == ParameterType.STRING:
-            self._value = str(value)
+            new_value = str(value)
         elif self._type == ParameterType.TOGGLE:
-            self._value = bool(value)
+            new_value = bool(value)
         else:
-            raise TypeError(
-                f"Cannot set value of type {type(value)} for parameter of type {self._type}"
-            )
+            raise TypeError(f"Cannot set value type {type(value)} for parameter type {self._type}")
+            
+        if new_value != self._value:
+            UndoManager().push_state(f"Set {self.node().name()} parm: {self.name()} to {value}")
+            self._value = new_value
 
     def script_callback(self) -> str:
         """Return the contents of the script that gets runs when this parameter changes."""

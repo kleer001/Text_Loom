@@ -11,6 +11,7 @@ from TUI.network_visualizer import load_flowstate
 from core.flowstate_manager import save_flowstate
 from core.global_store import GlobalStore
 from TUI.screens_registry import MAIN_SCREEN, Mode, ModeChanged
+from TUI.messages import FileLoaded
 
 class FileMode(Container):
     DEFAULT_CSS = """
@@ -150,18 +151,29 @@ class FileScreen(Screen):
             raise
 
     def _handle_load(self, path: Path) -> None:
+        from core.undo_manager import UndoManager
+        from TUI.node_window import NodeWindow
         self.logger.info(f"Handling load from: {path}")
         try:
             NodeEnvironment.flush_all_nodes()
             GlobalStore().flush_all_globals()
+            UndoManager().flush_all_undos()
+            UndoManager().undo_active = False
             load_flowstate(str(path))
             self.app.current_file = str(path)
             self.app.mode_line.path = str(path)
-            self.app.post_message(ModeChanged(Mode.NODE))
             self.app.pop_screen()
+            node_window = self.app.query_one(NodeWindow)
+            node_window._refresh_layout
+            self.app._refresh_all_windows()
+            self.app.post_message(FileLoaded(str(path)))
+            self.app.post_message(ModeChanged(Mode.NODE))
+            UndoManager().undo_active = True
         except Exception as e:
             self.logger.error(f"Failed to load file", exc_info=True)
             raise
+
+
 
     def on_directory_tree_file_selected(self, event: DirectoryTree.FileSelected) -> None:
         self.logger.info(f"File selected: {event.path}")

@@ -715,6 +715,7 @@ class Node(MobileItem):
 
 
     def destroy(self) -> None:
+        from core.undo_manager import UndoManager
         for conn in list(self._inputs.values()):
             output_node = conn.output_node()
             output_idx = conn.output_index()
@@ -734,6 +735,7 @@ class Node(MobileItem):
             self._outputs[output_idx].clear()
         
         NodeEnvironment.remove_node(self.node_path())
+        UndoManager().push_state(f"Delete node: {self.node_path()}")
 
     def type(self) -> NodeType:
         """Returns the NodeType for this node."""
@@ -760,10 +762,10 @@ class Node(MobileItem):
             return
         if hasattr(self, 'SINGLE_INPUT') and self.SINGLE_INPUT and self._inputs:
             self.add_warning(f"Node type {self.__class__.__name__} accepts only one input. Existing input will be replaced.")
-            self._remove_connection(next(iter(self._inputs.values())))
+            self.remove_connection(next(iter(self._inputs.values())))
 
         if input_index in self._inputs:
-            self._remove_connection(self._inputs[input_index])
+            self.remove_connection(self._inputs[input_index])
 
         connection = NodeConnection(input_node, self, output_index, input_index)
         print("New Connection: from input ", self.name(), " to output: ", input_node.name())
@@ -787,7 +789,7 @@ class Node(MobileItem):
     def remove_input(self, input_index: str) -> None:
         """Removes the connection to the specified input."""
         if input_index in self._inputs:
-            self._remove_connection(self._inputs[input_index])
+            self.remove_connection(self._inputs[input_index])
         # TODO Add undo logic
 
     def remove_connection(self, connection: NodeConnection) -> None:

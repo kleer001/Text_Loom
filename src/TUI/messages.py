@@ -22,6 +22,11 @@ class OutputMessage(Message):
         self.output_data = output_data
         super().__init__()
 
+class FileLoaded(Message):
+    def __init__(self, file_path: str) -> None:
+        self.file_path = file_path
+        super().__init__()
+
 #PARAMETER CHANGE
 class ParameterChanged(Message):
     def __init__(self, node_path: str, param_name: str, new_value: str, param_type: ParameterType) -> None:
