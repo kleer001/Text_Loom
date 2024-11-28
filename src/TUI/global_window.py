@@ -99,6 +99,13 @@ class GlobalWindow(Container):
     def on_input_submitted(self, event: Input.Submitted):
         logger.debug(f"Input submitted with value: {event.value}")
         
+        if "cut" in event.value:
+            key_to_cut = event.value.split(" ", 1)[1]
+            self.delete_global(key_to_cut)
+            self.input.value = ""
+            return
+            
+
         if ":" not in event.value:
             logger.debug("No colon found in input")
             self.flash_error()
@@ -140,6 +147,6 @@ class GlobalWindow(Container):
         logger.debug(f"Deleting global: {key}")
         store = GlobalStore()
         if key in store.list():
-            store.delete(key)
+            store.cut(key)
             self.post_message(GlobalDeleted(key))
             self.refresh_table()

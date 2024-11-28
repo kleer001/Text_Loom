@@ -30,7 +30,8 @@ from TUI.messages import (
     GlobalAdded,
     GlobalChanged,
     GlobalDeleted,
-    NodeSelected
+    NodeSelected,
+    FileLoaded,
 )
 
 from TUI.output_window import OutputWindow
@@ -273,13 +274,18 @@ class TUIApp(App[None]):
         for window in main_layout.walk_children():
             if hasattr(window, 'refresh'):
                 window.refresh()
-            #feel free to judge me when your code is perfect
             if hasattr(window, 'refresh_table'):
                 window.refresh_table()
+            if hasattr(window, 'parm_refresh'):
+                window.parm_refresh()
+            if hasattr(window, '_refresh_layout'):
+                window._refresh_layout()
 
     def on_key(self, event) -> None:
         #I don't know why but we can't capture the alt key press :(
         try:
+            if isinstance(self.screen, FileScreen):
+                return
             mode_line = self.query_one(ModeLine)
             key_display = []
             
@@ -364,6 +370,7 @@ class TUIApp(App[None]):
             self.logger.debug("Pushing FileScreen to screen stack")
             self.push_screen(file_screen)
             self.logger.info("FileScreen successfully pushed")
+            #self._refresh_all_windows()
         except Exception as e:
             self.logger.error(f"Failed to open file screen: {str(e)}", exc_info=True)
             raise
@@ -398,26 +405,19 @@ class TUIApp(App[None]):
             self.logger.error(f"Failed to open save as screen: {str(e)}", exc_info=True)
             raise
 
-    def _handle_load(self, path: Path) -> None:
-        self.logger.info(f"Handling load from: {path}")
+    def on_file_loaded(self, message: FileLoaded) -> None:
         try:
-            if not str(path).endswith('.json'):
-                self.logger.debug("Not a JSON file, ignoring")
-                return
-            NodeEnvironment.flush_all_nodes()
-            GlobalStore().flush_all_globals()
-            load_flowstate(str(path))
-            self.current_path = str(path)
-            self.current_file = str(path)
+            self.current_file = message.file_path
+            self.mode_line.path = message.file_path
             self._refresh_all_windows()
-            self.post_message(ModeChanged(Mode.NODE))
-            self.pop_screen()
+            self.logger.info(f"Successfully refreshed all windows after loading {message.file_path}")
         except Exception as e:
-            self.logger.error("Failed to load file", exc_info=True)
-            raise
+            self.logger.error(f"Error refreshing after file load: {str(e)}", exc_info=True)
 
 
     def _check_autosave(self) -> None:
+        return #temporary disable
+        from core.undo_manager import UndoManager
         self.logger.info("Starting autosave check")
         try:
             autosave_path = Path(self.AUTOSAVE_FILE)
@@ -429,9 +429,15 @@ class TUIApp(App[None]):
                 NodeEnvironment.flush_all_nodes()
                 self.logger.debug("Flushing existing globals")
                 GlobalStore().flush_all_globals()
+                self.logger.debug("Flushing UndoManager")
+                UndoManager().flush_all_undos()
+                self.logger.debug("Freezing UndoManager")
+                UndoManager().undo_active = False
                 self.logger.debug("Loading flowstate from autosave")
                 load_flowstate(self.AUTOSAVE_FILE)
                 self.logger.info("Successfully loaded autosave")
+                self.logger.debug("Unfreezing UndoManager")
+                UndoManager().undo_active = True
             else:
                 self.logger.info("No autosave file found")
         except Exception as e:

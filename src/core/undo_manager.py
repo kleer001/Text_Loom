@@ -60,10 +60,14 @@ class NetworkState:
 class UndoManager:
     _instance: Optional['UndoManager'] = None
     _initialized: bool = False
-    
+    _undo_active: bool = True  # Class level variable
+
     def __new__(cls):
         if cls._instance is None:
             cls._instance = super(UndoManager, cls).__new__(cls)
+            cls._instance.logger = get_logger('undo')
+            cls._instance._undo_active = True
+            cls._initialized = False
         return cls._instance
 
     def __init__(self):
@@ -73,9 +77,17 @@ class UndoManager:
             self._restoring: bool = False
             self._current_operation: Optional[str] = None
             self._node_paths_restored: Set[str] = set()
-            self.logger = get_logger('undo')
             self.logger.info("Initializing UndoManager")
             UndoManager._initialized = True
+
+    @property
+    def undo_active(self) -> bool:
+        return self._undo_active
+
+    @undo_active.setter 
+    def undo_active(self, value: bool) -> None:
+        self.logger.info(f"Setting undo_active to {value}")
+        self._undo_active = value
 
     def capture_network_state(self) -> NetworkState:
         from core.global_store import GlobalStore
@@ -194,10 +206,10 @@ class UndoManager:
                 str(PurePosixPath(state.path).parent)
             )
 
-        node._position = state.position.copy()
-        node._state = NodeState[state.state]
-        node._errors = state.errors.copy()
-        node._warnings = state.warnings.copy()
+        node._position = state.position
+        node._state = state.state
+        node._errors = state.errors
+        node._warnings = state.warnings
         node._is_time_dependent = state.is_time_dependent
         node._last_cook_time = state.last_cook_time
         node._cook_count = state.cook_count
@@ -216,12 +228,15 @@ class UndoManager:
         self._node_paths_restored.add(state.path)
 
     def _restore_connections(self, state: NetworkState) -> None:
-        self.logger.debug("Restoring node connections")
-        for node_state in state.nodes.values():
-            node = NodeEnvironment.node_from_name(node_state.path)
-            if not node:
-                continue
-            self._restore_node_connections(node, node_state)
+        try:
+            for node_state in state.nodes.values():
+                node = NodeEnvironment.node_from_name(node_state.path)
+                if not node:
+                    raise ValueError(f"Missing node {node_state.path} during connection restore")
+                self._restore_node_connections(node, node_state)
+        except Exception as e:
+            self.logger.error("Corrupt network state detected during connection restoration")
+            raise
 
     def _restore_node_connections(self, node: 'Node', state: NodeState) -> None:
         node._inputs.clear()
@@ -254,12 +269,12 @@ class UndoManager:
         input_node.set_input(state.input_index, output_node, state.output_index)
 
     def push_state(self, operation_name: str = "") -> None:
-        if not self._restoring:
+        if not self._restoring and self.undo_active:
             self.logger.info(f"Pushing new state: {operation_name}")
             current_state = self.capture_network_state()
             self.undo_stack.append((operation_name, current_state))
             self.redo_stack.clear()
-
+    
     def undo(self) -> Optional[str]:
         if not self.undo_stack:
             self.logger.debug("No states to undo")
@@ -293,3 +308,8 @@ class UndoManager:
         if not self.redo_stack:
             return "Nothing to redo"
         return "\n".join(f"{i+1}: {action}" for i, (action, _) in enumerate(reversed(self.redo_stack)))
+    
+    def flush_all_undos(self) -> None:
+        self.undo_stack.clear()
+        self.redo_stack.clear()
+        self.logger.info("Cleared all undo and redo stacks")

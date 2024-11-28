@@ -123,6 +123,12 @@ class ParameterRow(Horizontal):
         if self.on_change:
             self.on_change(event.value)
 
+    def update_value(self, new_value: str) -> None:
+        self._original_value = str(new_value)
+        self.value = str(new_value)
+        input_widget = self.query_one(Input)
+        input_widget.value = str(new_value)
+
     def watch_is_selected(self, selected: bool) -> None:
         input_widget = self.query_one(Input)
         input_widget.styles.background = pal.PARAM_INPUT_SELECTED_BG if selected else pal.PARAM_INPUT_BG
@@ -170,6 +176,10 @@ class ParameterSet(Vertical):
             try:
                 parm = self.node._parms[parm_name]
                 parm.set(self._convert_value(new_value, parm._type))
+                for row in self.parameter_rows:
+                    if row.name == parm_name:
+                        row.update_value(new_value)
+                        break
                 self.post_message(ParameterChanged(
                     self.node.path(),
                     parm_name,
@@ -288,6 +298,16 @@ class ParameterWindow(ScrollableContainer):
             if self.current_set_index == -1:
                 self.current_set_index = 0
                 self.parameter_sets[0].select_parameter(0)
+
+    def parm_refresh(self) -> None:
+        if not self.parameter_sets:
+            return
+            
+        for param_set in self.parameter_sets:
+            node = param_set.node
+            for row in param_set.parameter_rows:
+                if parm := node._parms.get(row.name):
+                    row.update_value(str(parm._value))
 
     def on_node_selected(self, event: NodeSelected) -> None:
         try:
