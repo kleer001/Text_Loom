@@ -1,9 +1,11 @@
 {
   "software": "Text Loom",
   "version": 0.01,
-  "timestamp": "2024-11-27T11:40:56.848041",
+  "timestamp": "2024-11-27T21:22:00.530606",
   "nodes": {},
   "globals": {
-    "BOO": "342"
+    "BOO": "342",
+    "ABB": "122",
+    "CBC": "1222"
   }
 }

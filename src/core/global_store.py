@@ -21,8 +21,10 @@ class GlobalStore:
             warnings.warn(warning_message, UserWarning)
             raise ValueError("Invalid key")
 
+    #protype for undo method interface
     @classmethod
     def set(cls, key: str, value: Any) -> None:
+        #declare this within method to avoid circular dependency
         from core.undo_manager import UndoManager
         
         cls._validate_key(key)
@@ -30,9 +32,9 @@ class GlobalStore:
         
         # Push state before modifying
         if exists:
-            UndoManager().push_state(f"Update global: {key}")
+            UndoManager().push_state(f"Update global: {key}:{value}")
         else:
-            UndoManager().push_state(f"Add global: {key}")
+            UndoManager().push_state(f"Add global: {key}:{value}")
             
         # Modify after pushing state
         cls._instance[key] = value
@@ -52,8 +54,9 @@ class GlobalStore:
         from core.undo_manager import UndoManager
         
         if cls._instance:
-            cls._instance.clear()
             UndoManager().push_state("Flush all globals")
+            cls._instance.clear()
+            
 
     @classmethod
     def get(cls, key: str) -> Any:
