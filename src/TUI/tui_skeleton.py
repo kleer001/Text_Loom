@@ -273,6 +273,9 @@ class TUIApp(App[None]):
         for window in main_layout.walk_children():
             if hasattr(window, 'refresh'):
                 window.refresh()
+            #feel free to judge me when your code is perfect
+            if hasattr(window, 'refresh_table'):
+                window.refresh_table()
 
     def on_key(self, event) -> None:
         #I don't know why but we can't capture the alt key press :(
@@ -480,6 +483,7 @@ class TUIApp(App[None]):
         try:
             undo_manager.undo()
             self._perform_autosave()
+            self._refresh_all_windows()
             self.mode_line.debug_info = f"Undo: {undo_manager.get_undo_text()}"
         except Exception as e:
             self.logger.error(f"Undo failed: {str(e)}", exc_info=True)

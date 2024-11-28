@@ -66,13 +66,13 @@ class GlobalWindow(Container):
 
     def refresh_table(self):
         self.table.clear()
-        globals = GlobalStore().list()
+        global_store = GlobalStore().list()
         
-        if not globals:
+        if not global_store:
             self.table.add_row("NONE", "NONE")
             return
             
-        for key, value in globals.items():
+        for key, value in global_store.items():
             self.table.add_row(key, str(value))
 
     def flash_error(self):
