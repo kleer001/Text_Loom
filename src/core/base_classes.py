@@ -140,20 +140,25 @@ class NodeEnvironment:
     def remove_node(cls, node_path: str) -> None:
         if node_path == "/":
             return
-
         nodes_to_remove = [path for path in cls.nodes.keys() if path.startswith(node_path)]
-        
-        for path in nodes_to_remove:
-            node = cls.nodes.pop(path)
+        nodes_to_destroy = [(path, cls.nodes[path]) for path in nodes_to_remove]
+        for path, node in nodes_to_destroy:
             node.destroy()
 
     @classmethod
-    def flush_all_nodes(cls):
-        nodes_to_remove = [path for path in cls.nodes.keys() if path != "/"]
+    def remove_node_from_dictionary(cls, node_path: str) -> None:
+        if node_path == "/":
+            return
+        nodes_to_remove = [path for path in cls.nodes.keys() if path.startswith(node_path)]
         for path in nodes_to_remove:
-            if path in cls.nodes:
-                node = cls.nodes.pop(path)
-                node.destroy()
+            cls.nodes.pop(path)
+
+    @classmethod
+    @classmethod
+    def flush_all_nodes(cls):
+        nodes_to_destroy = [(path, cls.nodes[path]) for path in cls.nodes.keys() if path != "/"]
+        for path, node in nodes_to_destroy:
+            node.destroy()
         cls.get_instance().current_node = None
         cls.get_instance().globals = cls.get_instance()._build_globals()
 
@@ -716,6 +721,7 @@ class Node(MobileItem):
 
     def destroy(self) -> None:
         from core.undo_manager import UndoManager
+        UndoManager().push_state(f"Delete node: {self.node_path()}")
         for conn in list(self._inputs.values()):
             output_node = conn.output_node()
             output_idx = conn.output_index()
@@ -734,8 +740,8 @@ class Node(MobileItem):
                 del conn
             self._outputs[output_idx].clear()
         
-        NodeEnvironment.remove_node(self.node_path())
-        UndoManager().push_state(f"Delete node: {self.node_path()}")
+        NodeEnvironment.remove_node_from_dictionary(self.node_path())
+        
 
     def type(self) -> NodeType:
         """Returns the NodeType for this node."""

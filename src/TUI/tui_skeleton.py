@@ -297,7 +297,7 @@ class TUIApp(App[None]):
                 key_display.append(event.key)
                 
             mode_line.keypress = "+".join(key_display)
-            self.logger.debug(f"Updated modeline keypress to: {mode_line.keypress}")
+            #self.logger.debug(f"Updated modeline keypress to: {mode_line.keypress}")
         except Exception as e:
             self.logger.error(f"Error handling key event: {str(e)}", exc_info=True)
 
