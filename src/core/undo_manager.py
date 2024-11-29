@@ -8,6 +8,40 @@ from TUI.logging_config import get_logger
 from core.base_classes import NodeEnvironment, Node, NodeConnection, NodeType, NodeState
 from core.parm import Parm
 
+"""
+Undo System Implementation Guide:
+
+Key Principles:
+- Push state BEFORE changes occur (like a bookmark)
+- Each undoable action pushes its own state
+- Parent methods must disable undo for child methods that push state
+- Always use try/finally when disabling undo to ensure it's re-enabled
+
+Example Pattern:
+    def parent_method():
+        from core.undo_manager import UndoManager
+        UndoManager().push_state("Parent operation")
+        UndoManager().disable_undo()
+        try:
+            child_method()  # Has its own push_state
+        finally:
+            UndoManager().enable_undo()
+
+    def child_method():
+        UndoManager().push_state("Child operation")
+        # make changes
+
+To avoid circular imports:
+    from core.undo_manager import UndoManager
+    UndoManager().push_state("Operation name")
+
+
+Stack Size: Limited to 100 operations. Arbitrary, but a starting point.
+Eventually it should be limited by memory, not number
+State Capture: Full network state including nodes, connections, parameters
+Restoration: Two-phase process (clear all, then rebuild) to avoid state conflicts
+"""
+
 MAX_STACK_SIZE = 100
 
 @dataclass
@@ -160,15 +194,16 @@ class UndoManager:
         )
 
     def _capture_connection_state(self, conn: 'NodeConnection') -> NodeConnectionState:
+        self.logger.debug(f"Capturing connection from {conn.output_node().path()} to {conn.input_node().path()}")
         return NodeConnectionState(
             output_node_path=conn.output_node().path(),
             input_node_path=conn.input_node().path(),
             output_index=conn.output_index(),
             input_index=conn.input_index(),
-            output_ref=WeakSet([conn.output_node()]),
-            input_ref=WeakSet([conn.input_node()])
+            output_ref=None,
+            input_ref=None
         )
-
+    
     def restore_network_state(self, state: NetworkState) -> None:
         if self._restoring:
             self.logger.debug("Already restoring state, skipping")
@@ -235,36 +270,55 @@ class UndoManager:
         self._node_paths_restored.add(state.path)
 
     def _restore_connections(self, state: NetworkState) -> None:
+        self.logger.debug("Starting connection restoration")
         try:
-            for node_state in state.nodes.values():
-                node = NodeEnvironment.node_from_name(node_state.path)
+            for node_path, node_state in state.nodes.items():
+                node = NodeEnvironment.node_from_name(node_path)
                 if not node:
-                    raise ValueError(f"Missing node {node_state.path} during connection restore")
+                    self.logger.error(f"Missing node {node_path} during connection restore")
+                    continue
+                    
+                self.logger.debug(f"Clearing existing connections for node {node_path}")
+                node._inputs.clear()
+                node._outputs.clear()
+
+            for node_path, node_state in state.nodes.items():
+                node = NodeEnvironment.node_from_name(node_path)
+                if not node:
+                    continue
+                    
+                self.logger.debug(f"Restoring connections for node {node_path}")
                 self._restore_node_connections(node, node_state)
+                
         except Exception as e:
-            self.logger.error("Corrupt network state detected during connection restoration")
+            self.logger.error(f"Error during connection restoration: {str(e)}", exc_info=True)
             raise
 
     def _restore_node_connections(self, node: 'Node', state: FullNodeState) -> None:
-        node._inputs.clear()
-        node._outputs.clear()
-
+        self.logger.debug(f"Processing inputs for node {node.path()}")
         for idx_str, conn_state in state.inputs.items():
             idx = int(idx_str)
-            if self._validate_connection_refs(conn_state):
-                self._recreate_connection(conn_state)
-            else:
-                output_node = NodeEnvironment.node_from_name(conn_state.output_node_path)
-                if output_node:
-                    node.set_input(idx, output_node, conn_state.output_index)
-
+            output_node = NodeEnvironment.node_from_name(conn_state.output_node_path)
+            if not output_node:
+                self.logger.warning(f"Missing output node {conn_state.output_node_path} for connection to {node.path()}")
+                continue
+                
+            self.logger.debug(f"Setting input {idx} from {output_node.path()}[{conn_state.output_index}] to {node.path()}")
+            node.set_input(idx, output_node, conn_state.output_index)
+            
+        self.logger.debug(f"Processing outputs for node {node.path()}")
         for idx_str, conn_states in state.outputs.items():
             idx = int(idx_str)
             for conn_state in conn_states:
-                if not self._validate_connection_refs(conn_state):
-                    input_node = NodeEnvironment.node_from_name(conn_state.input_node_path)
-                    if input_node:
-                        input_node.set_input(conn_state.input_index, node, idx)
+                input_node = NodeEnvironment.node_from_name(conn_state.input_node_path)
+                if not input_node:
+                    self.logger.warning(f"Missing input node {conn_state.input_node_path} for connection from {node.path()}")
+                    continue
+                    
+                if not any(c.output_node() == node for c in input_node._inputs.values()):
+                    self.logger.debug(f"Setting input {conn_state.input_index} from {node.path()}[{idx}] to {input_node.path()}")
+                    input_node.set_input(conn_state.input_index, node, idx)
+
 
     def _validate_connection_refs(self, state: NodeConnectionState) -> bool:
         return (state.output_ref and state.input_ref and
@@ -282,29 +336,45 @@ class UndoManager:
             self.undo_stack.append((operation_name, current_state))
             self.redo_stack.clear()
     
+    def disable(self) -> None:
+        self.logger.debug("Disabling undo system")
+        self._undo_active = False
+        
+    def enable(self) -> None:
+        self.logger.debug("Enabling undo system")
+        self._undo_active = True
+
     def undo(self) -> Optional[str]:
         if not self.undo_stack:
             self.logger.debug("No states to undo")
             return None
         
-        operation_name, previous_state = self.undo_stack.pop()
-        self.logger.info(f"Undoing operation: {operation_name}")
-        current_state = self.capture_network_state()
-        self.redo_stack.append((operation_name, current_state))
-        self.restore_network_state(previous_state)
-        return operation_name
+        self.disable()
+        try:
+            operation_name, previous_state = self.undo_stack.pop()
+            self.logger.info(f"Undoing operation: {operation_name}")
+            current_state = self.capture_network_state()
+            self.redo_stack.append((operation_name, current_state))
+            self.restore_network_state(previous_state)
+            return operation_name
+        finally:
+            self.enable()
 
     def redo(self) -> Optional[str]:
         if not self.redo_stack:
             self.logger.debug("No states to redo")
             return None
             
-        operation_name, next_state = self.redo_stack.pop()
-        self.logger.info(f"Redoing operation: {operation_name}")
-        current_state = self.capture_network_state()
-        self.undo_stack.append((operation_name, current_state))
-        self.restore_network_state(next_state)
-        return operation_name
+        self.disable()
+        try:
+            operation_name, next_state = self.redo_stack.pop()
+            self.logger.info(f"Redoing operation: {operation_name}")
+            current_state = self.capture_network_state()
+            self.undo_stack.append((operation_name, current_state))
+            self.restore_network_state(next_state)
+            return operation_name
+        finally:
+            self.enable()
     
     def get_undo_text(self) -> str:
         if not self.undo_stack:

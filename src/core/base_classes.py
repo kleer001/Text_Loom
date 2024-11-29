@@ -762,54 +762,77 @@ class Node(MobileItem):
         return tuple(conn.input_node() for conns in self._outputs.values() for conn in conns)
 
     def set_input(self, input_index: int, input_node: "Node", output_index: int = 0) -> None:
-        """Connects an input of this node to an output of another node."""
+        from core.undo_manager import UndoManager
+        UndoManager().push_state(f"Connect {input_node.name()}[{output_index}] to {self.name()}[{input_index}]")
+        
         if input_node == self:
             print(f"Rejected self-connection attempt for node: {self.name()}")
             return
+            
         if hasattr(self, 'SINGLE_INPUT') and self.SINGLE_INPUT and self._inputs:
             self.add_warning(f"Node type {self.__class__.__name__} accepts only one input. Existing input will be replaced.")
+            UndoManager().disable()
             self.remove_connection(next(iter(self._inputs.values())))
-
+            UndoManager().enable()
+            
         if input_index in self._inputs:
+            UndoManager().disable()
             self.remove_connection(self._inputs[input_index])
-
+            UndoManager().enable()
+            
         connection = NodeConnection(input_node, self, output_index, input_index)
         print("New Connection: from input ", self.name(), " to output: ", input_node.name())
         self._inputs[input_index] = connection
         input_node._outputs.setdefault(output_index, []).append(connection)
-        # TODO Add undo logic
 
     def set_next_input(self, input_node: "Node", output_index: int = 0) -> None:
-        if hasattr(self, 'SINGLE_INPUT') and self.SINGLE_INPUT:
-            self.set_input(0, input_node, output_index)
-            return
-            
-        if not self._inputs:
-            self.set_input(0, input_node, output_index)
-            return
-            
-        max_index = max(self._inputs.keys())
-        self.set_input(max_index + 1, input_node, output_index)
-        # TODO Add undo logic
+        from core.undo_manager import UndoManager
+        UndoManager().push_state(f"Add next input from {input_node.name()} to {self.name()}")
+        
+        
+        try:
+            UndoManager().disable()
+            if hasattr(self, 'SINGLE_INPUT') and self.SINGLE_INPUT:
+                self.set_input(0, input_node, output_index)
+                return
+                
+            if not self._inputs:
+                self.set_input(0, input_node, output_index)
+                return
+                
+            max_index = max(self._inputs.keys())
+            self.set_input(max_index + 1, input_node, output_index)
+        finally:
+            UndoManager().enable()
 
     def remove_input(self, input_index: str) -> None:
-        """Removes the connection to the specified input."""
+        from core.undo_manager import UndoManager
+        UndoManager().push_state(f"Remove input {input_index} from {self.name()}")
+        
         if input_index in self._inputs:
-            self.remove_connection(self._inputs[input_index])
-        # TODO Add undo logic
+            try:
+                UndoManager().disable()
+                self.remove_connection(self._inputs[input_index])
+            finally:
+                UndoManager().enable()
 
     def remove_connection(self, connection: NodeConnection) -> None:
-        input_name = connection.input_name()
-        output_name = connection.output_name()
+        from core.undo_manager import UndoManager
+        UndoManager().push_state(f"Remove connection between {connection.output_node().name()} and {connection.input_node().name()}")
         
+        # If this is the input side of the connection
         if connection.input_node() == self:
-            if input_name in self._inputs and self._inputs[input_name] == connection:
-                connection.remove_connection()
-                
+            input_idx = connection.input_index()
+            if input_idx in self._inputs and self._inputs[input_idx] == connection:
+                del self._inputs[input_idx]
+        
+        # If this is the output side of the connection
         if connection.output_node() == self:
-            if output_name in self._outputs and connection in self._outputs[output_name]:
-                connection.remove_connection()
-        # TODO Add undo logic
+            output_idx = connection.output_index()
+            if output_idx in self._outputs:
+                if connection in self._outputs[output_idx]:
+                    self._outputs[output_idx].remove(connection)
+
 
     def state(self) -> NodeState:
         """Returns the current state of the node."""
@@ -844,20 +867,20 @@ class Node(MobileItem):
         self._warnings.clear()
 
     def input_names(self) -> Dict[str, str]:
-        """Returns a dictionary of input names for this node type."""
-        return {}  # To be implemented by subclasses
+        input_count = max(self._inputs.keys()) + 1 if self._inputs else 0
+        return {str(i): str(i) for i in range(input_count)}
 
     def output_names(self) -> Dict[str, str]:
-        """Returns a dictionary of output names for this node type."""
-        return {}  # To be implemented by subclasses
+        output_count = max(self._outputs.keys()) + 1 if self._outputs else 0
+        return {str(i): str(i) for i in range(output_count)}
 
     def input_data_types(self) -> Dict[str, str]:
-        """Returns a dictionary of input data types for this node type."""
-        return {}  # To be implemented by subclasses
+        input_count = max(self._inputs.keys()) + 1 if self._inputs else 0
+        return {str(i): "any" for i in range(input_count)}
 
     def output_data_types(self) -> Dict[str, str]:
-        """Returns a dictionary of output data types for this node type."""
-        return {}  # To be implemented by subclasses
+        output_count = max(self._outputs.keys()) + 1 if self._outputs else 0
+        return {str(i): "any" for i in range(output_count)}
 
     def network_item_type(self) -> NetworkItemType:
         """Implement the abstract method from NetworkEntity."""

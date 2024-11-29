@@ -384,12 +384,7 @@ class NodeWindow(ScrollableContainer):
         node_data = self._node_data[self._selected_line]
         target_node = self._env.node_from_name(node_data.path)
         
-        if not target_node:
-            logger.debug(f"Node not found for deletion: {node_data.path}")
-            return
-            
-        connections = self._get_deletable_connections(target_node)
-        if not connections:
+        if not target_node or not target_node.inputs():
             logger.debug(f"No connections available to delete for node: {node_data.path}")
             return
             
@@ -408,16 +403,18 @@ class NodeWindow(ScrollableContainer):
         if not self._initialized or not self._source_node:
             return
 
-        if self._selected_line >= len(self._node_data):
-            return
-
         try:
             target_data = self._node_data[self._selected_line]
             source_node = self._source_node
+            target_node = self._env.node_from_name(target_data.path)
             
-            for idx, conn in source_node._inputs.items():
-                if conn.output_node().path() == target_data.path:
-                    del source_node._inputs[idx]
+            if not target_node:
+                return
+                
+            # Find input index where target_node is connected to source_node
+            for input_idx, conn in source_node._inputs.items():
+                if conn.output_node() == target_node:
+                    source_node.remove_input(input_idx)
                     logger.info(f"Deleted connection from {target_data.path} to {source_node.path()}")
                     self.post_message(ConnectionDeleted(target_data.path, source_node.path()))
                     break
@@ -431,7 +428,7 @@ class NodeWindow(ScrollableContainer):
             self._connection_mode = ConnectionMode.NONE
             self._source_node = None
             self._refresh_layout()
-
+                
     def on_node_type_selected(self, message: NodeTypeSelected) -> None:
         logger.debug(f"NodeWindow received NodeTypeSelected message: {message.node_type}")
         self._create_new_node(message.node_type)
