@@ -519,7 +519,7 @@ class NodeWindow(ScrollableContainer):
         from core.undo_manager import UndoManager
         logger.debug("Initializing network")
         try:
-            file_path = os.path.abspath("save_file.json")
+            file_path = os.path.abspath("save_file_2.json")
             logger.info(f"Loading flowstate from {file_path}")
             
             if not os.path.exists(file_path):

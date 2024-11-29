@@ -27,7 +27,7 @@ class NodeConnectionState:
     input_ref: Optional[WeakSet]
 
 @dataclass
-class NodeState:
+class FullNodeState:
     name: str
     path: str
     position: List[float]
@@ -53,7 +53,7 @@ class GlobalStoreState:
 
 @dataclass
 class NetworkState:
-    nodes: Dict[str, NodeState]
+    nodes: Dict[str, FullNodeState]
     global_store: GlobalStoreState
     restore_order: List[str]
 
@@ -96,22 +96,31 @@ class UndoManager:
         node_order = []
         captured_nodes = {}
         
-        for node_path in NodeEnvironment.list_nodes():
+        all_nodes = NodeEnvironment.list_nodes()
+        self.logger.debug(f"Nodes found in environment: {all_nodes}")
+        
+        for node_path in all_nodes:
             node = NodeEnvironment.node_from_name(node_path)
             if not node:
                 self.logger.debug(f"Skipping non-existent node: {node_path}")
                 continue
-
+            
+            self.logger.debug(f"Capturing state for node: {node_path}")
             node_order.append(node_path)
             captured_nodes[node_path] = self._capture_node_state(node)
-
-        return NetworkState(
+            
+        self.logger.debug(f"Captured nodes: {list(captured_nodes.keys())}")
+        self.logger.debug(f"Node order: {node_order}")
+        
+        network_state = NetworkState(
             nodes=captured_nodes,
             global_store=GlobalStoreState(dict(GlobalStore.list())),
             restore_order=node_order
         )
+        self.logger.debug(f"Final network state nodes: {list(network_state.nodes.keys())}")
+        return network_state
 
-    def _capture_node_state(self, node: 'Node') -> NodeState:
+    def _capture_node_state(self, node: 'Node') -> FullNodeState:
         parms = {}
         for parm_name, parm in node._parms.items():
             parms[parm_name] = ParmState(
@@ -129,12 +138,12 @@ class UndoManager:
         for idx, conns in node._outputs.items():
             outputs[str(idx)] = [self._capture_connection_state(c) for c in conns]
 
-        return NodeState(
+        return FullNodeState(
             name=node.name(),
             path=node.path(),
             position=node._position,
             node_type=str(node.type()),
-            state=str(node._state),
+            state=node._state,
             errors=node._errors.copy(),
             warnings=node._warnings.copy(),
             is_time_dependent=node._is_time_dependent,
@@ -193,21 +202,21 @@ class UndoManager:
         for key, value in state.store.items():
             GlobalStore.set(key, value)
 
-    def _restore_node(self, state: NodeState) -> None:
+    def _restore_node(self, state: FullNodeState) -> None:
         if state.path in self._node_paths_restored:
             return
-
         self.logger.debug(f"Restoring node: {state.path}")
         node = NodeEnvironment.node_from_name(state.path)
         if not node:
+            node_type_str = state.node_type.split('.')[-1] if '.' in state.node_type else state.node_type
             node = Node.create_node(
-                NodeType[state.node_type],
+                NodeType[node_type_str],
                 state.name,
                 str(PurePosixPath(state.path).parent)
             )
 
         node._position = state.position
-        node._state = state.state
+        node._state = NodeState(state.state)
         node._errors = state.errors
         node._warnings = state.warnings
         node._is_time_dependent = state.is_time_dependent
@@ -218,13 +227,11 @@ class UndoManager:
         node._last_input_size = state.last_input_size
         node._internal_nodes_created = state.internal_nodes_created
         node._parent_looper = state.parent_looper
-
         for parm_name, parm_state in state.parms.items():
             parm = node._parms.get(parm_name)
             if parm:
                 parm.set(parm_state.value)
                 parm.set_script_callback(parm_state.script_callback)
-
         self._node_paths_restored.add(state.path)
 
     def _restore_connections(self, state: NetworkState) -> None:
@@ -238,7 +245,7 @@ class UndoManager:
             self.logger.error("Corrupt network state detected during connection restoration")
             raise
 
-    def _restore_node_connections(self, node: 'Node', state: NodeState) -> None:
+    def _restore_node_connections(self, node: 'Node', state: FullNodeState) -> None:
         node._inputs.clear()
         node._outputs.clear()
 

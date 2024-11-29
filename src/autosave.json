@@ -1,8 +1,31 @@
 {
   "software": "Text Loom",
   "version": 0.01,
-  "timestamp": "2024-11-28T14:10:51.138325",
+  "timestamp": "2024-11-29T12:06:14.221666",
   "nodes": {
+    "/text2": {
+      "_node_type": "text",
+      "_path": "/text2",
+      "_name": "text2",
+      "_is_internal": false,
+      "_parms": {
+        "text_string": {
+          "_name": "text_string",
+          "_type": "string",
+          "_node": "/text2",
+          "_script_callback": "",
+          "_value": "CHAGNED Boopah Text 2"
+        },
+        "pass_through": {
+          "_name": "pass_through",
+          "_type": "toggle",
+          "_node": "/text2",
+          "_script_callback": "",
+          "_value": true
+        }
+      },
+      "_connections": []
+    },
     "/text1": {
       "_node_type": "text",
       "_path": "/text1",
