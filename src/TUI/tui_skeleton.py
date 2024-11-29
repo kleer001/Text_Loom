@@ -251,11 +251,6 @@ class TUIApp(App[None]):
         yield HelpWindow()
         yield ModeLine()
 
-
-    def on_mount(self) -> None:
-        super().on_mount()
-        self.logger.info("Application started")
-
     def on_mount(self) -> None:
         self.logger.info("Application started")
         try:

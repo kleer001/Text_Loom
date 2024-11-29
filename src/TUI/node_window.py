@@ -323,6 +323,32 @@ class NodeWindow(ScrollableContainer):
                 logger.debug(f"Started output connection from {source_node.path()}")
                 self._refresh_layout()
 
+    def action_complete_connection(self) -> None:
+        if not self._initialized or not self._source_node:
+            return
+
+        try:
+            target_data = self._node_data[self._selected_line]
+            target_node = self._env.node_from_name(target_data.path)
+            
+            if target_node:
+                if self._connection_mode == ConnectionMode.INPUT:
+                    target_node.set_next_input(self._source_node)
+                    logger.info(f"Connected input of {target_node.path()} to output of {self._source_node.path()}")
+                    self.post_message(ConnectionAdded(self._source_node.path(), target_node.path()))
+                else:  # OUTPUT mode
+                    self._source_node.set_next_input(target_node)
+                    logger.info(f"Connected input of {self._source_node.path()} to output of {target_node.path()}")
+                    self.post_message(ConnectionAdded(target_node.path(), self._source_node.path()))
+                    
+        except Exception as e:
+            logger.error(f"Error creating connection: {str(e)}", exc_info=True)
+            
+        finally:
+            self._connection_mode = ConnectionMode.NONE
+            self._source_node = None
+            self._refresh_layout()
+
     def action_cancel_connection(self) -> None:
         if self._connection_mode != ConnectionMode.NONE:
             self._connection_mode = ConnectionMode.NONE
@@ -338,38 +364,6 @@ class NodeWindow(ScrollableContainer):
         else:
             self.action_select_node()
 
-    def action_complete_connection(self) -> None:
-        if not self._initialized or not self._source_node:
-            return
-
-        if self._selected_line >= len(self._node_data):
-            return
-
-        target_data = self._node_data[self._selected_line]
-        target_node = self._env.node_from_name(target_data.path)
-        
-        if not target_node:
-            return
-
-        try:
-            if self._connection_mode == ConnectionMode.INPUT:
-                self._source_node.set_next_input(target_node)
-                logger.info(f"Connected input of {self._source_node.path()} to output of {target_node.path()}")
-                self.post_message(ConnectionAdded(target_node.path(), self._source_node.path()))
-            else:  # OUTPUT mode
-                target_node.set_next_input(self._source_node)
-                logger.info(f"Connected input of {target_node.path()} to output of {self._source_node.path()}")
-                self.post_message(ConnectionAdded(self._source_node.path(), target_node.path()))
-                
-            self._connection_mode = ConnectionMode.NONE
-            self._source_node = None
-            self._refresh_layout()
-            
-        except Exception as e:
-            logger.error(f"Error creating connection: {str(e)}", exc_info=True)
-            self._connection_mode = ConnectionMode.NONE
-            self._source_node = None
-            self._refresh_layout()
 
     def _get_deletable_connections(self, node) -> list:
         if not hasattr(node, '_inputs'):

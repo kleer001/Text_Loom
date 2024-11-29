@@ -1,7 +1,7 @@
 {
   "software": "Text Loom",
   "version": 0.01,
-  "timestamp": "2024-11-29T15:18:55.043905",
+  "timestamp": "2024-11-29T15:49:01.957306",
   "nodes": {
     "/text1": {
       "_node_type": "text",
@@ -54,6 +54,13 @@
           "_value": true
         }
       },
+      "_connections": []
+    },
+    "/null_1": {
+      "_node_type": "null",
+      "_path": "/null_1",
+      "_name": "null_1",
+      "_is_internal": false,
       "_connections": []
     }
   },
