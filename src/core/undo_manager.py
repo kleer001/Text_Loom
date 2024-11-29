@@ -156,13 +156,14 @@ class UndoManager:
 
     def _capture_node_state(self, node: 'Node') -> FullNodeState:
         parms = {}
-        for parm_name, parm in node._parms.items():
-            parms[parm_name] = ParmState(
-                name=parm.name(),
-                parm_type=str(parm.type()),
-                value=parm.raw_value(),
-                script_callback=parm.script_callback()
-            )
+        if hasattr(node, '_parms'):
+            for parm_name, parm in node._parms.items():
+                parms[parm_name] = ParmState(
+                    name=parm.name(),
+                    parm_type=str(parm.type()),
+                    value=parm.raw_value(),
+                    script_callback=parm.script_callback()
+                )
 
         inputs = {}
         for idx, conn in node._inputs.items():
@@ -262,11 +263,12 @@ class UndoManager:
         node._last_input_size = state.last_input_size
         node._internal_nodes_created = state.internal_nodes_created
         node._parent_looper = state.parent_looper
-        for parm_name, parm_state in state.parms.items():
-            parm = node._parms.get(parm_name)
-            if parm:
-                parm.set(parm_state.value)
-                parm.set_script_callback(parm_state.script_callback)
+        if hasattr(node, '_parms'):
+            for parm_name, parm_state in state.parms.items():
+                parm = node._parms.get(parm_name)
+                if parm:
+                    parm.set(parm_state.value)
+                    parm.set_script_callback(parm_state.script_callback)
         self._node_paths_restored.add(state.path)
 
     def _restore_connections(self, state: NetworkState) -> None:
