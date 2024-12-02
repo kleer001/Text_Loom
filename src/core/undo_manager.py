@@ -158,6 +158,8 @@ class UndoManager:
         parms = {}
         if hasattr(node, '_parms'):
             for parm_name, parm in node._parms.items():
+                if str(parm.type()) == 'ParameterType.BUTTON':
+                    continue
                 parms[parm_name] = ParmState(
                     name=parm.name(),
                     parm_type=str(parm.type()),
@@ -215,6 +217,15 @@ class UndoManager:
         self._node_paths_restored.clear()
         
         try:
+            # First, remove nodes that shouldn't exist in this state
+            current_nodes = set(NodeEnvironment.list_nodes())
+            target_nodes = set(state.nodes.keys())
+            nodes_to_remove = current_nodes - target_nodes
+            
+            self.logger.debug(f"Removing nodes not in target state: {nodes_to_remove}")
+            for node_path in nodes_to_remove:
+                NodeEnvironment.remove_node(node_path)  # Changed: pass the path directly
+            
             self._restore_global_store(state.global_store)
             
             for node_path in state.restore_order:
@@ -230,7 +241,7 @@ class UndoManager:
         finally:
             self._restoring = False
             self._node_paths_restored.clear()
-
+            
     def _restore_global_store(self, state: GlobalStoreState) -> None:
         from core.global_store import GlobalStore
         self.logger.debug("Restoring global store")
@@ -266,7 +277,7 @@ class UndoManager:
         if hasattr(node, '_parms'):
             for parm_name, parm_state in state.parms.items():
                 parm = node._parms.get(parm_name)
-                if parm:
+                if parm and str(parm.type()) != 'ParameterType.BUTTON':
                     parm.set(parm_state.value)
                     parm.set_script_callback(parm_state.script_callback)
         self._node_paths_restored.add(state.path)
