@@ -6,6 +6,7 @@ Space: Expand/collapse node
 a: Add node
 d: Delete node
 r: Rename node
+x: Delete connection
 i: Start input connection
 o: Start output connection
 e: Get node output

@@ -39,6 +39,7 @@ from TUI.status_window import StatusWindow
 from TUI.global_window import GlobalWindow
 from TUI.help_window import HelpWindow
 from TUI.file_screen import FileScreen
+from TUI.modeline import ModeLine
 from TUI.keymap_screen import KeymapScreen 
 import TUI.palette as pal
 
@@ -107,41 +108,6 @@ class MainContent(Static):
 
     def on_mount(self) -> None:
         self.query_one(NodeWindow).focus()
-
-class ModeLine(Static):
-    DEFAULT_CSS = f"""
-    ModeLine {{
-        width: 100%;
-        height: 1;
-        background: {pal.MODELINE_BACKGROUND};
-        color: {pal.MODELINE_TEXT};
-        padding: 0 1;
-    }}
-    """
-    mode = reactive(Mode.NODE)
-    path = reactive("untitled")
-    debug_info = reactive("")
-    keypress = reactive("")
-
-    def watch_mode(self) -> None:
-        self._refresh_display()
-
-    def watch_path(self) -> None:
-        self._refresh_display()
-        
-    def watch_debug_info(self) -> None:
-        self._refresh_display()
-
-    def watch_keypress(self) -> None:
-        self._refresh_display()
-
-    def _refresh_display(self) -> None:
-        display_text = f"[{self.mode}] {self.path}"
-        if self.debug_info:
-            display_text += f" | {self.debug_info}"
-        if self.keypress:
-            display_text += f" | Keys: {self.keypress}"
-        self.update(display_text)
 
 class ClearAllConfirmation(ModalScreen[bool]):
     DEFAULT_CSS = f"""
@@ -278,23 +244,18 @@ class TUIApp(App[None]):
 
     def on_key(self, event) -> None:
         #I don't know why but we can't capture the alt key press :(
-        try:
-            if isinstance(self.screen, FileScreen):
-                return
-            mode_line = self.query_one(ModeLine)
-            key_display = []
+        if isinstance(self.screen, (FileScreen, ModalScreen)):
+            return
             
+        if hasattr(self, "mode_line"):
+            key_display = []
             if event.control:
                 key_display.append("ctrl")
-            self.logger.debug(f"Key event details - key: {event.key}, name: {event.name}, control: {event.control}")
                 
             if event.key not in ["ctrl", "shift", "alt"]:
                 key_display.append(event.key)
                 
-            mode_line.keypress = "+".join(key_display)
-            #self.logger.debug(f"Updated modeline keypress to: {mode_line.keypress}")
-        except Exception as e:
-            self.logger.error(f"Error handling key event: {str(e)}", exc_info=True)
+            self.mode_line.keypress = "+".join(key_display)
 
     def _handle_mode_focus(self, mode: Mode) -> None:
         self.logger.info(f"Handling focus for mode: {mode}")
@@ -452,21 +413,37 @@ class TUIApp(App[None]):
     def action_clear_all(self) -> None:
         self.logger.info("Clear all action triggered")
         def handle_clear_response(clear: bool) -> None:
+            self.logger.info("Clear all response received: %s", clear)
             if clear:
                 try:
+                    self.logger.debug("Starting clear all process")
+                    self._perform_autosave()  # just in case
+                    undo_manager = UndoManager()
+                    self.logger.debug("Disabling undo manager")
+                    undo_manager.disable()
+                    
+                    self.logger.debug("Flushing nodes")
                     NodeEnvironment.flush_all_nodes()
+                    self.logger.debug("Flushing globals")
                     GlobalStore().flush_all_globals()
-                    self.undo_manager = UndoManager()
-                    self._perform_autosave()
+                    
+                    self.logger.debug("Re-enabling undo manager")
+                    undo_manager.enable()
+                    
+                    self.logger.debug("Refreshing windows")
                     self._refresh_all_windows()
+                    
                     self.mode_line.debug_info = "Cleared all nodes, globals, and history"
                     self.logger.info("Successfully cleared all")
                 except Exception as e:
                     self.logger.error(f"Clear all failed: {str(e)}", exc_info=True)
                     self.mode_line.debug_info = "Clear all failed"
 
-        self.push_screen(ClearAllConfirmation(), handle_clear_response)
-        self._refresh_all_windows()
+        try:
+            self.logger.debug("Pushing confirmation screen")
+            self.push_screen(ClearAllConfirmation(), handle_clear_response)
+        except Exception as e:
+            self.logger.error(f"Failed to show confirmation dialog: {str(e)}", exc_info=True)
 
 
     def action_undo(self) -> None:

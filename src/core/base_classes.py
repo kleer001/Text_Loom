@@ -653,6 +653,7 @@ class Node(MobileItem):
         """Returns a tuple of the list of nodes it's connected to on its output."""
         return tuple(self._children)
 
+
     @classmethod
     def create_node(cls, node_type: NodeType, node_name: Optional[str] = None, parent_path: str = "/") -> "Node":
         """
@@ -671,53 +672,47 @@ class Node(MobileItem):
             AttributeError: If the node class cannot be found in the imported module.
             ValueError: If the specified parent path does not exist.
         """
-        # Validate parent path
-        if parent_path != "/" and not NodeEnvironment.node_exists(parent_path):
-            raise ValueError(f"Parent path '{parent_path}' does not exist.")
-
-        base_name = node_name or f"{node_type.value}"
+        from core.undo_manager import UndoManager
         
-        # Check if the base_name already ends with a number
+        base_name = node_name or f"{node_type.value}"
         if re.search(r'_?\d+$', base_name):
-            new_name = base_name  # Use the name as-is if it already ends with a number
+            new_name = base_name
         else:
             counter = 1
-            # Generate a unique name by checking existing nodes
             while True:
                 new_name = f"{base_name}_{counter}"
                 new_path = f"{parent_path.rstrip('/')}/{new_name}"
-                
                 if new_path not in NodeEnvironment.nodes:
                     break
-                    
                 counter += 1
-
+                    
         new_path = f"{parent_path.rstrip('/')}/{new_name}"
+        UndoManager().push_state(f"Create node: {new_path}")
+        
+        if parent_path != "/" and not NodeEnvironment.node_exists(parent_path):
+            raise ValueError(f"Parent path '{parent_path}' does not exist.")
 
         try:
-        # Construct the full module path only when importing
             module_name = f"core.{node_type.value}_node"
             module = importlib.import_module(module_name)
-            
-            # Convert snake_case to PascalCase and remove '_node' suffix
             class_name = ''.join(word.capitalize() for word in node_type.value.split('_'))
             node_class = getattr(module, f"{class_name}Node")
-
             new_node = node_class(new_name, new_path, node_type)
             new_node._session_id = new_node._generate_unique_session_id()
             NodeEnvironment.add_node(new_node)
-
-            # Call post-registration initialization
+            
             if hasattr(new_node.__class__, 'post_registration_init'):
-                new_node.__class__.post_registration_init(new_node)
-
+                UndoManager().disable_undo()
+                try:
+                    new_node.__class__.post_registration_init(new_node)
+                finally:
+                    UndoManager().enable_undo()
+                    
             return new_node
         except ImportError:
             raise ImportError(f"Could not import module for node type: {node_type.value}")
         except AttributeError:
             raise AttributeError(f"Could not find node class for node type: {node_type.value}")
-        # TODO Add undo logic
-
 
     def destroy(self) -> None:
         from core.undo_manager import UndoManager
@@ -787,21 +782,28 @@ class Node(MobileItem):
 
     def set_next_input(self, input_node: "Node", output_index: int = 0) -> None:
         from core.undo_manager import UndoManager
-        UndoManager().push_state(f"Add next input from {input_node.name()} to {self.name()}")
         
+        # Calculate the next input index before pushing state
+        next_input_index = 0
+        if hasattr(self, 'SINGLE_INPUT') and self.SINGLE_INPUT:
+            next_input_index = 0
+        elif not self._inputs:
+            next_input_index = 0
+        else:
+            next_input_index = max(self._inputs.keys()) + 1
+
+        # Push state with more descriptive name including actual indices
+        UndoManager().push_state(f"Connect {input_node.name()}[{output_index}] to {self.name()}[{next_input_index}]")
         
+        # Make changes without additional undo states
+        UndoManager().disable()
         try:
-            UndoManager().disable()
             if hasattr(self, 'SINGLE_INPUT') and self.SINGLE_INPUT:
                 self.set_input(0, input_node, output_index)
-                return
-                
-            if not self._inputs:
+            elif not self._inputs:
                 self.set_input(0, input_node, output_index)
-                return
-                
-            max_index = max(self._inputs.keys())
-            self.set_input(max_index + 1, input_node, output_index)
+            else:
+                self.set_input(next_input_index, input_node, output_index)
         finally:
             UndoManager().enable()
 
