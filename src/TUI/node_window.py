@@ -20,6 +20,7 @@ from TUI.logging_config import get_logger
 from TUI.messages import (NodeAdded, NodeDeleted, ConnectionAdded, 
 ConnectionDeleted, NodeSelected, NodeTypeSelected, OutputMessage)
 import TUI.palette as pal
+from TUI.theme_manager import Theme, ThemeManager
 
 logger = get_logger('node')
 

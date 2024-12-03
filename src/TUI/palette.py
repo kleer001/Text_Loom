@@ -1,3 +1,5 @@
+#Basic default light blue color scheme
+
 # Base colors - main app areas
 MAIN_WIN_BACKGROUND = "#FAFAF8"  # Soft cream
 MAIN_WIN_TEXT = "#222222"        # Rich black

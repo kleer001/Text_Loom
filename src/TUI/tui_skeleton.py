@@ -18,7 +18,7 @@ from textual.widgets import Static
 from dataclasses import dataclass
 from enum import Enum, auto
 
-from TUI.node_window import NodeWindow, NodeSelected
+from TUI.node_window import NodeWindow, NodeSelected, Node
 from TUI.parameter_window import ParameterWindow
 from TUI.messages import (
     OutputMessage,
@@ -60,57 +60,23 @@ from TUI.logging_config import get_logger
 
 logger = get_logger('tui.main')
 
-
-# In TUI_skeleton.py add:
-from TUI.theme_loader import ThemeLoader
+from TUI.theme_manager import ThemeManager, Theme
 from textual.widgets import OptionList
 from textual.screen import ModalScreen
 
-class ThemeSelector(ModalScreen):
-    DEFAULT_CSS = """
-    ThemeSelector {
-        align: center middle;
-    }
-
-    Vertical {
-        width: 40;
-        height: auto;
-        border: solid rgb(45, 45, 45);
-        background: $surface;
-        padding: 1;
-    }
-
-    OptionList {
-        height: auto;
-        max-height: 20;
-    }
-
-    #theme-title {
-        content-align: center middle;
-        width: 100%;
-        height: 3;
-    }
-    """
-
-    def __init__(self):
-        super().__init__()
-        self.theme_loader = ThemeLoader()
-
-    def compose(self):
-        themes = self.theme_loader.scan_themes()
-        logger.debug(f"Available themes: {themes}")
+class ThemeSelector(ModalScreen[str]):
+    def compose(self) -> ComposeResult:
+        available_themes = ThemeManager.get_available_themes()
         with Vertical():
             yield Static("Select Theme", id="theme-title")
-            yield OptionList(*sorted(themes))
+            yield OptionList(*sorted(available_themes))
 
     def on_option_list_option_selected(self, event: OptionList.OptionSelected):
-        logger.debug(f"Theme selected: {event.option.prompt}")
         self.dismiss(event.option.prompt)
 
     def on_key(self, event):
         if event.key == "escape":
             self.dismiss(None)
-
 
 @dataclass
 class ModeChanged(Message):
@@ -247,6 +213,7 @@ class TUIApp(App[None]):
     help_window: ClassVar[HelpWindow]
     current_mode: reactive[Mode] = reactive(Mode.NODE)
     current_file: reactive[str] = reactive("")
+    current_theme: reactive[Theme] = reactive(None)  # Add this line
     AUTOSAVE_FILE: ClassVar[str] = "autosave.json"  # Added class variable
 
 
@@ -258,7 +225,6 @@ class TUIApp(App[None]):
             self.logger.debug("Super initialization complete")
             self.current_mode = Mode.NODE
             self.logger.debug("Mode set to NODE")
-            self._check_autosave()
             self.logger.info("TUIApp initialization complete")
         except Exception as e:
             self.logger.error(f"Failed during TUIApp initialization: {str(e)}", exc_info=True)
@@ -276,11 +242,34 @@ class TUIApp(App[None]):
             self.help_window = self.query_one(HelpWindow)
             self.mode_line.path = "untitled.json"
             self.current_file = "untitled.json"
+            
+            # Load theme after UI components are ready
+            default_theme = ThemeManager.load_theme('default')
+            self._apply_theme(default_theme)
+            
         except NoMatches as e:
             self.logger.error("Failed to initialize components", exc_info=True)
             self.exit(message="Failed to initialize components")
+        except Exception as e:
+            self.logger.error(f"Failed during mount: {str(e)}", exc_info=True)
+            self.exit(message="Failed during mount")
+            
         self._update_mode_display()
         self._check_autosave()
+
+    def _apply_theme(self, theme: Theme) -> None:
+        theme_css = ThemeManager.get_css(theme)
+        for component, css in theme_css.items():
+            try:
+                widget = self.query_one(f"#{component}")
+                if widget:
+                    widget.styles.update(css)
+            except NoMatches:
+                continue
+        
+        self.current_theme = theme
+        self._refresh_all_windows()
+        self.refresh(layout=True)
 
     def _refresh_all_windows(self) -> None:
         main_layout = self.query_one(MainLayout)
@@ -346,18 +335,63 @@ class TUIApp(App[None]):
             raise
 
     async def action_load_theme(self) -> None:
-        self.logger.info("Theme loading action triggered")
         try:
-            def handle_theme_selection(theme_name: str | None) -> None:
-                if theme_name:
-                    self.logger.info(f"Selected theme: {theme_name}")
-                    # Theme application will be implemented next
-                    self.mode_line.debug_info = f"Selected theme: {theme_name}"
-                
-            await self.push_screen(ThemeSelector(), handle_theme_selection)
+            theme_name = await self.push_screen(ThemeSelector())
+            if theme_name:
+                new_theme = ThemeManager.load_theme(theme_name)
+                self._apply_theme(new_theme)
+                self.mode_line.debug_info = f"Applied theme: {theme_name}"
         except Exception as e:
-            self.logger.error(f"Theme loading failed: {str(e)}", exc_info=True)
             self.mode_line.debug_info = "Theme loading failed"
+            self.logger.error(f"Theme loading failed: {str(e)}", exc_info=True)
+
+
+    def _generate_themed_css(self, theme_module) -> str:
+        """Generate CSS using theme colors"""
+        return f"""
+        Screen {{
+            background: {theme_module.MAIN_WIN_BACKGROUND};
+        }}
+
+        MainContent {{
+            height: 7fr;
+        }}
+
+        HelpWindow {{
+            height: 1fr;
+            background: {theme_module.HELP_WIN_BACKGROUND};
+            color: {theme_module.HELP_WIN_TEXT};
+        }}
+
+        ModeLine {{
+            height: 1;
+            background: {theme_module.MODELINE_BACKGROUND};
+            color: {theme_module.MODELINE_TEXT};
+        }}
+        
+        NodeWindow {{
+            width: 1fr;
+            background: {theme_module.NODE_WIN_BACKGROUND};
+            border: {theme_module.NODE_BORDER_NORMAL} {theme_module.NODE_WIN_BORDER};
+            color: {theme_module.MAIN_WIN_TEXT};
+        }}
+        
+        NodeWindow:focus {{
+            border: {theme_module.NODE_BORDER_FOCUS} {theme_module.NODE_WIN_BORDER_FOCUS};
+        }}
+        
+        ParameterWindow {{
+            width: 2fr;
+            background: {theme_module.PARAM_WINDOW_BG};
+            border: solid {theme_module.PARAM_WINDOW_BORDER};
+            color: {theme_module.MAIN_WIN_TEXT};
+        }}
+
+        .middle-section {{
+            width: 2fr;
+        }}
+        """
+
 
     def action_switch_mode(self, mode_name: str) -> None:
         try:
@@ -437,6 +471,7 @@ class TUIApp(App[None]):
 
 
     def _check_autosave(self) -> None:
+        print("We're not autosaving, sorry.")
         return #temporary disable
         from core.undo_manager import UndoManager
         self.logger.info("Starting autosave check")
