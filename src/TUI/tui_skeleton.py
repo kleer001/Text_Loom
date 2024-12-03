@@ -61,6 +61,57 @@ from TUI.logging_config import get_logger
 logger = get_logger('tui.main')
 
 
+# In TUI_skeleton.py add:
+from TUI.theme_loader import ThemeLoader
+from textual.widgets import OptionList
+from textual.screen import ModalScreen
+
+class ThemeSelector(ModalScreen):
+    DEFAULT_CSS = """
+    ThemeSelector {
+        align: center middle;
+    }
+
+    Vertical {
+        width: 40;
+        height: auto;
+        border: solid rgb(45, 45, 45);
+        background: $surface;
+        padding: 1;
+    }
+
+    OptionList {
+        height: auto;
+        max-height: 20;
+    }
+
+    #theme-title {
+        content-align: center middle;
+        width: 100%;
+        height: 3;
+    }
+    """
+
+    def __init__(self):
+        super().__init__()
+        self.theme_loader = ThemeLoader()
+
+    def compose(self):
+        themes = self.theme_loader.scan_themes()
+        logger.debug(f"Available themes: {themes}")
+        with Vertical():
+            yield Static("Select Theme", id="theme-title")
+            yield OptionList(*sorted(themes))
+
+    def on_option_list_option_selected(self, event: OptionList.OptionSelected):
+        logger.debug(f"Theme selected: {event.option.prompt}")
+        self.dismiss(event.option.prompt)
+
+    def on_key(self, event):
+        if event.key == "escape":
+            self.dismiss(None)
+
+
 @dataclass
 class ModeChanged(Message):
     mode: Mode
@@ -154,7 +205,8 @@ class TUIApp(App[None]):
         Binding("ctrl+e", "switch_mode('HELP')", "Help Mode"),
         Binding("ctrl+k", "switch_mode('KEYMAP')", "Keymap Mode"),
         Binding("ctrl+t", "switch_mode('STATUS')", "Status Mode"),
-        Binding("ctrl+l", "switch_mode('OUTPUT')", "Output Mode"),
+        #Binding("ctrl+l", "switch_mode('OUTPUT')", "Output Mode"),
+        Binding("ctrl+l", "load_theme", "Load Theme"),
         Binding("ctrl+z", "undo", "Undo"),
         Binding("ctrl+y", "redo", "Redo"),
         Binding("ctrl+q", "quit", "Quit"),
@@ -293,6 +345,19 @@ class TUIApp(App[None]):
             self.logger.error(f"Error in _handle_mode_focus: {str(e)}", exc_info=True)
             raise
 
+    async def action_load_theme(self) -> None:
+        self.logger.info("Theme loading action triggered")
+        try:
+            def handle_theme_selection(theme_name: str | None) -> None:
+                if theme_name:
+                    self.logger.info(f"Selected theme: {theme_name}")
+                    # Theme application will be implemented next
+                    self.mode_line.debug_info = f"Selected theme: {theme_name}"
+                
+            await self.push_screen(ThemeSelector(), handle_theme_selection)
+        except Exception as e:
+            self.logger.error(f"Theme loading failed: {str(e)}", exc_info=True)
+            self.mode_line.debug_info = "Theme loading failed"
 
     def action_switch_mode(self, mode_name: str) -> None:
         try:
