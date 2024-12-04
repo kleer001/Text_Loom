@@ -4,34 +4,24 @@ import re
 from enum import Enum, auto
 from dataclasses import dataclass
 
+def extract_component_name(file_content: str, file_stem: str) -> str:
+    """Extract the main component class name from the file"""
+    class_pattern = re.compile(r'class\s+(\w+)\s*\([^)]*\):')
+    matches = class_pattern.findall(file_content)
+    # Look for a class that matches the file name or ends with Window/Screen
+    for match in matches:
+        if match.lower() == file_stem.lower() or match.endswith(('Window', 'Screen')):
+            return match
+    return file_stem.title()
 
-@dataclass
-class Theme:
-    """Template for theme colors"""
+def clean_css_block(css: str) -> str:
+    """Clean and normalize CSS block"""
+    css = css.strip()
+    css = css.replace('\r\n', '\n')
+    return css
 
-    pass
-
-
-def quote_css_keywords(css: str) -> str:
-    keywords = {
-        r'\balign:\s*([\w\s]+);': lambda m: f'align: "{m.group(1)}";',
-        r'\btext-align:\s*([\w\s]+);': lambda m: f'text-align: "{m.group(1)}";',
-        r'\bcontent-align:\s*([\w\s]+);': lambda m: f'content-align: "{m.group(1)}";',
-        r'\bheight:\s*auto\b': 'height: "auto"',
-        r'\bwidth:\s*auto\b': 'width: "auto"',
-        r'\bdock:\s*([\w\s]+);': lambda m: f'dock: "{m.group(1)}";',
-        r'\blayout:\s*([\w\s]+);': lambda m: f'layout: "{m.group(1)}";',
-    }
-    
-    result = css
-    for pattern, replacement in keywords.items():
-        if callable(replacement):
-            result = re.sub(pattern, replacement, result)
-        else:
-            result = re.sub(pattern, replacement, result)
-    return result
-
-def extract_css_blocks() -> Dict[str, Set[str]]:
+def extract_css_blocks() -> Dict[str, Dict[str, str]]:
+    """Extract CSS blocks grouped by component and scoped properly"""
     css_blocks = {}
     css_pattern = re.compile(r'DEFAULT_CSS\s*=\s*f?"""(.*?)"""', re.DOTALL)
 
@@ -40,38 +30,39 @@ def extract_css_blocks() -> Dict[str, Set[str]]:
             content = py_file.read_text(encoding="utf-8")
             matches = css_pattern.findall(content)
             if matches:
-                css_blocks[py_file.stem] = set(matches)
+                component_name = extract_component_name(content, py_file.stem)
+                component_css = {}
+                
+                for block in matches:
+                    # Clean the CSS block
+                    clean_block = clean_css_block(block)
+                    # Scope the CSS to the component
+                    if not any(selector in clean_block for selector in [f"{component_name} ", f"{component_name}{{"]):
+                        clean_block = f"{component_name} {{\n{clean_block}\n}}"
+                    component_css[f"{component_name}-{len(component_css)}"] = clean_block
+                
+                css_blocks[component_name] = component_css
+
         except Exception as e:
-            print(f"Error reading {py_file}: {e}")
+            print(f"Error processing {py_file}: {e}")
 
     return css_blocks
 
-
 def extract_variables(css: str) -> Set[str]:
+    """Extract theme variables from CSS"""
     pattern = re.compile(r"\{(?:pal|theme)\.([A-Z_]+)\}")
     return set(pattern.findall(css))
 
-def needs_theme_formatting(css: str) -> bool:
-    double_brace_pattern = r'\{\{.*?\}\}'
-    single_brace_pattern = r'\{(?!\{).*?(?!\})\}'
-    
-    has_double_braces = bool(re.search(double_brace_pattern, css))
-    has_single_braces = bool(re.search(single_brace_pattern, css))
-    
-    return has_single_braces and not has_double_braces
-
-def generate_theme_manager(css_blocks: Dict[str, Set[str]], output_file="theme_manager.py"):
+def generate_theme_manager(css_blocks: Dict[str, Dict[str, str]], output_file="theme_manager.py"):
+    # Collect all unique variables
     all_variables = set()
-    for blocks in css_blocks.values():
-        for block in blocks:
+    for component_blocks in css_blocks.values():
+        for block in component_blocks.values():
             all_variables.update(extract_variables(block))
 
     with open(output_file, "w", encoding="utf-8") as f:
-        # Write imports and setup
-        f.write(
-
-            
-            """from dataclasses import dataclass
+        # Write imports and Theme class
+        f.write("""from dataclasses import dataclass
 from enum import Enum, auto
 from pathlib import Path
 from typing import Dict, List
@@ -79,60 +70,53 @@ import importlib.util
 
 @dataclass
 class Theme:
-"""
-        )
+""")
         # Write theme variables
         for var in sorted(all_variables):
             f.write(f"    {var}: str\n")
 
-        # Write ThemeManager class
-        f.write(
-            '''
+        # Write theme management code
+        f.write('''
 def load_theme_module(path: Path):
-   """Dynamically import theme module from path"""
-   spec = importlib.util.spec_from_file_location(path.stem, path)
-   module = importlib.util.module_from_spec(spec)
-   spec.loader.exec_module(module)
-   return module
+    """Dynamically import theme module from path"""
+    spec = importlib.util.spec_from_file_location(path.stem, path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 class ThemeManager:
-   @staticmethod
-   def get_available_themes() -> List[str]:
-       """Get list of available theme names from themes directory"""
-       theme_dir = Path(__file__).parent / "themes"
-       return [p.stem.replace("_colors", "") for p in theme_dir.glob("*_colors.py")]
-       
-   @staticmethod
-   def load_theme(theme_name: str) -> Theme:
-       """Load theme by name from themes directory"""
-       theme_path = Path(__file__).parent / "themes" / f"{theme_name}_colors.py"
-       if not theme_path.exists():
-           raise ValueError(f"Theme {theme_name} not found")
-       
-       theme_module = load_theme_module(theme_path)
-       return Theme(**{var: getattr(theme_module, var) for var in Theme.__annotations__})
+    @staticmethod
+    def get_available_themes() -> List[str]:
+        """Get list of available theme names from themes directory"""
+        theme_dir = Path(__file__).parent / "themes"
+        return [p.stem.replace("_colors", "") for p in theme_dir.glob("*_colors.py")]
+        
+    @staticmethod
+    def load_theme(theme_name: str) -> Theme:
+        """Load theme by name from themes directory"""
+        theme_path = Path(__file__).parent / "themes" / f"{theme_name}_colors.py"
+        if not theme_path.exists():
+            raise ValueError(f"Theme {theme_name} not found")
+        
+        theme_module = load_theme_module(theme_path)
+        return Theme(**{var: getattr(theme_module, var) for var in Theme.__annotations__})
 
-   @staticmethod
-   def get_css(theme: Theme) -> Dict[str, str]:
-       """Generate CSS for all components using theme"""
-       return {
-'''
-        )
+    @staticmethod
+    def get_css(theme: Theme) -> Dict[str, str]:
+        """Generate CSS for all components using theme"""
+        return {
+''')
 
-
+        # Write component CSS blocks with proper scoping
         for component, blocks in css_blocks.items():
-            for block in blocks:
-                quoted_block = quote_css_keywords(block)
-                if needs_theme_formatting(block):
-                    formatted_block = quoted_block.replace("pal.", "theme.")
-                    f.write(f"    '{component}': f'''{formatted_block}''',\n")
-                else:
-                    f.write(f"    '{component}': '''{quoted_block}''',\n")
+            for block_id, css in blocks.items():
+                # Replace pal. with theme.
+                themed_css = css.replace("pal.", "theme.")
+                # Proper indentation for readability
+                indented_css = "\n".join("            " + line for line in themed_css.split("\n"))
+                f.write(f'    "{block_id}": """\n{indented_css}\n""",\n')
 
-        f.write("       }\n")  # Close the return dictionary
-        #f.write("}\n")         # Close the class
-
-
+        f.write("        }\n")  # Close the return dictionary
 
 if __name__ == "__main__":
     css_blocks = extract_css_blocks()
