@@ -31,34 +31,34 @@ class Parameter:
 
 
 class ParameterRow(Horizontal):
-    DEFAULT_CSS = f"""
-    ParameterRow {{
+    DEFAULT_CSS = """
+    ParameterRow {
         height: 2;
         margin: 0;
         padding: 0;
         width: 100%;
-    }}
+    }
     
-    ParameterRow > Static {{
+    ParameterRow > Static {
         width: 20;
-        background: {pal.PARAM_LABEL_BG};
-        color: {pal.PARAM_LABEL_COLOR};
+        background: $surface;
+        color: $text-muted;
         padding: 0 1;
-    }}
+    }
     
-    ParameterRow > Input {{
+    ParameterRow > Input {
         width: 1fr;
-        background: {pal.PARAM_INPUT_BG};
-        color: {pal.PARAM_INPUT_COLOR};
+        background: $panel;
+        color: $foreground;
         border: none;
         padding: 0 1;
-    }}
+    }
     
-    ParameterRow > Input:focus {{
-        background: {pal.PARAM_INPUT_SELECTED_BG};
-        color: {pal.PARAM_INPUT_SELECTED_COLOR};
-        border: tall {pal.PARAM_INPUT_SELECTED_BORDER};
-    }}
+    ParameterRow > Input:focus {
+        background: $accent;
+        color: $foreground;
+        border: tall $primary;
+    }
     """
 
     is_selected = reactive(False)
@@ -137,20 +137,20 @@ class ParameterRow(Horizontal):
 class ParameterSet(Vertical):
     """A container for a node's parameters with title and parameter rows."""
     
-    DEFAULT_CSS = f"""
-    ParameterSet {{
+    DEFAULT_CSS = """
+    ParameterSet {
         width: 100%;
-        background: {pal.PARAM_SET_BG};
-        border-bottom: solid {pal.PARAM_SET_BORDER};
+        background: $background;
+        border-bottom: solid $primary;
         padding: 0 1;
         height: auto;
-    }}
+    }
     
-    ParameterSet .title {{
-        color: {pal.PARAM_TITLE_COLOR};
+    ParameterSet .title {
+        color: $secondary;
         text-style: bold;
         padding: 1 0;
-    }}
+    }
     """
 
     def __init__(self, node: Node):
@@ -249,22 +249,22 @@ class ParameterSet(Vertical):
 class ParameterWindow(ScrollableContainer):
     """Main container for parameter sets with keyboard navigation."""
     
-    DEFAULT_CSS = f"""
-    ParameterWindow {{
+    DEFAULT_CSS = """
+    ParameterWindow {
         width: 100%;
         height: 100%;
-        background: {pal.PARAM_WINDOW_BG};
-        border: solid {pal.PARAM_WINDOW_BORDER};
-    }}
+        background: $background;
+        border: solid $primary;
+    }
     
-    ParameterWindow:focus {{
-        border: double {pal.PARAM_WINDOW_FOCUS_BORDER};
-    }}
+    ParameterWindow:focus {
+        border: double $secondary;
+    }
     
-    ParameterWindow #parameter_stack {{
+    ParameterWindow #parameter_stack {
         width: 100%;
         height: auto;
-    }}
+    }
     """
 
     BINDINGS = [

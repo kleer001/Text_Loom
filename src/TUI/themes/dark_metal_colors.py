@@ -1,90 +1,56 @@
-# Dark Metal Theme
-# Base colors - main app areas
-MAIN_WIN_BACKGROUND = "#222222"    # Medium contrast bg
-MAIN_WIN_TEXT = "#D3D3D3"         # Low contrast text
-MODELINE_TEXT = "#FFFFFF"         # Pure white
-MODELINE_BACKGROUND = "#000000"   # High contrast bg
+from textual.theme import Theme
 
-# Node window colors
-NODE_WIN_BACKGROUND = "#222222"    # Matches main background
-NODE_WIN_BORDER = "#708090"       # Low contrast border    
-NODE_WIN_BORDER_FOCUS = "#696969" # Medium contrast border
-
-NODE_MODAL_SURFACE = "#191919"    # Low contrast bg
-NODE_MODAL_BORDER = "#708090"     # Low contrast border
-NODE_MODAL_TEXT = "#C0C0C0"       # Medium contrast text
-
-NODE_INPUT_BACKGROUND = "#191919"  # Low contrast bg
-NODE_INPUT_TEXT = "#C0C0C0"       # Medium contrast text
-
-# Border styles remain unchanged
-NODE_BORDER_NORMAL = "solid"
-NODE_BORDER_FOCUS = "double"
-NODE_BORDER_MODAL = "thick"
-
-# Status window
-STATUS_WIN_BACKGROUND = "#222222"   # Matches main background
-STATUS_WIN_BORDER_COLOR = "#708090" # Low contrast border
-STATUS_WIN_TEXT = "#C0C0C0"        # Medium contrast text
-STATUS_WIN_BORDER = "solid"
-
-# Parameter window colors
-PARAM_SET_BG = "#222222"           # Matches main background
-PARAM_SET_BORDER = "#708090"       # Low contrast border
-PARAM_WINDOW_BG = "#222222"        # Matches main background
-PARAM_WINDOW_BORDER = "#708090"    # Low contrast border
-
-PARAM_TITLE_COLOR = "#696969"      # Medium contrast text
-PARAM_WINDOW_FOCUS_BORDER = "#696969" # Medium contrast border
-
-PARAM_LABEL_BG = "#191919"         # Low contrast bg
-PARAM_LABEL_COLOR = "#D3D3D3"      # Low contrast text
-
-PARAM_INPUT_BG = "#191919"         # Low contrast bg
-PARAM_INPUT_COLOR = "#C0C0C0"      # Medium contrast text
-PARAM_INPUT_BORDER = "#708090"     # Low contrast border
-
-PARAM_INPUT_SELECTED_BG = "#222222" # Medium contrast bg
-PARAM_INPUT_SELECTED_COLOR = "#C0C0C0" # Medium contrast text
-PARAM_INPUT_SELECTED_BORDER = "#696969" # Medium contrast border
-
-PARAM_VALUE_EDITING_BG = "#191919"   # Low contrast bg
-PARAM_VALUE_EDITING_COLOR = "#C0C0C0" # Medium contrast text
-
-PARAM_INPUT_INVALID_BG = "#8B0000"   # Dark red for invalid
-PARAM_NAME_COLOR = "#D3D3D3"         # Low contrast text
-PARAM_VALUE_COLOR = "#C0C0C0"        # Medium contrast text
-PARAM_VALUE_BG = "#191919"           # Low contrast bg
-PARAM_VALUE_SELECTED_COLOR = "#C0C0C0" # Medium contrast text
-PARAM_VALUE_SELECTED_BG = "#222222"   # Medium contrast bg
-
-# Output window
-OUTPUT_WIN_BACKGROUND = "#222222"     # Matches main background
-OUTPUT_WIN_BORDER_COLOR = "#708090"   # Low contrast border
-OUTPUT_WIN_TEXT = "#C0C0C0"           # Medium contrast text
-OUTPUT_WIN_BORDER = "solid"
-
-# Keymap screen
-KEYMAP_SCR_BACKGROUND = "#222222"     # Matches main background
-KEYMAP_SCR_TEXT = "#C0C0C0"           # Medium contrast text
-KEYMAPCONTENT_SCR_BACKGROUND = "#191919" # Low contrast bg
-KEYMAPCONTENT_SCR_TEXT = "#C0C0C0"    # Medium contrast text
-
-# Help window
-HELP_WIN_BACKGROUND = "#222222"       # Medium contrast bg
-HELP_WIN_TEXT = "#C0C0C0"             # Medium contrast text
-HELP_WIN_HEADER = "#D3D3D3"           # Low contrast text
-
-# Global window colors
-GLOBAL_WIN_BACKGROUND_COLOR = "#222222" # Matches main background
-GLOBAL_WIN_TABLE_COLOR = "#708090"     # Low contrast border
-GLOBAL_WIN_INPUT_COLOR = "#696969"     # Medium contrast border
-GLOBAL_WIN_ERROR_COLOR = "#8B0000"     # Dark red for errors
-GLOBAL_WIN_TEXT_COLOR = "#C0C0C0"      # Medium contrast text
-GLOBAL_WIN_BORDER_COLOR = "#708090"    # Low contrast border
-
-# File screen
-FILE_SCR_BACKGROUND = "#222222"        # Matches main background
-FILE_SCR_TEXT = "#C0C0C0"              # Medium contrast text
-FILECONTENT_SCR_BACKGROUND = "#191919" # Low contrast bg
-FILECONTENT_SCR_TEXT = "#C0C0C0"       # Medium contrast text
+dark_metal_theme = Theme(
+    name="dark_metal",
+    dark=False,
+    
+    # Core colors
+    background="#222222"    # Medium contrast bg",
+    foreground="#D3D3D3"         # Low contrast text",
+    primary="#708090"       # Low contrast border",
+    secondary="#696969" # Medium contrast border",
+    accent="#222222" # Medium contrast bg",
+    error="#8B0000"     # Dark red for errors",
+    success="#4CAF50
+    warning="#FFA726
+    surface="#191919"    # Low contrast bg",
+    panel="#191919"  # Low contrast bg",
+    
+    variables={
+        "text-muted": "#D3D3D3"         # Low contrast text",
+        "text-on-primary": "#FFFFFF"         # Pure white",
+        "text-on-secondary": "#FFFFFF"
+        
+        "border-primary": "solid $primary",
+        "border-secondary": "solid $secondary",
+        "border-focus": "double $secondary",
+        "border-modal": "thick $primary",
+        
+        "background-input": "$panel",
+        "background-input-selected": "$accent",
+        "background-input-invalid": "rgba(217, 48, 37, 0.1)",
+        "background-editing": "$primary 10%",
+        "background-help": "#222222"       # Medium contrast bg",
+        
+        "modeline-bg": "$secondary",
+        "modeline-fg": "$text-on-secondary",
+        
+        "node-selected-bg": "$accent",
+        "node-selected-fg": "$foreground",
+        
+        "param-title": "$secondary",
+        "param-label-bg": "$surface",
+        "param-label-fg": "$text-muted",
+        
+        "input-border": "#708090"     # Low contrast border",
+        "input-border-focus": "$primary",
+        "input-border-invalid": "$error",
+        
+        "window-border-normal": "$border-primary",
+        "window-border-focus": "$border-focus",
+        
+        "table-border": "$primary",
+        "table-header-bg": "$primary 15%",
+        "table-alternate-bg": "$surface",
+    }
+)

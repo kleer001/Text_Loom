@@ -12,32 +12,32 @@ logger = get_logger('global')
 
 
 class GlobalWindow(Container):
-    DEFAULT_CSS = f"""
-    GlobalWindow {{
+    DEFAULT_CSS = """
+    GlobalWindow {
         width: 100%;
         height: 20%;
-        background: {pal.GLOBAL_WIN_BACKGROUND_COLOR};
-        border: heavy {pal.GLOBAL_WIN_BORDER_COLOR};
+        background: $background;
+        border: heavy $primary;
         layout: vertical;
-    }}
+    }
 
-    DataTable {{
+    DataTable {
         width: 100%;
         height: 1fr;
-        background: {pal.GLOBAL_WIN_TABLE_COLOR};
-        color: {pal.GLOBAL_WIN_TEXT_COLOR};
+        background: $primary;
+        color: $foreground;
         overflow: auto scroll;
         scrollbar-gutter: stable;
-    }}
+    }
 
-    Input {{
+    Input {
         width: 100%;
         height: 3;
         dock: top;
-        background: {pal.GLOBAL_WIN_INPUT_COLOR};
-        color: {pal.GLOBAL_WIN_TEXT_COLOR};
-        border: solid {pal.GLOBAL_WIN_BORDER_COLOR};
-    }}
+        background: $secondary;
+        color: $foreground;
+        border: solid $primary;
+    }
     """
 
     BINDINGS = [

@@ -1,0 +1,155 @@
+from dataclasses import dataclass
+from enum import Enum, auto
+from pathlib import Path
+from typing import Dict, List, Optional
+import importlib.util
+import json
+from TUI.logging_config import get_logger
+from functools import lru_cache
+
+
+@dataclass
+class Theme:
+    def __init__(self, **kwargs):
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+
+class ThemeManager:
+    _instance = None
+    
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+            cls._instance.logger = get_logger("theme_manager")
+            cls._instance._css_rules = cls._instance._load_css_rules()
+            cls._instance._theme_variables = cls._instance._load_theme_variables()
+        return cls._instance
+
+    @classmethod
+    def get_instance(cls):
+        if cls._instance is None:
+            cls._instance = cls()
+        return cls._instance
+    
+    @lru_cache()
+    def _load_css_rules(self) -> Dict[str, str]:
+        """Load CSS rules and flatten the numbered variants into single rules per component"""
+        try:
+            with open(Path(__file__).parent / "theme_css_rules.json") as f:
+                numbered_rules = json.load(f)
+                # Flatten numbered rules into single rules per component
+                flat_rules = {}
+                for component, rules in numbered_rules.items():
+                    combined_css = "\n".join(rules.values())
+                    flat_rules[component] = combined_css
+                return flat_rules
+        except Exception as e:
+            self.logger.error(f"Failed to load CSS rules: {e}")
+            return {}
+
+    @lru_cache()
+    def _load_theme_variables(self) -> List[str]:
+        """Extract just the variable names from theme_variables.py"""
+        try:
+            with open(Path(__file__).parent / "theme_variables.py") as f:
+                lines = f.readlines()
+                # Skip comments and empty lines, extract just the variable names
+                variables = []
+                for line in lines:
+                    line = line.strip()
+                    if line and not line.startswith('#'):
+                        var_name = line.split('=')[0].strip()
+                        if var_name:
+                            variables.append(var_name)
+                return variables
+        except Exception as e:
+            self.logger.error(f"Failed to load theme variables: {e}")
+            return []
+
+    def get_css(self, theme: Theme) -> Dict[str, Dict[str, str]]:
+        style_dict = {}
+        for component in ["NodeWindow", "ParameterWindow", "GlobalWindow", "OutputWindow", "StatusWindow", "HelpWindow"]:
+            style_dict[component] = {
+                "background": getattr(theme, f"{component.upper()}_BACKGROUND", theme.MAIN_WIN_BACKGROUND),
+                "color": getattr(theme, f"{component.upper()}_TEXT", theme.MAIN_WIN_TEXT),
+            }
+            if hasattr(theme, f"{component.upper()}_BORDER"):
+                style_dict[component]["border"] = f"solid {getattr(theme, f'{component.upper()}_BORDER')}"
+        return style_dict
+
+    def validate_theme(self, theme: Theme) -> bool:
+        missing_vars = []
+        for var in self._theme_variables:
+            if not hasattr(theme, var):
+                missing_vars.append(var)
+        
+        if missing_vars:
+            self.logger.error(f"Theme missing required variables: {missing_vars}")
+            return False
+            
+        self.logger.debug("Theme validation successful")
+        self.logger.debug("Theme variables:")
+        for var in dir(theme):
+            if var.isupper():
+                self.logger.debug(f"{var}: {getattr(theme, var)}")
+                
+        return True
+        
+    def get_available_themes(self) -> List[str]:
+        """Get list of available theme names"""
+        try:
+            theme_dir = Path(__file__).parent / "themes"
+            self.logger.debug(f"Scanning theme directory: {theme_dir}")
+            
+            if not theme_dir.exists():
+                self.logger.error(f"Theme directory not found: {theme_dir}")
+                return []
+                
+            themes = []
+            for theme_file in theme_dir.glob("*_colors.py"):
+                try:
+                    if theme_file.is_file():
+                        theme_name = theme_file.stem.replace("_colors", "")
+                        themes.append(theme_name)
+                        self.logger.debug(f"Found theme: {theme_name}")
+                except Exception as e:
+                    self.logger.warning(f"Error processing theme file {theme_file}: {e}")
+                    continue
+                    
+            self.logger.debug(f"Found {len(themes)} themes: {themes}")
+            return themes
+            
+        except Exception as e:
+            self.logger.error(f"Error listing themes: {e}")
+            return []
+
+    def load_theme(self, theme_name: str) -> Theme:
+        """Load a theme from a theme file"""
+        theme_path = Path(__file__).parent / "themes" / f"{theme_name}_colors.py"
+        if not theme_path.exists():
+            raise ValueError(f"Theme {theme_name} not found at {theme_path}")
+
+        try:
+            spec = importlib.util.spec_from_file_location(theme_path.stem, theme_path)
+            if spec is None or spec.loader is None:
+                raise ImportError(f"Could not load theme file {theme_path}")
+                
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+
+            # Get all uppercase variables from the module
+            theme_attrs = {
+                name: value for name, value in vars(module).items() 
+                if name.isupper() and not name.startswith('_')
+            }
+
+            if not theme_attrs:
+                raise ValueError(f"No theme variables found in {theme_path}")
+
+            return Theme(**theme_attrs)
+            
+        except Exception as e:
+            self.logger.error(f"Failed to load theme {theme_name}: {e}")
+            raise
+
+

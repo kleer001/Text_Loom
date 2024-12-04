@@ -1,0 +1,39 @@
+{
+  "Tui_Skeleton": {
+    "Tui_Skeleton-0": "Tui_Skeleton {\n    MainLayout {\n    height: 100%;\n        width: 100%;\n        grid-size: 3 1;\n        grid-columns: 1fr 2fr 2fr;\n        grid-rows: 1fr;\n        grid-gutter: 0;\n        background: {theme.MAIN_WIN_BACKGROUND}\n;\n        color: {theme.MAIN_WIN_TEXT}\n;\n}\nVertical {\n    height: 100%;\n        width: 100%;\n}\n\n}",
+    "Tui_Skeleton-1": "Tui_Skeleton {\n    ClearAllConfirmation {\n    align: center middle;\n}\nVertical {\n    width: 40;\n        height: auto;\n        border: {theme.NODE_BORDER_MODAL}\n{theme.NODE_MODAL_BORDER}\n;\n        background: {theme.NODE_MODAL_SURFACE}\n;\n        color: {theme.NODE_MODAL_TEXT}\n;\n        padding: 1;\n}\nStatic {\n    text-align: center;\n        width: 100%;\n}\n\n}"
+  },
+  "ModeLine": {
+    "ModeLine-0": "ModeLine {\n    width: 100%;\n        height: 1;\n        background: {theme.MODELINE_BACKGROUND}\n;\n        color: {theme.MODELINE_TEXT}\n;\n        padding: 0 1;\n}\n"
+  },
+  "GlobalWindow": {
+    "GlobalWindow-0": "GlobalWindow {\n    width: 100%;\n        height: 20%;\n        background: {theme.GLOBAL_WIN_BACKGROUND_COLOR}\n;\n        border: heavy {theme.GLOBAL_WIN_BORDER_COLOR}\n;\n        layout: vertical;\n}\nDataTable {\n    width: 100%;\n        height: 1fr;\n        background: {theme.GLOBAL_WIN_TABLE_COLOR}\n;\n        color: {theme.GLOBAL_WIN_TEXT_COLOR}\n;\n        overflow: auto scroll;\n        scrollbar-gutter: stable;\n}\nInput {\n    width: 100%;\n        height: 3;\n        dock: top;\n        background: {theme.GLOBAL_WIN_INPUT_COLOR}\n;\n        color: {theme.GLOBAL_WIN_TEXT_COLOR}\n;\n        border: solid {theme.GLOBAL_WIN_BORDER_COLOR}\n;\n}\n"
+  },
+  "NodeWindow": {
+    "NodeWindow-0": "NodeWindow {\n    NodeTypeSelector {\n    align: center middle;\n}\nVertical {\n    width: 40;\n        height: auto;\n        border: {theme.NODE_BORDER_MODAL}\n{theme.NODE_MODAL_BORDER}\n;\n        background: {theme.NODE_MODAL_SURFACE}\n;\n        color: {theme.NODE_MODAL_TEXT}\n;\n}\nOptionList {\n    height: auto;\n        max-height: 20;\n}\n\n}",
+    "NodeWindow-1": "NodeWindow {\n    DeleteConfirmation {\n    align: center middle;\n}\nVertical {\n    width: 40;\n        height: auto;\n        border: {theme.NODE_BORDER_MODAL}\n{theme.NODE_MODAL_BORDER}\n;\n        background: {theme.NODE_MODAL_SURFACE}\n;\n        color: {theme.NODE_MODAL_TEXT}\n;\n        padding: 1;\n}\nStatic {\n    text-align: center;\n        width: 100%;\n}\n\n}",
+    "NodeWindow-2": "NodeWindow {\n    RenameInput {\n    height: 3;\n        background: {theme.NODE_INPUT_BACKGROUND}\n;\n        color: {theme.NODE_INPUT_TEXT}\nborder: none;\n        padding: 0;\n}\n\n}",
+    "NodeWindow-3": "NodeWindow {\n    width: 100%;\n            height: 100%;\n            background: {theme.NODE_WIN_BACKGROUND}\n;\n            border: {theme.NODE_BORDER_NORMAL}\n{theme.NODE_WIN_BORDER}\n;\n            color: {theme.NODE_MODAL_TEXT}\n;\n}\nNodeWindow:focus {\n    border: {theme.NODE_BORDER_FOCUS}\n{theme.NODE_WIN_BORDER_FOCUS}\n;\n}\nNodeContent {\n    width: 100%;\n            padding: 0 1;\n}\n"
+  },
+  "FileScreen": {
+    "FileScreen-0": "FileScreen {\n    FileMode {\n    height: auto;\n        dock: bottom;\n        padding: 0 1;\n}\nInput {\n    width: 100%;\n        border: solid $primary;\n}\n\n}",
+    "FileScreen-1": "FileScreen {\n    align: center middle;\n        width: 100%;\n        height: 100%;\n}\nDirectoryTree {\n    width: 100%;\n        height: 1fr;\n        border: solid $primary;\n}\n"
+  },
+  "HelpWindow": {
+    "HelpWindow-0": "HelpWindow {\n    width: 100%;\n        height: 12.5%;\n        background: {theme.HELP_WIN_BACKGROUND}\n;\n}\nDataTable {\n    height: 100%;\n        border: none;\n        background: {theme.HELP_WIN_BACKGROUND}\n;\n        color: {theme.HELP_WIN_TEXT}\n;\n}\nDataTable > .datatable--cell {\n    background: {theme.HELP_WIN_BACKGROUND}\n;\n}\nDataTable > .datatable--header-cell {\n    background: {theme.HELP_WIN_BACKGROUND}\n;\n}\n"
+  },
+  "ParameterWindow": {
+    "ParameterWindow-0": "ParameterWindow {\n    ParameterRow {\n    height: 2;\n        margin: 0;\n        padding: 0;\n        width: 100%;\n}\nParameterRow > Static {\n    width: 20;\n        background: {theme.PARAM_LABEL_BG}\n;\n        color: {theme.PARAM_LABEL_COLOR}\n;\n        padding: 0 1;\n}\nParameterRow > Input {\n    width: 1fr;\n        background: {theme.PARAM_INPUT_BG}\n;\n        color: {theme.PARAM_INPUT_COLOR}\n;\n        border: none;\n        padding: 0 1;\n}\nParameterRow > Input:focus {\n    background: {theme.PARAM_INPUT_SELECTED_BG}\n;\n        color: {theme.PARAM_INPUT_SELECTED_COLOR}\n;\n        border: tall {theme.PARAM_INPUT_SELECTED_BORDER}\n;\n}\n\n}",
+    "ParameterWindow-1": "ParameterWindow {\n    ParameterSet {\n    width: 100%;\n        background: {theme.PARAM_SET_BG}\n;\n        border-bottom: solid {theme.PARAM_SET_BORDER}\n;\n        padding: 0 1;\n        height: auto;\n}\nParameterSet .title {\n    color: {theme.PARAM_TITLE_COLOR}\n;\n        text-style: bold;\n        padding: 1 0;\n}\n\n}",
+    "ParameterWindow-2": "ParameterWindow {\n    width: 100%;\n        height: 100%;\n        background: {theme.PARAM_WINDOW_BG}\n;\n        border: solid {theme.PARAM_WINDOW_BORDER}\n;\n}\nParameterWindow:focus {\n    border: double {theme.PARAM_WINDOW_FOCUS_BORDER}\n;\n}\nParameterWindow #parameter_stack {\n    width: 100%;\n        height: auto;\n}\n"
+  },
+  "StatusWindow": {
+    "StatusWindow-0": "StatusWindow {\n    width: 100%;\n        height: 30%;\n        background: {theme.STATUS_WIN_BACKGROUND}\n;\n        border: {theme.STATUS_WIN_BORDER}\n{theme.STATUS_WIN_BORDER_COLOR}\n;\n        color: {theme.STATUS_WIN_TEXT}\n;\n        padding: 0 1;\n        overflow-y: scroll;\n}\n"
+  },
+  "KeymapScreen": {
+    "KeymapScreen-0": "KeymapScreen {\n    align: center middle;\n        background: {theme.KEYMAP_SCR_BACKGROUND}\n;\n        color: {theme.KEYMAP_SCR_TEXT}\n;\n        width: 100%;\n        height: 100%;\n}\n.keymap-content {\n    width: 100%;\n        height: 100%;\n        content-align: center middle;\n        background: {theme.KEYMAPCONTENT_SCR_BACKGROUND}\n;\n        color: {theme.KEYMAPCONTENT_SCR_TEXT}\n;\n}\n"
+  },
+  "OutputWindow": {
+    "OutputWindow-0": "OutputWindow {\n    width: 100%;\n        height: 50%;\n        background: {theme.OUTPUT_WIN_BACKGROUND}\n;\n        border: {theme.OUTPUT_WIN_BORDER}\n{theme.OUTPUT_WIN_BORDER_COLOR}\n;\n        color: {theme.OUTPUT_WIN_TEXT}\n;\n        padding: 1;\n}\n"
+  }
+}

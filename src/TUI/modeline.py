@@ -4,6 +4,7 @@ from typing import ClassVar
 from enum import Enum
 from dataclasses import dataclass
 import TUI.palette as pal
+from TUI.theme_variables import *
 
 class Mode(Enum):
     NODE = "NODE"
@@ -15,14 +16,14 @@ class Mode(Enum):
     OUTPUT = "OUTPUT"
 
 class ModeLine(Static):
-    DEFAULT_CSS = f"""
-    ModeLine {{
+    DEFAULT_CSS = """
+    ModeLine {
         width: 100%;
         height: 1;
-        background: {pal.MODELINE_BACKGROUND};
-        color: {pal.MODELINE_TEXT};
+        background: $secondary;
+        color: white;
         padding: 0 1;
-    }}
+    }
     """
     mode: Mode = reactive(Mode.NODE)
     path: str = reactive("untitled")

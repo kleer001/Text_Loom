@@ -7,15 +7,15 @@ import TUI.palette as pal
 
 
 class OutputWindow(Static):
-    DEFAULT_CSS = f"""
-    OutputWindow {{
+    DEFAULT_CSS = """
+    OutputWindow {
         width: 100%;
         height: 50%;
-        background: {pal.OUTPUT_WIN_BACKGROUND};
-        border: {pal.OUTPUT_WIN_BORDER} {pal.OUTPUT_WIN_BORDER_COLOR};
-        color: {pal.OUTPUT_WIN_TEXT};
+        background: $background;
+        border: $output_win_border $primary;
+        color: $foreground;
         padding: 1;
-    }}
+    }
     """
     
     def __init__(self):
