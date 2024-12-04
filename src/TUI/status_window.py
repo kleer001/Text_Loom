@@ -35,16 +35,16 @@ class StatusWindow(ScrollableContainer):
         Binding("ctrl+l", "clear", "Clear Output")
     ]
     
-    DEFAULT_CSS = f"""
-    StatusWindow {{
+    DEFAULT_CSS = """
+    StatusWindow {
         width: 100%;
         height: 30%;
-        background: {pal.STATUS_WIN_BACKGROUND};
-        border: {pal.STATUS_WIN_BORDER} {pal.STATUS_WIN_BORDER_COLOR};
-        color: {pal.STATUS_WIN_TEXT};
+        background: $background;
+        border: $status_win_border $primary;
+        color: $foreground;
         padding: 0 1;
         overflow-y: scroll;
-    }}
+    }
     """
     
     def __init__(self):

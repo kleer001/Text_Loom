@@ -21,22 +21,22 @@ class KeymapScreen(Screen):
         super().__init__()
         self.logger = get_logger('tui.keymap_screen')
 
-    DEFAULT_CSS = f"""
-    KeymapScreen {{
+    DEFAULT_CSS = """
+    KeymapScreen {
         align: center middle;
-        background: {pal.KEYMAP_SCR_BACKGROUND};
-        color: {pal.KEYMAP_SCR_TEXT};
+        background: $background;
+        color: $foreground;
         width: 100%;
         height: 100%;
-    }}
+    }
 
-    .keymap-content {{
+    .keymap-content {
         width: 100%;
         height: 100%;
         content-align: center middle;
-        background: {pal.KEYMAPCONTENT_SCR_BACKGROUND};
-        color: {pal.KEYMAPCONTENT_SCR_TEXT}; 
-    }}
+        background: $surface;
+        color: $foreground; 
+    }
     """
 
     def compose(self) -> ComposeResult:

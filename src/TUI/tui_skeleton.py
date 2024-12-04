@@ -14,9 +14,11 @@ from textual.widgets import Static
 from textual.css.query import NoMatches
 from textual.containers import Grid, Horizontal, Vertical
 from textual.widgets import Static
+from textual.theme import Theme
 
 from dataclasses import dataclass
 from enum import Enum, auto
+from importlib import import_module
 
 from TUI.node_window import NodeWindow, NodeSelected, Node
 from TUI.parameter_window import ParameterWindow
@@ -71,15 +73,23 @@ from textual.app import ComposeResult
 
 class ThemeSelector(ModalScreen[str]):
     def compose(self) -> ComposeResult:
+        app = self.app
+        app.logger.debug("Composing ThemeSelector modal")
+        theme_manager = ThemeManager.get_instance()
+        available_themes = theme_manager.get_available_themes()
+        app.logger.debug(f"Available themes: {available_themes}")
+        
         with Container(id="theme-selector-container"):
             yield Static("🎨 Select Theme", id="theme-title")
-            yield OptionList(*sorted(ThemeManager.get_available_themes()), id="theme-list")
-            
+            yield OptionList(*sorted(available_themes), id="theme-list")
+    
     def on_option_list_option_selected(self, event: OptionList.OptionSelected) -> None:
+        self.app.logger.debug(f"Theme selected: {event.option.prompt}")
         self.dismiss(event.option.prompt)
 
     def on_key(self, event) -> None:
         if event.key == "escape":
+            self.app.logger.debug("ThemeSelector cancelled via escape")
             self.dismiss(None)
 
     CSS = """
@@ -124,22 +134,22 @@ class ModeChanged(Message):
     mode: Mode
 
 class MainLayout(Grid):
-    DEFAULT_CSS = f"""
-    MainLayout {{
+    DEFAULT_CSS = """
+    MainLayout {
         height: 100%;
         width: 100%;
         grid-size: 3 1;
         grid-columns: 1fr 2fr 2fr;
         grid-rows: 1fr;
         grid-gutter: 0;
-        background: {pal.MAIN_WIN_BACKGROUND};
-        color: {pal.MAIN_WIN_TEXT};
-    }}
+        background: $background;
+        color: $foreground;
+    }
     
-    Vertical {{
+    Vertical {
         height: 100%;
         width: 100%;
-    }}
+    }
     """
 
     def compose(self) -> ComposeResult:
@@ -168,22 +178,22 @@ class MainContent(Static):
         self.query_one(NodeWindow).focus()
 
 class ClearAllConfirmation(ModalScreen[bool]):
-    DEFAULT_CSS = f"""
-    ClearAllConfirmation {{
+    DEFAULT_CSS = """
+    ClearAllConfirmation {
         align: center middle;
-    }}
-    Vertical {{
+    }
+    Vertical {
         width: 40;
         height: auto;
-        border: {pal.NODE_BORDER_MODAL} {pal.NODE_MODAL_BORDER};
-        background: {pal.NODE_MODAL_SURFACE};
-        color: {pal.NODE_MODAL_TEXT};
+        border: thick $primary;
+        background: $surface;
+        color: $foreground;
         padding: 1;
-    }}
-    Static {{
+    }
+    Static {
         text-align: center;
         width: 100%;
-    }}
+    }
     """
     
     def compose(self):
@@ -257,11 +267,16 @@ class TUIApp(App[None]):
     current_theme: reactive[Theme] = reactive(None)  # Add this line
     AUTOSAVE_FILE: ClassVar[str] = "autosave.json"  # Added class variable
 
-
     def __init__(self):
         self.logger = get_logger('tui.app')
         self.logger.info("Starting TUIApp initialization")
         try:
+            # Initialize ThemeManager first
+            theme_manager = ThemeManager()
+            # Ensure base theme is created
+            if not theme_manager.theme_base_path.exists():
+                theme_manager._create_theme_base()
+                
             super().__init__()
             self.logger.debug("Super initialization complete")
             self.current_mode = Mode.NODE
@@ -270,6 +285,34 @@ class TUIApp(App[None]):
         except Exception as e:
             self.logger.error(f"Failed during TUIApp initialization: {str(e)}", exc_info=True)
             raise
+
+    def register_themes_from_directory(self, directory: str = "themes") -> None:
+        """
+        Search for and register all themes found in the specified directory.
+        
+        Args:
+            directory (str): The directory to search for theme files. Defaults to "themes".
+        """
+        # Get the absolute path of the themes directory
+        themes_dir = os.path.abspath(directory)
+        
+        # Iterate through all .py files in the themes directory
+        for filename in os.listdir(themes_dir):
+            if filename.endswith(".py"):
+                module_name = filename[:-3]  # Remove .py extension
+                try:
+                    # Import the module
+                    module = import_module(f"{directory}.{module_name}")
+                    
+                    # Look for Theme objects in the module
+                    for item_name in dir(module):
+                        item = getattr(module, item_name)
+                        if isinstance(item, Theme):
+                            # Register the theme
+                            self.register_theme(item)
+                            self.logger.debug(f"Registered Theme {item.name}")
+                except Exception as e:
+                    self.logger.error(f"Error loading theme from {filename}: {str(e)}")
 
     def compose(self) -> ComposeResult:
         yield MainContent()
@@ -284,83 +327,102 @@ class TUIApp(App[None]):
             self.mode_line.path = "untitled.json"
             self.current_file = "untitled.json"
             
-            # Load theme after UI components are ready
-            default_theme = ThemeManager.load_theme('default')
-            self._apply_theme(default_theme)
+            # Load the default theme if available
+            theme_manager = ThemeManager()
+            self.logger.debug("Got ThemeManager instance")
             
-        except NoMatches as e:
-            self.logger.error("Failed to initialize components", exc_info=True)
-            self.exit(message="Failed to initialize components")
+            available_themes = theme_manager.get_available_themes()
+            self.logger.debug(f"Available themes: {available_themes}")
+            
+            default_theme = theme_manager.load_theme("default")
+            if default_theme:
+                self.logger.debug("Loaded default theme successfully")
+                self.theme = default_theme
+                self.logger.debug("Applied default theme")
+            else:
+                self.logger.warning("Failed to load default theme")
+                
         except Exception as e:
             self.logger.error(f"Failed during mount: {str(e)}", exc_info=True)
             self.exit(message="Failed during mount")
             
         self._update_mode_display()
         self._check_autosave()
-
-    def _apply_theme(self, theme: Theme) -> None:
-        """Apply theme to all components."""
-        try:
-            # Get all CSS rules for the theme
-            theme_css = ThemeManager.get_css(theme)
-            
-            # Process each CSS block
-            for css_id, css in theme_css.items():
-                try:
-                    # Extract component name from the CSS ID (e.g., "NodeWindow-0" -> "NodeWindow")
-                    component_name = css_id.split('-')[0]
-                    
-                    # First try to find widget by class name
-                    widgets = self.query(component_name)
-                    if not widgets:
-                        # Try by ID if class name fails
-                        widgets = self.query(f"#{component_name.lower()}")
-                    
-                    # Apply CSS to all matching widgets
-                    for widget in widgets:
-                        css_with_vars = css.format(theme=theme)
-                        widget.styles.update(css_with_vars)
-                        
-                    self.logger.debug(f"Applied theme to {component_name}")
-                    
-                except Exception as e:
-                    self.logger.warning(f"Failed to apply theme to {css_id}: {e}")
-                    continue
-            
-            self.current_theme = theme
-            self._refresh_all_windows()
-            self.refresh(layout=True)
-            
-            self.logger.info("Theme applied successfully")
-            self.mode_line.debug_info = "Theme applied successfully"
-            
-        except Exception as e:
-            self.logger.error(f"Failed to apply theme: {e}", exc_info=True)
-            self.mode_line.debug_info = f"Theme application failed: {str(e)}"
-            raise
-
+        
     async def action_load_theme(self) -> None:
-        """Action handler for loading a new theme."""
+        self.logger.info("Loading theme")
         try:
             theme_name = await self.push_screen(ThemeSelector())
+            
             if theme_name:
-                new_theme = ThemeManager.load_theme(theme_name)
-                self._apply_theme(new_theme)
+                theme_manager = ThemeManager.get_instance()
+                new_theme = theme_manager.load_theme(theme_name)
+                if new_theme:
+                    self.theme = new_theme
+                    self.refresh(layout=True)
+                    self.mode_line.debug_info = f"Theme {theme_name} applied"
+                    
         except Exception as e:
             self.logger.error(f"Theme loading failed: {e}", exc_info=True)
             self.mode_line.debug_info = f"Theme loading failed: {str(e)}"
 
+
+    def _parse_css_block(self, css: str) -> dict:
+        style_dict = {}
+        for line in css.split(";"):
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                prop, value = [x.strip() for x in line.split(":", 1)]
+                style_dict[prop] = value
+            except ValueError:
+                continue
+        return style_dict
+
+    def _apply_styles_to_widget(self, widget, styles: dict, theme: Theme) -> None:
+        basic_props = {
+            "background": theme.MAIN_WIN_BACKGROUND,
+            "color": theme.MAIN_WIN_TEXT,
+        }
+        
+        for prop, default in basic_props.items():
+            try:
+                setattr(widget.styles, prop, styles.get(prop, default))
+            except Exception as e:
+                self.logger.warning(f"Failed to set {prop} on {widget.__class__.__name__}: {e}")
+                
+        for prop in ["border", "width", "height", "padding", "margin"]:
+            if prop in styles:
+                try:
+                    setattr(widget.styles, prop, styles[prop])
+                except Exception as e:
+                    self.logger.warning(f"Failed to set {prop} on {widget.__class__.__name__}: {e}")
+
+
+
     def _refresh_all_windows(self) -> None:
+        """Force refresh all windows and their contents"""
         main_layout = self.query_one(MainLayout)
+        
+        refresh_methods = [
+            'refresh',
+            'refresh_table',
+            'parm_refresh',
+            '_refresh_layout',
+            'refresh_content',
+            'update_content'
+        ]
+        
         for window in main_layout.walk_children():
-            if hasattr(window, 'refresh'):
-                window.refresh()
-            if hasattr(window, 'refresh_table'):
-                window.refresh_table()
-            if hasattr(window, 'parm_refresh'):
-                window.parm_refresh()
-            if hasattr(window, '_refresh_layout'):
-                window._refresh_layout()
+            self.logger.debug(f"Refreshing window: {window.__class__.__name__}")
+            # Try all possible refresh methods
+            for method in refresh_methods:
+                if hasattr(window, method):
+                    try:
+                        getattr(window, method)()
+                    except Exception as e:
+                        self.logger.warning(f"Failed to call {method} on {window.__class__.__name__}: {e}")
 
     def on_key(self, event) -> None:
         #I don't know why but we can't capture the alt key press :(
@@ -412,55 +474,6 @@ class TUIApp(App[None]):
         except Exception as e:
             self.logger.error(f"Error in _handle_mode_focus: {str(e)}", exc_info=True)
             raise
-
-
-
-
-    def _generate_themed_css(self, theme_module) -> str:
-        """Generate CSS using theme colors"""
-        return f"""
-        Screen {{
-            background: {theme_module.MAIN_WIN_BACKGROUND};
-        }}
-
-        MainContent {{
-            height: 7fr;
-        }}
-
-        HelpWindow {{
-            height: 1fr;
-            background: {theme_module.HELP_WIN_BACKGROUND};
-            color: {theme_module.HELP_WIN_TEXT};
-        }}
-
-        ModeLine {{
-            height: 1;
-            background: {theme_module.MODELINE_BACKGROUND};
-            color: {theme_module.MODELINE_TEXT};
-        }}
-        
-        NodeWindow {{
-            width: 1fr;
-            background: {theme_module.NODE_WIN_BACKGROUND};
-            border: {theme_module.NODE_BORDER_NORMAL} {theme_module.NODE_WIN_BORDER};
-            color: {theme_module.MAIN_WIN_TEXT};
-        }}
-        
-        NodeWindow:focus {{
-            border: {theme_module.NODE_BORDER_FOCUS} {theme_module.NODE_WIN_BORDER_FOCUS};
-        }}
-        
-        ParameterWindow {{
-            width: 2fr;
-            background: {theme_module.PARAM_WINDOW_BG};
-            border: solid {theme_module.PARAM_WINDOW_BORDER};
-            color: {theme_module.MAIN_WIN_TEXT};
-        }}
-
-        .middle-section {{
-            width: 2fr;
-        }}
-        """
 
 
     def action_switch_mode(self, mode_name: str) -> None:

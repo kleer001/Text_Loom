@@ -1,381 +1,176 @@
 from dataclasses import dataclass
-from enum import Enum, auto
 from pathlib import Path
-from typing import Dict, List
 import importlib.util
-
-@dataclass
-class Theme:
-    GLOBAL_WIN_BACKGROUND_COLOR: str
-    GLOBAL_WIN_BORDER_COLOR: str
-    GLOBAL_WIN_INPUT_COLOR: str
-    GLOBAL_WIN_TABLE_COLOR: str
-    GLOBAL_WIN_TEXT_COLOR: str
-    HELP_WIN_BACKGROUND: str
-    HELP_WIN_TEXT: str
-    KEYMAPCONTENT_SCR_BACKGROUND: str
-    KEYMAPCONTENT_SCR_TEXT: str
-    KEYMAP_SCR_BACKGROUND: str
-    KEYMAP_SCR_TEXT: str
-    MAIN_WIN_BACKGROUND: str
-    MAIN_WIN_TEXT: str
-    MODELINE_BACKGROUND: str
-    MODELINE_TEXT: str
-    NODE_BORDER_FOCUS: str
-    NODE_BORDER_MODAL: str
-    NODE_BORDER_NORMAL: str
-    NODE_INPUT_BACKGROUND: str
-    NODE_INPUT_TEXT: str
-    NODE_MODAL_BORDER: str
-    NODE_MODAL_SURFACE: str
-    NODE_MODAL_TEXT: str
-    NODE_WIN_BACKGROUND: str
-    NODE_WIN_BORDER: str
-    NODE_WIN_BORDER_FOCUS: str
-    OUTPUT_WIN_BACKGROUND: str
-    OUTPUT_WIN_BORDER: str
-    OUTPUT_WIN_BORDER_COLOR: str
-    OUTPUT_WIN_TEXT: str
-    PARAM_INPUT_BG: str
-    PARAM_INPUT_COLOR: str
-    PARAM_INPUT_SELECTED_BG: str
-    PARAM_INPUT_SELECTED_BORDER: str
-    PARAM_INPUT_SELECTED_COLOR: str
-    PARAM_LABEL_BG: str
-    PARAM_LABEL_COLOR: str
-    PARAM_SET_BG: str
-    PARAM_SET_BORDER: str
-    PARAM_TITLE_COLOR: str
-    PARAM_WINDOW_BG: str
-    PARAM_WINDOW_BORDER: str
-    PARAM_WINDOW_FOCUS_BORDER: str
-    STATUS_WIN_BACKGROUND: str
-    STATUS_WIN_BORDER: str
-    STATUS_WIN_BORDER_COLOR: str
-    STATUS_WIN_TEXT: str
-
-def load_theme_module(path: Path):
-    """Dynamically import theme module from path"""
-    spec = importlib.util.spec_from_file_location(path.stem, path)
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
+from typing import List, Optional
+from textual.theme import Theme
+from TUI.logging_config import get_logger
 
 class ThemeManager:
-    @staticmethod
-    def get_available_themes() -> List[str]:
-        """Get list of available theme names from themes directory"""
-        theme_dir = Path(__file__).parent / "themes"
-        return [p.stem.replace("_colors", "") for p in theme_dir.glob("*_colors.py")]
-        
-    @staticmethod
-    def load_theme(theme_name: str) -> Theme:
-        """Load theme by name from themes directory"""
-        theme_path = Path(__file__).parent / "themes" / f"{theme_name}_colors.py"
-        if not theme_path.exists():
-            raise ValueError(f"Theme {theme_name} not found")
-        
-        theme_module = load_theme_module(theme_path)
-        return Theme(**{var: getattr(theme_module, var) for var in Theme.__annotations__})
+    _instance = None
+    
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+            cls._instance.logger = get_logger("theme_manager")
+            cls._instance.theme_base_path = Path(__file__).parent / "theme_base.css"
+            cls._instance._load_themes()
+        return cls._instance
 
-    @staticmethod
-    def get_css(theme: Theme) -> Dict[str, str]:
-        """Generate CSS for all components using theme"""
-        return {
-    "Tui_Skeleton-0": """
-            Tui_Skeleton {
-            MainLayout {{
-                    height: 100%;
-                    width: 100%;
-                    grid-size: 3 1;
-                    grid-columns: 1fr 2fr 2fr;
-                    grid-rows: 1fr;
-                    grid-gutter: 0;
-                    background: {theme.MAIN_WIN_BACKGROUND};
-                    color: {theme.MAIN_WIN_TEXT};
-                }}
+    def _load_themes(self) -> None:
+        self.themes = {}
+        theme_dir = Path(__file__).parent / "themes"
+        
+        self.logger.debug(f"Loading themes from directory: {theme_dir}")
+        
+        if not theme_dir.exists():
+            self.logger.error(f"Theme directory not found: {theme_dir}")
+            return
+
+        # Create theme_base.css if it doesn't exist
+        if not self.theme_base_path.exists():
+            self._create_theme_base()
+
+        for theme_file in theme_dir.glob("*_colors.py"):
+            try:
+                if not theme_file.is_file():
+                    continue
+                    
+                theme_name = theme_file.stem.replace("_colors", "")
+                self.logger.debug(f"Processing theme: {theme_name}")
                 
-                Vertical {{
-                    height: 100%;
-                    width: 100%;
-                }}
-            }
-""",
-    "Tui_Skeleton-1": """
-            Tui_Skeleton {
-            ClearAllConfirmation {{
-                    align: center middle;
-                }}
-                Vertical {{
-                    width: 40;
-                    height: auto;
-                    border: {theme.NODE_BORDER_MODAL} {theme.NODE_MODAL_BORDER};
-                    background: {theme.NODE_MODAL_SURFACE};
-                    color: {theme.NODE_MODAL_TEXT};
-                    padding: 1;
-                }}
-                Static {{
-                    text-align: center;
-                    width: 100%;
-                }}
-            }
-""",
-    "ModeLine-0": """
-            ModeLine {{
-                    width: 100%;
-                    height: 1;
-                    background: {theme.MODELINE_BACKGROUND};
-                    color: {theme.MODELINE_TEXT};
-                    padding: 0 1;
-                }}
-""",
-    "GlobalWindow-0": """
-            GlobalWindow {{
-                    width: 100%;
-                    height: 20%;
-                    background: {theme.GLOBAL_WIN_BACKGROUND_COLOR};
-                    border: heavy {theme.GLOBAL_WIN_BORDER_COLOR};
-                    layout: vertical;
-                }}
+                spec = importlib.util.spec_from_file_location(theme_name, theme_file)
+                if spec and spec.loader:
+                    module = importlib.util.module_from_spec(spec)
+                    spec.loader.exec_module(module)
+                    
+                    theme_var = f"{theme_name}_theme"
+                    if hasattr(module, theme_var):
+                        theme = getattr(module, theme_var)
+                        # Add the base theme path to every theme
+                        theme.paths.append(str(self.theme_base_path))
+                        # Explicitly store the theme
+                        self.themes[theme_name] = theme
+                        self.logger.debug(f"Successfully stored theme: {theme_name}")
+                        
+            except Exception as e:
+                self.logger.warning(f"Error loading theme {theme_file}: {e}", exc_info=True)
+                continue  # Continue to next theme file
+
+        self.logger.debug(f"Themes loaded: {list(self.themes.keys())}")
+
+    def load_theme(self, theme_name: str) -> Optional[Theme]:
+        self.logger.debug(f"Attempting to load theme: {theme_name}")
+        self.logger.debug(f"Available themes: {list(self.themes.keys())}")
+        
+        if theme_name not in self.themes:
+            self.logger.error(f"Theme {theme_name} not found in available themes: {list(self.themes.keys())}")
+            return None
             
-                DataTable {{
-                    width: 100%;
-                    height: 1fr;
-                    background: {theme.GLOBAL_WIN_TABLE_COLOR};
-                    color: {theme.GLOBAL_WIN_TEXT_COLOR};
-                    overflow: auto scroll;
-                    scrollbar-gutter: stable;
-                }}
-            
-                Input {{
-                    width: 100%;
-                    height: 3;
-                    dock: top;
-                    background: {theme.GLOBAL_WIN_INPUT_COLOR};
-                    color: {theme.GLOBAL_WIN_TEXT_COLOR};
-                    border: solid {theme.GLOBAL_WIN_BORDER_COLOR};
-                }}
-""",
-    "NodeWindow-0": """
-            NodeWindow {
-            NodeTypeSelector {{
-                    align: center middle;
-                }}
-            
-                Vertical {{
-                    width: 40;
-                    height: auto;
-                    border: {theme.NODE_BORDER_MODAL} {theme.NODE_MODAL_BORDER};
-                    background: {theme.NODE_MODAL_SURFACE};
-                    color: {theme.NODE_MODAL_TEXT};
-                }}
-            
-                OptionList {{
-                    height: auto;
-                    max-height: 20;
-                }}
-            }
-""",
-    "NodeWindow-1": """
-            NodeWindow {
-            DeleteConfirmation {{
-                    align: center middle;
-                }}
-            
-                Vertical {{
-                    width: 40;
-                    height: auto;
-                    border: {theme.NODE_BORDER_MODAL} {theme.NODE_MODAL_BORDER};
-                    background: {theme.NODE_MODAL_SURFACE};
-                    color: {theme.NODE_MODAL_TEXT};
-                    padding: 1;
-                }}
-            
-                Static {{
-                    text-align: center;
-                    width: 100%;
-                }}
-            }
-""",
-    "NodeWindow-2": """
-            NodeWindow {
-            RenameInput {{
-                    height: 3;
-                    background: {theme.NODE_INPUT_BACKGROUND};
-                    color: {theme.NODE_INPUT_TEXT}
-                    border: none;
-                    padding: 0;
-                }}
-            }
-""",
-    "NodeWindow-3": """
-            NodeWindow {{
-                        width: 100%;
-                        height: 100%;
-                        background: {theme.NODE_WIN_BACKGROUND};
-                        border: {theme.NODE_BORDER_NORMAL} {theme.NODE_WIN_BORDER};
-                        color: {theme.NODE_MODAL_TEXT};
-                    }}
-            
-                    NodeWindow:focus {{
-                        border: {theme.NODE_BORDER_FOCUS} {theme.NODE_WIN_BORDER_FOCUS};
-                    }}
-            
-                    NodeContent {{
-                        width: 100%;
-                        padding: 0 1;
-                    }}
-""",
-    "FileScreen-0": """
-            FileScreen {
-            FileMode {
-                    height: auto;
-                    dock: bottom;
-                    padding: 0 1;
-                }
-                
-                Input {
-                    width: 100%;
-                    border: solid $primary;
-                }
-            }
-""",
-    "FileScreen-1": """
-            FileScreen {
-                    align: center middle;
-                    width: 100%;
-                    height: 100%;
-                }
-                
-                DirectoryTree {
-                    width: 100%;
-                    height: 1fr;
-                    border: solid $primary;
-                }
-""",
-    "HelpWindow-0": """
-            HelpWindow {{
-                    width: 100%;
-                    height: 12.5%;
-                    background: {theme.HELP_WIN_BACKGROUND};
-                }}
-                
-                DataTable {{
-                    height: 100%;
-                    border: none;
-                    background: {theme.HELP_WIN_BACKGROUND};
-                    color: {theme.HELP_WIN_TEXT};
-                }}
-            
-                DataTable > .datatable--cell {{
-                    background: {theme.HELP_WIN_BACKGROUND};
-                }}
-                
-                DataTable > .datatable--header-cell {{
-                    background: {theme.HELP_WIN_BACKGROUND};
-                }}
-""",
-    "ParameterWindow-0": """
-            ParameterWindow {
-            ParameterRow {{
-                    height: 2;
-                    margin: 0;
-                    padding: 0;
-                    width: 100%;
-                }}
-                
-                ParameterRow > Static {{
-                    width: 20;
-                    background: {theme.PARAM_LABEL_BG};
-                    color: {theme.PARAM_LABEL_COLOR};
-                    padding: 0 1;
-                }}
-                
-                ParameterRow > Input {{
-                    width: 1fr;
-                    background: {theme.PARAM_INPUT_BG};
-                    color: {theme.PARAM_INPUT_COLOR};
-                    border: none;
-                    padding: 0 1;
-                }}
-                
-                ParameterRow > Input:focus {{
-                    background: {theme.PARAM_INPUT_SELECTED_BG};
-                    color: {theme.PARAM_INPUT_SELECTED_COLOR};
-                    border: tall {theme.PARAM_INPUT_SELECTED_BORDER};
-                }}
-            }
-""",
-    "ParameterWindow-1": """
-            ParameterWindow {
-            ParameterSet {{
-                    width: 100%;
-                    background: {theme.PARAM_SET_BG};
-                    border-bottom: solid {theme.PARAM_SET_BORDER};
-                    padding: 0 1;
-                    height: auto;
-                }}
-                
-                ParameterSet .title {{
-                    color: {theme.PARAM_TITLE_COLOR};
-                    text-style: bold;
-                    padding: 1 0;
-                }}
-            }
-""",
-    "ParameterWindow-2": """
-            ParameterWindow {{
-                    width: 100%;
-                    height: 100%;
-                    background: {theme.PARAM_WINDOW_BG};
-                    border: solid {theme.PARAM_WINDOW_BORDER};
-                }}
-                
-                ParameterWindow:focus {{
-                    border: double {theme.PARAM_WINDOW_FOCUS_BORDER};
-                }}
-                
-                ParameterWindow #parameter_stack {{
-                    width: 100%;
-                    height: auto;
-                }}
-""",
-    "StatusWindow-0": """
-            StatusWindow {{
-                    width: 100%;
-                    height: 30%;
-                    background: {theme.STATUS_WIN_BACKGROUND};
-                    border: {theme.STATUS_WIN_BORDER} {theme.STATUS_WIN_BORDER_COLOR};
-                    color: {theme.STATUS_WIN_TEXT};
-                    padding: 0 1;
-                    overflow-y: scroll;
-                }}
-""",
-    "KeymapScreen-0": """
-            KeymapScreen {{
-                    align: center middle;
-                    background: {theme.KEYMAP_SCR_BACKGROUND};
-                    color: {theme.KEYMAP_SCR_TEXT};
-                    width: 100%;
-                    height: 100%;
-                }}
-            
-                .keymap-content {{
-                    width: 100%;
-                    height: 100%;
-                    content-align: center middle;
-                    background: {theme.KEYMAPCONTENT_SCR_BACKGROUND};
-                    color: {theme.KEYMAPCONTENT_SCR_TEXT}; 
-                }}
-""",
-    "OutputWindow-0": """
-            OutputWindow {{
-                    width: 100%;
-                    height: 50%;
-                    background: {theme.OUTPUT_WIN_BACKGROUND};
-                    border: {theme.OUTPUT_WIN_BORDER} {theme.OUTPUT_WIN_BORDER_COLOR};
-                    color: {theme.OUTPUT_WIN_TEXT};
-                    padding: 1;
-                }}
-""",
-        }
+        theme = self.themes[theme_name]
+        self.logger.debug(f"Loaded theme object: {theme}")
+        return theme
+
+    def _create_theme_base(self) -> None:
+        theme_base_content = """
+$text-on-primary: "#FFFFFF"
+$text-on-secondary: "#FFFFFF"
+$text-muted: "#444444"
+
+$border-primary: "solid $primary"
+$border-secondary: "solid $secondary"
+$border-focus: "double $secondary"
+$border-modal: "thick $primary"
+
+$background-input: "$panel"
+$background-input-selected: "$accent"
+$background-input-invalid: "rgba(217, 48, 37, 0.1)"
+$background-editing: "$primary 10%"
+$background-help: "$primary 5%"
+
+$modeline-bg: "$secondary"
+$modeline-fg: "$text-on-secondary"
+
+$node-selected-bg: "$accent"
+$node-selected-fg: "$foreground"
+
+$param-title: "$secondary"
+$param-label-bg: "$surface"
+$param-label-fg: "$text-muted"
+
+$input-border: "#D0D0D0"
+$input-border-focus: "$primary"
+$input-border-invalid: "$error"
+
+$window-border-normal: "$border-primary"
+$window-border-focus: "$border-focus"
+
+$table-border: "$primary"
+$table-header-bg: "$primary 15%"
+$table-alternate-bg: "$surface"
+"""
+        with open(self.theme_base_path, 'w') as f:
+            f.write(theme_base_content.strip())
+        self.logger.info(f"Created theme base file at {self.theme_base_path}")
+
+    def get_available_themes(self) -> List[str]:
+        return sorted(self.themes.keys())
+
+
+
+
+from textual.screen import ModalScreen
+from textual.widgets import OptionList, Static
+from textual.containers import Container
+from textual.app import ComposeResult
+
+class ThemeSelector(ModalScreen[str]):
+    CSS = """
+    ThemeSelector {
+        align: center middle;
+    }
+
+    #theme-selector-container {
+        width: 40;
+        height: auto;
+        background: $surface;
+        border: thick $primary;
+        padding: 1;
+    }
+
+    #theme-title {
+        text-align: center;
+        height: 3;
+        margin: 0 0 1 0;
+    }
+
+    #theme-list {
+        height: auto;
+        max-height: 16;
+        border: none;
+        padding: 0;
+    }
+
+    #theme-list > ListItem {
+        padding: 0 1;
+    }
+
+    #theme-list > ListItem:hover {
+        background: $accent;
+        color: $text;
+    }
+    """
+
+    def compose(self) -> ComposeResult:
+        theme_manager = ThemeManager.get_instance()
+        available_themes = theme_manager.get_available_themes()
+        
+        with Container(id="theme-selector-container"):
+            yield Static("🎨 Select Theme", id="theme-title")
+            yield OptionList(*sorted(available_themes), id="theme-list")
+    
+    def on_option_list_option_selected(self, event: OptionList.OptionSelected) -> None:
+        self.dismiss(event.option.prompt)
+
+    def on_key(self, event) -> None:
+        if event.key == "escape":
+            self.dismiss(None)

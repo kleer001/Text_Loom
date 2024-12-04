@@ -15,27 +15,27 @@ import TUI.palette as pal
 logger = get_logger('help', level=0)
 
 class HelpWindow(Container):
-    DEFAULT_CSS = f"""
-    HelpWindow {{
+    DEFAULT_CSS = """
+    HelpWindow {
         width: 100%;
         height: 12.5%;
-        background: {pal.HELP_WIN_BACKGROUND};
-    }}
+        background: $primary 5%;
+    }
     
-    DataTable {{
+    DataTable {
         height: 100%;
         border: none;
-        background: {pal.HELP_WIN_BACKGROUND};
-        color: {pal.HELP_WIN_TEXT};
-    }}
+        background: $primary 5%;
+        color: $foreground;
+    }
 
-    DataTable > .datatable--cell {{
-        background: {pal.HELP_WIN_BACKGROUND};
-    }}
+    DataTable > .datatable--cell {
+        background: $primary 5%;
+    }
     
-    DataTable > .datatable--header-cell {{
-        background: {pal.HELP_WIN_BACKGROUND};
-    }}
+    DataTable > .datatable--header-cell {
+        background: $primary 5%;
+    }
     """
 
     help_sections: Dict[str, str] = {}
