@@ -11,8 +11,8 @@ light_fire_theme = Theme(
     secondary="#FF0000" # Medium contrast border",
     accent="#FFF0F5" # Medium contrast bg",
     error="#8B0000"     # High contrast text for errors",
-    success="#4CAF50
-    warning="#FFA726
+    success="#4CAF50"
+    warning="#FFA726"
     surface="#FFFAFA"    # Low contrast bg",
     panel="#FFF0F5"  # Medium contrast bg",
     

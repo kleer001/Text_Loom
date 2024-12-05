@@ -11,8 +11,8 @@ light_earth_theme = Theme(
     secondary="#D2691E" # High contrast border",
     accent="#FFF5EE" # Medium contrast bg",
     error="#8B0000"     # Dark red for errors",
-    success="#4CAF50
-    warning="#FFA726
+    success="#4CAF50"
+    warning="#FFA726"
     surface="#FFF8DC"    # Low contrast bg",
     panel="#FFF5EE"  # Medium contrast bg",
     

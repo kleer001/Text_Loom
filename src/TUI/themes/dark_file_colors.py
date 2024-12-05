@@ -11,8 +11,8 @@ dark_file_theme = Theme(
     secondary="#B22222" # Medium contrast border",
     accent="#191919" # Medium contrast bg",
     error="#8B0000"     # Dark red for errors",
-    success="#4CAF50
-    warning="#FFA726
+    success="#4CAF50"
+    warning="#FFA726"
     surface="#222222"    # Low contrast bg",
     panel="#222222"  # Low contrast bg",
     

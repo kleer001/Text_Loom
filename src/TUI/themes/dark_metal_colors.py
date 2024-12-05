@@ -11,8 +11,8 @@ dark_metal_theme = Theme(
     secondary="#696969" # Medium contrast border",
     accent="#222222" # Medium contrast bg",
     error="#8B0000"     # Dark red for errors",
-    success="#4CAF50
-    warning="#FFA726
+    success="#4CAF50"
+    warning="#FFA726"
     surface="#191919"    # Low contrast bg",
     panel="#191919"  # Low contrast bg",
     

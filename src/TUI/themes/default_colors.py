@@ -5,16 +5,16 @@ default_theme = Theme(
     dark=False,
     
     # Core colors
-    background="#FAFAF8
-    foreground="#222222
-    primary="#486591
-    secondary="#2C4975
-    accent="#EDF2F7
-    error="#D93025
-    success="#4CAF50
-    warning="#FFA726
-    surface="#F5F5F2
-    panel="#FFFFFF
+    background="#FAFAF8"
+    foreground="#222222"
+    primary="#486591"
+    secondary="#2C4975"
+    accent="#EDF2F7"
+    error="#D93025"
+    success="#4CAF50"
+    warning="#FFA726"
+    surface="#F5F5F2"
+    panel="#FFFFFF"
     
     variables={
         "text-muted": "#444444

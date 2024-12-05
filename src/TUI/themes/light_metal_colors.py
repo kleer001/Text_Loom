@@ -11,8 +11,8 @@ light_metal_theme = Theme(
     secondary="#C0C0C0" # High contrast border",
     accent="#E0FFFF" # Medium contrast bg",
     error="#FFE4E1"     # Light red for errors",
-    success="#4CAF50
-    warning="#FFA726
+    success="#4CAF50"
+    warning="#FFA726"
     surface="#F0F8FF"    # Low contrast bg",
     panel="#E0FFFF"  # Medium contrast bg",
     
