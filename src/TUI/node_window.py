@@ -19,8 +19,7 @@ from TUI.network_visualizer import layout_network, render_layout, LayoutEntry
 from TUI.logging_config import get_logger
 from TUI.messages import (NodeAdded, NodeDeleted, ConnectionAdded, 
 ConnectionDeleted, NodeSelected, NodeTypeSelected, OutputMessage)
-import TUI.palette as pal
-from TUI.theme_manager import Theme, Theme
+
 
 logger = get_logger('node')
 
@@ -504,7 +503,7 @@ class NodeWindow(ScrollableContainer):
 
     def on_mount(self) -> None:
         logger.debug("NodeWindow mounted")
-        self._initialize_network()
+        #self._initialize_network()
         self.border_title = "Node Network"
 
     def _initialize_network(self) -> None:
