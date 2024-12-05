@@ -11,8 +11,8 @@ light_water_theme = Theme(
     secondary="#191970" # High contrast border",
     accent="#ADD8E6" # Medium contrast bg",
     error="#FFE4E1"     # Light red for errors",
-    success="#4CAF50
-    warning="#FFA726
+    success="#4CAF50"
+    warning="#FFA726"
     surface="#E0FFFF"    # Low contrast bg",
     panel="#ADD8E6"  # Medium contrast bg",
     

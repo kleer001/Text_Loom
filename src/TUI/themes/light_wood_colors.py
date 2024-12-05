@@ -11,8 +11,8 @@ light_wood_theme = Theme(
     secondary="#008000"  # High contrast border",
     accent="#DFFFDF"  # Medium contrast bg",
     error="#D93025"       # Keeping red for errors",
-    success="#4CAF50
-    warning="#FFA726
+    success="#4CAF50"
+    warning="#FFA726"
     surface="#E0FFE0"     # Low contrast bg",
     panel="#FFFFFF"   # Pure white",
     
