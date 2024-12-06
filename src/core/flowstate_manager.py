@@ -201,7 +201,7 @@ def _deserialize_node(node_data: dict, env: NodeEnvironment) -> Optional[Node]:
         return node
         
     except Exception as e:
-        print(f"Error in _deserialize_node")
+        print(f"Error in _deserialize_node {e}")
         traceback.print_exc()
         return None
 
@@ -219,7 +219,7 @@ def _restore_connections(node: Node, connections_data: List[dict]) -> None:
             node.set_input(input_idx, output_node, output_idx)
             
         except Exception as e:
-            print(f"Error restoring connection")
+            print(f"Error restoring connection {e}")
             traceback.print_exc()
 
 
@@ -248,7 +248,7 @@ def save_flowstate(filepath: str) -> bool:
             global_store = GlobalStore()
             save_data["globals"] = _clean_for_json(global_store.list())
         except Exception as e:
-            print(f"Error saving state")
+            print(f"Error saving state {e}")
             traceback.print_exc()
         
         with open(filepath, 'w', encoding='utf-8') as f:
@@ -258,7 +258,7 @@ def save_flowstate(filepath: str) -> bool:
         return True
         
     except Exception as e:
-        print(f"Error saving flowstate")
+        print(f"Error saving flowstate {e}")
         traceback.print_exc()
         return False
     
@@ -315,13 +315,13 @@ def load_flowstate(filepath: str) -> bool:
                     global_store.set(key, value)
             
         except Exception as e:
-            print(f"Error restoring state")
+            print(f"Error restoring state {e}")
             traceback.print_exc()
         
         print("💾 Flowstate Loaded 💾 ")
         return True
         
     except Exception as e:
-        print(f"Error loading flowstate")
+        print(f"Error loading flowstate {e}")
         traceback.print_exc()
         return False

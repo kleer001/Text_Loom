@@ -20,8 +20,8 @@ class ModeLine(Static):
     ModeLine {
         width: 100%;
         height: 1;
-        background: $secondary;
-        color: white;
+        background: $background;
+        color: $secondary;
         padding: 0 1;
     }
     """

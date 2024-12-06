@@ -1,82 +1,63 @@
 {
   "software": "Text Loom",
   "version": 0.01,
-  "timestamp": "2024-12-02T14:46:19.037882",
+  "timestamp": "2024-12-06T14:58:53.869527",
   "nodes": {
-    "/text_1": {
+    "/text1": {
       "_node_type": "text",
-      "_path": "/text_1",
-      "_name": "text_1",
+      "_path": "/text1",
+      "_name": "text1",
       "_is_internal": false,
       "_parms": {
         "text_string": {
           "_name": "text_string",
           "_type": "string",
-          "_node": "/text_1",
+          "_node": "/text1",
           "_script_callback": "",
-          "_value": "What is the capital of france? "
+          "_value": "CHANGED Filler Text 1"
         },
         "pass_through": {
           "_name": "pass_through",
           "_type": "toggle",
-          "_node": "/text_1",
+          "_node": "/text1",
           "_script_callback": "",
-          "_value": true
-        }
-      },
-      "_connections": []
-    },
-    "/query_1": {
-      "_node_type": "query",
-      "_path": "/query_1",
-      "_name": "query_1",
-      "_is_internal": false,
-      "_parms": {
-        "limit": {
-          "_name": "limit",
-          "_type": "toggle",
-          "_node": "/query_1",
-          "_script_callback": "",
-          "_value": true
-        },
-        "response": {
-          "_name": "response",
-          "_type": "stringList",
-          "_node": "/query_1",
-          "_script_callback": "",
-          "_value": []
-        },
-        "llm_name": {
-          "_name": "llm_name",
-          "_type": "string",
-          "_node": "/query_1",
-          "_script_callback": "",
-          "_value": "Ollama"
-        },
-        "find_llm": {
-          "_name": "find_llm",
-          "_type": "button",
-          "_node": "/query_1",
-          "_script_callback": null,
-          "_value": ""
-        },
-        "respond": {
-          "_name": "respond",
-          "_type": "button",
-          "_node": "/query_1",
-          "_script_callback": null,
-          "_value": ""
+          "_value": false
         }
       },
       "_connections": [
         {
           "input_index": 0,
-          "output_node_path": "/text_1",
-          "input_node_path": "/query_1",
+          "output_node_path": "/text2",
+          "input_node_path": "/text1",
           "output_index": 0
         }
       ]
+    },
+    "/text2": {
+      "_node_type": "text",
+      "_path": "/text2",
+      "_name": "text2",
+      "_is_internal": false,
+      "_parms": {
+        "text_string": {
+          "_name": "text_string",
+          "_type": "string",
+          "_node": "/text2",
+          "_script_callback": "",
+          "_value": "CHAGNED Boopah Text 2"
+        },
+        "pass_through": {
+          "_name": "pass_through",
+          "_type": "toggle",
+          "_node": "/text2",
+          "_script_callback": "",
+          "_value": true
+        }
+      },
+      "_connections": []
     }
   },
-  "globals": {}
+  "globals": {
+    "WATER": "erwer"
+  }
 }

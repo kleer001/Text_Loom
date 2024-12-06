@@ -702,11 +702,11 @@ class Node(MobileItem):
             NodeEnvironment.add_node(new_node)
             
             if hasattr(new_node.__class__, 'post_registration_init'):
-                UndoManager().disable_undo()
+                UndoManager().disable()
                 try:
                     new_node.__class__.post_registration_init(new_node)
                 finally:
-                    UndoManager().enable_undo()
+                    UndoManager().enable()
                     
             return new_node
         except ImportError:

@@ -19,23 +19,13 @@ class HelpWindow(Container):
     HelpWindow {
         width: 100%;
         height: 12.5%;
-        background: $primary 5%;
+        
     }
     
     DataTable {
         height: 100%;
         border: none;
-        background: $primary 5%;
-        color: $foreground;
-    }
-
-    DataTable > .datatable--cell {
-        background: $primary 5%;
-    }
-    
-    DataTable > .datatable--header-cell {
-        background: $primary 5%;
-    }
+}
     """
 
     help_sections: Dict[str, str] = {}
@@ -117,20 +107,20 @@ class HelpWindow(Container):
                     colon_idx = line.find(':')
                     if colon_idx != -1:
                         styled_text = Text()
-                        styled_text.append(line[:colon_idx], style=f"bold {pal.HELP_WIN_TEXT}")
-                        styled_text.append(line[colon_idx:], style=pal.HELP_WIN_TEXT)
+                        styled_text.append(line[:colon_idx])
+                        styled_text.append(line[colon_idx:])
                     else:
-                        styled_text = Text(line, style=pal.HELP_WIN_TEXT)
+                        styled_text = Text(line)
                     table_data[row_idx].append(styled_text)
                     
                 for row in table_data[len(column):]:
-                    row.append(Text("", style=pal.HELP_WIN_TEXT))
+                    row.append(Text(""))
                     
             return table_data
             
         except Exception as e:
             logger.error(f"Error creating table data: {str(e)}", exc_info=True)
-            return [[Text("Error formatting help text", style=pal.HELP_WIN_TEXT)]]
+            return [[Text("Error formatting help text")]]
                     
 
     def watch_current_section(self) -> None:
@@ -139,6 +129,6 @@ class HelpWindow(Container):
         table_data = self._create_table_data(content)
         self.table.clear(columns=True)
         column_count = len(table_data[0]) if table_data else 1
-        headers = [Text(f"{section} Mode commands ", style=f"bold {pal.HELP_WIN_HEADER}")] + ["" for _ in range(column_count - 1)]
+        headers = [Text(f"{section} Mode commands ", style="bold ")] + ["" for _ in range(column_count - 1)]
         self.table.add_columns(*headers)
         self.table.add_rows(table_data)
