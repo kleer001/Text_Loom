@@ -17,7 +17,7 @@ class GlobalWindow(Container):
         width: 100%;
         height: 20%;
         background: $background;
-        border: heavy $primary;
+        border: solid $primary;
         layout: vertical;
     }
 
@@ -28,7 +28,7 @@ class GlobalWindow(Container):
     DataTable {
         width: 100%;
         height: 1fr;
-        background: $primary;
+        background: $background;
         color: $foreground;
         overflow: auto scroll;
         scrollbar-gutter: stable;
@@ -40,7 +40,10 @@ class GlobalWindow(Container):
         dock: top;
         background: $secondary;
         color: $foreground;
-        border: solid $primary;
+        border: solid $accent;
+    }
+    Input:focus {
+        border: double $primary;
     }
     """
 

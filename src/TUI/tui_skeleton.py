@@ -80,7 +80,7 @@ class ThemeSelector(ModalScreen[str]):
     
     #dialog {
         width: 40;
-        height: 15;
+        height: 50%;
         border: solid $primary;
         background: $surface;
         padding: 1;
@@ -114,6 +114,16 @@ class ThemeSelector(ModalScreen[str]):
             event.stop()
             event.prevent_default()
             self.dismiss(None)
+
+    def on_option_list_option_highlighted(self, event: Message) -> None:
+        logger.debug(f"Theme highlighted: {event.option.prompt}")
+        try:
+            theme_name = event.option.prompt
+            self.app.theme = theme_name
+            #self.app._refresh_all_windows()
+            logger.debug(f"Theme preview applied: {theme_name}")
+        except Exception as e:
+            logger.error(f"Theme preview failed: {e}", exc_info=True)
 
     def action_apply_theme(self) -> None:
         logger.debug("Select theme action triggered")
@@ -237,14 +247,14 @@ class TUIApp(App[None]):
 
     HelpWindow {
         height: 1fr;
-        background: $surface;
-        color: $foreground;
+        background: $panel;
+        color: $accent;
     }
 
     ModeLine {
         height: 1;
         background: $primary;
-        color: $foreground;
+        color: $background;
     }
     
     NodeWindow {
@@ -409,13 +419,6 @@ class TUIApp(App[None]):
             self.logger.error(f"Error in _handle_mode_focus: {str(e)}", exc_info=True)
             raise
 
-
-    # async def action_load_theme(self) -> None:
-    #     theme = await self.push_screen(ThemeSelector())
-    #     if theme:
-    #         self.theme = theme
-    #         self.mode_line.debug_info = f"Applied theme: {theme}"
-
     def action_switch_mode(self, mode_name: str) -> None:
         try:
             new_mode = Mode[mode_name]
@@ -495,7 +498,7 @@ class TUIApp(App[None]):
 
     def _check_autosave(self) -> None:
         print("We're not autosaving, sorry.")
-        return #temporary disable
+        #return #temporary disable
         from core.undo_manager import UndoManager
         self.logger.info("Starting autosave check")
         try:
