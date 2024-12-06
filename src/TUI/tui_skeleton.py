@@ -69,10 +69,13 @@ from textual.screen import ModalScreen
 
 
 class ThemeSelector(ModalScreen[str]):
+    can_focus = True
+
     DEFAULT_CSS = """
     ThemeSelector {
         align: center middle;
         background: transparent;
+        
     }
     
     #dialog {
@@ -86,7 +89,7 @@ class ThemeSelector(ModalScreen[str]):
 
     BINDINGS = [
         ("escape", "dismiss(None)", "Cancel"),
-        ("p", "apply_theme", "Select"),
+        ("enter", "select_theme", "Select"),
     ]
 
     def __init__(self):
@@ -101,15 +104,25 @@ class ThemeSelector(ModalScreen[str]):
         self.query_one("#dialog", OptionList).focus()
         self.logger.debug(f"After focus attempt: {self.screen.focused}")
 
+    def on_key(self, event) -> None:
+        logger.debug(f"Key received in ThemeSelector: {event.key}")
+        if event.key == "enter":
+            event.stop()
+            event.prevent_default()
+            self.action_apply_theme()
+        elif event.key == "escape":
+            event.stop()
+            event.prevent_default()
+            self.dismiss(None)
+
     def action_apply_theme(self) -> None:
-        self.logger.debug("Select theme action triggered")
+        logger.debug("Select theme action triggered")
         option_list = self.query_one(OptionList)
-        highlighted = option_list.highlighted
-        if highlighted is not None:
+        if option_list.highlighted is not None:
             theme_name = option_list.get_option_at_index(option_list.highlighted).prompt
-            self.logger.debug(f"Selected theme: {theme_name}")
-            #self.app.theme = theme_name
-            #self.logger.debug("Theme applied successfully")
+            logger.debug(f"Selected theme: {theme_name}")
+            self.app.theme = theme_name
+            logger.debug("Dismissing with theme selection")
             self.dismiss(theme_name)
     
 
@@ -265,18 +278,19 @@ class TUIApp(App[None]):
     help_window: ClassVar[HelpWindow]
     current_mode: reactive[Mode] = reactive(Mode.NODE)
     current_file: reactive[str] = reactive("")
-    current_theme: Theme = create_themes()["default"]  # Add this line
+    #current_theme: Theme = create_themes()["light_fire"]  # Add this line
     AUTOSAVE_FILE: ClassVar[str] = "autosave.json"  
 
     async def action_select_theme(self) -> None:
-        self.logger.debug("Starting theme selection")
-        theme_name = await self.push_screen(ThemeSelector())
-        self.logger.debug(f"Selected theme name: {theme_name}")
-        if theme_name:
-            self.theme = theme_name
+        logger.debug("Starting theme selection")
+        theme = await self.push_screen(ThemeSelector())
+        logger.debug(f"Selected theme name: {theme}")
+        if theme:
+            self.theme = theme
             self._refresh_all_windows()
-            self.mode_line.debug_info = f"Applied theme: {theme_name}"
-            self.logger.debug(f"Theme {theme_name} applied with refresh")
+            mode_line = self.query_one(ModeLine)
+            mode_line.debug_info = f"Applied theme: {theme}"
+            logger.debug(f"Theme {theme} applied with refresh")
 
     def __init__(self):
         try:
@@ -317,8 +331,9 @@ class TUIApp(App[None]):
             
             # Set default theme after registering all themes
             self.logger.debug("Setting default theme")
-            self.theme = "default"
-            self.logger.debug("Theme registration complete")
+            #self.theme = "light_earth"
+            self.theme = list(self.themes.keys())[0]
+            self.logger.error("Theme registration complete")
 
             main_content = self.query_one(MainContent)
             node_window = main_content.query_one(NodeWindow)
@@ -330,11 +345,6 @@ class TUIApp(App[None]):
         except Exception as e:
             self.logger.error(f"Mount failed: {str(e)}", exc_info=True)
             raise
-
-    def action_next_theme(self) -> None:
-        theme_names = list(self.themes.keys())
-        self.current_theme_index = (self.current_theme_index + 1) % len(theme_names)
-        self.theme = theme_names[self.current_theme_index]
         
     def _refresh_all_windows(self) -> None:
         main_layout = self.query_one(MainLayout)
