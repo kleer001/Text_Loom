@@ -21,6 +21,10 @@ class GlobalWindow(Container):
         layout: vertical;
     }
 
+    GlobalWindow:focus {
+        border: double $primary;
+    }
+
     DataTable {
         width: 100%;
         height: 1fr;
@@ -78,7 +82,7 @@ class GlobalWindow(Container):
     def flash_error(self):
         logger.debug("Starting flash_error")
         try:
-            self.input.styles.background = pal.GLOBAL_WIN_ERROR_COLOR
+            self.input.styles.background = "$error"
             logger.debug("Set error background")
             self.app.set_timer(0.25, self.reset_background)
             logger.debug("Scheduled reset")
@@ -88,7 +92,7 @@ class GlobalWindow(Container):
     def reset_background(self):
         logger.debug("Resetting background")
         try:
-            self.input.styles.background = None  # This removes our override and falls back to CSS
+            self.input.styles.background = "$secondary" #might need to be None ? 
             logger.debug("Background reset complete")
         except Exception as e:
             logger.debug(f"Reset background failed: {str(e)}")

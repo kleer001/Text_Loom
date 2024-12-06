@@ -8,8 +8,6 @@ import sys
 from io import StringIO
 from threading import Lock
 
-import TUI.palette as pal
-
 logger = get_logger('status')
 
 
@@ -25,10 +23,11 @@ class CapturedOutput:
             
     def flush(self):
         pass
-        
+            
     def getvalue(self):
         with self._lock:
-            return self.buffer.getvalue()
+            value = self.buffer.getvalue()
+            return value
 
 class StatusWindow(ScrollableContainer):
     BINDINGS = [
@@ -40,7 +39,7 @@ class StatusWindow(ScrollableContainer):
         width: 100%;
         height: 30%;
         background: $background;
-        border: $status_win_border $primary;
+        border: solid $primary;
         color: $foreground;
         padding: 0 1;
         overflow-y: scroll;

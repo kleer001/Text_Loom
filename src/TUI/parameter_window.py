@@ -322,6 +322,7 @@ class ParameterWindow(ScrollableContainer):
 
     def _process_parameter_set(self, node: Node) -> None:
         try:
+            stack = self.query_one("#parameter_stack")
             node_key = node.name()
             if node_key in self.node_to_param_set:
                 old_param_set = self.node_to_param_set[node_key]
@@ -334,8 +335,7 @@ class ParameterWindow(ScrollableContainer):
             self.node_to_param_set[node_key] = new_param_set
             self.current_set_index = 0
             new_param_set.select_parameter(0)
-
-            stack = self.query_one("#parameter_stack")
+            
             stack.styles.offset = (0, 0)
 
             logger.info(f"Added/Updated parameter set for {node_key}, total sets: {len(self.parameter_sets)}")

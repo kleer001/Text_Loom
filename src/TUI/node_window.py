@@ -7,6 +7,7 @@ from textual.containers import ScrollableContainer, Vertical
 from textual.screen import ModalScreen, Screen
 from textual.message import Message
 from textual.geometry import Region, Size
+from textual.timer import Timer
 from rich.text import Text
 import os
 from collections import namedtuple
@@ -194,7 +195,7 @@ class NodeWindow(ScrollableContainer):
             width: 100%;
             height: 100%;
             background: $background;
-            border: solid $primary;
+            border: solid $secondary;
             color: $foreground;
         }
 
@@ -503,7 +504,7 @@ class NodeWindow(ScrollableContainer):
 
     def on_mount(self) -> None:
         logger.debug("NodeWindow mounted")
-        #self._initialize_network()
+        self._initialize_network()
         self.border_title = "Node Network"
 
     def _initialize_network(self) -> None:

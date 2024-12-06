@@ -12,7 +12,7 @@ class OutputWindow(Static):
         width: 100%;
         height: 50%;
         background: $background;
-        border: $output_win_border $primary;
+        border: solid $primary;
         color: $foreground;
         padding: 1;
     }
