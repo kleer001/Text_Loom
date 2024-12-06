@@ -7,10 +7,10 @@ from textual import work
 from textual.app import App, ComposeResult
 from textual.screen import Screen, ModalScreen
 from textual.binding import Binding, BindingType
-from textual.containers import Container
+from textual.containers import Container, ScrollableContainer
 from textual.message import Message
 from textual.reactive import reactive
-from textual.widgets import Static
+from textual.widgets import Static, OptionList
 from textual.css.query import NoMatches
 from textual.containers import Grid, Horizontal, Vertical
 from textual.widgets import Static
@@ -74,21 +74,44 @@ class ThemeSelector(ModalScreen[str]):
         align: center middle;
         background: transparent;
     }
+    
+    #dialog {
+        width: 40;
+        height: 15;
+        border: solid $primary;
+        background: $surface;
+        padding: 1;
+    }
     """
 
     BINDINGS = [
         ("escape", "dismiss(None)", "Cancel"),
-        ("enter", "select_theme", "Select"),
+        ("p", "apply_theme", "Select"),
     ]
+
+    def __init__(self):
+        super().__init__()
+        self.logger = get_logger('theme_selector')
 
     def compose(self) -> ComposeResult:
         yield OptionList(*self.app.themes.keys(), id="dialog")
 
-    def on_option_list_option_highlighted(self, event: Message) -> None:
-        self.app.theme = event.option.prompt
+    def on_mount(self) -> None:
+        self.logger.debug("ThemeSelector mounted")
+        self.query_one("#dialog", OptionList).focus()
+        self.logger.debug(f"After focus attempt: {self.screen.focused}")
 
-    def action_select_theme(self) -> None:
-        self.dismiss(self.query_one(OptionList).highlighted)
+    def action_apply_theme(self) -> None:
+        self.logger.debug("Select theme action triggered")
+        option_list = self.query_one(OptionList)
+        highlighted = option_list.highlighted
+        if highlighted is not None:
+            theme_name = option_list.get_option_at_index(option_list.highlighted).prompt
+            self.logger.debug(f"Selected theme: {theme_name}")
+            #self.app.theme = theme_name
+            #self.logger.debug("Theme applied successfully")
+            self.dismiss(theme_name)
+    
 
 @dataclass
 class ModeChanged(Message):
@@ -183,8 +206,7 @@ class TUIApp(App[None]):
         Binding("ctrl+e", "switch_mode('HELP')", "Help Mode"),
         Binding("ctrl+k", "switch_mode('KEYMAP')", "Keymap Mode"),
         Binding("ctrl+t", "switch_mode('STATUS')", "Status Mode"),
-        #Binding("ctrl+l", "switch_mode('OUTPUT')", "Output Mode"),
-        Binding("ctrl+l", "load_theme", "Load Theme"),
+        Binding("ctrl+l", "select_theme", "Load Theme"),
         Binding("ctrl+z", "undo", "Undo"),
         Binding("ctrl+y", "redo", "Redo"),
         Binding("ctrl+q", "quit", "Quit"),
@@ -246,19 +268,31 @@ class TUIApp(App[None]):
     current_theme: Theme = create_themes()["default"]  # Add this line
     AUTOSAVE_FILE: ClassVar[str] = "autosave.json"  
 
+    async def action_select_theme(self) -> None:
+        self.logger.debug("Starting theme selection")
+        theme_name = await self.push_screen(ThemeSelector())
+        self.logger.debug(f"Selected theme name: {theme_name}")
+        if theme_name:
+            self.theme = theme_name
+            self._refresh_all_windows()
+            self.mode_line.debug_info = f"Applied theme: {theme_name}"
+            self.logger.debug(f"Theme {theme_name} applied with refresh")
+
     def __init__(self):
         try:
             super().__init__()
             self.logger = get_logger('tui.app')
             self.logger.info("Starting TUIApp initialization")
             self.current_mode = Mode.NODE
+            self.current_theme_index = 0;
             self.themes = create_themes()
             self.logger.debug("Theme gathering complete")
 
         except Exception as e:
             self.logger.error(f"Init failed: {str(e)}", exc_info=True)
             raise
-        
+            
+    
 
     def compose(self) -> ComposeResult:
         self.logger.debug("Starting compose")
@@ -275,11 +309,16 @@ class TUIApp(App[None]):
             self.mode_line.path = "untitled.json"
             self.current_file = "untitled.json"
             
-            for t in self.themes.values():
-                self.register_theme(t)
-                #self.logger.debug(f"registered {t}")    
-            self.logger.debug("Theme registering complete")
+            # Register themes before setting default
+            self.logger.debug("Starting theme registration")
+            for theme_name, theme in self.themes.items():
+                self.logger.debug(f"Registering theme: {theme_name}")
+                self.register_theme(theme)
+            
+            # Set default theme after registering all themes
+            self.logger.debug("Setting default theme")
             self.theme = "default"
+            self.logger.debug("Theme registration complete")
 
             main_content = self.query_one(MainContent)
             node_window = main_content.query_one(NodeWindow)
@@ -292,20 +331,11 @@ class TUIApp(App[None]):
             self.logger.error(f"Mount failed: {str(e)}", exc_info=True)
             raise
 
-    def _apply_theme(self, theme: Theme) -> None:
-        theme_css = ThemeManager.get_css(theme)
-        for component, css in theme_css.items():
-            try:
-                widget = self.query_one(f"#{component}")
-                if widget:
-                    widget.styles.update(css)
-            except NoMatches:
-                continue
+    def action_next_theme(self) -> None:
+        theme_names = list(self.themes.keys())
+        self.current_theme_index = (self.current_theme_index + 1) % len(theme_names)
+        self.theme = theme_names[self.current_theme_index]
         
-        self.current_theme = theme
-        self._refresh_all_windows()
-        self.refresh(layout=True)
-
     def _refresh_all_windows(self) -> None:
         main_layout = self.query_one(MainLayout)
         for window in main_layout.walk_children():
@@ -370,11 +400,11 @@ class TUIApp(App[None]):
             raise
 
 
-    async def action_load_theme(self) -> None:
-        theme = await self.push_screen(ThemeSelector())
-        if theme:
-            self.theme = theme
-            self.mode_line.debug_info = f"Applied theme: {theme}"
+    # async def action_load_theme(self) -> None:
+    #     theme = await self.push_screen(ThemeSelector())
+    #     if theme:
+    #         self.theme = theme
+    #         self.mode_line.debug_info = f"Applied theme: {theme}"
 
     def action_switch_mode(self, mode_name: str) -> None:
         try:
