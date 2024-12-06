@@ -3,7 +3,7 @@ import curses
 import os
 from typing import Optional, Tuple, List, Dict, Set
 from dataclasses import dataclass
-from palette import ACTIVE_WINDOW, INACTIVE_WINDOW, CURSOR_HIGHLIGHT
+
 
 class CursorStyle(Enum):
     BLOCK = auto()

@@ -51,7 +51,7 @@ def create_themes():
             foreground="#222222",
             primary="#486591",
             secondary="#2C4975",
-            accent="#EDF2F7",
+            accent="#BBBBF7",
             error="#D93025",
             success="#4CAF50",
             warning="#FFA726",

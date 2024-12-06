@@ -14,6 +14,8 @@ from textual.widgets import Static
 from textual.css.query import NoMatches
 from textual.containers import Grid, Horizontal, Vertical
 from textual.widgets import Static
+from textual import theme
+from textual.theme import Theme
 
 from dataclasses import dataclass
 from enum import Enum, auto
@@ -218,7 +220,7 @@ class TUIApp(App[None]):
     }
     
     NodeWindow:focus {
-        border: solid $accent;
+        border: double $primary;
     }
     
     ParameterWindow {
@@ -228,6 +230,10 @@ class TUIApp(App[None]):
         color: $foreground;
     }
 
+    ParameterWindow:focus {
+        border: double $primary;
+    }
+    
     .middle-section {
         width: 2fr;
     }
@@ -271,7 +277,7 @@ class TUIApp(App[None]):
             
             for t in self.themes.values():
                 self.register_theme(t)
-                self.logger.debug(f"registered {t}")    
+                #self.logger.debug(f"registered {t}")    
             self.logger.debug("Theme registering complete")
             self.theme = "default"
 
