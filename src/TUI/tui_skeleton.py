@@ -245,23 +245,12 @@ class TUIApp(App[None]):
             super().__init__()
             self.logger = get_logger('tui.app')
             self.logger.info("Starting TUIApp initialization")
-            self.themes = create_themes()
-            self.logger.debug(f"Created themes: {list(self.themes.keys())}")
-            
-            for theme_name, theme in self.themes.items():
-                try:
-                    self.logger.debug(f"Registering theme: {theme_name}")
-                    self.dark = theme_name.startswith('dark_')
-                    self.register_theme(theme)
-                except Exception as e:
-                    self.logger.error(f"Failed to register theme {theme_name}: {str(e)}", exc_info=True)
-            
             self.current_mode = Mode.NODE
-            self.current_theme = self.themes["default"]
-            self.logger.debug("Theme registration complete")
-            self.logger.info("TUIApp initialization complete")
+            self.themes = create_themes()
+            self.logger.debug("Theme gathering complete")
+
         except Exception as e:
-            self.logger.error(f"Failed in init: {str(e)}", exc_info=True)
+            self.logger.error(f"Init failed: {str(e)}", exc_info=True)
             raise
         
 
@@ -279,8 +268,13 @@ class TUIApp(App[None]):
             self.help_window = self.query_one(HelpWindow)
             self.mode_line.path = "untitled.json"
             self.current_file = "untitled.json"
-            self.theme = "default"
             
+            for t in self.themes.values():
+                self.register_theme(t)
+                self.logger.debug(f"registered {t}")    
+            self.logger.debug("Theme registering complete")
+            self.theme = "default"
+
             main_content = self.query_one(MainContent)
             node_window = main_content.query_one(NodeWindow)
             node_window.focus()
