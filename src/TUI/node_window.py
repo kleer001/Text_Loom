@@ -19,7 +19,7 @@ from core.flowstate_manager import load_flowstate
 from TUI.network_visualizer import layout_network, render_layout, LayoutEntry
 from TUI.logging_config import get_logger
 from TUI.messages import (NodeAdded, NodeDeleted, ConnectionAdded, 
-ConnectionDeleted, NodeSelected, NodeTypeSelected, OutputMessage)
+ConnectionDeleted, NodeSelected, NodeTypeSelected, OutputMessage, FileLoaded)
 
 
 logger = get_logger('node')
@@ -132,7 +132,7 @@ class RenameInput(Input):
     RenameInput {
         height: 3;
         background: $panel;
-        color: $foreground
+        color: $foreground;
         border: none;
         padding: 0;
     }
@@ -482,14 +482,16 @@ class NodeWindow(ScrollableContainer):
 
 
     def action_rename_node(self) -> None:
+        logger.info("Began rename action")
         if not self._initialized or self._selected_line >= len(self._node_data):
             return
 
         node_data = self._node_data[self._selected_line]
         indent_offset = node_data.indent_level + 2
         #EYEBALLED IT! But it works. Hahaha! 
-        relative_y = (- len(self._node_data) * 2) + 4 + self._selected_line 
-
+        #relative_y = (- len(self._node_data) * 2) + 4 + self._selected_line 
+        relative_y = self._selected_line - len(self._node_data) - 2
+        logger.info("Creating RenameInput widget")
         self._rename_input = RenameInput(node_data.path)
         self.mount(self._rename_input)
         
@@ -498,14 +500,28 @@ class NodeWindow(ScrollableContainer):
         self._rename_input.styles.offset = (indent_offset, relative_y)
         self._rename_input.value = node_data.name
         self._rename_input.focus()
+        logger.info("RenameInput widget created and focused")
 
     def compose(self):
         yield self.content
 
     def on_mount(self) -> None:
         logger.debug("NodeWindow mounted")
-        self._initialize_network()
+        self._init_empty_network() #uncomment for forced load
         self.border_title = "Node Network"
+
+    def _init_empty_network(self) -> None: 
+        logger.debug("Initializing empty network")
+        try:        
+            self._env = NodeEnvironment.get_instance()
+            self._initialized = True
+            logger.info("Successfully initialized NodeEnvironment")
+            self._refresh_layout()
+
+        except Exception as e:
+            error_msg = f"Failed to initialize network: {str(e)}"
+            logger.error(error_msg, exc_info=True)
+            self.content.update(f"[red]{error_msg}")
 
     def _initialize_network(self) -> None:
         from core.undo_manager import UndoManager

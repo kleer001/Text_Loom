@@ -2,8 +2,8 @@ from textual.theme import Theme
 
 def create_themes():
     return {
-        "default": Theme(
-            name="default",
+        "default_powder": Theme(
+            name="default_powder",
             dark=False,
             background="#FAFAF8",
             foreground="#222222",
@@ -16,6 +16,112 @@ def create_themes():
             surface="#F5F5F2",
             panel="#FFFFFF",
         ),
+
+        "default_slate": Theme(
+            name="default_slate",
+            dark=True,
+            background="#1A1C1E",
+            foreground="#D8E1E6",
+            primary="#4A6B8C",
+            secondary="#2C4C6F",
+            accent="#1A1C1E",
+            error="#963B3B",
+            success="#4CAF50",
+            warning="#C7A850",
+            surface="#22262A",
+            panel="#2A2E32",
+        ),
+
+        "default_parchment": Theme(
+            name="default_parchment",
+            dark=False,
+            background="#F5ECD8",      # More yellow undertone
+            foreground="#2C2826",
+            primary="#A38B66",         # Warmer brown
+            secondary="#8B735A",       # Warmer secondary
+            accent="#FFF6E6",         # Warmer accent
+            error="#963B3B",
+            success="#4CAF50",
+            warning="#C7A850",
+            surface="#EDE4D0",        # More yellow undertone
+            panel="#FFF9EA",          # Warmer panel
+        ),
+
+        "default_ivory": Theme(
+            name="default_ivory",
+            dark=False,
+            background="#F8F6F4",     # Desaturated white
+            foreground="#2D2A26",
+            primary="#9E958A",        # Desaturated brown
+            secondary="#847E76",      # Desaturated secondary
+            accent="#FFFDFC",        # Very slightly warm white
+            error="#963B3B",
+            success="#4CAF50",
+            warning="#C7A850",
+            surface="#F0EEEC",       # Desaturated surface
+            panel="#FFFFFF",
+        ),
+
+        "default_graphite": Theme(
+            name="default_graphite",
+            dark=True,
+            background="#232326",
+            foreground="#E0E0E2",
+            primary="#667799",
+            secondary="#445577",
+            accent="#232326",
+            error="#963B3B",
+            success="#4CAF50",
+            warning="#C7A850",
+            surface="#2A2A2E",
+            panel="#303034",
+        ),
+
+        "default_pearl": Theme(
+            name="default_pearl",
+            dark=False,
+            background="#F8F0F0",
+            foreground="#2C2D30",
+            primary="#90BCBF",
+            secondary="#4E5B6B",
+            accent="#FFF0F0",
+            error="#963B3B",
+            success="#4CAF50",
+            warning="#C7A850",
+            surface="#F0F2F4",
+            panel="#FFFFFF",
+        ),
+
+        "default_obsidian": Theme(
+            name="default_obsidian",
+            dark=True,
+            background="#161618",
+            foreground="#E6E6E8",
+            primary="#665C7A",
+            secondary="#4A4359",
+            accent="#161618",
+            error="#963B3B",
+            success="#4CAF50",
+            warning="#C7A850",
+            surface="#1E1E21",
+            panel="#252528",
+        ),
+
+        "default_charcoal": Theme(
+            name="default_charcoal",
+            dark=True,
+            background="#1D1F1E",
+            foreground="#E2E3E3",
+            primary="#6B7272",
+            secondary="#4E5353",
+            accent="#1D1F1E",
+            error="#963B3B",
+            success="#4CAF50",
+            warning="#C7A850",
+            surface="#252827",
+            panel="#2D302F",
+        ),
+
         "light_fire": Theme(
             name="light_fire",
             dark=False,
@@ -147,9 +253,9 @@ def create_themes():
             dark=True,
             background="#191919",
             foreground="#87CEFA",
-            primary="#00008B",
+            primary="#7777EB",
             secondary="#0000CD",
-            accent="#191919",
+            accent="#1966AB",
             error="#8B0000",
             success="#4CAF50",
             warning="#FFA726",
@@ -247,4 +353,123 @@ def create_themes():
         panel="#000047",
     ),
 
+        "fruit_strawberry": Theme(
+            name="fruit_strawberry",
+            dark=False,
+            background="#FFF5F5",
+            foreground="#8B1D1D",
+            primary="#E14343",
+            secondary="#C13030",
+            accent="#FFE5E5",
+            error="#D93025",
+            success="#4CAF50",
+            warning="#FFA726",
+            surface="#FFF0F0",
+            panel="#FFFFFF",
+        ),
+
+        "fruit_blueberry": Theme(
+            name="fruit_blueberry",
+            dark=True,
+            background="#1A1B2E",
+            foreground="#E6E7FF",
+            primary="#4A4E8C",
+            secondary="#363A77",
+            accent="#1A1B2E",
+            error="#963B3B",
+            success="#4CAF50",
+            warning="#C7A850",
+            surface="#222438",
+            panel="#2A2C42",
+        ),
+
+        "fruit_dragonfruit": Theme(
+            name="fruit_dragonfruit",
+            dark=False,
+            background="#FFF5F9",
+            foreground="#4A2037",
+            primary="#E875B0",
+            secondary="#C45C8F",
+            accent="#FFE5F2",
+            error="#D93025",
+            success="#4CAF50",
+            warning="#FFA726",
+            surface="#FFF0F5",
+            panel="#FFFFFF",
+        ),
+
+        "fruit_blackberry": Theme(
+            name="fruit_blackberry",
+            dark=True,
+            background="#1A1522",
+            foreground="#E6D9F2",
+            primary="#614875",
+            secondary="#4A3459",
+            accent="#1A1522",
+            error="#963B3B",
+            success="#4CAF50",
+            warning="#C7A850",
+            surface="#221B2E",
+            panel="#2A2238",
+        ),
+
+        "fruit_blood_orange": Theme(
+            name="fruit_blood_orange",
+            dark=False,
+            background="#FFF5F5",
+            foreground="#8B1D1D",
+            primary="#C41E3A",
+            secondary="#A01830",
+            accent="#FFE5E5",
+            error="#D93025",
+            success="#4CAF50",
+            warning="#FFA726",
+            surface="#FFF0F0",
+            panel="#FFFFFF",
+        ),
+
+        "fruit_avocado": Theme(
+            name="fruit_avocado",
+            dark=False,
+            background="#F5FAF5",
+            foreground="#2C4A2C",
+            primary="#567C56",
+            secondary="#445E44",
+            accent="#E5FFE5",
+            error="#D93025",
+            success="#4CAF50",
+            warning="#FFA726",
+            surface="#F0FFF0",
+            panel="#FFFFFF",
+        ),
+
+        "fruit_mango": Theme(
+            name="fruit_mango",
+            dark=False,
+            background="#FFF9F5",
+            foreground="#8B4513",
+            primary="#FF9B4D",
+            secondary="#E68A44",
+            accent="#FFE5D9",
+            error="#D93025",
+            success="#4CAF50",
+            warning="#FFA726",
+            surface="#FFF4F0",
+            panel="#FFFFFF",
+        ),
+
+        "fruit_plum": Theme(
+            name="fruit_plum",
+            dark=True,
+            background="#1A151A",
+            foreground="#E6D9E6",
+            primary="#8B4B8B",
+            secondary="#6E3C6E",
+            accent="#1A151A",
+            error="#963B3B",
+            success="#4CAF50",
+            warning="#C7A850",
+            surface="#221B22",
+            panel="#2A222A",
+        ),
     }

@@ -66,74 +66,7 @@ logger = get_logger('tui.main')
 from TUI.theme_manager import ThemeManager, Theme
 from textual.widgets import OptionList
 from textual.screen import ModalScreen
-
-
-class ThemeSelector(ModalScreen[str]):
-    can_focus = True
-
-    DEFAULT_CSS = """
-    ThemeSelector {
-        align: center middle;
-        background: transparent;
-        
-    }
-    
-    #dialog {
-        width: 40;
-        height: 50%;
-        border: solid $primary;
-        background: $surface;
-        padding: 1;
-    }
-    """
-
-    BINDINGS = [
-        ("escape", "dismiss(None)", "Cancel"),
-        ("enter", "select_theme", "Select"),
-    ]
-
-    def __init__(self):
-        super().__init__()
-        self.logger = get_logger('theme_selector')
-
-    def compose(self) -> ComposeResult:
-        yield OptionList(*self.app.themes.keys(), id="dialog")
-
-    def on_mount(self) -> None:
-        self.logger.debug("ThemeSelector mounted")
-        self.query_one("#dialog", OptionList).focus()
-        self.logger.debug(f"After focus attempt: {self.screen.focused}")
-
-    def on_key(self, event) -> None:
-        logger.debug(f"Key received in ThemeSelector: {event.key}")
-        if event.key == "enter":
-            event.stop()
-            event.prevent_default()
-            self.action_apply_theme()
-        elif event.key == "escape":
-            event.stop()
-            event.prevent_default()
-            self.dismiss(None)
-
-    def on_option_list_option_highlighted(self, event: Message) -> None:
-        logger.debug(f"Theme highlighted: {event.option.prompt}")
-        try:
-            theme_name = event.option.prompt
-            self.app.theme = theme_name
-            #self.app._refresh_all_windows()
-            logger.debug(f"Theme preview applied: {theme_name}")
-        except Exception as e:
-            logger.error(f"Theme preview failed: {e}", exc_info=True)
-
-    def action_apply_theme(self) -> None:
-        logger.debug("Select theme action triggered")
-        option_list = self.query_one(OptionList)
-        if option_list.highlighted is not None:
-            theme_name = option_list.get_option_at_index(option_list.highlighted).prompt
-            logger.debug(f"Selected theme: {theme_name}")
-            self.app.theme = theme_name
-            logger.debug("Dismissing with theme selection")
-            self.dismiss(theme_name)
+from TUI.theme_selector import ThemeSelector
     
 
 @dataclass
@@ -292,38 +225,34 @@ class TUIApp(App[None]):
     AUTOSAVE_FILE: ClassVar[str] = "autosave.json"  
 
     async def action_select_theme(self) -> None:
-        logger.debug("Starting theme selection")
+        logger.info("Starting theme selection")
         theme = await self.push_screen(ThemeSelector())
-        logger.debug(f"Selected theme name: {theme}")
+        logger.info(f"Selected theme name: {theme}")
         if theme:
             self.theme = theme
             self._refresh_all_windows()
             mode_line = self.query_one(ModeLine)
             mode_line.debug_info = f"Applied theme: {theme}"
-            logger.debug(f"Theme {theme} applied with refresh")
+            logger.info(f"Theme {theme} applied with refresh")
 
     def __init__(self):
         try:
             super().__init__()
-            self.logger = get_logger('tui.app')
+            self.logger = get_logger('tui.app', level=2)
             self.logger.info("Starting TUIApp initialization")
             self.current_mode = Mode.NODE
             self.current_theme_index = 0;
             self.themes = create_themes()
-            self.logger.debug("Theme gathering complete")
+            self.logger.info("Theme gathering complete")
 
         except Exception as e:
             self.logger.error(f"Init failed: {str(e)}", exc_info=True)
             raise
             
-    
-
     def compose(self) -> ComposeResult:
-        self.logger.debug("Starting compose")
         yield MainContent()
         yield HelpWindow()
         yield ModeLine()
-        self.logger.debug("Compose complete")
 
     def on_mount(self) -> None:
         try:
@@ -334,14 +263,13 @@ class TUIApp(App[None]):
             self.current_file = "untitled.json"
             
             # Register themes before setting default
-            self.logger.debug("Starting theme registration")
+            self.logger.info("Starting theme registration")
             for theme_name, theme in self.themes.items():
-                self.logger.debug(f"Registering theme: {theme_name}")
+                self.logger.info(f"Registering theme: {theme_name}")
                 self.register_theme(theme)
             
             # Set default theme after registering all themes
-            self.logger.debug("Setting default theme")
-            #self.theme = "light_earth"
+            self.logger.info("Setting default theme")
             self.theme = list(self.themes.keys())[0]
             self.logger.error("Theme registration complete")
 
@@ -355,7 +283,12 @@ class TUIApp(App[None]):
         except Exception as e:
             self.logger.error(f"Mount failed: {str(e)}", exc_info=True)
             raise
-        
+
+    def on_file_loaded(self, message: FileLoaded) -> None:
+        self._env = NodeEnvironment.get_instance()
+        self._initialized = True
+        self._refresh_layout()
+
     def _refresh_all_windows(self) -> None:
         main_layout = self.query_one(MainLayout)
         for window in main_layout.walk_children():
@@ -497,7 +430,7 @@ class TUIApp(App[None]):
 
 
     def _check_autosave(self) -> None:
-        print("We're not autosaving, sorry.")
+        #print("We're not autosaving, sorry.")
         #return #temporary disable
         from core.undo_manager import UndoManager
         self.logger.info("Starting autosave check")
@@ -520,6 +453,7 @@ class TUIApp(App[None]):
                 self.logger.info("Successfully loaded autosave")
                 self.logger.debug("Unfreezing UndoManager")
                 UndoManager().undo_active = True
+                self.post_message(FileLoaded(self.AUTOSAVE_FILE))
             else:
                 self.logger.info("No autosave file found")
         except Exception as e:
