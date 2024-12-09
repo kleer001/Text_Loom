@@ -99,7 +99,7 @@ class UndoManager:
     def __new__(cls):
         if cls._instance is None:
             cls._instance = super(UndoManager, cls).__new__(cls)
-            cls._instance.logger = get_logger('undo')
+            cls._instance.logger = get_logger('undo', level=1)
             cls._instance._undo_active = True
             cls._initialized = False
         return cls._instance
