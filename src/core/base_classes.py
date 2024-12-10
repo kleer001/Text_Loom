@@ -162,6 +162,49 @@ class NodeEnvironment:
         cls.get_instance().current_node = None
         cls.get_instance().globals = cls.get_instance()._build_globals()
 
+    @classmethod
+    def update_node_path(cls, old_path: str, new_parent_path: str) -> Tuple[str, bool]:
+        if new_parent_path != "/" and not cls.node_exists(new_parent_path):
+            raise ValueError(f"Parent path '{new_parent_path}' does not exist")
+            
+        node = cls.nodes.get(old_path)
+        if not node:
+            raise ValueError(f"Node at path '{old_path}' does not exist")
+            
+        old_name = old_path.split('/')[-1]
+        base_name = old_name
+        counter = 1
+        
+        while True:
+            new_name = base_name if counter == 1 else f"{base_name}_{counter}"
+            new_path = f"{new_parent_path.rstrip('/')}/{new_name}"
+            if new_path not in cls.nodes or new_path == old_path:
+                break
+            counter += 1
+                
+        path_updates = {}
+        children = [p for p in cls.nodes if p.startswith(old_path + "/")]
+        
+        path_updates[old_path] = new_path
+        for child_path in children:
+            relative_path = child_path[len(old_path):]
+            path_updates[child_path] = new_path + relative_path
+            
+        nodes_copy = {}
+        for old_p, new_p in path_updates.items():
+            node = cls.nodes[old_p]
+            node._path = InternalPath(new_p)
+            if old_p == old_path:
+                node._name = new_name
+            nodes_copy[new_p] = node
+            
+        for old_p in path_updates:
+            del cls.nodes[old_p]
+            
+        cls.nodes.update(nodes_copy)
+        
+        return new_path, new_name != base_name
+
         
 
 
@@ -835,6 +878,19 @@ class Node(MobileItem):
                 if connection in self._outputs[output_idx]:
                     self._outputs[output_idx].remove(connection)
 
+    def set_parent(self, new_parent_path: str) -> None:
+        from core.undo_manager import UndoManager
+        old_path = self.path()
+        
+        UndoManager().push_state(f"Move {old_path} to {new_parent_path}")
+        
+        try:
+            new_path, name_changed = NodeEnvironment.update_node_path(old_path, new_parent_path)
+            if name_changed:
+                print(f"Node renamed to maintain uniqueness at new location: {new_path}")
+        except ValueError as e:
+            print(f"Failed to move node: {e}")
+            return
 
     def state(self) -> NodeState:
         """Returns the current state of the node."""

@@ -4,7 +4,7 @@ sys.path.append(parent_dir)
 
 from core.base_classes import NodeEnvironment, Node, NodeType
 from core.print_node_info import print_node_info
-from core.nodes.looper_node import *
+from core.looper_node import *
 from core.loop_manager import *
 
 # Create nodes
@@ -40,7 +40,7 @@ merge1.set_input(2, text4)
 # print_node_info(looper1._output_node)
 
 print("\n:: LOOPER EVAL::")
-loopeval = looper1.eval()
+loopeval = looper1.cook()
 print("::LOOP EVALS TO::\n", loopeval)
 
 
@@ -52,9 +52,9 @@ print("::LOOP EVALS TO::\n", loopeval)
 # print_node_info(looper1._input_node)
 #print_node_info(merge1)
 # print_node_info(text1)
-# print_node_info(looper1._output_node)
+print_node_info(looper1._output_node)
 
 # looper1out = looper1.eval()
-# print_node_info(looper1out)
+print_node_info(looper1)
 
 # print("looper evals to : ", looper1._output_node.eval())

@@ -1,7 +1,7 @@
 {
   "software": "Text Loom",
   "version": 0.01,
-  "timestamp": "2024-12-09T15:52:27.400333",
+  "timestamp": "2024-12-10T09:53:20.134208",
   "nodes": {
     "/looper1": {
       "_node_type": "looper",
@@ -135,6 +135,50 @@
       "_path": "/null_1",
       "_name": "null_1",
       "_is_internal": false,
+      "_connections": []
+    },
+    "/query_1": {
+      "_node_type": "query",
+      "_path": "/query_1",
+      "_name": "query_1",
+      "_is_internal": false,
+      "_parms": {
+        "limit": {
+          "_name": "limit",
+          "_type": "toggle",
+          "_node": "/query_1",
+          "_script_callback": "",
+          "_value": true
+        },
+        "response": {
+          "_name": "response",
+          "_type": "stringList",
+          "_node": "/query_1",
+          "_script_callback": "",
+          "_value": []
+        },
+        "llm_name": {
+          "_name": "llm_name",
+          "_type": "string",
+          "_node": "/query_1",
+          "_script_callback": "",
+          "_value": "Ollama"
+        },
+        "find_llm": {
+          "_name": "find_llm",
+          "_type": "button",
+          "_node": "/query_1",
+          "_script_callback": null,
+          "_value": ""
+        },
+        "respond": {
+          "_name": "respond",
+          "_type": "button",
+          "_node": "/query_1",
+          "_script_callback": null,
+          "_value": ""
+        }
+      },
       "_connections": []
     },
     "/looper1/inputNullNode_1": {
@@ -287,7 +331,7 @@
           "_type": "string",
           "_node": "/looper1/text44",
           "_script_callback": "",
-          "_value": " 4 Eggplants"
+          "_value": "There's a place in France where the ladies like to dance. "
         },
         "pass_through": {
           "_name": "pass_through",

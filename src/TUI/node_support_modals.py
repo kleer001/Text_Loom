@@ -42,6 +42,8 @@ class NodeTypeSelector(ModalScreen):
     def compose(self):
         with Vertical():
             type_list = sorted(self.node_types.keys())
+            type_list.remove('INPUT_NULL') #user won't ever need 
+            type_list.remove('OUTPUT_NULL') #user won't ever need 
             logger.debug(f"Available node types: {type_list}")
             yield OptionList(*type_list)
 

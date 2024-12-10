@@ -46,6 +46,7 @@ class TextNode(Node):
         #try:
         pass_through = self._parms["pass_through"].eval()
         text_string = self._parms["text_string"].eval()
+        print(f"text_string for {self.name()} is {text_string}")
 
         if pass_through:
             input_data = self.inputs()[0].output_node().eval() if self.inputs() else []
