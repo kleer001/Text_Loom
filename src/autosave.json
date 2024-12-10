@@ -1,7 +1,7 @@
 {
   "software": "Text Loom",
   "version": 0.01,
-  "timestamp": "2024-12-09T13:16:09.802821",
+  "timestamp": "2024-12-09T15:52:27.400333",
   "nodes": {
     "/looper1": {
       "_node_type": "looper",
