@@ -1,27 +1,45 @@
-from typing import ClassVar, Dict
+from dataclasses import dataclass
 from pathlib import Path
-import logging
-from datetime import datetime
-import os 
+from typing import ClassVar, Dict
+
 from textual import work
 from textual.app import App, ComposeResult
-from textual.screen import Screen, ModalScreen
 from textual.binding import Binding, BindingType
-from textual.containers import Container, ScrollableContainer
+from textual.css.query import NoMatches
 from textual.message import Message
 from textual.reactive import reactive
-from textual.widgets import Static, OptionList
-from textual.css.query import NoMatches
-from textual.containers import Grid, Horizontal, Vertical
-from textual.widgets import Static
-from textual import theme
-from textual.theme import Theme
+from textual.screen import Screen, ModalScreen
 
-from dataclasses import dataclass
-from enum import Enum, auto
+from core.base_classes import NodeEnvironment
+from core.flowstate_manager import save_flowstate, load_flowstate
+from core.global_store import GlobalStore
+from core.undo_manager import UndoManager
 
-from TUI.node_window import NodeWindow, NodeSelected, Node
+from TUI.global_window import GlobalWindow
+from TUI.help_window import HelpWindow
+from TUI.node_window import NodeWindow
+from TUI.output_window import OutputWindow
 from TUI.parameter_window import ParameterWindow
+from TUI.status_window import StatusWindow
+
+from TUI.file_screen import FileScreen
+from TUI.keymap_screen import KeymapScreen
+from TUI.main_layout import MainLayout, MainContent
+from TUI.clear_all_modal import ClearAllConfirmation
+
+from TUI.theme_collection import create_themes
+from TUI.theme_selector import ThemeSelector
+
+from TUI.logging_config import get_logger
+from TUI.modeline import ModeLine
+from TUI.screens_registry import (
+    Mode,
+    get_screen_registry,
+    MAIN_SCREEN,
+    FILE_SCREEN,
+    KEYMAP_SCREEN,
+)
+
 from TUI.messages import (
     OutputMessage,
     NodeAdded,
@@ -36,117 +54,12 @@ from TUI.messages import (
     FileLoaded,
 )
 
-from TUI.output_window import OutputWindow
-from TUI.status_window import StatusWindow
-from TUI.global_window import GlobalWindow
-from TUI.help_window import HelpWindow
-from TUI.file_screen import FileScreen
-from TUI.modeline import ModeLine
-from TUI.keymap_screen import KeymapScreen 
-
-from TUI.theme_collection import create_themes
-
-from core.base_classes import NodeEnvironment
-from core.flowstate_manager import save_flowstate, load_flowstate
-from core.global_store import GlobalStore
-from core.undo_manager import UndoManager
-
-from TUI.screens_registry import (
-    Mode, 
-    get_screen_registry,
-    MAIN_SCREEN,
-    FILE_SCREEN,
-    KEYMAP_SCREEN,
-)
-
-from TUI.logging_config import get_logger
-
 logger = get_logger('tui.main')
 
-from TUI.theme_manager import ThemeManager, Theme
-from textual.widgets import OptionList
-from textual.screen import ModalScreen
-from TUI.theme_selector import ThemeSelector
-    
 
 @dataclass
 class ModeChanged(Message):
     mode: Mode
-
-class MainLayout(Grid):
-    DEFAULT_CSS = """
-    MainLayout {
-        height: 100%;
-        width: 100%;
-        grid-size: 3 1;
-        grid-columns: 1fr 2fr 2fr;
-        grid-rows: 1fr;
-        grid-gutter: 0;
-        background: $background;
-        color: $foreground;
-    }
-    
-    Vertical {
-        height: 100%;
-        width: 100%;
-    }
-    """
-
-    def compose(self) -> ComposeResult:
-        yield NodeWindow()
-        yield ParameterWindow()
-        with Vertical():
-            yield GlobalWindow()
-            yield OutputWindow()
-            yield StatusWindow()
-            
-        
-
-    def on_node_selected(self, event: NodeSelected) -> None:
-        self.query_one(ParameterWindow).on_node_selected(event)
-
-    def on_output_message(self, message: OutputMessage) -> None:
-        logger.debug("MainLayout received output message")
-        output_window = self.query_one(OutputWindow)
-        output_window.on_output_message(message)
-
-class MainContent(Static):
-    def compose(self) -> ComposeResult:
-        yield MainLayout()
-
-    def on_mount(self) -> None:
-        self.query_one(NodeWindow).focus()
-
-class ClearAllConfirmation(ModalScreen[bool]):
-    DEFAULT_CSS = """
-    ClearAllConfirmation {
-        align: center middle;
-    }
-    Vertical {
-        width: 40;
-        height: auto;
-        border: solid $primary;
-        background: $accent;
-        color: $panel;
-        padding: 1;
-    }
-    Static {
-        text-align: center;
-        width: 100%;
-    }
-    """
-    
-    def compose(self):
-        with Vertical():
-            yield Static("Clear all nodes and globals?")
-            yield Static("This action cannot be undone")
-            yield Static("Y/N")
-            
-    def on_key(self, event):
-        if event.key.lower() == "y":
-            self.dismiss(True)
-        elif event.key.lower() == "n" or event.key == "escape":
-            self.dismiss(False)
 
 class TUIApp(App[None]):
 
@@ -428,10 +341,7 @@ class TUIApp(App[None]):
         except Exception as e:
             self.logger.error(f"Error refreshing after file load: {str(e)}", exc_info=True)
 
-
     def _check_autosave(self) -> None:
-        #print("We're not autosaving, sorry.")
-        #return #temporary disable
         from core.undo_manager import UndoManager
         self.logger.info("Starting autosave check")
         try:
