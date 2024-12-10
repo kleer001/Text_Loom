@@ -20,7 +20,7 @@ from TUI.network_visualizer import layout_network, render_layout, LayoutEntry
 from TUI.logging_config import get_logger
 from TUI.messages import (NodeAdded, NodeDeleted, ConnectionAdded, 
 ConnectionDeleted, NodeSelected, NodeTypeSelected, OutputMessage, FileLoaded)
-from TUI.node_support_modals import NodeTypeSelector, DeleteConfirmation, RenameInput
+from TUI.node_support_modals import NodeTypeSelector, DeleteConfirmation, RenameInput, NodeMoveDestinationSelected, NodeMoveSelector
 
 logger = get_logger('node')
 
@@ -77,6 +77,7 @@ class NodeWindow(ScrollableContainer):
         Binding("i", "start_input_connection", "Input Connection"),
         Binding("o", "start_output_connection", "Output Connection"),
         Binding("x", "start_delete_connection", "Delete Connection"),
+        Binding("m", "move_node", "Change Node Path"),
         Binding("e", "get_output", "Get Node Output"),
         Binding("escape", "cancel_connection", "Cancel Connection"),
         Binding("C", "cook_node", "Cook Node"),
@@ -142,7 +143,7 @@ class NodeWindow(ScrollableContainer):
                 
                 if output_data is None:
                     logger.debug("Node returned None output")
-                    self.parent.post_message(OutputMessage(["NO OUTPUT FROM NODE"]))
+                    self.parent.post_message(OutputMessage([f"NO OUTPUT FROM NODE {node}"]))
                     return
                     
                 if not isinstance(output_data, list):
@@ -358,6 +359,26 @@ class NodeWindow(ScrollableContainer):
         self._rename_input.focus()
         logger.info("RenameInput widget created and focused")
 
+    def action_move_node(self) -> None:
+            if not self._initialized or self._selected_line >= len(self._node_data):
+                return
+            
+            node_data = self._node_data[self._selected_line]
+            self.app.push_screen(NodeMoveSelector(node_data.path))
+            
+    def on_node_move_destination_selected(self, message: NodeMoveDestinationSelected) -> None:
+            if not self._initialized or self._selected_line >= len(self._node_data):
+                return
+                
+            try:
+                node_data = self._node_data[self._selected_line]
+                node = self._env.node_from_name(node_data.path)
+                if node:
+                    node.set_parent(message.destination_path)
+                    self._refresh_layout()
+            except Exception as e:
+                logger.error(f"Error moving node: {str(e)}", exc_info=True)
+
     def compose(self):
         yield self.content
 
@@ -560,3 +581,4 @@ class NodeWindow(ScrollableContainer):
             self._cooking = False
             self._cooking_node = None
             self._refresh_layout()
+            self.action_get_output()

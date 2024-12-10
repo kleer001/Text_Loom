@@ -1,8 +1,101 @@
 {
   "software": "Text Loom",
   "version": 0.01,
-  "timestamp": "2024-12-10T09:53:20.134208",
+  "timestamp": "2024-12-10T15:39:17.763200",
   "nodes": {
+    "/looper": {
+      "_node_type": "looper",
+      "_path": "/looper",
+      "_name": "looper",
+      "_is_internal": false,
+      "_parms": {
+        "min": {
+          "_name": "min",
+          "_type": "int",
+          "_node": "/looper",
+          "_script_callback": "",
+          "_value": 1
+        },
+        "max": {
+          "_name": "max",
+          "_type": "int",
+          "_node": "/looper",
+          "_script_callback": "",
+          "_value": 3
+        },
+        "step": {
+          "_name": "step",
+          "_type": "int",
+          "_node": "/looper",
+          "_script_callback": "",
+          "_value": 1
+        },
+        "max_from_input": {
+          "_name": "max_from_input",
+          "_type": "toggle",
+          "_node": "/looper",
+          "_script_callback": "",
+          "_value": false
+        },
+        "feedback_mode": {
+          "_name": "feedback_mode",
+          "_type": "toggle",
+          "_node": "/looper",
+          "_script_callback": "",
+          "_value": false
+        },
+        "use_test": {
+          "_name": "use_test",
+          "_type": "toggle",
+          "_node": "/looper",
+          "_script_callback": "",
+          "_value": false
+        },
+        "test_number": {
+          "_name": "test_number",
+          "_type": "int",
+          "_node": "/looper",
+          "_script_callback": "",
+          "_value": 1
+        },
+        "input_hook": {
+          "_name": "input_hook",
+          "_type": "string",
+          "_node": "/looper",
+          "_script_callback": "",
+          "_value": ""
+        },
+        "output_hook": {
+          "_name": "output_hook",
+          "_type": "string",
+          "_node": "/looper",
+          "_script_callback": "",
+          "_value": ""
+        },
+        "staging_data": {
+          "_name": "staging_data",
+          "_type": "stringList",
+          "_node": "/looper",
+          "_script_callback": "",
+          "_value": []
+        },
+        "timeout_limit": {
+          "_name": "timeout_limit",
+          "_type": "float",
+          "_node": "/looper",
+          "_script_callback": "",
+          "_value": 300.0
+        },
+        "data_limit": {
+          "_name": "data_limit",
+          "_type": "int",
+          "_node": "/looper",
+          "_script_callback": "",
+          "_value": 209715200
+        }
+      },
+      "_connections": []
+    },
     "/looper1": {
       "_node_type": "looper",
       "_path": "/looper1",
@@ -78,9 +171,9 @@
           "_node": "/looper1",
           "_script_callback": "",
           "_value": [
-            "[' 2 Apples ', ' 3 Cherries', ' 4 Eggplants', 'I have  4 Eggplants']",
-            "[' 2 Apples ', ' 3 Cherries', ' 4 Eggplants', 'I have  4 Eggplants']",
-            "[' 2 Apples ', ' 3 Cherries', ' 4 Eggplants', 'I have  4 Eggplants']"
+            "['12 Apples ', ' 3 Cherries', \"There's a place in France where the ladies like to dance. \", 'I have 12 Apples ']",
+            "['12 Apples ', ' 3 Cherries', \"There's a place in France where the ladies like to dance. \", 'I have  3 Cherries']",
+            "['12 Apples ', ' 3 Cherries', \"There's a place in France where the ladies like to dance. \", \"I have There's a place in France where the ladies like to dance. \"]"
           ]
         },
         "timeout_limit": {
@@ -100,134 +193,173 @@
       },
       "_connections": []
     },
-    "/file_in_1": {
-      "_node_type": "file_in",
-      "_path": "/file_in_1",
-      "_name": "file_in_1",
+    "/file_out": {
+      "_node_type": "file_out",
+      "_path": "/file_out",
+      "_name": "file_out",
       "_is_internal": false,
       "_parms": {
         "file_name": {
           "_name": "file_name",
           "_type": "string",
-          "_node": "/file_in_1",
+          "_node": "/file_out",
           "_script_callback": "",
-          "_value": "./input.txt"
+          "_value": "./output.txt"
         },
         "file_text": {
           "_name": "file_text",
           "_type": "string",
-          "_node": "/file_in_1",
+          "_node": "/file_out",
           "_script_callback": "",
           "_value": ""
         },
         "refresh": {
           "_name": "refresh",
           "_type": "button",
-          "_node": "/file_in_1",
+          "_node": "/file_out",
           "_script_callback": "self.node().refresh()",
           "_value": ""
-        }
-      },
-      "_connections": []
-    },
-    "/null_1": {
-      "_node_type": "null",
-      "_path": "/null_1",
-      "_name": "null_1",
-      "_is_internal": false,
-      "_connections": []
-    },
-    "/query_1": {
-      "_node_type": "query",
-      "_path": "/query_1",
-      "_name": "query_1",
-      "_is_internal": false,
-      "_parms": {
-        "limit": {
-          "_name": "limit",
+        },
+        "format_output": {
+          "_name": "format_output",
           "_type": "toggle",
-          "_node": "/query_1",
+          "_node": "/file_out",
           "_script_callback": "",
           "_value": true
-        },
-        "response": {
-          "_name": "response",
-          "_type": "stringList",
-          "_node": "/query_1",
-          "_script_callback": "",
-          "_value": []
-        },
-        "llm_name": {
-          "_name": "llm_name",
-          "_type": "string",
-          "_node": "/query_1",
-          "_script_callback": "",
-          "_value": "Ollama"
-        },
-        "find_llm": {
-          "_name": "find_llm",
-          "_type": "button",
-          "_node": "/query_1",
-          "_script_callback": null,
-          "_value": ""
-        },
-        "respond": {
-          "_name": "respond",
-          "_type": "button",
-          "_node": "/query_1",
-          "_script_callback": null,
-          "_value": ""
         }
       },
       "_connections": []
     },
-    "/looper1/inputNullNode_1": {
+    "/text": {
+      "_node_type": "text",
+      "_path": "/text",
+      "_name": "text",
+      "_is_internal": false,
+      "_parms": {
+        "text_string": {
+          "_name": "text_string",
+          "_type": "string",
+          "_node": "/text",
+          "_script_callback": "",
+          "_value": ""
+        },
+        "pass_through": {
+          "_name": "pass_through",
+          "_type": "toggle",
+          "_node": "/text",
+          "_script_callback": "",
+          "_value": true
+        }
+      },
+      "_connections": []
+    },
+    "/null": {
+      "_node_type": "null",
+      "_path": "/null",
+      "_name": "null",
+      "_is_internal": false,
+      "_connections": []
+    },
+    "/looper/inputNullNode": {
       "_node_type": "input_null",
-      "_path": "/looper1/inputNullNode_1",
-      "_name": "inputNullNode_1",
+      "_path": "/looper/inputNullNode",
+      "_name": "inputNullNode",
       "_is_internal": true,
       "_parms": {
         "in_node": {
           "_name": "in_node",
           "_type": "string",
-          "_node": "/looper1/inputNullNode_1",
+          "_node": "/looper/inputNullNode",
           "_script_callback": "",
-          "_value": "/looper1"
+          "_value": "/looper"
         },
         "in_data": {
           "_name": "in_data",
           "_type": "stringList",
-          "_node": "/looper1/inputNullNode_1",
+          "_node": "/looper/inputNullNode",
           "_script_callback": "",
           "_value": []
         },
         "feedback_mode": {
           "_name": "feedback_mode",
           "_type": "toggle",
-          "_node": "/looper1/inputNullNode_1",
+          "_node": "/looper/inputNullNode",
           "_script_callback": "",
           "_value": false
         }
       },
       "_connections": []
     },
-    "/looper1/outputNullNode_1": {
+    "/looper/outputNullNode": {
       "_node_type": "output_null",
-      "_path": "/looper1/outputNullNode_1",
-      "_name": "outputNullNode_1",
+      "_path": "/looper/outputNullNode",
+      "_name": "outputNullNode",
       "_is_internal": true,
       "_parms": {
         "out_data": {
           "_name": "out_data",
           "_type": "stringList",
-          "_node": "/looper1/outputNullNode_1",
+          "_node": "/looper/outputNullNode",
           "_script_callback": "",
           "_value": []
         },
         "feedback_mode": {
           "_name": "feedback_mode",
           "_type": "toggle",
-          "_node": "/looper1/outputNullNode_1",
+          "_node": "/looper/outputNullNode",
+          "_script_callback": "",
+          "_value": false
+        }
+      },
+      "_connections": []
+    },
+    "/looper1/inputNullNode": {
+      "_node_type": "input_null",
+      "_path": "/looper1/inputNullNode",
+      "_name": "inputNullNode",
+      "_is_internal": true,
+      "_parms": {
+        "in_node": {
+          "_name": "in_node",
+          "_type": "string",
+          "_node": "/looper1/inputNullNode",
+          "_script_callback": "",
+          "_value": "/looper1"
+        },
+        "in_data": {
+          "_name": "in_data",
+          "_type": "stringList",
+          "_node": "/looper1/inputNullNode",
+          "_script_callback": "",
+          "_value": []
+        },
+        "feedback_mode": {
+          "_name": "feedback_mode",
+          "_type": "toggle",
+          "_node": "/looper1/inputNullNode",
+          "_script_callback": "",
+          "_value": false
+        }
+      },
+      "_connections": []
+    },
+    "/looper1/outputNullNode": {
+      "_node_type": "output_null",
+      "_path": "/looper1/outputNullNode",
+      "_name": "outputNullNode",
+      "_is_internal": true,
+      "_parms": {
+        "out_data": {
+          "_name": "out_data",
+          "_type": "stringList",
+          "_node": "/looper1/outputNullNode",
+          "_script_callback": "",
+          "_value": []
+        },
+        "feedback_mode": {
+          "_name": "feedback_mode",
+          "_type": "toggle",
+          "_node": "/looper1/outputNullNode",
           "_script_callback": "",
           "_value": false
         }
@@ -236,7 +368,7 @@
         {
           "input_index": 0,
           "output_node_path": "/looper1/text1",
-          "input_node_path": "/looper1/outputNullNode_1",
+          "input_node_path": "/looper1/outputNullNode",
           "output_index": 0
         }
       ]
@@ -289,7 +421,7 @@
           "_type": "toggle",
           "_node": "/looper1/merge1",
           "_script_callback": "",
-          "_value": false
+          "_value": true
         },
         "insert_string": {
           "_name": "insert_string",
@@ -391,7 +523,6 @@
     }
   },
   "globals": {
-    "AB": 6,
-    "FOO": "apples"
+    "AB": 6
   }
 }

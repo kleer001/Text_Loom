@@ -718,16 +718,21 @@ class Node(MobileItem):
         from core.undo_manager import UndoManager
         
         base_name = node_name or f"{node_type.value}"
-        if re.search(r'_?\d+$', base_name):
+        new_path = f"{parent_path.rstrip('/')}/{base_name}"
+        
+        if new_path not in NodeEnvironment.nodes:
             new_name = base_name
         else:
-            counter = 1
-            while True:
-                new_name = f"{base_name}_{counter}"
-                new_path = f"{parent_path.rstrip('/')}/{new_name}"
-                if new_path not in NodeEnvironment.nodes:
-                    break
-                counter += 1
+            if re.search(r'_?\d+$', base_name):
+                new_name = base_name
+            else:
+                counter = 1
+                while True:
+                    new_name = f"{base_name}_{counter}"
+                    new_path = f"{parent_path.rstrip('/')}/{new_name}"
+                    if new_path not in NodeEnvironment.nodes:
+                        break
+                    counter += 1
                     
         new_path = f"{parent_path.rstrip('/')}/{new_name}"
         UndoManager().push_state(f"Create node: {new_path}")

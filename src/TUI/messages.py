@@ -36,7 +36,7 @@ class ParameterChanged(Message):
         self.param_type = param_type
         super().__init__()
 
-#NODE CREATION
+#NODE MANAGEMENT
 class NodeAdded(Message):
     def __init__(self, node_path: str, node_type: str) -> None:
         self.node_path = node_path
@@ -46,6 +46,11 @@ class NodeAdded(Message):
 class NodeDeleted(Message):
     def __init__(self, node_path: str) -> None:
         self.node_path = node_path
+        super().__init__()
+
+class NodeMoveDestinationSelected(Message):
+    def __init__(self, destination_path: str) -> None:
+        self.destination_path = destination_path
         super().__init__()
 
 #CONNECTIONS

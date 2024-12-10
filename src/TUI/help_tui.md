@@ -10,8 +10,17 @@ x: Delete connection
 i: Start input connection
 o: Start output connection
 e: Get node output
+m: Move node path
 Esc: Cancel connection
 C: Cook node
+ctrl+o: Open File
+ctrl+s: Quick Save
+ctrl+d: Save As
+ctrl+z: Undo
+ctrl+y: Redo
+ctrl+q: Quit
+ctrl+w: Clear All
+ctrl+l: Load Theme
 
 [PARAMETER]
 j/k: Navigate parameters
