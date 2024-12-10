@@ -19,7 +19,7 @@ class MainLayout(Grid):
         height: 100%;
         width: 100%;
         grid-size: 3 1;
-        grid-columns: 1fr 2fr 2fr;
+        grid-columns: 3fr 3fr 2fr;
         grid-rows: 1fr;
         grid-gutter: 0;
         background: $background;

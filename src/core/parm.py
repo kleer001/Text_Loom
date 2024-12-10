@@ -51,11 +51,12 @@ class Parm:
         
         
         # ~ Simple loop number ~
-        # Matches $$N - represents the current loop number
+        # Matches $$N - represents the current loop number and imports the list item of 
+        # that number
         #
         # MATCH 4
         #
-        'NLOOP': r"\$\$N",
+        'NLOOPIN': r"\$\$N",
         
         # ~ Math loop number ~
         # Matches $$M followed by an optional arithmetic operation and a number
@@ -211,7 +212,7 @@ class Parm:
             if invalid_keys:
                 raise ValueError(f"Invalid pattern key(s): {', '.join(invalid_keys)}")
             pattern_return = '|'.join(patterns[key] for key in selected_patterns)
-            #print("returning pattern ",pattern_return)
+            print("returning pattern ",pattern_return)
             return pattern_return
 
     def eval(self) -> Any:
@@ -223,8 +224,10 @@ class Parm:
             return float(self._value)
         elif self._type == ParameterType.STRING:
             if self.is_expression():
+                #print(f"CONTAINS EXPRESSION {self.raw_value()}")
                 return self._expand_and_evaluate(str(self._value))
             else:
+                #print(f"DOES NOT CONTAIN EXPRESSION  {self.raw_value()}")
                 return str(self._value)
         elif self._type == ParameterType.TOGGLE:
             return bool(self._value)
@@ -383,7 +386,7 @@ class Parm:
                 if op in ops:
                     result = ops[op](result, value)
                 else:
-                    #print(f"$$ Warning: Invalid operator: {op}")
+                    print(f"$$ Warning: Invalid operator: {op}")
                     return loop_number
             
             return result
@@ -393,14 +396,14 @@ class Parm:
             loop_number = loop_manager.get_current_loop(self.node().path()) - 1
             
             if not self.node().inputs():
-                #print(f"$$ Warning: No valid input list found for {expression}")
+                print(f"$$ Warning: No valid input list found for {expression}")
                 return expression
             
             input_list = self.node().inputs()[0].output_node().eval()
             list_length = len(input_list)
             
             if list_length == 0:
-                #print(f"$$ Warning: Empty input list for {expression}")
+                print(f"$$ Warning: Empty input list for {expression}")
                 return expression
             
             if match.group(0):
@@ -409,12 +412,12 @@ class Parm:
             elif match.group(1):  # $$M expression
                 arithmetic_result = evaluate_arithmetic(match.group(1), loop_number)
                 index = arithmetic_result % list_length
-                #print(f"$$ Resolved index for {expression}: {index} (Arithmetic result: {arithmetic_result})")
+                print(f"$$ Resolved index for {expression}: {index} (Arithmetic result: {arithmetic_result})")
             elif match.group(2):  # $$<number> expression
                 index = (int(match.group(2)) - 1) % list_length
-                #print(f"$$ Resolved index for {expression}: {index}")
+                print(f"$$ Resolved index for {expression}: {index}")
             else:
-                #print(f"$$ Warning: Malformed $$ expression: {expression}")
+                print(f"$$ Warning: Malformed $$ expression: {expression}")
                 return expression
             
             replacement_value = str(input_list[index])

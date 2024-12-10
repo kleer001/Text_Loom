@@ -104,7 +104,7 @@ class TUIApp(App[None]):
     }
     
     NodeWindow {
-        width: 1fr;
+        width: 3fr;
         background: $surface;
         border: solid $primary;
         color: $foreground;

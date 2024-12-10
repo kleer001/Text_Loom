@@ -14,7 +14,7 @@ text1 = Node.create_node(NodeType.TEXT, node_name="text1", parent_path="/looper1
 merge1 = Node.create_node(NodeType.MERGE, node_name="merge1", parent_path="/looper1")
 
 # Set the parameters for text nodes
-text1._parms["text_string"].set("Filler Text 1")
+text1._parms["text_string"].set("Filler Text $$N")
 # Set merge node parameter
 
 # Connect nodes
