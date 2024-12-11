@@ -563,7 +563,7 @@ class NodeWindow(ScrollableContainer):
             
             # Use regular worker for sync function
             def do_eval():
-                return node.eval()
+                return node.eval(force=True)
                 
             worker = self.app.run_worker(do_eval, thread=True)
             result = await worker.wait()

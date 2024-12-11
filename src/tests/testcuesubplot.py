@@ -8,7 +8,7 @@ from core.global_store import GlobalStore
 
 # Initialize GlobalStore
 globalstore = GlobalStore()
-loops_to_go = 9
+loops_to_go = 3
 globalstore.set("ACTORS", loops_to_go)
 
 # Create nodes

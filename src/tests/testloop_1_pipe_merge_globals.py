@@ -4,7 +4,7 @@ sys.path.append(parent_dir)
 
 from core.base_classes import NodeEnvironment, Node, NodeType
 from core.print_node_info import print_node_info
-from core.nodes.looper_node import *
+from core.looper_node import *
 from core.global_store import GlobalStore
 
 globalstore = GlobalStore()

@@ -131,10 +131,10 @@ class InputNullNode(Node):
     def _calculate_hash(self, content: str) -> str:
         return hashlib.md5(content.encode()).hexdigest()
 
-    def eval(self) -> List[str]:
-        if self.state() != NodeState.UNCHANGED:
-            self.cook()
-        return self._output
+    # def eval(self) -> List[str]:
+    #     if self.state() != NodeState.UNCHANGED:
+    #         self.cook()
+    #     return self._output
 
     def input_names(self) -> Dict[str, str]:
         return {}  # This node has no inputs

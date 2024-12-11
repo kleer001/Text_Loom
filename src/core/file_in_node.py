@@ -68,6 +68,7 @@ class FileInNode(Node):
             new_hash = self._calculate_file_hash(content)
             if force or new_hash != self._file_hash:
                 self._parms["file_text"].set(content)
+                self._output = content
                 self._file_hash = new_hash
 
             self.set_state(NodeState.UNCHANGED)
@@ -124,7 +125,7 @@ class FileInNode(Node):
     def _calculate_file_hash(self, content: str) -> str:
         return hashlib.md5(content.encode()).hexdigest()
 
-    def eval(self) -> List[str]:
-        if self.state() != NodeState.UNCHANGED:
-            self.cook()
-        return [self._parms["file_text"].eval()]
+    # def eval(self) -> List[str]:
+    #     if self.state() != NodeState.UNCHANGED:
+    #         self.cook()
+    #     return [self._parms["file_text"].eval()]

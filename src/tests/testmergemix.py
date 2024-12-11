@@ -4,7 +4,7 @@ sys.path.append(parent_dir)
 
 from core.base_classes import NodeEnvironment, Node, NodeType
 from core.print_node_info import print_node_info
-from core.nodes.looper_node import *
+from core.looper_node import *
 
 
 # Create nodes
@@ -27,7 +27,7 @@ merge1.set_input(2, text3)
 #print_node_info(text2)
 
 pass1 = merge1.eval()
-print(pass1)
+print(f"PASS1: \n{pass1}")
 print_node_info(merge1)
 
 print("\n \n")

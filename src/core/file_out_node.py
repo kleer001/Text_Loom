@@ -90,12 +90,11 @@ class FileOutNode(Node):
 
             content = "\n\n\n".join(input_data)
             if (self._parms["format_output"].eval()):
-                # overly manual, but what people would want
                 content = content.replace("[", "").replace("]", "")
                 content = content.encode('utf-8').decode('unicode_escape')
 
             self._parms["file_text"].set(content)
-
+            self._output = content
             full_file_path = self._parms["file_name"].eval()
 
             new_hash = self._calculate_file_hash(content)
@@ -150,7 +149,7 @@ class FileOutNode(Node):
     def _calculate_file_hash(self, content: str) -> str:
         return hashlib.md5(content.encode()).hexdigest()
 
-    def eval(self) -> List[str]:
-        if self.state() != NodeState.UNCHANGED:
-            self.cook()
-        return [self._parms["file_text"].eval()]
+    # def eval(self) -> List[str]:
+    #     if self.state() != NodeState.UNCHANGED:
+    #         self.cook()
+    #     return [self._parms["file_text"].eval()]

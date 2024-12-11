@@ -28,7 +28,8 @@ class TextNode(Node):
         # Initialize parameters
         self._parms: Dict[str, Parm] = {
             "text_string": Parm("text_string", ParameterType.STRING, self),
-            "pass_through": Parm("pass_through", ParameterType.TOGGLE, self)
+            "pass_through": Parm("pass_through", ParameterType.TOGGLE, self),
+            "prefix": Parm("prefix", ParameterType.TOGGLE, self),
         }
 
         # Set default value
@@ -36,23 +37,27 @@ class TextNode(Node):
         self._parms["pass_through"].set(True)
     
     def _internal_cook(self, force: bool = False) -> None:
-        
         self.set_state(NodeState.COOKING)
         self._cook_count += 1
         start_time = time.time()
 
         self._is_time_dependent = self._parms["text_string"].is_expression()
         print("🍳 cooking", self.name())
-        #try:
+
         pass_through = self._parms["pass_through"].eval()
         text_string = self._parms["text_string"].eval()
+        prefix = self._parms["prefix"].eval()
         print(f"text_string for {self.name()} is {text_string}")
 
         if pass_through:
             input_data = self.inputs()[0].output_node().eval() if self.inputs() else []
             if not isinstance(input_data, list) or not all(isinstance(item, str) for item in input_data):
                 raise TypeError("Input data must be a list of strings")
-            result = input_data + [text_string]
+            
+            if prefix:
+                result = [f"{text_string}{item}" for item in input_data]
+            else:
+                result = input_data + [text_string]
         else:
             result = [text_string]
 
@@ -61,7 +66,7 @@ class TextNode(Node):
         self._input_hash = self._calculate_hash(str(input_data)) if pass_through else None
         self.set_state(NodeState.UNCHANGED)
 
-        self._last_cook_time = (time.time() - start_time) * 1000  # Convert to milliseconds
+        self._last_cook_time = (time.time() - start_time) * 1000
 
     def input_names(self) -> Dict[str, str]:
         return {"input": "Input Text"}
@@ -83,7 +88,8 @@ class TextNode(Node):
         try:
             pass_through = self._parms["pass_through"].raw_value()
             text_string = self._parms["text_string"].raw_value()
-            new_param_hash = self._calculate_hash(text_string)
+            prefix = self._parms["prefix"].raw_value()
+            new_param_hash = self._calculate_hash(text_string + str(prefix))
 
             if pass_through:
                 input_data = self.inputs()[0].output_node().eval() if self.inputs() else []
@@ -94,10 +100,10 @@ class TextNode(Node):
         except Exception:
             return True
 
-    def eval(self) -> List[str]:
-        if self.state() != NodeState.UNCHANGED or self.needs_to_cook():
-            self.cook()
-        return self._output
+    # def eval(self) -> List[str]:
+    #     if self.state() != NodeState.UNCHANGED or self.needs_to_cook() or self._is_time_dependent() is True:
+    #         self.cook()
+    #     return self._output
     
     def _calculate_hash(self, content: str) -> str:
         return hashlib.md5(content.encode()).hexdigest()

@@ -91,7 +91,7 @@ class QueryNode(Node):
     def output_data_types(self) -> Dict[str, str]:
         return {"output": "List[str]"}
 
-    def eval(self) -> List[str]:
-        if self.state() != NodeState.UNCHANGED:
+    def eval(self, force: bool = False) -> List[str]:
+        if self.state() != NodeState.UNCHANGED or force is True:
             self.cook()
         return self._output

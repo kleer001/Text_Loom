@@ -73,6 +73,7 @@ class TUIApp(App[None]):
         Binding("ctrl+s", "quick_save", "Quick Save"),
         Binding("ctrl+d", "save_as", "Save As"),
         Binding("ctrl+e", "switch_mode('HELP')", "Help Mode"),
+        Binding("ctrl+u", "switch_mode('OUTPUT')", "Output Mode"),
         Binding("ctrl+k", "switch_mode('KEYMAP')", "Keymap Mode"),
         Binding("ctrl+t", "switch_mode('STATUS')", "Status Mode"),
         Binding("ctrl+l", "select_theme", "Load Theme"),

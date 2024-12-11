@@ -1,7 +1,7 @@
 {
   "software": "Text Loom",
   "version": 0.01,
-  "timestamp": "2024-12-11T13:18:50.931706",
+  "timestamp": "2024-12-11T11:59:20.710013",
   "nodes": {
     "/text": {
       "_node_type": "text",
@@ -82,43 +82,6 @@
           "input_index": 0,
           "output_node_path": "/text",
           "input_node_path": "/query",
-          "output_index": 0
-        }
-      ]
-    },
-    "/make_list": {
-      "_node_type": "make_list",
-      "_path": "/make_list",
-      "_name": "make_list",
-      "_is_internal": false,
-      "_parms": {
-        "limit": {
-          "_name": "limit",
-          "_type": "toggle",
-          "_node": "/make_list",
-          "_script_callback": "",
-          "_value": false
-        },
-        "max_list": {
-          "_name": "max_list",
-          "_type": "int",
-          "_node": "/make_list",
-          "_script_callback": "",
-          "_value": 5
-        },
-        "refresh": {
-          "_name": "refresh",
-          "_type": "button",
-          "_node": "/make_list",
-          "_script_callback": null,
-          "_value": ""
-        }
-      },
-      "_connections": [
-        {
-          "input_index": 0,
-          "output_node_path": "/query",
-          "input_node_path": "/make_list",
           "output_index": 0
         }
       ]
