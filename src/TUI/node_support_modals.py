@@ -51,7 +51,7 @@ class NodeTypeSelector(ModalScreen):
         'n': 'FILE_IN',
         'o': 'FILE_OUT',
         'l': 'LOOPER',
-        'm': 'MAKE_LIST',
+        'M': 'MAKE_LIST',
         'e': 'MERGE',
         'u': 'NULL',
         'q': 'QUERY',
@@ -99,7 +99,9 @@ class NodeTypeSelector(ModalScreen):
             yield option_list
 
     def on_key(self, event) -> None:
-        key = event.key.lower()
+        event.prevent_default()
+        #key = event.key.lower()
+        key = event.key
         if key in self.HOTKEYS:
             selected_type = self.HOTKEYS[key]
             logger.debug(f"Hotkey {key} pressed, selecting node type: {selected_type}")

@@ -4,7 +4,7 @@ sys.path.append(parent_dir)
 
 from core.base_classes import NodeEnvironment, Node, NodeType
 from core.print_node_info import print_node_info
-from core.nodes.looper_node import *
+from core.looper_node import *
 
 
 # Create nodes
@@ -41,7 +41,7 @@ looper1._output_node.set_input(0, text4, "output")
 print_node_info(text1)
 print_node_info(text2)
 print_node_info(merge1)
-print("merged output = ",merge1._merged_output)
+print("merged output = ",merge1._output)
 print_node_info(text4)
 print_node_info(looper1._input_node)
 print_node_info(looper1._output_node)
@@ -52,7 +52,7 @@ loopeval = looper1.eval()
 
 
 print_node_info(merge1)
-print("merged output = ", merge1._merged_output)
+print("merged output = ", merge1._output)
 print_node_info(text4)
 print_node_info(looper1._input_node)
 print_node_info(looper1._output_node)

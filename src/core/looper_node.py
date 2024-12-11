@@ -166,13 +166,14 @@ class LooperNode(Node):
         
         accumulated = self._output_node._parms["out_data"].eval()
         self._parms["staging_data"].set(accumulated)
+        self._output = accumulated
         loop_manager.set_loop(self.path(), value=None)
         print("∞ loop: end of loop reached, cleaning up\n")
 
-    def eval(self) -> List[str]:
-        if self.state() != NodeState.UNCHANGED:
-            self.cook()
-        return self._parms["staging_data"].eval()
+    # def eval(self) -> List[str]:
+    #     if self.state() != NodeState.UNCHANGED:
+    #         self.cook()
+    #     return self._parms["staging_data"].eval()
 
     def input_names(self) -> Dict[str, str]:
         return {"input": "Input Data"}

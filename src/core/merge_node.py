@@ -88,7 +88,7 @@ class MergeNode(Node):
             for num_in, in_d in enumerate(input_data):
                 insert_string = insert_string_raw.replace("N", str(num_in + 1))
                 next_item = "\n" + insert_string + "\n" + in_d
-                print("NEXT ITEM ", next_item)
+                #print("NEXT ITEM ", next_item)
                 temp_data.append(next_item)
             input_data = temp_data
         single_string = self._parms["single_string"].eval()
@@ -112,10 +112,10 @@ class MergeNode(Node):
     def output_data_types(self) -> Dict[str, str]:
         return {"output": "List[str]"}
 
-    def eval(self) -> List[str]:
-        if self.state() != NodeState.UNCHANGED:
-            self.cook()
-        return self._output
+    # def eval(self) -> List[str]:
+    #     if self.state() != NodeState.UNCHANGED:
+    #         self.cook()
+    #     return self._output
 
     def needs_to_cook(self) -> bool:
         if super().needs_to_cook():

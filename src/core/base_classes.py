@@ -149,11 +149,8 @@ class NodeEnvironment:
     def remove_node_from_dictionary(cls, node_path: str) -> None:
         if node_path == "/":
             return
-        nodes_to_remove = [path for path in cls.nodes.keys() if path.startswith(node_path)]
-        for path in nodes_to_remove:
-            cls.nodes.pop(path)
+        cls.nodes.pop(node_path)
 
-    @classmethod
     @classmethod
     def flush_all_nodes(cls):
         nodes_to_destroy = [(path, cls.nodes[path]) for path in cls.nodes.keys() if path != "/"]
@@ -696,50 +693,45 @@ class Node(MobileItem):
         """Returns a tuple of the list of nodes it's connected to on its output."""
         return tuple(self._children)
 
+    @classmethod
+    def sanitize_node_name(cls, name: Optional[str]) -> Optional[str]:
+        if not name:
+            return None
+        sanitized = re.sub(r'[^a-zA-Z0-9_]', '', name)
+        return sanitized if sanitized else None
 
     @classmethod
     def create_node(cls, node_type: NodeType, node_name: Optional[str] = None, parent_path: str = "/") -> "Node":
-        """
-        Creates a node of the specified type.
-
-        Args:
-            node_type (NodeType): The type of node to create.
-            node_name (Optional[str]): The name for the new node. If None, a default name will be generated.
-            parent_path (str): The path where the new node should be created. Defaults to root "/".
-
-        Returns:
-            Node: The newly created node.
-
-        Raises:
-            ImportError: If the module for the specified node type cannot be imported.
-            AttributeError: If the node class cannot be found in the imported module.
-            ValueError: If the specified parent path does not exist.
-        """
         from core.undo_manager import UndoManager
         
-        base_name = node_name or f"{node_type.value}"
+        sanitized_name = cls.sanitize_node_name(node_name)
+        base_name = f"{node_type.value}_1" if sanitized_name is None else sanitized_name
         new_path = f"{parent_path.rstrip('/')}/{base_name}"
         
         if new_path not in NodeEnvironment.nodes:
             new_name = base_name
         else:
-            if re.search(r'_?\d+$', base_name):
-                new_name = base_name
+            number_match = re.search(r'_(\d+)$', base_name)
+            if number_match:
+                prefix = base_name[:number_match.start()]
+                counter = int(number_match.group(1)) + 1
             else:
+                prefix = base_name
                 counter = 1
-                while True:
-                    new_name = f"{base_name}_{counter}"
-                    new_path = f"{parent_path.rstrip('/')}/{new_name}"
-                    if new_path not in NodeEnvironment.nodes:
-                        break
-                    counter += 1
-                    
+                
+            while True:
+                new_name = f"{prefix}_{counter}"
+                new_path = f"{parent_path.rstrip('/')}/{new_name}"
+                if new_path not in NodeEnvironment.nodes:
+                    break
+                counter += 1
+                
         new_path = f"{parent_path.rstrip('/')}/{new_name}"
         UndoManager().push_state(f"Create node: {new_path}")
         
         if parent_path != "/" and not NodeEnvironment.node_exists(parent_path):
             raise ValueError(f"Parent path '{parent_path}' does not exist.")
-
+        
         try:
             module_name = f"core.{node_type.value}_node"
             module = importlib.import_module(module_name)
@@ -1054,11 +1046,11 @@ class Node(MobileItem):
                     result.append((input_node, output_index, input_index))
         return result
 
-    def eval(self):
-        # implement in class as a simple return of the
-        # state of the self._output after previous cooking
-        
-        pass
+    
+    def eval(self, force: bool = False) -> List[str]:
+        if self.state() != NodeState.UNCHANGED or force is True or self._is_time_dependent is True:
+            self.cook()
+        return self._output
 
     def get_output(self):
         #simple output regardless of change

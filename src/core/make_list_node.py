@@ -73,10 +73,10 @@ class MakeListNode(Node):
     def output_data_types(self) -> Dict[str, str]:
         return {"output": "List[str]"}
 
-    def eval(self) -> List[str]:
-        if self.state() != NodeState.UNCHANGED:
-            self.cook()
-        return self._output
+    # def eval(self) -> List[str]:
+    #     if self.state() != NodeState.UNCHANGED:
+    #         self.cook()
+    #     return self._output
 
     def needs_to_cook(self) -> bool:
         if super().needs_to_cook():
