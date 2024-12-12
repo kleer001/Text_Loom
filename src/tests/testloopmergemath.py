@@ -31,7 +31,7 @@ text4 = Node.create_node(NodeType.TEXT, node_name="text4", parent_path="/looper1
 text1._parms["text_string"].set("Filler Text 1")
 text2._parms["text_string"].set("Filler Text 2")
 #text3._parms["text_string"].set("Filler Text 3")
-text4._parms["text_string"].set("Text4. Input text: $$M*$FOO+$BAR")
+text4._parms["text_string"].set("Text4. Input text: $$N*$FOO+$BAR")
 
 # Set merge node parameter
 merge1._parms["single_string"].set(False)

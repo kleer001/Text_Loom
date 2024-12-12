@@ -39,17 +39,14 @@ class OutputNullNode(Node):
         self._parms["feedback_mode"].set(False)
         
     def _internal_cook(self) -> None:
-        """
-        Core cooking logic, separated from dependency management.
-        This method handles the actual processing of data for this node.
-        """
         self.set_state(NodeState.COOKING)
         self._cook_count += 1
         start_time = time.time()
 
         try:
-            # Get input data from connected nodes
-            input_data = self.inputs()[0].output_node().eval() if self.inputs() else None
+            # Don't eval() again - just get the output directly since dependencies are already cooked
+            input_node = self.inputs()[0].output_node() if self.inputs() else None
+            input_data = input_node.get_output() if input_node else None
             print(f"Input data for outputnull:", input_data)
 
             if input_data is None:
@@ -59,17 +56,23 @@ class OutputNullNode(Node):
             elif not isinstance(input_data, list) or not all(isinstance(item, str) for item in input_data):
                 raise TypeError("Input data must be a list of strings")
             else:
-                new_data = self._parms["out_data"].raw_value().append(input_data)
-                if(self._parms["feedback_mode"].eval() is True):
-                    new_data = self._parms["out_data"].set(input_data)
+                current_data = self._parms["out_data"].raw_value()
+                if isinstance(current_data, list):
+                    if self._parms["feedback_mode"].eval():
+                        new_data = input_data
+                    else:
+                        current_data.append(input_data)
+                        new_data = current_data
+                else:
+                    new_data = [input_data]
+                
                 self._parms["out_data"].set(new_data)
                 self._output = input_data
-                print ("from- ",self.name()," set output: ",self._output)
+                print("from-", self.name(), " set output:", self._output)
 
             self.set_state(NodeState.UNCHANGED)
 
         except Exception as e:
-            #self.add_error(f"Error in NullNode cook: {str(e)}")
             self.set_state(NodeState.UNCOOKED)
 
         self._last_cook_time = (time.time() - start_time) * 1000

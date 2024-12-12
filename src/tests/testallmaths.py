@@ -7,7 +7,7 @@ from core.global_store import GlobalStore
 from core.print_node_info import print_node_info
 
 globalstore = GlobalStore()
-loops = 3
+loops = 2
 globalstore.set("TEST", loops)
 
 text_list1 = Node.create_node(NodeType.TEXT, node_name="text_list1")
@@ -27,13 +27,10 @@ looper._parms["max"].set(loops)
 
 text_patterns = Node.create_node(NodeType.TEXT, node_name="text_patterns", parent_path="/looper")
 text_patterns._parms["text_string"].set(
-    "Global var test: ${$TEST}\n"
+    "Global var test: $TEST\n"
+    "Global math test: $TEST+4\n"
     "Simple loop number ($$N): $$N\n"
-    "Math loop add ($$M+1): $$M+1\n"
-    "Math loop subtract ($$M-1): $$M-1\n"
-    "Math loop multiply ($$M*2): $$M*2\n"
-    "Math loop divide ($$M/2): $$M/2\n"
-    "Math loop modulo ($$M%2): $$M%2\n"
+    "Math loop add ($$N+1): $$N+1\n"
     "Explicit number ($$1): $$1\n"
     "Backtick test: `len('test') + 1`\n"
     "Loop number ($$L): $$L"
@@ -49,8 +46,12 @@ looper.set_input(0, merge1)
 text_patterns.set_input(0, looper._input_node)
 looper._output_node.set_input(0, text_patterns)
 
-output = looper.eval()
-print(f"**Output=\n\n{output}")
+#print_node_info(merge1)
+inputeval = looper._input_node.eval()
+print(inputeval)
+print_node_info(looper._input_node)
+#output = looper.eval()
+#print(f"**Output=\n\n{output}")
 
-print_node_info(text_patterns)
-print_node_info(looper)
+#print_node_info(text_patterns)
+#print_node_info(looper)

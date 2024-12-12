@@ -34,7 +34,7 @@ merge1 = Node.create_node(NodeType.MERGE, node_name="merge1")
 merge1._parms["single_string"].set(False)
 
 text_prompt = Node.create_node(NodeType.TEXT, node_name="text_prompt", parent_path="/looper1")
-text_prompt._parms["text_string"].set("Given the character of $$N, in Comedia Del Arte, please say in a tweet what they think of $$M+$ACTORS.")
+text_prompt._parms["text_string"].set("Given the character of $$N, in Comedia Del Arte, please say in a tweet what they think of $$N+$ACTORS.")
 text_prompt._parms["pass_through"].set(False)
 
 full_prompt = Node.create_node(NodeType.QUERY, node_name="full_prompt")
