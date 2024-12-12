@@ -332,8 +332,7 @@ class Parm:
             if self._check_script_safety(script):
                 safe_globals = self.create_safe_globals()
                 safe_locals = {}
-                exec_return = eval(script, safe_globals, safe_locals)
-                #print("EVAL ", script," RETURNS ", exec_return)
+                exec_return = str(eval(script, safe_globals, safe_locals))  # Convert to string
                 return exec_return
             else:
                 raise ValueError("Script contains unsafe operations")

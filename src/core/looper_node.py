@@ -2,6 +2,7 @@ import time
 import sys
 import re
 from typing import List, Dict, Any, Optional
+import traceback
 
 from core.base_classes import Node, NodeType, NodeState, NodeEnvironment
 from core.parm import Parm, ParameterType
@@ -113,7 +114,7 @@ class LooperNode(Node):
         try:
             self._perform_iterations()
         except Exception as e:
-            self.add_error(f"Error during iteration: {str(e)}")
+            self.add_error(f"Error during iteration: {traceback.format_exc().replace('\\n', '\n')}")
             self.set_state(NodeState.UNCOOKED)
 
 

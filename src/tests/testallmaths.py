@@ -4,6 +4,7 @@ sys.path.append(parent_dir)
 
 from core.base_classes import NodeEnvironment, Node, NodeType
 from core.global_store import GlobalStore
+from core.print_node_info import print_node_info
 
 globalstore = GlobalStore()
 loops = 3
@@ -50,3 +51,6 @@ looper._output_node.set_input(0, text_patterns)
 
 output = looper.eval()
 print(f"**Output=\n\n{output}")
+
+print_node_info(text_patterns)
+print_node_info(looper)
