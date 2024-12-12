@@ -21,7 +21,7 @@ print("Globals are: " , globals.list())
 text1 = Node.create_node(NodeType.TEXT, node_name="text1")
 
 # Set the parameters for text nodes
-text1._parms["text_string"].set("Filler Text ${$FOO and $BAR} AND printing -> `ascii(\"$FOO\")` ")
+text1._parms["text_string"].set("Filler Text $FOO and $BAR AND printing -> `ascii(\"$FOO\")` ")
 # Connect nodes
 #text1.set_input(0, text2)
 

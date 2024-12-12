@@ -16,7 +16,7 @@ text1 = Node.create_node(NodeType.TEXT, node_name="text1")
 prompt = Node.create_node(NodeType.QUERY, node_name="prompt")
 
 # Set the parameters for text nodes
-text1._parms["text_string"].set("What is the capital of ${$COUNTRY} ?")
+text1._parms["text_string"].set("What is the capital of $COUNTRY ?")
 # Connect nodes
 prompt.set_input(0, text1)
 

@@ -61,7 +61,7 @@ class Parm:
         """Returns this parameter's name."""
         return self._name
 
-    def setName(self, name: str) -> None:
+    def set_name(self, name: str) -> None:
         """Change the name of this parm."""
         self._name = name
 

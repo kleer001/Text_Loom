@@ -724,7 +724,7 @@
           "_type": "string",
           "_node": "/text_1",
           "_script_callback": "",
-          "_value": "${$ROLE} Please outline a romance novel titled DEEP BLUE LOVE, where two characters from different backgrounds meet unexpectedly and fall in love. The main characters are ${$LOVERA} and ${$LOVERB}. Include key plot points, conflicts, and a satisfying conclusion. Add moments of emotional tension, vulnerability, slow-burn tension, steamy scenes, and intense chemistry. This outline should be about ${$CHAPTERS} chapters long. Please provide the chaper outlines in a simple numbered list like 1,2,3, etc.  "
+          "_value": "$ROLE Please outline a romance novel titled DEEP BLUE LOVE, where two characters from different backgrounds meet unexpectedly and fall in love. The main characters are $LOVERA and $LOVERB. Include key plot points, conflicts, and a satisfying conclusion. Add moments of emotional tension, vulnerability, slow-burn tension, steamy scenes, and intense chemistry. This outline should be about $CHAPTERS chapters long. Please provide the chaper outlines in a simple numbered list like 1,2,3, etc.  "
         },
         "pass_through": {
           "_name": "pass_through",
@@ -2424,7 +2424,7 @@
           "_type": "string",
           "_node": "/looper_1/p_scenes",
           "_script_callback": "",
-          "_value": "${$ROLE} Expand the following chapter with ${$SCENES} for ${$LOVERA} and ${$LOVERB}. Please provide the scenes in a simple numbered list like 1,2,3, etc :  $$N"
+          "_value": "$ROLE Expand the following chapter with $SCENES for $LOVERA and $LOVERB. Please provide the scenes in a simple numbered list like 1,2,3, etc :  $$N"
         },
         "pass_through": {
           "_name": "pass_through",
@@ -2461,7 +2461,7 @@
           "_type": "string",
           "_node": "/looper_2/p_prose",
           "_script_callback": "",
-          "_value": "${$ROLE} Expand the following scene with ${$SCENELENGTH} for the characters  ${$LOVERA} and ${$LOVERB}. Please provide only the story prose:  $$N"
+          "_value": "$ROLE Expand the following scene with $SCENELENGTH for the characters  $LOVERA and $LOVERB. Please provide only the story prose:  $$N"
         },
         "pass_through": {
           "_name": "pass_through",
