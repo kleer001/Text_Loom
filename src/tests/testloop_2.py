@@ -13,7 +13,7 @@ looper1 = Node.create_node(NodeType.LOOPER, node_name="looper1")
 text1 = Node.create_node(NodeType.TEXT, node_name="text1", parent_path="/looper1")
 text2 = Node.create_node(NodeType.TEXT, node_name="text2", parent_path="/looper1")
 text3 = Node.create_node(NodeType.TEXT, node_name="text3", parent_path="/looper1")
-text4 = Node.create_node(NodeType.TEXT, node_name="text3", parent_path="/looper1")
+text4 = Node.create_node(NodeType.TEXT, node_name="text4", parent_path="/looper1")
 merge1 = Node.create_node(NodeType.MERGE, node_name="merge1", parent_path="/looper1")
 
 # Set the parameters for text nodes

@@ -44,6 +44,7 @@ class InputNullNode(Node):
         self.set_state(NodeState.COOKING)
         self._cook_count += 1
         start_time = time.time()
+        #loop_manager = LoopManager()
 
         try:
             in_node_path = self._parms["in_node"].eval()
@@ -79,9 +80,9 @@ class InputNullNode(Node):
             elif not all(isinstance(item, str) for item in input_data):
                 raise TypeError("All items in input data must be strings")
             else:    
-                loopnumber = loopmanager.get_loop_number(self.path)
+                loopnumber = loop_manager.get_current_loop(self.path())
                 if(self._parms["feedback_mode"].eval() is True and loopnumber > 1):
-                    parent_looper_name = os.path.dirname(self.path)
+                    parent_looper_name = os.path.dirname(self.path())
                     parent_looper = NodeEnvironment.node_from_name(parent_looper_name)
                     input_data = parent_looper._output_node._parms["out_data"].eval()
                 self._parms["in_data"].set(input_data)

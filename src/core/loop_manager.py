@@ -4,23 +4,6 @@ from typing import Optional, Dict
 
 import inspect
 
-def print_calfun():
-    frame = inspect.stack()[2]
-    frame2 = inspect.stack()[3]
-    frame3 = inspect.stack()[4]
-    frame4 = inspect.stack()[5]
-    frame5 = inspect.stack()[6]
-    frame5 = inspect.stack()[7]
-    calfun = frame.function
-    calfun2 = frame2.function
-    calfun3 = frame3.function
-    calfun4 = frame4.function
-    calfun5 = frame4.function
-    calfun6 = frame4.function
-    print(f"~fP~ {calfun}←{calfun2}←{calfun3}←{calfun4}←{calfun5}←{calfun6}")
-
-
-
 class LoopManager:
     _instance = None
 

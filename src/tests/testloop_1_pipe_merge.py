@@ -21,7 +21,7 @@ text1._parms["text_string"].set("front-A ")
 text1b._parms["text_string"].set("start-B ")
 text1c._parms["text_string"].set("head-C ")
 merge1._parms["single_string"].set(False)
-text2._parms["text_string"].set("In@2 $$M+1")
+text2._parms["text_string"].set("In@2 $$N+1")
 text2._parms["pass_through"].set(False)
 text3._parms["text_string"].set(" END_TEXT_3")
 

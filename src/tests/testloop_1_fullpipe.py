@@ -15,7 +15,7 @@ text3 = Node.create_node(NodeType.TEXT, node_name="text3")
 
 # Set the parameters for text nodes
 text1._parms["text_string"].set("front-1 ")
-text2._parms["text_string"].set("In@2 $$M+1")
+text2._parms["text_string"].set("In@2 $$N+1")
 text3._parms["text_string"].set(" END_TEXT_3")
 
 # Connect nodes

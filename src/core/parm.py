@@ -9,9 +9,9 @@ import math, datetime, random
 from enum import Enum
 from typing import Dict, Tuple, Union, Callable
 from typing import List, Optional
-from .base_classes import OperationFailed
-from .loop_manager import *
-from .global_store import GlobalStore
+from core.base_classes import OperationFailed
+from core.loop_manager import *
+from core.global_store import GlobalStore
 
 
 """Defines parameter types and the Parm class for node-based operations.
@@ -35,57 +35,17 @@ class Parm:
     """
 
     __patterns = {
-        # please pay special attention to the order of the patterns when used in a group as this
-        # is how if and case control flow statements will filter them.
-        # The default positions are noted below. 
-        # Evenatually we will refactor them to be one offs and will no longer need to count them
-        #     --------------
-        # ~ Global variables in various contexts ~
-        # All global varaible must be two or more caplital letters
-        # Examples: `function($FOO)`, $$M+$FOO, ${$FOO * 5}, ${$FOO}, `$FOO`
-        #
-        # MATCH 1,2,3 (with the global variable $FOO
-        # 1 = `$FOO` , 2 = $$M*3+$FOO , 3 = ${ $FOO }
-        #
-        'GLOBAL': r"`[^`]*\$[A-Z]{2,}[^`]*`|\$\$M\S*\$[A-Z]{2,}|\$\{[^}]*\$[A-Z]{2,}[^}]*\}",
+        # Stage 1: Global Variables with optional math
+        'GLOBAL': r"\$[A-Z]{2,}([-+*/%]\d+)?",     # $FOO, $FOO+4
         
+        # Stage 2: Loop Number
+        'LOOP_NUMBER': r"\$\$L",                    # $$L
         
-        # ~ Simple loop number ~
-        # Matches $$N - represents the current loop number and imports the list item of 
-        # that number
-        #
-        # MATCH 4
-        #
-        'NLOOPIN': r"\$\$N",
+        # Stage 3: Combined List Access
+        'LIST_ACCESS': r"\$\$(?:N([-+*/%]\d+)?|(\d+))",  # $$N, $$N*8, $$1
         
-        # ~ Math loop number ~
-        # Matches $$M followed by an optional arithmetic operation and a number
-        # Examples: $$M+5, $$M-3, $$M*2, $$M/4, $$M%3
-        #
-        # MATCH 5
-        #
-        'MLOOP': r"\$\$M([-+*/%]?\d+)",
-        
-        # ~ Explicit Number for input list item ~
-        # Matches $$ followed by one or more digits
-        # Example: $$1, $$42, $$100
-        #
-        # MATCH 6
-        #
-        'NUMBER': r"\$\$(\d+)",
-                
-        # ~ Backticks for python code ~
-        #
-        # MATCH 7
-        #
-        'BACKTICK': r"`([^`]+)`",
-
-        # ~ loop number its self~
-        # Matches $$L - represents the current loop number
-        #
-        # MATCH 8
-        #
-        'NLOOP': r"\$\$L",
+        # Stage 4: Python Code
+        'PYTHON_CODE': r"`([^`]+)`"                # `len("test")`
     }
 
     def __init__(self, name: str, parm_type: ParameterType, node: "Node"):
@@ -147,56 +107,68 @@ class Parm:
         """Set the callback script to the given string."""
         self._script_callback = script_callback
 
-    def press_button(self, arguments: Dict[str, Any] = {}) -> None:
+    def press_button(self, arguments: Optional[Dict[str, Any]] = None) -> None:
         """
-        Emulates clicking a button parameter to trigger its callback script.
+        Executes a button parameter's callback script with proper safety checks.
+        
+        Args:
+            arguments: Optional dictionary of arguments to pass to the script
 
         Raises:
-            OperationFailed: If the callback script could not be run.
-            TypeError: If an argument value type is unsupported.
+            OperationFailed: If parameter is not a button or script execution fails
+            ValueError: If script contains unsafe operations
         """
         if self._type != ParameterType.BUTTON:
             raise OperationFailed("Parameter is not a button.")
+            
+        if not self._script_callback:
+            raise OperationFailed("No callback script defined for button.")
+            
+        if arguments is None:
+            arguments = {}
+            
+        try:
+            processed_script = self._expand_and_evaluate(self._script_callback)
+                
+            if not self._check_script_safety(processed_script):
+                raise ValueError("Script contains unsafe operations")
+                
+            safe_globals = self.create_safe_globals()
+            
+            safe_locals = arguments.copy()
+            
+            result = eval(processed_script, safe_globals, safe_locals)
+        
+            if result is not None:
+                if isinstance(result, (int, float, bool, str, list)):
+                    self.set(result)
+                else:
+                    self.set(str(result))
+            return result
+        except Exception as e:
+            raise OperationFailed(f"Failed to execute button script: {str(e)}")
 
-        expanded_script = self._expand_dollar_signs(self._script_callback) #This looks old and broken 
-        if self._check_script_safety(expanded_script):
-            try:
-                result = eval(expanded_script, {"__builtins__": {}}, arguments)
-                self.set(str(result))
-            except Exception as e:
-                raise OperationFailed(f"Failed to execute button script: {str(e)}")
-        else:
-            raise OperationFailed("Script failed safety check")
+    def _get_menu_dict(self) -> dict:
+        """Returns parsed menu dictionary or raises OperationFailed with helpful message."""
+        if self._type != ParameterType.MENU:
+            raise OperationFailed(f"Cannot access menu data on parameter of type {self._type}")
+        
+        try:
+            return ast.literal_eval(self._value)
+        except (ValueError, SyntaxError):
+            raise OperationFailed(f"Invalid menu format in parameter {self.name()}")
 
     def menu_keys(self) -> Tuple[str, ...]:
-        """Returns a tuple of keys for the menu items."""
-        if self._type != ParameterType.MENU:
-            raise OperationFailed("Parameter is not a menu.")
-        try:
-            menu_dict = ast.literal_eval(self._value)
-            return tuple(menu_dict.keys())
-        except:
-            raise OperationFailed("Invalid menu format")
+        """Returns tuple of menu option keys."""
+        return tuple(self._get_menu_dict().keys())
 
     def menu_values(self) -> Tuple[str, ...]:
-        """Returns a tuple of values for the menu items."""
-        if self._type != ParameterType.MENU:
-            raise OperationFailed("Parameter is not a menu.")
-        try:
-            menu_dict = ast.literal_eval(self._value)
-            return tuple(menu_dict.values())
-        except:
-            raise OperationFailed("Invalid menu format")
+        """Returns tuple of menu option values."""
+        return tuple(self._get_menu_dict().values())
 
     def menu_items(self) -> Tuple[Tuple[str, str], ...]:
-        """Returns a tuple of (key, value) pairs for the menu items."""
-        if self._type != ParameterType.MENU:
-            raise OperationFailed("Parameter is not a menu.")
-        try:
-            menu_dict = ast.literal_eval(self._value)
-            return tuple(menu_dict.items())
-        except:
-            raise OperationFailed("Invalid menu format")
+        """Returns tuple of (key, value) pairs for menu options."""
+        return tuple(self._get_menu_dict().items())
 
 
     def _get_patterns(self, selected_patterns: Optional[Union[str, List[str]]] = None) -> str:
@@ -236,109 +208,6 @@ class Parm:
         else:
             raise OperationFailed(f"Unsupported parameter type: {self._type}")
 
-    def _expand_and_evaluate(self, value: str) -> str:
-        current_value = value
-        current_value = self._expand_loop_number(current_value)
-        current_value = self._expand_globals(current_value)
-        current_value = self._expand_dollar_signs(current_value)
-        current_value = self._eval_backticks(current_value)
-        current_value = self._clean_globals(current_value)
-        return current_value
-
-    def _expand_globals(self, value: str) -> str:
-        global_store = GlobalStore()
-        def replace_global(match):
-            global_var = match.group(0)
-            global_var = global_var[1:] 
-            #print(f"🌐 Processing global variable: {global_var}")
-            
-            if not global_store.has(global_var):
-                #print(f"🌐 Warning: Global variable {global_var} not found")
-                return global_var
-            
-            replacement_value = str(global_store.get(global_var))
-            #print(f"🌐 Replacing {global_var} with: {replacement_value}")
-            return replacement_value
-
-        def replace_container(match):
-            container = match.group(0)
-            #base global far aka $FOO
-            return re.sub(r'\$[A-Z]{2,}', replace_global, container)
-
-        pattern = self._get_patterns('GLOBAL')
-        result = re.sub(pattern, replace_container, value)
-        return result
-
-    def _clean_globals(self, value: str) -> str: 
-        pattern = r'\$\{(.*?)\}'
-        return re.sub(pattern, r'\1', value)
-
-
-    def create_safe_globals(self):
-        # List of allowed builtin function names
-        allowed_builtins = [
-            'len', 'abs', 'round', 'min', 'max', 'sum',
-            'sorted', 'reversed', 'list', 'tuple', 'set', 'dict',
-            'range', 'enumerate', 'zip',
-            'isinstance', 'type', 'ascii',
-            'int', 'float', 'str', 'bool',
-            'print', 'True', 'False', 'None'
-        ]
-
-        # Create safe_builtins dictionary efficiently
-        safe_builtins = {name: getattr(builtins, name) for name in allowed_builtins}
-
-        # Create safe_modules dictionary
-        safe_modules = {
-            'math': math,
-            'datetime': datetime,
-            'random': random
-        }
-
-        # Combine safe_builtins and safe_modules
-        return {'__builtins__': safe_builtins, **safe_modules}
-
-    def _check_script_safety(self, script: str) -> bool:
-        allowed_modules = {"math", "datetime", "random"}
-        allowed_functions = set(self.create_safe_globals()['__builtins__'].keys()) | {"str.lower", "str.upper", "str.strip", "str.replace", "str.split", "str.join"}
-
-        try:
-            tree = ast.parse(script)
-            for node in ast.walk(tree):
-                if isinstance(node, ast.Import):
-                    for alias in node.names:
-                        if alias.name not in allowed_modules:
-                            return False
-                elif isinstance(node, ast.ImportFrom):
-                    if node.module not in allowed_modules:
-                        return False
-                elif isinstance(node, ast.Call):
-                    if isinstance(node.func, ast.Name):
-                        if node.func.id not in allowed_functions:
-                            return False
-                elif isinstance(node, ast.Attribute):
-                    if node.attr not in allowed_functions:
-                        return False
-            return True
-        except SyntaxError:
-            return False
-
-
-    def _eval_backticks(self, value: str) -> str:
-        """Evaluates expressions within backticks."""
-
-        def evaluate_expression(match):
-            script = match.group(1)
-            if self._check_script_safety(script):
-                safe_globals = self.create_safe_globals()
-                safe_locals = {}
-                exec_return = str(eval(script, safe_globals, safe_locals))  # Convert to string
-                return exec_return
-            else:
-                raise ValueError("Script contains unsafe operations")
-
-        return re.sub(r"`([^`]+)`", evaluate_expression, value)
-
     def raw_value(self) -> str:
         """Returns the parameter's raw text value without evaluation or expansion."""
         return self._value
@@ -360,70 +229,226 @@ class Parm:
         """Returns True if the parameter contains one or more valid functions accoring to self.__patterns ."""
         all_patterns = self._get_patterns()
         return bool(re.search(all_patterns, self._value))
-        #return bool(re.search(r"`[^`]*`|\$\$N|\$\$M([-+*/%]?\d+)|\$\$(\d+)", self._value))
+
+    def _process_global(self, match) -> str:
+        var_part = match.group(0)
+        var_name = var_part[1:]  # Remove $
+        math_part = None
+        
+        # Split variable and math if exists
+        for op in ['+', '-', '*', '/', '%']:
+            if op in var_name:
+                var_name, math_part = var_name.split(op)
+                math_part = op + math_part
+                break
+        
+        global_store = GlobalStore()
+        if not global_store.has(var_name):
+            print(f"🌐 Warning: Global variable {var_name} not found")
+            return match.group(0)
+            
+        value = global_store.get(var_name)
+        
+        if math_part:
+            try:
+                op = math_part[0]
+                num = int(math_part[1:])
+                ops = {'+': operator.add, '-': operator.sub, 
+                      '*': operator.mul, '/': operator.truediv, 
+                      '%': operator.mod}
+                value = ops[op](float(value), num)
+                print(f"🌐 Global {var_name} with {math_part} = {value}")
+            except (ValueError, TypeError) as e:
+                print(f"🌐 Error processing math for {var_name}: {e}")
+                return match.group(0)
+        else:
+            print(f"🌐 Global {var_name} = {value}")
+            
+        return str(value)
+
+    def _process_list_access(self, match) -> str:
+        expression = match.group(0)
+        
+        if not self.node().inputs():
+            print(f"📝 Warning: No input list found for {expression}")
+            return expression
+            
+        input_list = self.node().inputs()[0].output_node().eval()
+        if not input_list:
+            print(f"📝 Warning: Empty input list for {expression}")
+            return expression
+            
+        list_length = len(input_list)
+        loop_number = loop_manager.get_current_loop(self.node().path()) - 1
+
+        try:
+            # Handle $$N cases (with or without math)
+            if expression.startswith("$$N"):
+                if match.group(1):  # Has math
+                    op = match.group(1)[0]
+                    num = int(match.group(1)[1:])
+                    ops = {'+': operator.add, '-': operator.sub, 
+                          '*': operator.mul, '/': operator.truediv, 
+                          '%': operator.mod}
+                    index = int(ops[op](loop_number, num)) % list_length
+                    print(f"📝 List access with {match.group(1)} = index {index}")
+                else:  # Simple $$N
+                    index = loop_number % list_length
+                    print(f"📝 Simple list access = index {index}")
+            # Handle $$1 style cases
+            else:
+                index = (int(match.group(2)) - 1) % list_length
+                print(f"📝 Direct index access = index {index}")
+                
+            result = str(input_list[index])
+            print(f"📝 Retrieved: {result}")
+            return result
+            
+        except (ValueError, TypeError) as e:
+            print(f"📝 Error processing list access: {e}")
+            return expression
+
+    def _process_list_index(self, match) -> str:
+        expression = match.group(0)
+        
+        if not self.node().inputs():
+            print(f"📑 Warning: No input list found for {expression}")
+            return expression
+            
+        input_list = self.node().inputs()[0].output_node().eval()
+        if not input_list:
+            print(f"📑 Warning: Empty input list for {expression}")
+            return expression
+            
+        list_length = len(input_list)
+        try:
+            index = (int(match.group(1)) - 1) % list_length
+            result = str(input_list[index])
+            print(f"📑 Direct index {match.group(1)} = {result} (index {index})")
+            return result
+        except (ValueError, TypeError) as e:
+            print(f"📑 Error processing index: {e}")
+            return expression
+
+    def _process_python_code(self, match) -> str:
+        script = match.group(1)
+        print(f"🐍 Evaluating: {script}")
+        
+        if not self._check_script_safety(script):
+            print("🐍 Error: Unsafe script detected")
+            raise ValueError("Script contains unsafe operations")
+            
+        try:
+            safe_globals = self.create_safe_globals()
+            result = str(eval(script, safe_globals, {}))
+            print(f"🐍 Result: {result}")
+            return result
+        except Exception as e:
+            print(f"🐍 Error evaluating script: {e}")
+            return match.group(0)
+
+    def _expand_and_evaluate(self, value: str) -> str:
+        result = value
+        print(f"\n🔄 Processing: {value}")
+
+        # Stage 1: Global Variables
+        result = re.sub(self._get_patterns('GLOBAL'), 
+                       self._process_global, result)
+
+        # Stage 2: Loop Number
+        loop_number = loop_manager.get_current_loop(self.node().path()) - 1
+        result = result.replace("$$L", str(loop_number))
+        if "$$L" in value:
+            print(f"🔢 Loop number {loop_number}")
+
+        # Stage 3: List Access (combined)
+        result = re.sub(self._get_patterns('LIST_ACCESS'), 
+                       self._process_list_access, result)
+
+        # Stage 4: Python Code
+        result = re.sub(self._get_patterns('PYTHON_CODE'), 
+                       self._process_python_code, result)
+
+        print(f"🔄 Final result: {result}\n")
+        return result
+
+#------------ END NEW
+
+    def create_safe_globals(self):
+        allowed_builtins = [
+            'len', 'abs', 'round', 'min', 'max', 'sum',
+            'sorted', 'reversed', 'list', 'tuple', 'set', 'dict',
+            'range', 'enumerate', 'zip',
+            'isinstance', 'type', 'ascii',
+            'int', 'float', 'str', 'bool',
+            'print', 'True', 'False', 'None'
+        ]
+        safe_builtins = {name: getattr(builtins, name) for name in allowed_builtins}
+        safe_modules = {
+            'math': math,
+            'datetime': datetime,
+            'random': random
+        }
+
+        # Combine safe_builtins and safe_modules
+        return {'__builtins__': safe_builtins, **safe_modules}
+
+    def _check_script_safety(self, script: str) -> bool:
+        """
+        Check if a Python script contains only allowed operations.
+        
+        Args:
+            script: The Python script to check
+            
+        Returns:
+            bool: True if the script only uses allowed operations, False otherwise
+        """
+        try:
+            tree = ast.parse(script)
+            return self._check_ast_node_safety(tree)
+        except SyntaxError:
+            return False
+            
+    def _check_ast_node_safety(self, tree: ast.AST) -> bool:
+        """
+        Recursively check if all nodes in the AST are safe.
+        """
+        for node in ast.walk(tree):
+            if not self._is_node_safe(node):
+                return False
+        return True
+        
+    def _is_node_safe(self, node: ast.AST) -> bool:
+        """
+        Check if a single AST node is safe based on its type.
+        """
+        # Define allowed operations
+        allowed_modules = {"math", "datetime", "random"}
+        allowed_functions = (set(self.create_safe_globals()['__builtins__'].keys()) | 
+                            {"str.lower", "str.upper", "str.strip", 
+                            "str.replace", "str.split", "str.join"})
+        
+        # Check different node types
+        if isinstance(node, ast.Import):
+            return all(alias.name in allowed_modules 
+                    for alias in node.names)
+                    
+        elif isinstance(node, ast.ImportFrom):
+            return node.module in allowed_modules
+            
+        elif isinstance(node, ast.Call):
+            if isinstance(node.func, ast.Name):
+                return node.func.id in allowed_functions
+                
+        elif isinstance(node, ast.Attribute):
+            return node.attr in allowed_functions
+            
+        # All other node types are considered safe
+        return True
 
     def _expand_loop_number(self, value: str) -> str: 
         loop_number = loop_manager.get_current_loop(self.node().path()) - 1
         result = value.replace("$$L", str(loop_number))
         return result
 
-    def _expand_dollar_signs(self, value: str) -> str:
-        def evaluate_arithmetic(expression: str, loop_number: int) -> int:
-            ops = {
-                '+': operator.add,
-                '-': operator.sub,
-                '*': operator.mul,
-                '/': operator.truediv,
-                '%': operator.mod
-            }
-            
-            tokens = re.findall(r'[-+*/%]|\d+', expression)
-            result = loop_number if tokens[0] in ops else int(tokens[0])
-            
-            for i in range(0, len(tokens) - 1, 2):
-                op, value = tokens[i], int(tokens[i + 1])
-                if op in ops:
-                    result = ops[op](result, value)
-                else:
-                    print(f"$$ Warning: Invalid operator: {op}")
-                    return loop_number
-            
-            return result
-
-        def replace(match):
-            expression = match.group(0)
-            loop_number = loop_manager.get_current_loop(self.node().path()) - 1
-            
-            if not self.node().inputs():
-                print(f"$$ Warning: No valid input list found for {expression}")
-                return expression
-            
-            input_list = self.node().inputs()[0].output_node().eval()
-            list_length = len(input_list)
-            
-            if list_length == 0:
-                print(f"$$ Warning: Empty input list for {expression}")
-                return expression
-            
-            if match.group(0):
-                index = loop_number % list_length
-                print(f"$$ Resolved index for $$N: {index}")
-            elif match.group(1):  # $$M expression
-                arithmetic_result = evaluate_arithmetic(match.group(1), loop_number)
-                index = arithmetic_result % list_length
-                print(f"$$ Resolved index for {expression}: {index} (Arithmetic result: {arithmetic_result})")
-            elif match.group(2):  # $$<number> expression
-                index = (int(match.group(2)) - 1) % list_length
-                print(f"$$ Resolved index for {expression}: {index}")
-            else:
-                print(f"$$ Warning: Malformed $$ expression: {expression}")
-                return expression
-            
-            replacement_value = str(input_list[index])
-            print(f"Replacing {expression} with: {replacement_value}")
-            return replacement_value
-
-        pattern = r"\$\$N|\$\$M([-+*/%\d]+)|\$\$(\d+)"
-        result = re.sub(pattern, replace, value)
-        return result
 
