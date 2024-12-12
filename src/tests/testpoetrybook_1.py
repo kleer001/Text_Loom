@@ -36,7 +36,7 @@ globalstore.set("ROLE", "You are Alan Ginsbeg. You write free verse with vivid, 
 
 prompt_months = create_node("text")
 prompt_months._parms["text_string"].set(
-    "${$SYS} ${$LIST} Please give a list of twelve unique feelings it engenders and brings that go along with the 12 months of the year. Mention only the feeling, not the month its self."
+    "$SYS $LIST Please give a list of twelve unique feelings it engenders and brings that go along with the 12 months of the year. Mention only the feeling, not the month its self."
 )
 
 months_query = create_node("query")
@@ -52,7 +52,7 @@ print(NodeEnvironment.list_nodes())
 
 prompt_roles = create_node("text", node_name="p_scenes", parent_path="/looper_1")
 prompt_roles._parms["text_string"].set(
-    "${$SYS} ${$ROLE}. Given the following season of life please compose ${$LENGTH} free verse meditation about $$N . Break through the constant rhythm of normal poetry. Break the bones of rhyme. Make short lines and long lines. Be ORGANIC! YOU ARE ALIVE!"
+    "$SYS $ROLE. Given the following season of life please compose $LENGTH free verse meditation about $$N . Break through the constant rhythm of normal poetry. Break the bones of rhyme. Make short lines and long lines. Be ORGANIC! YOU ARE ALIVE!"
 )
 prompt_roles._parms["pass_through"].set(False)
 

@@ -13,13 +13,13 @@ globalstore.set("ACTORS", loops_to_go)
 
 # Create nodes
 text_chars = Node.create_node(NodeType.TEXT, node_name="text_chars")
-text_chars._parms["text_string"].set("please give me a simple numbered list of ${$ACTORS} types of stock characters in comedia del arte. List the character name only please.")
+text_chars._parms["text_string"].set("please give me a simple numbered list of $ACTORS types of stock characters in comedia del arte. List the character name only please.")
 
 char_prompt = Node.create_node(NodeType.QUERY, node_name="char_prompt")
 char_prompt._parms["llm_name"].set("Ollama")
 
 text_stories = Node.create_node(NodeType.TEXT, node_name="text_stories")
-text_stories._parms["text_string"].set("please give me a simple numbered list of ${$ACTORS} types of breakfast foods. List the type of food only.")
+text_stories._parms["text_string"].set("please give me a simple numbered list of $ACTORS types of breakfast foods. List the type of food only.")
 
 story_prompt = Node.create_node(NodeType.QUERY, node_name="story_prompt")
 story_prompt._parms["llm_name"].set("Ollama")
