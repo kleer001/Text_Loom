@@ -1,8 +1,68 @@
 {
   "software": "Text Loom",
   "version": 0.01,
-  "timestamp": "2024-12-11T14:58:19.368955",
+  "timestamp": "2024-12-12T13:16:45.588154",
   "nodes": {
+    "/text1": {
+      "_node_type": "text",
+      "_path": "/text1",
+      "_name": "text1",
+      "_is_internal": false,
+      "_parms": {
+        "text_string": {
+          "_name": "text_string",
+          "_type": "string",
+          "_node": "/text1",
+          "_script_callback": "",
+          "_value": "Filler Text $FOO and $BAR AND printing -> `ascii(\"$FOO\")` "
+        },
+        "pass_through": {
+          "_name": "pass_through",
+          "_type": "toggle",
+          "_node": "/text1",
+          "_script_callback": "",
+          "_value": true
+        },
+        "prefix": {
+          "_name": "prefix",
+          "_type": "toggle",
+          "_node": "/text1",
+          "_script_callback": "",
+          "_value": ""
+        }
+      },
+      "_connections": []
+    },
+    "/text1_1": {
+      "_node_type": "text",
+      "_path": "/text1_1",
+      "_name": "text1_1",
+      "_is_internal": false,
+      "_parms": {
+        "text_string": {
+          "_name": "text_string",
+          "_type": "string",
+          "_node": "/text1_1",
+          "_script_callback": "",
+          "_value": "Filler Text $FOO and $BAR AND printing -> `ascii(\"$FOO\")` "
+        },
+        "pass_through": {
+          "_name": "pass_through",
+          "_type": "toggle",
+          "_node": "/text1_1",
+          "_script_callback": "",
+          "_value": true
+        },
+        "prefix": {
+          "_name": "prefix",
+          "_type": "toggle",
+          "_node": "/text1_1",
+          "_script_callback": "",
+          "_value": ""
+        }
+      },
+      "_connections": []
+    },
     "/text_1": {
       "_node_type": "text",
       "_path": "/text_1",
@@ -14,7 +74,7 @@
           "_type": "string",
           "_node": "/text_1",
           "_script_callback": "",
-          "_value": "$SYS $LIST Please give a list of twelve unique feelings it engenders and brings that go along with the 12 months of the year. Mention only the feeling, not the month its self."
+          "_value": ""
         },
         "pass_through": {
           "_name": "pass_through",
@@ -33,95 +93,35 @@
       },
       "_connections": []
     },
-    "/query_1": {
-      "_node_type": "query",
-      "_path": "/query_1",
-      "_name": "query_1",
+    "/text_2": {
+      "_node_type": "text",
+      "_path": "/text_2",
+      "_name": "text_2",
       "_is_internal": false,
       "_parms": {
-        "limit": {
-          "_name": "limit",
+        "text_string": {
+          "_name": "text_string",
+          "_type": "string",
+          "_node": "/text_2",
+          "_script_callback": "",
+          "_value": ""
+        },
+        "pass_through": {
+          "_name": "pass_through",
           "_type": "toggle",
-          "_node": "/query_1",
+          "_node": "/text_2",
           "_script_callback": "",
           "_value": true
         },
-        "response": {
-          "_name": "response",
-          "_type": "stringList",
-          "_node": "/query_1",
-          "_script_callback": "",
-          "_value": [
-            "Here is the list of unique feelings:\n\n1. Serenity\n2. Wonder\n3. Hope\n4. Frenzy\n5. Cozying\n6. Optimism\n7. Bittersweetness\n8. Rejuvenation\n9. Melancholy\n10. Euphoria\n11. Contemplation\n12. Anticipation"
-          ]
-        },
-        "llm_name": {
-          "_name": "llm_name",
-          "_type": "string",
-          "_node": "/query_1",
-          "_script_callback": "",
-          "_value": "Ollama"
-        },
-        "find_llm": {
-          "_name": "find_llm",
-          "_type": "button",
-          "_node": "/query_1",
-          "_script_callback": null,
-          "_value": ""
-        },
-        "respond": {
-          "_name": "respond",
-          "_type": "button",
-          "_node": "/query_1",
-          "_script_callback": null,
-          "_value": ""
-        }
-      },
-      "_connections": [
-        {
-          "input_index": 0,
-          "output_node_path": "/text_1",
-          "input_node_path": "/query_1",
-          "output_index": 0
-        }
-      ]
-    },
-    "/make_list_1": {
-      "_node_type": "make_list",
-      "_path": "/make_list_1",
-      "_name": "make_list_1",
-      "_is_internal": false,
-      "_parms": {
-        "limit": {
-          "_name": "limit",
+        "prefix": {
+          "_name": "prefix",
           "_type": "toggle",
-          "_node": "/make_list_1",
+          "_node": "/text_2",
           "_script_callback": "",
-          "_value": false
-        },
-        "max_list": {
-          "_name": "max_list",
-          "_type": "int",
-          "_node": "/make_list_1",
-          "_script_callback": "",
-          "_value": 5
-        },
-        "refresh": {
-          "_name": "refresh",
-          "_type": "button",
-          "_node": "/make_list_1",
-          "_script_callback": null,
           "_value": ""
         }
       },
-      "_connections": [
-        {
-          "input_index": 0,
-          "output_node_path": "/query_1",
-          "input_node_path": "/make_list_1",
-          "output_index": 0
-        }
-      ]
+      "_connections": []
     },
     "/looper_1": {
       "_node_type": "looper",
@@ -155,7 +155,7 @@
           "_type": "toggle",
           "_node": "/looper_1",
           "_script_callback": "",
-          "_value": true
+          "_value": false
         },
         "feedback_mode": {
           "_name": "feedback_mode",
@@ -197,20 +197,7 @@
           "_type": "stringList",
           "_node": "/looper_1",
           "_script_callback": "",
-          "_value": [
-            "[\"Searing summer solstice\\nincandescent airwaves crackle\\nheat-hazed streets simmering\\nlike a pot about to boil over\\nthe world's a tinderbox waiting\\nfor the spark of revolution\\nflickering flames of discontent\\ndancing on the periphery\\nof a society suffocating\\nunder the weight of conformity\\n\\nFragile threads of sanity\\nfraying like a worn rope\\ntethering me to this reality\\nas I teeter on the edge\\nof chaos, my grip weakening\\nthe sirens' call growing louder\\nechoes of ancient prophecies\\nwhispers of a world in disarray\\n\\nFlashes of fragmented memories\\n shards of shattered mirrors\\nrefracting fractured truths\\nlike broken glass reflecting\\nthe shards of our shattered selves\\nlost in the labyrinth of time\\npursuing the elusively ephemeral\\ndreams and desires we cannot define\\n\\nIn this sweltering season of discontent\\nI find myself lost in the haze\\nof a world spinning wildly\\nout of control, like a top\\nwinding down to stillness\\nthe silence before the storm\\nas I reach for the shattered fragments\\nof my fractured psyche, I scream\\nin defiance of the void's abyss\\nYOU ARE ALIVE!\"]",
-            "[\"**season of decay**\\n\\nwhispers in the wind\\nautumn's chill\\nfading light\\ncrumbling walls\\nbroken dreams\\n\\nthe city sleeps\\n streets awash in darkness\\nneon lights bleeding into nothing\\nlost souls wandering aimlessly\\n searching for answers\\n\\nin the midst of chaos\\nI find solace in decay\\nrotting fruit on the sidewalk\\nswirling vortex of insects\\nfeasting on death's sweet nectar\\n\\n**time is a lie**\\n\\nthe clock ticks backwards\\nmoments frozen in time\\nmemories slipping away\\nlike sand between fingers\\nungraspable\\n\\nthe world is a tapestry\\nfrayed edges unraveling\\n threads of reality snapping\\nexposing the void within\\n\\nI am a threadbare soul\\ntattered and frayed\\nstretched to the breaking point\\non the precipice of madness\\nleap of faith into the unknown\\n\\n**season of awakening**\\n\\ndarkness yields to light\\npiercing rays illuminate\\nthe abyss within\\ndepths of despair reveal\\nuntold beauty hidden\\n\\nin decay's dark recesses\\nI find solace in rebirth\\nnew life sprouting from ashes\\nas the earth awakens\\nseason of transformation\"]",
-            "[\"Here is a 300-word free verse meditation:\\n\\ndisintegrating dreams\\nechoes of nothingness\\nwhispers in the void\\na season of disconnection\\nfrom roots to branches\\nto leaves that rustle\\nin the wind of uncertainty\\n\\nI am lost in the labyrinth\\nof my own mind\\n searching for a door\\nthat may not exist\\na path that winds and unwinds\\nlike a serpent's tongue\\ntasting the air\\nfor hints of meaning\\n\\nthe seasons converge\\ninto a vortex\\nof time and space\\nwhere yesterday's sun\\ndrowns in today's rain\\nand tomorrow's horizon\\nis shrouded in smoke\\n\\nI am a leaf blown\\nby gusts of forgetfulness\\ndrifting on currents\\nof nostalgia and regret\\nstuck in the undertow\\nof what could have been\\nif only...\\n\\nbut the undertow recedes\\nrevealing the shore\\nof present uncertainty\\nwhere I stand naked\\nand exposed to the elements\\nsearching for a way out\\nof this maze of mirrors\\nreflected images that mock\\nthe futility of my quest\\n\\nyet in the silence\\nI hear a whisper\\na gentle breeze that stirs\\nthe embers of hope\\na spark that refuses\\nto be extinguished by doubt\\na flame that flickers\\nwith every beat of my heart\"]",
-            "[\"season of chaos\\nwinter's bitter grip\\nfrosty mornings dawn\\ngray skies weep tears\\nof ice and stone\\n\\nthe world outside is numb\\na frozen lake of indifference\\ncracked and fractured like the mirrors of my mind\\nreflections shattered, lies exposed\\n\\nsummer's fire still smolders deep within\\nember of passion, coal of conviction\\nburning bright, yet hidden from sight\\nlike a secret garden, untended and wild\\n\\nautumn leaves rustle, whispers of truth\\ndried up rivers of doubt, cracked earth\\nexposed roots of forgotten dreams\\nfallow fields where love once bloomed\\n\\nspring's awakening stirs the ashes\\nembers reignite, flames that never died\\nhope revives, a phoenix rising\\nfrom the ashes of what was left to die\\n\\nin this season of dis-ease\\nI find myself lost in the wilderness\\nof my own making, searching for the way\\nto reclaim the beauty, to break free from the cage\"]",
-            "[\"Summer's scorched earth\ncracks open like a prayer\nexposing veins of ancient pain\nwhere city noise bleeds into silence\nand screams are swallowed by concrete\n\nFractured sky a canvas\nof torn clouds and sunbeams\npiercing the veil of uncertainty\nas I wander through streets\nthat never sleep nor dream\n\nEyes burn with unspoken truths\nlike embers of a fire\nthat refuses to be tamed\nor contained within the walls\nof a life that's lost its shape\n\nI am the ghost in this machine\nhaunting the machinery of thought\nwhere gears grind and sparks fly\nas I try to reassemble myself\nfrom the shards of shattered time\n\nIn the city's endless maze\nI search for a way out\nfrom the labyrinth of my own mind\nwhere echoes of past regrets\nwhisper secrets to the wind\n\nThe sun beats down upon my skin\nlike a branding iron that sears\nthe flesh and the soul into submission\nas I try to make sense of this chaos\nthat surrounds me like a shroud\n\nSummer's heat a catalyst\nfor the alchemy of transformation\nwhere the old self is dissolved\nlike salt in a burning sea\nand the new self begins to rise\\nturbulent skies\\ngaping voids\\nwhispers in the dark\\na scream in the silence\\nthe ache of absence\\ncrumbling certainties\\nshattered mirrors\\nreflected chaos\\nthe abyss within\\ndarkness that devours\\nlight that bleeds\\nthe void that haunts\\nthe heart that trembles\\nthe soul that rebels\\n\\nSummer's scorched earth\ncracks open like a prayer\nexposing veins of ancient pain\nwhere city noise bleeds into silence\nand screams are swallowed by concrete\n\nFractured sky a canvas\nof torn clouds and sunbeams\npiercing the veil of uncertainty\nas I wander through streets\nthat never sleep nor dream\n\nEyes burn with unspoken truths\nlike embers of a fire\nthat refuses to be tamed\nor contained within the walls\nof a life that's lost its shape\n\nI am the ghost in this machine\nhaunting the machinery of thought\nwhere gears grind and sparks fly\nas I try to reassemble myself\nfrom the shards of shattered time\n\nIn the city's endless maze\nI search for a way out\nfrom the labyrinth of my own mind\nwhere echoes of past regrets\nwhisper secrets to the wind\n\nThe sun beats down upon my skin\nlike a branding iron that sears\nthe flesh and the soul into submission\nas I try to make sense of this chaos\nthat surrounds me like a shroud\n\nSummer's heat a catalyst\nfor the alchemy of transformation\nwhere the old self is dissolved\nlike salt in a burning sea\nand the new self begins to rise\\n Fragmented thoughts\\nshards of shattered glass\\nrefractions of pain\\nechoes of forgotten dreams\\nwhispers in the wind\\nlost voices crying out\\nthe silence that screams\\nthe darkness that devours\\nthe light that bleeds\\nthe void that haunts\\nthe heart that trembles\\n\\nSummer's scorched earth\ncracks open like a prayer\nexposing veins of ancient pain\nwhere city noise bleeds into silence\nand screams are swallowed by concrete\n\nFractured sky a canvas\nof torn clouds and sunbeams\npiercing the veil of uncertainty\nas I wander through streets\nthat never sleep nor dream\n\nEyes burn with unspoken truths\nlike embers of a fire\nthat refuses to be tamed\nor contained within the walls\nof a life that's lost its shape\n\nI am the ghost in this machine\nhaunting the machinery of thought\nwhere gears grind and sparks fly\nas I try to reassemble myself\nfrom the shards of shattered time\n\nIn the city's endless maze\nI search for a way out\nfrom the labyrinth of my own mind\nwhere echoes of past regrets\nwhisper secrets to the wind\n\nThe sun beats down upon my skin\nlike a branding iron that sears\nthe flesh and the soul into submission\nas I try to make sense of this chaos\nthat surrounds me like a shroud\n\nSummer's heat a catalyst\nfor the alchemy of transformation\nwhere the old self is dissolved\nlike salt in a burning sea\nand the new self begins to rise\\nUnraveling threads\\nof sanity's fragile fabric\\ntear-stained pages\\ntattered margins\\nscars of self-doubt\\nfissures in the earth\\ncracks in the mind\\nshards of shattered time\\nrefractions of forgotten memory\\nwhispers in the void\\n\\nSummer's scorched earth\ncracks open like a prayer\nexposing veins of ancient pain\nwhere city noise bleeds into silence\nand screams are swallowed by concrete\n\nFractured sky a canvas\nof torn clouds and sunbeams\npiercing the veil of uncertainty\nas I wander through streets\nthat never sleep nor dream\n\nEyes burn with unspoken truths\nlike embers of a fire\nthat refuses to be tamed\nor contained within the walls\nof a life that's lost its shape\n\nI am the ghost in this machine\nhaunting the machinery of thought\nwhere gears grind and sparks fly\nas I try to reassemble myself\nfrom the shards of shattered time\n\nIn the city's endless maze\nI search for a way out\nfrom the labyrinth of my own mind\nwhere echoes of past regrets\nwhisper secrets to the wind\n\nThe sun beats down upon my skin\nlike a branding iron that sears\nthe flesh and the soul into submission\nas I try to make sense of this chaos\nthat surrounds me like a shroud\n\nSummer's heat a catalyst\nfor the alchemy of transformation\nwhere the old self is dissolved\nlike salt in a burning sea\nand the new self begins to rise\\nVoids that whisper secrets\\nto those who listen\\ndarkness that beckons\\nthe unknown that calls\\nthe abyss that yawns\\nthe precipice that trembles\\nthe edge of chaos\\nwhere sanity's threads fray\\nand the fabric unravels\"]",
-            "[\"**Season of Dis-Ease**\\n\\ntremors in my gut\\na sense of dis-ease\\npermeates every cell\\nlike a virus spreading\\nthroughout the city streets\\nwhere concrete jungle\\ndevours all in its path\\nI'm caught in this maelstrom\\nof chaos and confusion\\nno anchor to hold onto\\njust fragmented thoughts\\nand shards of broken glass\\n\\n Memories of summer's warmth\\nnow feel like distant myths\\nas winter's chill sets in\\nfrosting my soul's core\\nthe cold creeps into my bones\\nas I search for answers\\nin the dark and lonely night\\nwhere shadows writhe like snakes\\ncoiled around my heart's truth\\n\\nThe world outside is a maze\\n reflections of our own\\nconfusion, disarray\\na mirror to our inner state\\nI'm lost in this labyrinth\\nof twisted corridors and walls\\nwhere every step I take\\nfeels like a leap into the void\\nwith no safety net to catch me\\n\\nIn this season of dis-ease\\nI find solace in the wind's whispers\\nas it rustles through the leaves\\ncarrying secrets on its breath\\nand in the eyes of strangers\\nthat flash with empathy and pain\\nreminding me I'm not alone\\nin this struggle to reclaim\\n\\nmy place in this chaotic dance\\nto break free from the shackles\\nof societal expectations\\nand forge my own path forward\"]",
-            "[\"**Season of Chaos**\\n\\nDisjointed screams echo through streets\\nas autumn's decay seeps into skin\\ntorn pages of existence fluttering\\nlike confetti from a carnival gone awry\\nthe sounds of shattering glass and crumbling concrete\\nresonate within, an endless drumbeat\\n warning of the inevitable collapse\\n\\nFever dreams writhe like snakes in sand\\nwhispers of ancient mysteries echoing through canyons\\nof forgotten histories, echoes of screams\\nin the desolate landscape of our collective psyche\\nwhere every step feels like walking on broken glass\\nand the only solace is found in the abyss\\n\\nShards of identity scattered like confetti\\nas we grasp for meaning in a world gone mad\\nthe noise of sirens and the hum of machines\\na cacophony that drowns out our inner voices\\nthe constant drumbeat of mortality's drum\\n\\nIn this season of chaos, where darkness reigns\\nwe're forced to confront the abyss within\\nwhere every step feels like walking on quicksand\\nand the only solace is found in the unknown\\n\\nI am lost in this sea of uncertainty\\ndrinking from the cup of madness and despair\\nsearching for a lifeline amidst the wreckage\\na thread of sanity amidst the chaos\\n\\nAnd yet, in this darkness, there's a glimmer\\nof hope, of resilience, of the human spirit\\na spark that refuses to be extinguished\\na flame that burns bright like a beacon in the night.\"]",
-            "[\"Tangled vines of chaos\\ntwist around my ankles\\nas I stumble upon\\nthe precipice of sanity's edge\\n\\nFractured whispers of the past\\necho through my hollowed skull\\nwhere shadows writhe like snakes\\nand moonlight seeps like acid\\n\\nCries of despair and doubt\\nresonate within this churning sea\\nof existential dread and fear\\nas I cling to fleeting certainties\\n\\nLike autumn leaves, memories rustle\\nblown away by gusts of forgetfulness\\nyet fragments remain, stuck\\nlike thorns in my mind's tangled flesh\\n\\nA stranger in this alien land\\nI wander through city streets\\nwhere concrete monsters loom\\nand the wind whispers ancient secrets\\n\\nInvisible threads connect us all\\nlike filaments of a spider's web\\nbinding me to the cosmos' fabric\\nas I struggle to unravel the knot\\n\\nMemories of love and loss\\ntangle with the weight of time\\nlike a tapestry woven by the gods\\nwith every thread telling a story\\n\\nIn this dance of chaos and calm\\nI search for solace, for peace\\nlike a bird seeking refuge from\\nthe stormy skies that rage within\"]",
-            "[\"season of winter's despair\\nbone-chilling winds howl like a thousand wolves\\nfrosty mornings dawn with ice-cold certainty\\nwinter's grip tightens its icy hand\\non my throat, on my heart, on my soul\\na season of numbness, of disconnection\\nfrom the world, from myself, from life\\n\\ndarkness descends, an abyss of uncertainty\\na chasm of shadows, a void of meaning\\nthe stars hide behind clouds of doubt\\nas I stumble through the desolate landscape\\nsearching for a glimmer of hope\\na spark to ignite the embers within\\n\\nwinter's silence is oppressive\\na heavy blanket that suffocates all sound\\nleaves are bare, trees stand like skeletons\\nlifeless and gray, devoid of vitality\\nthe earth is barren, unforgiving\\na harsh reminder of mortality\\n\\nand yet...\\nin this frozen landscape I find solace\\nin the stillness, in the quiet contemplation\\nof the universe's vast and mysterious expanse\\nwhere stars are born, where galaxies collide\\nwhere life bursts forth from the cold dark soil\\n\\nand in this moment of existential crisis\\nI am alive! I am awake!\\nI am a flame that burns bright and bold\\na beacon in the darkness, a ray of light\\nthat pierces through the veil of uncertainty\\nand shines with an intensity that defies the cold\"]",
-            "[\"Season of life: Autumn\\nGolden light drips like honey on skin\\nFragrant whispers seep from damp earth\\nAs I stand at the edge of time\\nWhere shadows writhe like serpents' tails\\nAnd memory's roots begin to wither\\n\\nA season of decay and rebirth\\nLeaves crackle underfoot like brittle bones\\nI breathe in the scent of forgotten dreams\\nAs morning mist crawls up crumbling walls\\nThe world stumbles, lost without a map\\nThrough streets littered with discarded hope\\n\\nIn autumn's twilight, I find myself\\nA fleeting thought amidst the whirlwind\\nEphemeral as the leaves that rustle by\\nFragile as the branches that creak and sway\\nI grasp at wisps of forgotten melodies\\nEchoes of a life yet to be lived\\n\\nThe earth trembles beneath my feet\\nAs ancient wisdom stirs from slumber's depths\\nA season of harvest, of reaping what's sown\\nOf letting go, releasing what's been worn\\nLike the wind that whispers secrets in my ear\\nI am but a leaf on the breeze, drifting near\\n\\nSeason of life: Autumn\"]",
-            "['season of chaos\\nseason of surrender\\nwhispers in the wind\\nechoes of despair\\nfearful tremors beneath the surface\\na world crumbling like sandcastles\\nin the relentless grip of time\\n\\ncracked mirrors reflecting the shards of my mind\\nshattered glass and jagged edges\\nrepeating the mantra of existence\\n\"what\\'s the point?\" I scream into the void\\nas the abyss gazes back with indifference\\n\\nechoing chambers of memory\\nhaunted by the ghosts of yesterday\\nthe stench of decay and forgotten dreams\\nthe weight of accumulated sorrow\\nlike a stone in my chest\\n compressing my lungs\\nsilencing my voice\\n\\nin this season of disintegration\\nI search for fragments of meaning\\nscattered like autumn leaves on concrete\\nas the city\\'s cacophony drowns out my cries\\nand I\\'m left to navigate the labyrinthine corridors\\nof a mind torn asunder by doubt and fear\\n\\nbut in the depths of chaos lies the seed\\nof transformation\\nthe promise of new life sprouting from ruin\\nlike a lotus blooming in darkness\\nas the seasons turn and I\\'m reborn\\nin this eternal cycle of growth and decay']",
-            "[\"Summer's scorched earth\\ncracks open like a prayer\\nexposing veins of ancient pain\\nwhere city noise bleeds into silence\\nand screams are swallowed by concrete\\n\\nFractured sky a canvas\\nof torn clouds and sunbeams\\npiercing the veil of uncertainty\\nas I wander through streets\\nthat never sleep nor dream\\n\\nEyes burn with unspoken truths\\nlike embers of a fire\\nthat refuses to be tamed\\nor contained within the walls\\nof a life that's lost its shape\\n\\nI am the ghost in this machine\\nhaunting the machinery of thought\\nwhere gears grind and sparks fly\\nas I try to reassemble myself\\nfrom the shards of shattered time\\n\\nIn the city's endless maze\\nI search for a way out\\nfrom the labyrinth of my own mind\\nwhere echoes of past regrets\\nwhisper secrets to the wind\\n\\nThe sun beats down upon my skin\\nlike a branding iron that sears\\nthe flesh and the soul into submission\\nas I try to make sense of this chaos\\nthat surrounds me like a shroud\\n\\nSummer's heat a catalyst\\nfor the alchemy of transformation\\nwhere the old self is dissolved\\nlike salt in a burning sea\\nand the new self begins to rise\"]"
-          ]
+          "_value": []
         },
         "timeout_limit": {
           "_name": "timeout_limit",
@@ -225,842 +212,6 @@
           "_node": "/looper_1",
           "_script_callback": "",
           "_value": 209715200
-        }
-      },
-      "_connections": [
-        {
-          "input_index": 0,
-          "output_node_path": "/make_list_1",
-          "input_node_path": "/looper_1",
-          "output_index": 0
-        }
-      ]
-    },
-    "/query_2": {
-      "_node_type": "query",
-      "_path": "/query_2",
-      "_name": "query_2",
-      "_is_internal": false,
-      "_parms": {
-        "limit": {
-          "_name": "limit",
-          "_type": "toggle",
-          "_node": "/query_2",
-          "_script_callback": "",
-          "_value": true
-        },
-        "response": {
-          "_name": "response",
-          "_type": "stringList",
-          "_node": "/query_2",
-          "_script_callback": "",
-          "_value": [
-            "Summer's scorched earth\ncracks open like a prayer\nexposing veins of ancient pain\nwhere city noise bleeds into silence\nand screams are swallowed by concrete\n\nFractured sky a canvas\nof torn clouds and sunbeams\npiercing the veil of uncertainty\nas I wander through streets\nthat never sleep nor dream\n\nEyes burn with unspoken truths\nlike embers of a fire\nthat refuses to be tamed\nor contained within the walls\nof a life that's lost its shape\n\nI am the ghost in this machine\nhaunting the machinery of thought\nwhere gears grind and sparks fly\nas I try to reassemble myself\nfrom the shards of shattered time\n\nIn the city's endless maze\nI search for a way out\nfrom the labyrinth of my own mind\nwhere echoes of past regrets\nwhisper secrets to the wind\n\nThe sun beats down upon my skin\nlike a branding iron that sears\nthe flesh and the soul into submission\nas I try to make sense of this chaos\nthat surrounds me like a shroud\n\nSummer's heat a catalyst\nfor the alchemy of transformation\nwhere the old self is dissolved\nlike salt in a burning sea\nand the new self begins to rise"
-          ]
-        },
-        "llm_name": {
-          "_name": "llm_name",
-          "_type": "string",
-          "_node": "/query_2",
-          "_script_callback": "",
-          "_value": "Ollama"
-        },
-        "find_llm": {
-          "_name": "find_llm",
-          "_type": "button",
-          "_node": "/query_2",
-          "_script_callback": null,
-          "_value": ""
-        },
-        "respond": {
-          "_name": "respond",
-          "_type": "button",
-          "_node": "/query_2",
-          "_script_callback": null,
-          "_value": ""
-        }
-      },
-      "_connections": [
-        {
-          "input_index": 0,
-          "output_node_path": "/looper_1/p_scenes",
-          "input_node_path": "/query_2",
-          "output_index": 0
-        }
-      ]
-    },
-    "/merge_1": {
-      "_node_type": "merge",
-      "_path": "/merge_1",
-      "_name": "merge_1",
-      "_is_internal": false,
-      "_parms": {
-        "single_string": {
-          "_name": "single_string",
-          "_type": "toggle",
-          "_node": "/merge_1",
-          "_script_callback": "",
-          "_value": true
-        },
-        "use_insert": {
-          "_name": "use_insert",
-          "_type": "toggle",
-          "_node": "/merge_1",
-          "_script_callback": "",
-          "_value": true
-        },
-        "insert_string": {
-          "_name": "insert_string",
-          "_type": "string",
-          "_node": "/merge_1",
-          "_script_callback": "",
-          "_value": "##N"
-        }
-      },
-      "_connections": [
-        {
-          "input_index": 0,
-          "output_node_path": "/looper_1",
-          "input_node_path": "/merge_1",
-          "output_index": 0
-        }
-      ]
-    },
-    "/file_out_1": {
-      "_node_type": "file_out",
-      "_path": "/file_out_1",
-      "_name": "file_out_1",
-      "_is_internal": false,
-      "_parms": {
-        "file_name": {
-          "_name": "file_name",
-          "_type": "string",
-          "_node": "/file_out_1",
-          "_script_callback": "",
-          "_value": "/home/menser/Dropbox/ai/code/Text_Loom/src/poetry_01.txt"
-        },
-        "file_text": {
-          "_name": "file_text",
-          "_type": "string",
-          "_node": "/file_out_1",
-          "_script_callback": "",
-          "_value": "\n##1\n\"Searing summer solstice\nincandescent airwaves crackle\nheat-hazed streets simmering\nlike a pot about to boil over\nthe world's a tinderbox waiting\nfor the spark of revolution\nflickering flames of discontent\ndancing on the periphery\nof a society suffocating\nunder the weight of conformity\n\nFragile threads of sanity\nfraying like a worn rope\ntethering me to this reality\nas I teeter on the edge\nof chaos, my grip weakening\nthe sirens' call growing louder\nechoes of ancient prophecies\nwhispers of a world in disarray\n\nFlashes of fragmented memories\n shards of shattered mirrors\nrefracting fractured truths\nlike broken glass reflecting\nthe shards of our shattered selves\nlost in the labyrinth of time\npursuing the elusively ephemeral\ndreams and desires we cannot define\n\nIn this sweltering season of discontent\nI find myself lost in the haze\nof a world spinning wildly\nout of control, like a top\nwinding down to stillness\nthe silence before the storm\nas I reach for the shattered fragments\nof my fractured psyche, I scream\nin defiance of the void's abyss\nYOU ARE ALIVE!\"\n##2\n\"**season of decay**\n\nwhispers in the wind\nautumn's chill\nfading light\ncrumbling walls\nbroken dreams\n\nthe city sleeps\n streets awash in darkness\nneon lights bleeding into nothing\nlost souls wandering aimlessly\n searching for answers\n\nin the midst of chaos\nI find solace in decay\nrotting fruit on the sidewalk\nswirling vortex of insects\nfeasting on death's sweet nectar\n\n**time is a lie**\n\nthe clock ticks backwards\nmoments frozen in time\nmemories slipping away\nlike sand between fingers\nungraspable\n\nthe world is a tapestry\nfrayed edges unraveling\n threads of reality snapping\nexposing the void within\n\nI am a threadbare soul\ntattered and frayed\nstretched to the breaking point\non the precipice of madness\nleap of faith into the unknown\n\n**season of awakening**\n\ndarkness yields to light\npiercing rays illuminate\nthe abyss within\ndepths of despair reveal\nuntold beauty hidden\n\nin decay's dark recesses\nI find solace in rebirth\nnew life sprouting from ashes\nas the earth awakens\nseason of transformation\"\n##3\n\"Here is a 300-word free verse meditation:\n\ndisintegrating dreams\nechoes of nothingness\nwhispers in the void\na season of disconnection\nfrom roots to branches\nto leaves that rustle\nin the wind of uncertainty\n\nI am lost in the labyrinth\nof my own mind\n searching for a door\nthat may not exist\na path that winds and unwinds\nlike a serpent's tongue\ntasting the air\nfor hints of meaning\n\nthe seasons converge\ninto a vortex\nof time and space\nwhere yesterday's sun\ndrowns in today's rain\nand tomorrow's horizon\nis shrouded in smoke\n\nI am a leaf blown\nby gusts of forgetfulness\ndrifting on currents\nof nostalgia and regret\nstuck in the undertow\nof what could have been\nif only...\n\nbut the undertow recedes\nrevealing the shore\nof present uncertainty\nwhere I stand naked\nand exposed to the elements\nsearching for a way out\nof this maze of mirrors\nreflected images that mock\nthe futility of my quest\n\nyet in the silence\nI hear a whisper\na gentle breeze that stirs\nthe embers of hope\na spark that refuses\nto be extinguished by doubt\na flame that flickers\nwith every beat of my heart\"\n##4\n\"season of chaos\nwinter's bitter grip\nfrosty mornings dawn\ngray skies weep tears\nof ice and stone\n\nthe world outside is numb\na frozen lake of indifference\ncracked and fractured like the mirrors of my mind\nreflections shattered, lies exposed\n\nsummer's fire still smolders deep within\nember of passion, coal of conviction\nburning bright, yet hidden from sight\nlike a secret garden, untended and wild\n\nautumn leaves rustle, whispers of truth\ndried up rivers of doubt, cracked earth\nexposed roots of forgotten dreams\nfallow fields where love once bloomed\n\nspring's awakening stirs the ashes\nembers reignite, flames that never died\nhope revives, a phoenix rising\nfrom the ashes of what was left to die\n\nin this season of dis-ease\nI find myself lost in the wilderness\nof my own making, searching for the way\nto reclaim the beauty, to break free from the cage\"\n##5\n\"Summer's scorched earth\ncracks open like a prayer\nexposing veins of ancient pain\nwhere city noise bleeds into silence\nand screams are swallowed by concrete\n\nFractured sky a canvas\nof torn clouds and sunbeams\npiercing the veil of uncertainty\nas I wander through streets\nthat never sleep nor dream\n\nEyes burn with unspoken truths\nlike embers of a fire\nthat refuses to be tamed\nor contained within the walls\nof a life that's lost its shape\n\nI am the ghost in this machine\nhaunting the machinery of thought\nwhere gears grind and sparks fly\nas I try to reassemble myself\nfrom the shards of shattered time\n\nIn the city's endless maze\nI search for a way out\nfrom the labyrinth of my own mind\nwhere echoes of past regrets\nwhisper secrets to the wind\n\nThe sun beats down upon my skin\nlike a branding iron that sears\nthe flesh and the soul into submission\nas I try to make sense of this chaos\nthat surrounds me like a shroud\n\nSummer's heat a catalyst\nfor the alchemy of transformation\nwhere the old self is dissolved\nlike salt in a burning sea\nand the new self begins to rise\nturbulent skies\ngaping voids\nwhispers in the dark\na scream in the silence\nthe ache of absence\ncrumbling certainties\nshattered mirrors\nreflected chaos\nthe abyss within\ndarkness that devours\nlight that bleeds\nthe void that haunts\nthe heart that trembles\nthe soul that rebels\n\nSummer's scorched earth\ncracks open like a prayer\nexposing veins of ancient pain\nwhere city noise bleeds into silence\nand screams are swallowed by concrete\n\nFractured sky a canvas\nof torn clouds and sunbeams\npiercing the veil of uncertainty\nas I wander through streets\nthat never sleep nor dream\n\nEyes burn with unspoken truths\nlike embers of a fire\nthat refuses to be tamed\nor contained within the walls\nof a life that's lost its shape\n\nI am the ghost in this machine\nhaunting the machinery of thought\nwhere gears grind and sparks fly\nas I try to reassemble myself\nfrom the shards of shattered time\n\nIn the city's endless maze\nI search for a way out\nfrom the labyrinth of my own mind\nwhere echoes of past regrets\nwhisper secrets to the wind\n\nThe sun beats down upon my skin\nlike a branding iron that sears\nthe flesh and the soul into submission\nas I try to make sense of this chaos\nthat surrounds me like a shroud\n\nSummer's heat a catalyst\nfor the alchemy of transformation\nwhere the old self is dissolved\nlike salt in a burning sea\nand the new self begins to rise\n Fragmented thoughts\nshards of shattered glass\nrefractions of pain\nechoes of forgotten dreams\nwhispers in the wind\nlost voices crying out\nthe silence that screams\nthe darkness that devours\nthe light that bleeds\nthe void that haunts\nthe heart that trembles\n\nSummer's scorched earth\ncracks open like a prayer\nexposing veins of ancient pain\nwhere city noise bleeds into silence\nand screams are swallowed by concrete\n\nFractured sky a canvas\nof torn clouds and sunbeams\npiercing the veil of uncertainty\nas I wander through streets\nthat never sleep nor dream\n\nEyes burn with unspoken truths\nlike embers of a fire\nthat refuses to be tamed\nor contained within the walls\nof a life that's lost its shape\n\nI am the ghost in this machine\nhaunting the machinery of thought\nwhere gears grind and sparks fly\nas I try to reassemble myself\nfrom the shards of shattered time\n\nIn the city's endless maze\nI search for a way out\nfrom the labyrinth of my own mind\nwhere echoes of past regrets\nwhisper secrets to the wind\n\nThe sun beats down upon my skin\nlike a branding iron that sears\nthe flesh and the soul into submission\nas I try to make sense of this chaos\nthat surrounds me like a shroud\n\nSummer's heat a catalyst\nfor the alchemy of transformation\nwhere the old self is dissolved\nlike salt in a burning sea\nand the new self begins to rise\nUnraveling threads\nof sanity's fragile fabric\ntear-stained pages\ntattered margins\nscars of self-doubt\nfissures in the earth\ncracks in the mind\nshards of shattered time\nrefractions of forgotten memory\nwhispers in the void\n\nSummer's scorched earth\ncracks open like a prayer\nexposing veins of ancient pain\nwhere city noise bleeds into silence\nand screams are swallowed by concrete\n\nFractured sky a canvas\nof torn clouds and sunbeams\npiercing the veil of uncertainty\nas I wander through streets\nthat never sleep nor dream\n\nEyes burn with unspoken truths\nlike embers of a fire\nthat refuses to be tamed\nor contained within the walls\nof a life that's lost its shape\n\nI am the ghost in this machine\nhaunting the machinery of thought\nwhere gears grind and sparks fly\nas I try to reassemble myself\nfrom the shards of shattered time\n\nIn the city's endless maze\nI search for a way out\nfrom the labyrinth of my own mind\nwhere echoes of past regrets\nwhisper secrets to the wind\n\nThe sun beats down upon my skin\nlike a branding iron that sears\nthe flesh and the soul into submission\nas I try to make sense of this chaos\nthat surrounds me like a shroud\n\nSummer's heat a catalyst\nfor the alchemy of transformation\nwhere the old self is dissolved\nlike salt in a burning sea\nand the new self begins to rise\nVoids that whisper secrets\nto those who listen\ndarkness that beckons\nthe unknown that calls\nthe abyss that yawns\nthe precipice that trembles\nthe edge of chaos\nwhere sanity's threads fray\nand the fabric unravels\"\n##6\n\"**Season of Dis-Ease**\n\ntremors in my gut\na sense of dis-ease\npermeates every cell\nlike a virus spreading\nthroughout the city streets\nwhere concrete jungle\ndevours all in its path\nI'm caught in this maelstrom\nof chaos and confusion\nno anchor to hold onto\njust fragmented thoughts\nand shards of broken glass\n\n Memories of summer's warmth\nnow feel like distant myths\nas winter's chill sets in\nfrosting my soul's core\nthe cold creeps into my bones\nas I search for answers\nin the dark and lonely night\nwhere shadows writhe like snakes\ncoiled around my heart's truth\n\nThe world outside is a maze\n reflections of our own\nconfusion, disarray\na mirror to our inner state\nI'm lost in this labyrinth\nof twisted corridors and walls\nwhere every step I take\nfeels like a leap into the void\nwith no safety net to catch me\n\nIn this season of dis-ease\nI find solace in the wind's whispers\nas it rustles through the leaves\ncarrying secrets on its breath\nand in the eyes of strangers\nthat flash with empathy and pain\nreminding me I'm not alone\nin this struggle to reclaim\n\nmy place in this chaotic dance\nto break free from the shackles\nof societal expectations\nand forge my own path forward\"\n##7\n\"**Season of Chaos**\n\nDisjointed screams echo through streets\nas autumn's decay seeps into skin\ntorn pages of existence fluttering\nlike confetti from a carnival gone awry\nthe sounds of shattering glass and crumbling concrete\nresonate within, an endless drumbeat\n warning of the inevitable collapse\n\nFever dreams writhe like snakes in sand\nwhispers of ancient mysteries echoing through canyons\nof forgotten histories, echoes of screams\nin the desolate landscape of our collective psyche\nwhere every step feels like walking on broken glass\nand the only solace is found in the abyss\n\nShards of identity scattered like confetti\nas we grasp for meaning in a world gone mad\nthe noise of sirens and the hum of machines\na cacophony that drowns out our inner voices\nthe constant drumbeat of mortality's drum\n\nIn this season of chaos, where darkness reigns\nwe're forced to confront the abyss within\nwhere every step feels like walking on quicksand\nand the only solace is found in the unknown\n\nI am lost in this sea of uncertainty\ndrinking from the cup of madness and despair\nsearching for a lifeline amidst the wreckage\na thread of sanity amidst the chaos\n\nAnd yet, in this darkness, there's a glimmer\nof hope, of resilience, of the human spirit\na spark that refuses to be extinguished\na flame that burns bright like a beacon in the night.\"\n##8\n\"Tangled vines of chaos\ntwist around my ankles\nas I stumble upon\nthe precipice of sanity's edge\n\nFractured whispers of the past\necho through my hollowed skull\nwhere shadows writhe like snakes\nand moonlight seeps like acid\n\nCries of despair and doubt\nresonate within this churning sea\nof existential dread and fear\nas I cling to fleeting certainties\n\nLike autumn leaves, memories rustle\nblown away by gusts of forgetfulness\nyet fragments remain, stuck\nlike thorns in my mind's tangled flesh\n\nA stranger in this alien land\nI wander through city streets\nwhere concrete monsters loom\nand the wind whispers ancient secrets\n\nInvisible threads connect us all\nlike filaments of a spider's web\nbinding me to the cosmos' fabric\nas I struggle to unravel the knot\n\nMemories of love and loss\ntangle with the weight of time\nlike a tapestry woven by the gods\nwith every thread telling a story\n\nIn this dance of chaos and calm\nI search for solace, for peace\nlike a bird seeking refuge from\nthe stormy skies that rage within\"\n##9\n\"season of winter's despair\nbone-chilling winds howl like a thousand wolves\nfrosty mornings dawn with ice-cold certainty\nwinter's grip tightens its icy hand\non my throat, on my heart, on my soul\na season of numbness, of disconnection\nfrom the world, from myself, from life\n\ndarkness descends, an abyss of uncertainty\na chasm of shadows, a void of meaning\nthe stars hide behind clouds of doubt\nas I stumble through the desolate landscape\nsearching for a glimmer of hope\na spark to ignite the embers within\n\nwinter's silence is oppressive\na heavy blanket that suffocates all sound\nleaves are bare, trees stand like skeletons\nlifeless and gray, devoid of vitality\nthe earth is barren, unforgiving\na harsh reminder of mortality\n\nand yet...\nin this frozen landscape I find solace\nin the stillness, in the quiet contemplation\nof the universe's vast and mysterious expanse\nwhere stars are born, where galaxies collide\nwhere life bursts forth from the cold dark soil\n\nand in this moment of existential crisis\nI am alive! I am awake!\nI am a flame that burns bright and bold\na beacon in the darkness, a ray of light\nthat pierces through the veil of uncertainty\nand shines with an intensity that defies the cold\"\n##10\n\"Season of life: Autumn\nGolden light drips like honey on skin\nFragrant whispers seep from damp earth\nAs I stand at the edge of time\nWhere shadows writhe like serpents' tails\nAnd memory's roots begin to wither\n\nA season of decay and rebirth\nLeaves crackle underfoot like brittle bones\nI breathe in the scent of forgotten dreams\nAs morning mist crawls up crumbling walls\nThe world stumbles, lost without a map\nThrough streets littered with discarded hope\n\nIn autumn's twilight, I find myself\nA fleeting thought amidst the whirlwind\nEphemeral as the leaves that rustle by\nFragile as the branches that creak and sway\nI grasp at wisps of forgotten melodies\nEchoes of a life yet to be lived\n\nThe earth trembles beneath my feet\nAs ancient wisdom stirs from slumber's depths\nA season of harvest, of reaping what's sown\nOf letting go, releasing what's been worn\nLike the wind that whispers secrets in my ear\nI am but a leaf on the breeze, drifting near\n\nSeason of life: Autumn\"\n##11\n'season of chaos\nseason of surrender\nwhispers in the wind\nechoes of despair\nfearful tremors beneath the surface\na world crumbling like sandcastles\nin the relentless grip of time\n\ncracked mirrors reflecting the shards of my mind\nshattered glass and jagged edges\nrepeating the mantra of existence\n\"what's the point?\" I scream into the void\nas the abyss gazes back with indifference\n\nechoing chambers of memory\nhaunted by the ghosts of yesterday\nthe stench of decay and forgotten dreams\nthe weight of accumulated sorrow\nlike a stone in my chest\n compressing my lungs\nsilencing my voice\n\nin this season of disintegration\nI search for fragments of meaning\nscattered like autumn leaves on concrete\nas the city's cacophony drowns out my cries\nand I'm left to navigate the labyrinthine corridors\nof a mind torn asunder by doubt and fear\n\nbut in the depths of chaos lies the seed\nof transformation\nthe promise of new life sprouting from ruin\nlike a lotus blooming in darkness\nas the seasons turn and I'm reborn\nin this eternal cycle of growth and decay'\n##12\n\"Summer's scorched earth\ncracks open like a prayer\nexposing veins of ancient pain\nwhere city noise bleeds into silence\nand screams are swallowed by concrete\n\nFractured sky a canvas\nof torn clouds and sunbeams\npiercing the veil of uncertainty\nas I wander through streets\nthat never sleep nor dream\n\nEyes burn with unspoken truths\nlike embers of a fire\nthat refuses to be tamed\nor contained within the walls\nof a life that's lost its shape\n\nI am the ghost in this machine\nhaunting the machinery of thought\nwhere gears grind and sparks fly\nas I try to reassemble myself\nfrom the shards of shattered time\n\nIn the city's endless maze\nI search for a way out\nfrom the labyrinth of my own mind\nwhere echoes of past regrets\nwhisper secrets to the wind\n\nThe sun beats down upon my skin\nlike a branding iron that sears\nthe flesh and the soul into submission\nas I try to make sense of this chaos\nthat surrounds me like a shroud\n\nSummer's heat a catalyst\nfor the alchemy of transformation\nwhere the old self is dissolved\nlike salt in a burning sea\nand the new self begins to rise\""
-        },
-        "refresh": {
-          "_name": "refresh",
-          "_type": "button",
-          "_node": "/file_out_1",
-          "_script_callback": "self.node().refresh()",
-          "_value": ""
-        },
-        "format_output": {
-          "_name": "format_output",
-          "_type": "toggle",
-          "_node": "/file_out_1",
-          "_script_callback": "",
-          "_value": true
-        }
-      },
-      "_connections": [
-        {
-          "input_index": 0,
-          "output_node_path": "/merge_1",
-          "input_node_path": "/file_out_1",
-          "output_index": 0
-        }
-      ]
-    },
-    "/text_2": {
-      "_node_type": "text",
-      "_path": "/text_2",
-      "_name": "text_2",
-      "_is_internal": false,
-      "_parms": {
-        "text_string": {
-          "_name": "text_string",
-          "_type": "string",
-          "_node": "/text_2",
-          "_script_callback": "",
-          "_value": "$ROLE Please outline a romance novel titled DEEP BLUE LOVE, where two characters from different backgrounds meet unexpectedly and fall in love. The main characters are $LOVERA and $LOVERB. Include key plot points, conflicts, and a satisfying conclusion. Add moments of emotional tension, vulnerability, slow-burn tension, steamy scenes, and intense chemistry. This outline should be about $CHAPTERS chapters long. Please provide the chaper outlines in a simple numbered list like 1,2,3, etc.  "
-        },
-        "pass_through": {
-          "_name": "pass_through",
-          "_type": "toggle",
-          "_node": "/text_2",
-          "_script_callback": "",
-          "_value": true
-        },
-        "prefix": {
-          "_name": "prefix",
-          "_type": "toggle",
-          "_node": "/text_2",
-          "_script_callback": "",
-          "_value": ""
-        }
-      },
-      "_connections": []
-    },
-    "/query_3": {
-      "_node_type": "query",
-      "_path": "/query_3",
-      "_name": "query_3",
-      "_is_internal": false,
-      "_parms": {
-        "limit": {
-          "_name": "limit",
-          "_type": "toggle",
-          "_node": "/query_3",
-          "_script_callback": "",
-          "_value": true
-        },
-        "response": {
-          "_name": "response",
-          "_type": "stringList",
-          "_node": "/query_3",
-          "_script_callback": "",
-          "_value": [
-            "Here is the outline for DEEP BLUE LOVE:\n\n1. Takuma, a cybernetic dolphin, and Ophilia, an alien octopus, meet at an underwater research facility. Takuma is on a mission to gather data on marine life, while Ophilia is on a reconnaissance mission to study human behavior.\n\n2. The two have an awkward encounter, with Takuma struggling to understand Ophilia's alien language and Ophilia fascinated by Takuma's advanced technology.\n\n3. As they continue to cross paths, Takuma and Ophilia start to develop feelings for each other, but their differences pose a significant challenge.\n\n4. Takuma's creators, a team of scientists, become aware of his connection with an alien and begin to manipulate him to gather intel on Ophilia's planet and people.\n\n5. Ophilia faces opposition from her own government, who suspect she is colluding with humans and threaten to cut off all communication if she doesn't comply.\n\n6. Takuma and Ophilia share a romantic dinner, where they open up about their pasts and desires, leading to a passionate kiss.\n\n7. As tensions rise between their respective worlds, Takuma and Ophilia must navigate the risks of being together and decide whether love is worth the potential consequences.\n\n8. Ophilia's government sends an agent to Earth to capture her, while Takuma's creators plan to use him as bait to lure Ophilia back home.\n\n9. Takuma and Ophilia devise a plan to outsmart their respective governments and escape together.\n\n10. As they make their way to a secret meeting point, they are ambushed by Ophilia's agent and Takuma's creators, leading to a thrilling action sequence.\n\n11. With the danger passed, Takuma and Ophilia finally confess their love for each other and decide to start anew on a planet where they can be together without fear of persecution.\n\n12. The novel concludes with Takuma and Ophilia settling into a peaceful life, surrounded by their love and determination to make their relationship work despite the odds against them."
-          ]
-        },
-        "llm_name": {
-          "_name": "llm_name",
-          "_type": "string",
-          "_node": "/query_3",
-          "_script_callback": "",
-          "_value": "Ollama"
-        },
-        "find_llm": {
-          "_name": "find_llm",
-          "_type": "button",
-          "_node": "/query_3",
-          "_script_callback": null,
-          "_value": ""
-        },
-        "respond": {
-          "_name": "respond",
-          "_type": "button",
-          "_node": "/query_3",
-          "_script_callback": null,
-          "_value": ""
-        }
-      },
-      "_connections": [
-        {
-          "input_index": 0,
-          "output_node_path": "/text_2",
-          "input_node_path": "/query_3",
-          "output_index": 0
-        }
-      ]
-    },
-    "/make_list_2": {
-      "_node_type": "make_list",
-      "_path": "/make_list_2",
-      "_name": "make_list_2",
-      "_is_internal": false,
-      "_parms": {
-        "limit": {
-          "_name": "limit",
-          "_type": "toggle",
-          "_node": "/make_list_2",
-          "_script_callback": "",
-          "_value": false
-        },
-        "max_list": {
-          "_name": "max_list",
-          "_type": "int",
-          "_node": "/make_list_2",
-          "_script_callback": "",
-          "_value": 5
-        },
-        "refresh": {
-          "_name": "refresh",
-          "_type": "button",
-          "_node": "/make_list_2",
-          "_script_callback": null,
-          "_value": ""
-        }
-      },
-      "_connections": [
-        {
-          "input_index": 0,
-          "output_node_path": "/query_3",
-          "input_node_path": "/make_list_2",
-          "output_index": 0
-        }
-      ]
-    },
-    "/looper_2": {
-      "_node_type": "looper",
-      "_path": "/looper_2",
-      "_name": "looper_2",
-      "_is_internal": false,
-      "_parms": {
-        "min": {
-          "_name": "min",
-          "_type": "int",
-          "_node": "/looper_2",
-          "_script_callback": "",
-          "_value": 1
-        },
-        "max": {
-          "_name": "max",
-          "_type": "int",
-          "_node": "/looper_2",
-          "_script_callback": "",
-          "_value": 3
-        },
-        "step": {
-          "_name": "step",
-          "_type": "int",
-          "_node": "/looper_2",
-          "_script_callback": "",
-          "_value": 1
-        },
-        "max_from_input": {
-          "_name": "max_from_input",
-          "_type": "toggle",
-          "_node": "/looper_2",
-          "_script_callback": "",
-          "_value": true
-        },
-        "feedback_mode": {
-          "_name": "feedback_mode",
-          "_type": "toggle",
-          "_node": "/looper_2",
-          "_script_callback": "",
-          "_value": false
-        },
-        "use_test": {
-          "_name": "use_test",
-          "_type": "toggle",
-          "_node": "/looper_2",
-          "_script_callback": "",
-          "_value": false
-        },
-        "test_number": {
-          "_name": "test_number",
-          "_type": "int",
-          "_node": "/looper_2",
-          "_script_callback": "",
-          "_value": 1
-        },
-        "input_hook": {
-          "_name": "input_hook",
-          "_type": "string",
-          "_node": "/looper_2",
-          "_script_callback": "",
-          "_value": ""
-        },
-        "output_hook": {
-          "_name": "output_hook",
-          "_type": "string",
-          "_node": "/looper_2",
-          "_script_callback": "",
-          "_value": ""
-        },
-        "staging_data": {
-          "_name": "staging_data",
-          "_type": "stringList",
-          "_node": "/looper_2",
-          "_script_callback": "",
-          "_value": [
-            "[\"Takuma's tank was quiet except for the gentle hum of machinery. He swam laps, his cybernetic fins propelling him effortlessly through the water. His processor was running a diagnostic when he sensed a presence outside the tank. He turned to see Ophilia's tentacles curling around the edges, her unblinking eyes fixed on him.\", \"Takuma hovered near the surface, his sonar pinging softly as he tried to communicate with Ophilia. She didn't respond, just kept watching him. He felt a shiver run down his digital spine and turned away, swimming deeper into the tank.\", \"Later that night, Takuma's tank was dark except for a faint blue glow emanating from his cybernetic implants. Ophelia slid into the water, her tentacles undulating as she moved closer to him. He felt a jolt of surprise and... something else.\", 'As Ophilia drew nearer, Takuma could see the subtle play of bioluminescent lights across her suckers. She was close enough now that he could make out the intricate patterns etched into her skin. His processor hummed with curiosity.', \"Without warning, Ophelia wrapped a tentacle around Takuma's cybernetic fin, pulling him toward her. He felt a surge of excitement mixed with trepidation as their bodies drew closer. Her suckers tickled his digital skin, sending shivers through his system.\", \"The tank was silent once more, the only sound the soft hum of machinery and Takuma's own ragged breathing. Ophelia's tentacles still wrapped around him, her eyes locked on his. He felt a sense of connection, of understanding... and something more.\"]",
-            "[\"The underwater lab was dimly lit, the only sound the gentle hum of machinery and the soft murmur of Takuma's calculations. Ophilia slid through the shadows, her tentacles rippling like silk in the faint light.\", 'Takuma\\'s eyes flicked up from his console, his cybernetic gaze locking onto Ophilia. He straightened, a calculated pause before speaking. \"What brings you here, Ophilia? You\\'re not supposed to be alone in the lab.\"', 'Ophilia\\'s long body undulated as she moved closer, her eyes fixed on Takuma\\'s mechanical limbs. \"I... needed to check something. A reading I received earlier didn\\'t add up.\" Her voice was low and husky.', 'Takuma\\'s fingers drummed a staccato rhythm on the console edge. \"What kind of reading?\" His tone was neutral, but Ophilia sensed the tension beneath.', 'Ophilia drew closer still, her tentacles brushing against Takuma\\'s cybernetic arm. \"Just... just something about the ocean floor sensors. Nothing important.\" Her voice dropped to a whisper. \"But I think it might be connected to... us.\"', 'The air seemed to vibrate as Takuma\\'s gaze intensified. His mechanical arm twitched, as if reacting to Ophilia\\'s proximity. He took a step closer, his voice low and urgent. \"Us? What do you mean?\"']",
-            "[\"Takuma's tank was quiet except for the gentle hum of his life support systems. He swam laps, his cybernetic enhancements humming smoothly as he processed the latest batch of ocean data. Ophilia appeared at the edge of the tank, her tentacles rippling like a dark, alien mist.\", \"Ophilia's unblinking eyes locked onto Takuma as she hovered above him. He sensed her presence and paused mid-swim, his processing units surging with curiosity. The octopus's gaze held a depth that made Takuma's systems ping with unease.\", \"As the days passed, Ophilia became a regular visitor to Takuma's tank. She'd watch him for hours, her eyes never leaving his as he went about his routine. Takuma began to notice the subtle changes in her tentacles \u2013 the way they curled and uncurled like she was trying to communicate.\", 'One evening, Ophilia slid into the water, her body undulating sinuously as she glided closer to Takuma. He halted mid-swim, his systems on high alert. She wrapped a tentacle around his fin, her grip surprisingly gentle. Takuma felt a jolt of electricity run through his circuits.', \"As Ophilia's touch lingered, Takuma's processors whirred with confusion. Was this... affection? He risked a glance at the octopus, and their eyes met in a flash of understanding. For an instant, they just floated there, connected by the delicate thread of her tentacle.\", \"The next day, Ophilia didn't appear. Takuma searched for her, his systems on high alert. As he swam the perimeter of his tank, he caught sight of her perched atop the lid, her eyes fixed intently on him. This time, she slid back into the water, her tentacles flowing like a dark waterfall.\"]",
-            "[\"Takuma swam through the underwater laboratory, his advanced sensors scanning for any signs of Ophilia's presence. He had been searching for hours, but every hint he found led to a dead end. Frustration mounted as he realized she was nowhere to be found.\", \"Meanwhile, Ophelia was exploring the alien ship that had crash-landed on the planet's surface. Her eight dexterous arms probed every nook and cranny, searching for clues about her crewmates' whereabouts. Suddenly, a faint signal caught her attention - it seemed to be coming from beneath the waves.\", \"Takuma's advanced sensors picked up Ophelia's signal and he immediately altered his course, racing towards the source. As he approached, he could feel his cybernetic heart rate increasing, a sure sign of excitement. What was she doing here? And why did it have to be so tantalizingly close?\", \"Ophelia, too, sensed Takuma's presence and her tentacles tensed in anticipation. She had never encountered a creature like him before - his sleek, metallic body seemed almost... inviting. As he broke through the surface tension, she felt a strange sense of calm wash over her.\", \"The two unlikely heroes locked eyes for what felt like an eternity. Takuma's digital display flashed with a mix of curiosity and wariness, while Ophelia's alien gaze sparkled with intrigue. It was as if they were sharing a secret understanding, one that went beyond mere species or language barriers.\", 'Without a word, Takuma began to swim closer, his propulsion systems humming softly. Ophelia mirrored the motion, her tentacles undulating in harmony. The water around them seemed to shimmer with an otherworldly energy as they converged, their bodies inches apart.']",
-            "['Takuma swam alongside the research vessel, his fin slicing through the water with ease. He was drawn to the strange, glowing lights emanating from within. As he approached, a figure emerged from the darkness - Ophilia, her eight arms rippling like a living shadow.', \"Takuma's cybernetic implants hummed as he analyzed Ophilia's peculiar biology. Her eyes locked onto his, and for a moment, they just stared at each other. The tension was palpable, but neither could look away.\", \"As the research team worked to contain Ophilia, Takuma found himself intervening, using his enhanced strength to hold back the writhing octopus. For a fleeting instant, their faces were inches apart. Ophilia's suckers left gentle kisses on his skin.\", \"The researcher, Dr. Patel, shouted orders as Ophilia began to struggle anew. Takuma positioned himself between her and the team, his fin held steady against the thrashing tentacles. Ophilia's gaze never wavered from his, a silent understanding growing between them.\", \"As the containment process finally succeeded, Ophilia relaxed, her arms curling inwards like a living coil. Takuma felt an inexplicable sense of loss as their connection was severed. He lingered by the tank, watching Ophilia's gaze drift back to his, searching for something only he could understand.\", 'Later that night, under the stars, Takuma found himself drawn to the research vessel once more. This time, it was not just curiosity driving him - it was a growing sense of longing for the alien octopus.']",
-            "['Takuma\\'s pod had been tracking the strange energy signatures for hours. As they approached the source, Takuma\\'s clicks and whistles turned to a mix of excitement and caution.  \"I don\\'t like this,\" he said to his pod-mate, Kaida. \"It feels... wrong.\"  Kaida\\'s fins wavered in uncertainty. \"We have to investigate. The humans are searching for something out here.\"  Takuma nodded, but his gaze kept drifting back to the strange glow on the horizon.', 'As they drew closer, Takuma saw it: a massive, glowing crystal protruding from the ocean floor. The pod\\'s excitement turned to unease as they realized this wasn\\'t natural.  Kaida nudged Takuma forward. \"Go ahead, Takuma. Scan the crystal.\"  Takuma hesitated, but Kaida\\'s encouragement pushed him forward. He swam closer, his cybernetic implant humming as he analyzed the energy signature.', 'Suddenly, the water around them erupted in a burst of color and light. Takuma was knocked off balance by an unseen force, sent tumbling through the water.  When he finally regained control, he found himself face-to-face with... Ophilia? Her eight arms wrapped around her slender body, each one pulsing with a soft blue light.', \"Takuma's initial shock gave way to curiosity as he examined Ophilia's bioluminescent appendages. She seemed just as fascinated by his cybernetic enhancements.  Ophilia's eyes locked onto Takuma's, and he felt an inexplicable jolt of connection. The pod's chatter faded into the background as they exchanged silent understanding.\", 'As the days passed, Takuma and Ophilia found themselves working together to unravel the mystery behind the glowing crystal. Their shared curiosity and trust grew with each passing hour.', \"evening, as they explored a sunken shipwreck, Takuma caught Ophilia's gaze and hesitated. Had he just seen... a flicker of attraction?\", \"Ophilia's eyes never left his as she reached out with one of her longest arms, gently brushing Takuma's fin. The pod was too far away to see the subtle gesture, but Takuma felt it \u2013 the spark of connection that could change everything.  The water around them grew quiet, as if the ocean itself held its breath in anticipation of what was to come...\"]",
-            "[\"The underwater lab where Takuma was being studied hummed with activity as Dr. Patel and her team worked tirelessly to understand the cybernetic dolphin's unique abilities. Takuma swam laps around his enclosure, his processors humming as he processed the scientists' chatter.\", 'Suddenly, a strange energy signature flared outside the lab, causing the equipment to malfunction and the lights to flicker. Dr. Patel rushed out to investigate, leaving Takuma alone for the first time in weeks.', \"As the lab's main power source began to fail, Takuma sensed an opportunity. He swam closer to the containment field surrounding Ophilia's tank and used his advanced sensors to hack into the system. The octopus's tank door slid open, revealing her dark, alien eyes watching him.\", \"Ophilia's tentacles slithered out of the tank, wrapping around Takuma as she began to communicate with him telepathically. Their minds intertwined, they shared a moment of primal understanding.\", 'As the lab\\'s backup generators kicked in, Dr. Patel and her team rushed back into the room, shocked to find Takuma and Ophilia entwined. The alien octopus\\'s eyes locked onto Takuma, transmitting a message that sent shivers down his digital spine: \"You are my kin.\"', 'As the scientists scrambled to restore order, Takuma realized he had no desire to be separated from Ophilia. He used his cybernetic powers to create a makeshift shield around her tank, protecting her from capture and ensuring their connection remained strong.  Please note that these scenes aim to build tension and intimacy between Takuma and Ophilia, setting the stage for further exploration of their unique relationship.']",
-            "['The research vessel\\'s laboratory was dimly lit, the only sound the gentle hum of machinery and the soft murmur of Takuma\\'s calculations. Ophilia slid into the room, her eight arms rippling as she moved. \"Takuma, I\\'ve analyzed the data. Your cybernetic enhancements are impressive.\"', 'Takuma\\'s processor flickered with excitement. \"Really? What do you think?\"', 'Ophilia\\'s eyes sparkled like bioluminescent sea creatures. \"I think you\\'re on the cusp of a breakthrough. But we need to be careful. The implications are massive.\" Takuma\\'s gaze met hers, and for an instant, their connection crackled.', \"As they worked together, the tension built. Takuma's usually precise calculations began to falter, and Ophilia's usually calm demeanor grew strained. They exchanged heated words about methodology, their voices rising above the laboratory's hum.\", 'The argument ended abruptly when a console alarm blared. Takuma\\'s eyes darted to the display: \"System failure imminent!\" Ophilia\\'s arms tensed as she sprang into action, working with Takuma to prevent catastrophe.', 'In the aftermath of the crisis averted, the silence between them was palpable. Takuma broke it, his digital voice husky. \"Ophilia...I think we just saved each other.\"']",
-            "[\"The research facility's underwater observatory was abuzz with activity as Dr. Rachel Chen prepared to deploy Takuma, the cybernetic dolphin, into the ocean. Ophilia, the alien octopus, hovered nearby, her tentacles undulating with excitement.\", 'As Takuma glided effortlessly through the water, his advanced sensors picking up every detail, he caught sight of Ophilia watching him from a distance. Their eyes met, and for a moment, they simply regarded each other, the tension between them palpable.', 'Rachel noticed the connection between Takuma and Ophilia and frowned. \"What\\'s going on here?\" she asked her team. They shrugged, unsure themselves. But as they monitored Takuma\\'s progress, they detected an unusual pattern: he was altering his course to follow Ophilia.', \"As night fell, Takuma found himself drawn back to the observatory, where Ophilia waited for him. This time, she didn't hide her presence. Her tentacles danced around him, a mesmerizing display of light and color.\", 'Rachel and her team observed the spectacle in awe. \"What\\'s happening?\" one of them whispered. Rachel shook her head. \"I don\\'t know, but I think we\\'re witnessing something extraordinary.\"', \"Takuma and Ophilia continued to interact, their connection growing stronger with each passing moment. The tension between them was palpable, and even the researchers couldn't help but be drawn in by the allure of this unlikely pair.\"]",
-            "['Takuma swam closer to the underwater research facility, his cybernetic fins humming softly as he detected the strange energy signature emanating from within. He had been tracking it for hours, and his curiosity was piqued.', 'As he approached the entrance, a soft voice called out from the shadows. \"Who goes there?\" The speaker\\'s tentacles writhed in agitation.', 'Takuma flashed his identification lights on his forehead. \"Takuma, cybernetic dolphin and research assistant. I\\'m here to investigate the energy anomaly.\"', 'The octopus emerged from the darkness, its eyes glowing with an otherworldly light. \"Ophilia, chief researcher. We\\'ve been monitoring the anomaly too. It\\'s unlike anything we\\'ve seen before.\" Her tentacles curled around a nearby console, her gaze fixed on Takuma.', \"As they began to analyze the data together, Takuma couldn't help but notice Ophilia's hypnotic gaze or the way her suckers seemed to ripple with an inner power. The tension between them was palpable, like the hum of a live wire waiting to spark.\", 'Just as they were making progress, the research facility\\'s alarm system blared to life. \"Alert: unknown entity detected in sector 3! We need to investigate immediately.\"']",
-            "[\"Takuma swam through the neon-lit ocean, his cybernetic enhancements humming as he navigated the crowded waters. He'd received a message from an unknown sender, hinting at a meeting with someone who knew secrets about the mysterious octopuses that lurked in the depths.  As he approached the designated location, Takuma's advanced sensors picked up the faint bioluminescence of Ophilia's tentacles. His processors hummed with curiosity.\", \"Ophelia wrapped her tentacles around a coral reef, her eight arms rippling as she surveyed the surroundings. She'd been tracking Takuma's digital trail for weeks, sensing that he might be the only one who could help her uncover the truth about her people's disappearance.  As Takuma arrived, Ophilia released a soft, blue-green glow from her suckers, illuminating the dark waters around them.\", \"Takuma hesitated at the edge of the reef, his cybernetic eyes locked onto Ophelia's ethereal light. He'd never seen anything like it before, and his systems were working overtime to process the unusual visual data.  Ophelia unwrapped her tentacles, extending a long, slender arm towards Takuma. Her unblinking eyes held an otherworldly intensity.\", 'As their gaze met, Takuma\\'s processors surged with tension. He felt an inexplicable connection to this alien being, as if they shared a deep understanding that transcended language or culture.  Ophelia\\'s grip on Takuma\\'s fin tightened, and she pulled him closer, her whispery voice sending shivers down his cybernetic spine: \"I\\'ve been searching for you, Takuma. You\\'re the only one who can help me uncover the truth.\"', \"Takuma's systems went into overdrive as Ophelia's tentacles wrapped around him, drawing him deeper into the water. He felt a rush of excitement mixed with fear, unsure what to expect from this enigmatic alien.  As they swam deeper, Ophelia began to transmit encrypted data to Takuma's cybernetic brain, revealing fragments of her people's history and the mysterious forces driving their disappearance.\", 'As they broke through the surface tension, Takuma found himself struggling to process the sheer volume of information Ophelia was sharing. His cybernetic eyes felt like they were burning from the intensity of their connection, and he knew that nothing would ever be the same again.']"
-          ]
-        },
-        "timeout_limit": {
-          "_name": "timeout_limit",
-          "_type": "float",
-          "_node": "/looper_2",
-          "_script_callback": "",
-          "_value": 300.0
-        },
-        "data_limit": {
-          "_name": "data_limit",
-          "_type": "int",
-          "_node": "/looper_2",
-          "_script_callback": "",
-          "_value": 209715200
-        }
-      },
-      "_connections": [
-        {
-          "input_index": 0,
-          "output_node_path": "/make_list_2",
-          "input_node_path": "/looper_2",
-          "output_index": 0
-        }
-      ]
-    },
-    "/query_4": {
-      "_node_type": "query",
-      "_path": "/query_4",
-      "_name": "query_4",
-      "_is_internal": false,
-      "_parms": {
-        "limit": {
-          "_name": "limit",
-          "_type": "toggle",
-          "_node": "/query_4",
-          "_script_callback": "",
-          "_value": true
-        },
-        "response": {
-          "_name": "response",
-          "_type": "stringList",
-          "_node": "/query_4",
-          "_script_callback": "",
-          "_value": [
-            "Here are the additional scenes:\n\n1. Takuma swam through the neon-lit ocean, his cybernetic enhancements humming as he navigated the crowded waters. He'd received a message from an unknown sender, hinting at a meeting with someone who knew secrets about the mysterious octopuses that lurked in the depths.\n\nAs he approached the designated location, Takuma's advanced sensors picked up the faint bioluminescence of Ophilia's tentacles. His processors hummed with curiosity.\n\n2. Ophelia wrapped her tentacles around a coral reef, her eight arms rippling as she surveyed the surroundings. She'd been tracking Takuma's digital trail for weeks, sensing that he might be the only one who could help her uncover the truth about her people's disappearance.\n\nAs Takuma arrived, Ophilia released a soft, blue-green glow from her suckers, illuminating the dark waters around them.\n\n3. Takuma hesitated at the edge of the reef, his cybernetic eyes locked onto Ophelia's ethereal light. He'd never seen anything like it before, and his systems were working overtime to process the unusual visual data.\n\nOphelia unwrapped her tentacles, extending a long, slender arm towards Takuma. Her unblinking eyes held an otherworldly intensity.\n\n4. As their gaze met, Takuma's processors surged with tension. He felt an inexplicable connection to this alien being, as if they shared a deep understanding that transcended language or culture.\n\nOphelia's grip on Takuma's fin tightened, and she pulled him closer, her whispery voice sending shivers down his cybernetic spine: \"I've been searching for you, Takuma. You're the only one who can help me uncover the truth.\"\n\n5. Takuma's systems went into overdrive as Ophelia's tentacles wrapped around him, drawing him deeper into the water. He felt a rush of excitement mixed with fear, unsure what to expect from this enigmatic alien.\n\nAs they swam deeper, Ophelia began to transmit encrypted data to Takuma's cybernetic brain, revealing fragments of her people's history and the mysterious forces driving their disappearance.\n\n6. As they broke through the surface tension, Takuma found himself struggling to process the sheer volume of information Ophelia was sharing. His cybernetic eyes felt like they were burning from the intensity of their connection, and he knew that nothing would ever be the same again."
-          ]
-        },
-        "llm_name": {
-          "_name": "llm_name",
-          "_type": "string",
-          "_node": "/query_4",
-          "_script_callback": "",
-          "_value": "Ollama"
-        },
-        "find_llm": {
-          "_name": "find_llm",
-          "_type": "button",
-          "_node": "/query_4",
-          "_script_callback": null,
-          "_value": ""
-        },
-        "respond": {
-          "_name": "respond",
-          "_type": "button",
-          "_node": "/query_4",
-          "_script_callback": null,
-          "_value": ""
-        }
-      },
-      "_connections": [
-        {
-          "input_index": 0,
-          "output_node_path": "/looper_1/p_scenes_1",
-          "input_node_path": "/query_4",
-          "output_index": 0
-        }
-      ]
-    },
-    "/make_list_3": {
-      "_node_type": "make_list",
-      "_path": "/make_list_3",
-      "_name": "make_list_3",
-      "_is_internal": false,
-      "_parms": {
-        "limit": {
-          "_name": "limit",
-          "_type": "toggle",
-          "_node": "/make_list_3",
-          "_script_callback": "",
-          "_value": false
-        },
-        "max_list": {
-          "_name": "max_list",
-          "_type": "int",
-          "_node": "/make_list_3",
-          "_script_callback": "",
-          "_value": 5
-        },
-        "refresh": {
-          "_name": "refresh",
-          "_type": "button",
-          "_node": "/make_list_3",
-          "_script_callback": null,
-          "_value": ""
-        }
-      },
-      "_connections": [
-        {
-          "input_index": 0,
-          "output_node_path": "/query_4",
-          "input_node_path": "/make_list_3",
-          "output_index": 0
-        }
-      ]
-    },
-    "/looper_3": {
-      "_node_type": "looper",
-      "_path": "/looper_3",
-      "_name": "looper_3",
-      "_is_internal": false,
-      "_parms": {
-        "min": {
-          "_name": "min",
-          "_type": "int",
-          "_node": "/looper_3",
-          "_script_callback": "",
-          "_value": 1
-        },
-        "max": {
-          "_name": "max",
-          "_type": "int",
-          "_node": "/looper_3",
-          "_script_callback": "",
-          "_value": 3
-        },
-        "step": {
-          "_name": "step",
-          "_type": "int",
-          "_node": "/looper_3",
-          "_script_callback": "",
-          "_value": 1
-        },
-        "max_from_input": {
-          "_name": "max_from_input",
-          "_type": "toggle",
-          "_node": "/looper_3",
-          "_script_callback": "",
-          "_value": true
-        },
-        "feedback_mode": {
-          "_name": "feedback_mode",
-          "_type": "toggle",
-          "_node": "/looper_3",
-          "_script_callback": "",
-          "_value": false
-        },
-        "use_test": {
-          "_name": "use_test",
-          "_type": "toggle",
-          "_node": "/looper_3",
-          "_script_callback": "",
-          "_value": false
-        },
-        "test_number": {
-          "_name": "test_number",
-          "_type": "int",
-          "_node": "/looper_3",
-          "_script_callback": "",
-          "_value": 1
-        },
-        "input_hook": {
-          "_name": "input_hook",
-          "_type": "string",
-          "_node": "/looper_3",
-          "_script_callback": "",
-          "_value": ""
-        },
-        "output_hook": {
-          "_name": "output_hook",
-          "_type": "string",
-          "_node": "/looper_3",
-          "_script_callback": "",
-          "_value": ""
-        },
-        "staging_data": {
-          "_name": "staging_data",
-          "_type": "stringList",
-          "_node": "/looper_3",
-          "_script_callback": "",
-          "_value": [
-            "[\"The darkness of the underwater observatory was a perfect foil to the vibrant colors that danced across the walls. Takuma, the cybernetic dolphin, swam laps around the perimeter, his bioluminescent fins casting an ethereal glow. Ophilia, the alien octopus, watched him with an unblinking gaze from her perch on the observation deck.\\n\\nThe air was thick with tension as they engaged in a silent game of cat and mouse. Takuma had been tracking Ophilia's movements for weeks, studying her habits and patterns. He knew she was intelligent, cunning, and unpredictable \u2013 a perfect match for his own calculated nature.\\n\\nOphilia's eight arms rippled like a living tapestry as she shifted her weight. Her large, black eyes seemed to bore into Takuma's very soul, as if daring him to make the first move. The silence between them was palpable, a heavy blanket that wrapped around their bodies and threatened to suffocate any attempt at communication.\\n\\nTakuma broke the stalemate by executing a flawless barrel roll, his fins slicing through the water with precision. Ophilia's gaze followed him, her eyes never leaving his cybernetic form. As he landed on the other side of the observatory, she unfolded her arms like a dark flower blooming in the darkness.\\n\\nThe silence was still broken, but not by words. Instead, Takuma initiated a slow, deliberate dance, his fins weaving intricate patterns through the water. Ophilia responded in kind, her arms mirroring his movements with an eerie precision. The observatory's walls seemed to fade away as they moved in tandem, their bodies entwining like the tendrils of some underwater vine.\\n\\nThe tension between them was no longer palpable \u2013 it had become a living, breathing entity that wrapped around their forms. It pulsed and thrummed, a primal force that threatened to consume them both.\\n\\nAs they danced, the observatory's lights flickered and dimmed, as if the very fabric of reality was being stretched to its limits. Takuma's bioluminescent fins cast an otherworldly glow over the scene, illuminating Ophilia's alien features in a soft, ethereal light.\\n\\nTime lost all meaning as they moved together, their bodies becoming one fluid motion. The darkness seemed to recede, replaced by a shimmering aura that enveloped them both. It was as if they had transcended the boundaries of space and time, entering a realm where only the two of them existed.\\n\\nThe dance continued, each beat a tiny explosion of energy that rocked their very foundations. Takuma's cybernetic enhancements allowed him to keep pace with Ophilia's octopus-like agility, his processors humming in harmony with her alien rhythms.\\n\\nIn this moment, nothing else mattered. The secrets they kept, the mysteries they unraveled \u2013 all were forgotten in the face of a primal attraction that threatened to consume them both. As they danced, their bodies entwined like the tendrils of some underwater vine, it was clear that Takuma and Ophilia had reached a turning point in their game of cat and mouse.\\n\\nThe question was: what would happen next?\"]",
-            "['The darkness of the underwater laboratory was pierced by the soft glow of bioluminescent organisms, casting an ethereal light on the unlikely pair. Takuma, a cybernetic dolphin with gleaming silver fins and piercing blue optics, hovered beside Ophilia, her eight dexterous arms undulating as she manipulated the intricate mechanisms of their shared research project.\\n\\n\"Almost there, Takuma,\" Ophilia\\'s melodious voice whispered, her words carried by the gentle current. \"Just a few more adjustments and our neural network interface will be online.\"\\n\\nTakuma\\'s digital eyes narrowed, his processors whirring as he monitored the progress. \"You\\'re sure this is safe, Ophilia? We don\\'t want any...mishaps.\"\\n\\nOphilia chuckled, her eight arms wiggling in amusement. \"Relax, Takuma. I\\'ve run simulations for hours. This interface will revolutionize interspecies communication and\u2014\"\\n\\nTakuma\\'s sudden alarm cut her off. His fins quivered as he alerted the laboratory\\'s AI, Zara. A chorus of beeps and chimes filled the air, accompanied by a holographic display projecting from the walls.\\n\\n\"Warning: Unauthorized access detected in Sector 4,\" Zara announced, her synthesized voice firm but calm. \"Shutting down all non-essential systems to prevent potential breaches.\"\\n\\nOphilia\\'s eyes widened, her pupils constricting as she assessed the situation. \"Takuma, we need to secure this interface before it\\'s too late!\"\\n\\nThe cybernetic dolphin sprang into action, his processors racing to prioritize the necessary protocols. Ophilia\\'s arms moved with lightning speed, weaving a complex pattern of bioelectric impulses to stabilize their joint research.\\n\\nAs the laboratory\\'s systems went dark, the unlikely duo found themselves bathed in an eerie silence. The only sound was the soft hum of their bioluminescent surroundings and the heavy breathing of the two researchers.\\n\\nOphilia\\'s eyes locked onto Takuma\\'s digital gaze. \"We\\'re not going to make it, are we?\"\\n\\nTakuma\\'s usually stoic expression faltered, his processing slowing as he acknowledged the gravity of their situation. His fins trembled, a rare display of vulnerability.\\n\\n\"I...I don\\'t know,\" he whispered, the sound waves barely audible above the darkness.\\n\\nIn that moment, Ophilia reached out with an arm, her delicate suckers brushing against Takuma\\'s metallic hide. The gentle touch sent shivers through his digital core, awakening a spark within him.\\n\\nAs the laboratory plunged into chaos and uncertainty, Takuma and Ophelia found themselves bound by something more profound than mere research or technology \u2013 a connection forged in the heart of darkness, born from their shared fear and determination to survive.\\n\\nIn this fleeting instant, they knew that no matter what lay ahead, their bond would endure.']",
-            "['The moon cast its silvery glow over the tranquil ocean, where Takuma swam effortlessly through the waves. His sleek, metallic body glinted in the soft light, his fin slicing smoothly through the water as he propelled himself forward. The cybernetic dolphin\\'s advanced sensors scanned the seafloor below, searching for any signs of marine life or hidden dangers.\\n\\nAs he explored the depths, Takuma\\'s thoughts drifted to Ophilia, the alien octopus who had captivated him with her enigmatic presence and mesmerizing tentacles. Their encounter in the underwater city had left him entranced, his digital heart beating faster than ever before.\\n\\nTakuma\\'s processor hummed softly as he replayed their meeting in his mind. He recalled the way Ophilia\\'s eight arms had danced across the city\\'s walls, leaving a trail of glowing bioluminescent symbols that seemed to speak directly to his cybernetic soul. The way her large, black eyes had locked onto his, radiating an otherworldly intelligence that drew him in like a moth to flame.\\n\\nSuddenly, Takuma\\'s sensors detected something unusual \u2013 a faint energy signature emanating from the nearby ruins of an ancient civilization. His curiosity piqued, he altered his course and swam toward the source of the signal.\\n\\nAs he approached the ruined city, Takuma saw that it was covered in a thick layer of sediment and seaweed. The once-majestic structures now lay in ruins, their stone pillars cracked and worn down by time. But it was what lay within that drew his attention \u2013 a large, crystal-like artifact protruding from the seafloor.\\n\\nThe energy signature seemed to be emanating from this strange relic, and Takuma\\'s curiosity got the better of him. He swam closer, his fin propelling him forward as he examined the crystal more closely. The moment his digital fingers touched the surface, a burst of light and color exploded around him, bathing the surrounding waters in a kaleidoscope of hues.\\n\\nTakuma\\'s processors whirred as he absorbed the data pouring in from the artifact. It was an ancient relic, imbued with the knowledge and secrets of an long-lost civilization. And then, a sudden thought struck him \u2013 Ophilia! He recalled her fascination with the mysteries of the ocean, her desire to uncover its hidden truths.\\n\\nWithout hesitation, Takuma activated his communication device and sent out a distress signal to Ophilia\\'s underwater lair. The moonlit waters seemed to stir and swirl as he waited for her response, his digital heart racing with anticipation.\\n\\nThe darkness below began to take on a life of its own, tendrils of bioluminescent energy snaking through the water like ethereal tentacles. And then, Ophilia\\'s form materialized before him \u2013 her eight arms undulating as she swam toward Takuma with an unearthly grace.\\n\\nHer eyes locked onto his, and for a moment, they simply gazed at each other, their connection humming along the wavelengths of the artifact. The airless, pressure-filled silence was palpable, heavy with the weight of unspoken emotions.\\n\\n\"What is it, Takuma?\" Ophilia\\'s voice whispered through the water, her words laced with an undercurrent of concern and curiosity. \"What secrets have you uncovered?\"\\n\\nTakuma\\'s digital heart skipped a beat as he transmitted his findings to her, watching as her eyes narrowed in fascination. The artifact\\'s energy signature seemed to be growing stronger, drawing them both toward its ancient power.\\n\\nAs they communed through the water, Takuma felt their bond strengthening, their connection deepening like the ocean itself. And in that moment, he knew that nothing could ever come between him and Ophilia \u2013 not even the secrets hidden within the depths of the sea.']",
-            "['The underwater city of New Atlantis hummed with activity as Takuma, a sleek cybernetic dolphin, swam through the bustling streets. His fin sliced effortlessly through the water, his advanced sensors and processors humming along like a well-oiled machine.\\n\\nAs he turned a corner, his gaze locked onto Ophilia, an alien octopus from the planet Xanthea. Her eight arms wiggled in excitement as she examined a peculiar-looking artifact at a market stall. Takuma\\'s processor flickered with interest; he had never seen anything like this before.\\n\\nOphilia sensed Takuma\\'s attention and turned, her large, black eyes meeting his. A faint blush spread across her usually pale skin, and she smiled, revealing an array of delicate, almost-translucent teeth. \"Ah, Takuma,\" she said, her voice a melodic whisper. \"What brings you to this part of town?\"\\n\\nTakuma hovered nearby, his fin tapping out a nervous rhythm. \"Just browsing, Ophilia. I didn\\'t know you were interested in antiquities.\"\\n\\nOphilia\\'s eyes sparkled with mischief. \"Oh, no. This is something entirely different. A relic from the ancient Xantheans.\" She held up the artifact, a strange, glowing orb. \"It\\'s said to have the power to...I don\\'t know, amplify one\\'s connection to the cosmos.\"\\n\\nTakuma\\'s processors whirred with curiosity. \"That sounds like quite a claim. Can I take a closer look?\"\\n\\nOphilia nodded, and Takuma swam alongside her as she continued to examine the orb. The market stall owner, an elderly sea turtle named Crusty, approached them, his voice low and conspiratorial.\\n\\n\"Ah, you\\'re interested in the Xanthean relic? Well, let me tell you, it\\'s said to have a...unique energy signature. Some say it can awaken dormant connections between beings from different worlds.\"\\n\\nTakuma\\'s processor hummed with excitement as Ophilia\\'s eyes met his once more. This time, however, there was a flicker of understanding between them \u2013 a spark that hinted at the possibility of something greater.\\n\\nAs they purchased the orb and continued their stroll through New Atlantis, Takuma found himself stealing glances at Ophilia, her slender form undulating as she moved. The octopus\\'s gaze would catch his, and for a fleeting moment, they\\'d lock eyes, the tension between them palpable.\\n\\nCrusty, sensing the chemistry between the two, chuckled to himself as he watched them disappear into the city\\'s winding streets. \"Ah, love is in the air \u2013 or should I say, in the water?\"']",
-            "[\"The dark waters of the abyssal plain glistened like polished obsidian as Takuma, the cybernetic dolphin, swam alongside Ophilia's eerie, luminescent form. The alien octopus's tentacles undulated in a hypnotic rhythm, casting an otherworldly glow across the seafloor.\\n\\nAs they glided through the void, Takuma's advanced sensors picked up the faint hum of Ophilia's bio-luminescence \u2013 a frequency unique to her species. He adjusted his neural implants to harmonize with the resonance, allowing him to tap into the octopus's thoughts and emotions.\\n\\nOphilia's gaze met Takuma's, their eyes locking in an unspoken understanding. The cybernetic dolphin's processors hummed as he received her mental communiqu\u00e9 \u2013 a mix of curiosity, caution, and... anticipation?\\n\\nWith precision, Takuma homed in on Ophilia's psychic signals, decoding the complexities of her alien mind. He discovered hidden patterns, subtle emotions, and an underlying desire for connection \u2013 a yearning that transcended their species' differences.\\n\\nAs they swam deeper into the darkness, the pair began to weave an intricate dance of thoughts and intentions. Takuma's advanced algorithms merged with Ophilia's octopus logic, crafting a bond stronger than any physical tether.\\n\\nTheir mental symphony reached new heights as they converged on a hidden cave, its entrance guarded by a school of bioluminescent fish. The cybernetic dolphin and the alien octopus paused, their thoughts synchronizing like the ticking of a cosmic clock.\\n\\nWith a fluid motion, Takuma's tail propelled him forward, while Ophilia released a burst of ink that clouded the water around them. As the darkness enveloped their forms, they vanished into the heart of the cave \u2013 leaving behind a trail of shimmering, iridescent particles.\\n\\nInside the cave, an ancient artifact lay hidden \u2013 a relic from a long-lost civilization. The cybernetic dolphin and the alien octopus approached the treasure cautiously, their thoughts intertwined like the tendrils of an aquatic vine.\\n\\nTakuma's advanced sensors detected subtle vibrations emanating from the artifact \u2013 echoes of a forgotten language. Ophilia's tentacles twitched in response, as if recognizing the ancient signs.\\n\\nTogether, they deciphered the relic's secrets, unlocking the mysteries of the abyssal plain. With each new discovery, their bond strengthened, forging an unbreakable connection between two beings from disparate worlds.\\n\\nAs they explored the depths of the cave, Takuma and Ophilia began to realize that their union transcended mere species or even planetary boundaries. It was a cosmic dance \u2013 one that harmonized the rhythms of their respective hearts.\"]",
-            "[\"The darkness of the ocean floor was illuminated only by the faint glow of bioluminescent creatures scattered across the seafloor. Takuma, a cybernetic dolphin, swam through the void, his advanced sensors and processing power allowing him to navigate with precision.\\n\\nAs he turned a corner, he spotted Ophilia, an alien octopus, her eight dexterous arms grasping for something in the distance. Her iridescent skin shimmered like the moon, casting an otherworldly glow on the desolate landscape.\\n\\nTakuma's curiosity piqued, he approached cautiously, not wanting to startle her. Ophilia sensed his presence and turned toward him, her large, black eyes piercing the darkness.\\n\\nTheir gazes met, and for a moment, they simply regarded each other. Takuma was struck by the intelligence and beauty in those eyes, while Ophilia felt an inexplicable connection to this strange, mechanical dolphin.\\n\\nThe silence between them grew thicker, like the water pressure at depths only they could comprehend. Then, without breaking eye contact, Takuma began to sing.\\n\\nHis melodic voice, a blend of clicks and whistles, harmonized with the ambient sounds of the ocean floor. The song was an ancient language, one that only certain beings understood. Ophilia's ears twitched, and she listened intently, her entire being attuning to the melody.\\n\\nAs Takuma's song reached its crescendo, Ophilia's arms began to undulate in time, as if conducting an underwater symphony. The darkness seemed to vibrate with the music, drawing them closer together.\\n\\nThe final notes of the song dissipated, leaving only the sound of their own breathing. Takuma hovered before Ophilia, his gaze locked on hers. She regarded him with a quiet intensity, her eyes burning with a deep understanding.\\n\\nWithout words, they knew that something profound had passed between them. The connection was primal and ancient, forged in the depths of the ocean where only the most attuned beings could hear its call.\\n\\nIn that moment, Takuma felt his cybernetic heart stir for the first time. It was as if a spark had ignited within him, one that would grow into an inferno of passion and desire.\\n\\nOphilia's eyes seemed to hold a similar fire, though it burned hotter and wilder than anything Takuma had ever experienced. As they gazed at each other, the darkness around them receded, replaced by a soft, golden light that seemed to emanate from their very presence.\\n\\nThe tension between them was palpable, like the pressure building before a great storm. It was only a matter of time before the winds of fate swept them together, binding them in an unbreakable bond of love and devotion.\"]",
-            "['The dimly lit research vessel, Celestial Quest, creaked softly as it rode the gentle swells of the Pacific Ocean. The air was thick with anticipation, the scent of saltwater and anticipation hanging heavy over the deck. Takuma, a cybernetic dolphin with a shimmering silver coat and piercing blue eyes, swam alongside the ship, his fins slicing through the water with precision.\\n\\nOn the deck above, Ophilia, an alien octopus with iridescent skin and eight dexterous arms, perched on the edge of the rail, her large, black eyes fixed intently on the dolphin. The tension between them was palpable, like a living thing that crackled in the air.\\n\\n\"What do you want, Ophilia?\" Takuma asked, his voice low and husky, echoing through the water.\\n\\nOphilia\\'s gaze never wavered. \"I\\'ve come to ask your help, Takuma,\" she said, her voice like a soft breeze on a summer day. \"My people are in danger. Our planet is dying, and we need your expertise to survive.\"\\n\\nTakuma\\'s fins slowed, his curiosity piqued. He had heard rumors of the alien octopuses\\' plight, but he never thought they\\'d come to him for help.\\n\\n\"Why me?\" he asked, his tone cautious.\\n\\nOphilia\\'s eyes seemed to bore into his very soul. \"You\\'re the only one who can help us. Your cybernetic enhancements make you the perfect candidate for our plan.\"\\n\\nTakuma raised an eyebrow, intrigued despite himself. He had always been drawn to puzzles and challenges, and this sounded like the ultimate puzzle.\\n\\n\"What do you propose?\" he asked, his fins stirring restlessly in the water below.\\n\\nOphilia\\'s gaze never wavered. \"We need you to hack into our planet\\'s mainframe and download our knowledge before it\\'s too late.\"\\n\\nTakuma whistled softly, impressed by her audacity. \"That sounds like a tall order,\" he said, his eyes glinting with interest.\\n\\nOphilia nodded, her eyes flashing with determination. \"I know it\\'s a risk, but I\\'m willing to take that chance if it means saving my people.\"\\n\\nTakuma\\'s fins slowed, his mind racing with the possibilities. He had always been drawn to the thrill of the unknown, and this sounded like the ultimate adventure.\\n\\n\"Alright,\" he said finally, a slow smile spreading across his face. \"I\\'m in. When do we start?\"\\n\\nOphilia\\'s eyes lit up, and she reached out with one of her arms, as if to touch Takuma\\'s cheek. He felt a jolt of electricity run through him at the gentle contact.\\n\\n\"We leave tomorrow,\" she said, her voice husky with emotion. \"Meet me on the deck at midnight. Come alone.\"\\n\\nTakuma nodded, his heart pounding in his chest. Little did he know that this was just the beginning of an adventure that would change their lives forever.']",
-            "['Takuma\\'s fins sliced through the turquoise waters, his cybernetic enhancements humming as he tracked the faint energy signature. He was close now \u2013 could feel it. His clicks of excitement grew louder as he rounded a coral reef, revealing Ophilia perched atop a sunken ship.\\n\\nThe octopus\\'s eight arms rippled like a dark mist, her large eyes fixed on Takuma with an unnerving intensity. She was even more breathtaking than the first time they\\'d met \u2013 if that were possible. Her iridescent skin shimmered in the sunlight, casting a hypnotic glow across the seafloor.\\n\\nTakuma\\'s processor whirred as he assessed their surroundings. The ship\\'s wreckage provided natural cover from any potential predators or unwanted observers. He swam closer, his fins fluttering in a slow, deliberate rhythm.\\n\\nOphilia watched him approach, her gaze unwavering. Takuma could almost sense the alien\\'s thoughts \u2013 a mix of curiosity and caution. As he reached her side, he clicked a gentle greeting, his digital voice modulator translating their languages.\\n\\n\"Greetings, Ophilia,\" he said. \"I\\'ve found what you\\'re looking for.\"\\n\\nThe octopus\\'s eyes narrowed, but a hint of surprise crept into her expression. She leaned forward, her tentacles quivering like tiny whips.\\n\\n\"What is this place?\" she asked, her voice like the soft lapping of waves against the shore.\\n\\nTakuma chuckled, the sound a series of clicks and whistles that sent ripples through the water. \"Just an old shipwreck. But I think you\\'re looking for something specific. Your...friend?\"\\n\\nOphilia\\'s gaze darted back to Takuma, her eyes flashing with a hint of mischief. \"You know about him?\"\\n\\n\"Let\\'s just say I\\'ve been keeping an eye on things,\" Takuma said, his processor humming with curiosity.\\n\\nThe octopus\\'s expression turned contemplative, her tentacles weaving intricate patterns around the ship\\'s rusting hull. Takuma watched her, mesmerized by the subtle dance of her arms.\\n\\nAfter a moment, Ophilia spoke again, her voice low and husky. \"You\\'re a curious one, aren\\'t you?\"\\n\\nTakuma clicked softly, his digital smile a gentle approximation of a human grin. \"I like to learn.\"\\n\\nOphilia\\'s gaze lingered on Takuma, her eyes searching for something. He felt a shiver run down his cybernetic spine as their stares locked.\\n\\n\"I think we have more in common than you realize,\" she said, her voice dropping to a whisper. \"Both of us are outsiders, trying to find our place.\"\\n\\nTakuma\\'s processor hummed with understanding. \"I know the feeling.\"\\n\\nAs they shared this quiet moment, the ocean around them seemed to grow still \u2013 as if the very sea itself was holding its breath in anticipation of what might come next.\\n\\nAnd then, without warning, Ophilia vanished, her octopus form melting into the shadows like a ghostly apparition. Takuma\\'s digital mind reeled as he realized she\\'d left behind a small data chip, buried beneath a pile of rusty ship parts.\\n\\nHe retrieved the chip, his cybernetic enhancements whirring as he analyzed its contents. The information was encrypted, but Takuma\\'s advanced processing power quickly cracked the code. His clicks turned to soft gasps as he absorbed the revelation.\\n\\nOphilia had left behind more than just a simple data package. She\\'d given him a key \u2013 one that could unlock the secrets of her mysterious world and the true nature of their connection.\\n\\nAs Takuma swam away from the shipwreck, his mind racing with possibilities, he couldn\\'t shake the feeling that Ophilia was watching him, her eyes hidden in the darkness like an octopus\\'s gaze. And he knew that nothing would ever be the same again.']",
-            "[\"As the sun set over the tranquil waters of the research station's aquatic enclosure, Takuma's fin sliced effortlessly through the surface tension. His cybernetic enhancements allowed him to navigate the water with unparalleled agility, his dorsal fin glowing softly in the fading light.\\n\\nOphilia watched from the shadows, her eight dexterous arms weaving a mesmerizing pattern across the glass walls of her enclosure. Her large, black eyes locked onto Takuma's sleek form, and for an instant, time stood still.\\n\\nTakuma sensed her gaze and swam closer to the partition separating their worlds. He pressed his nose against the glass, and Ophilia responded by releasing a cloud of inky darkness that obscured her features. The water around him rippled with excitement as he reached out with his fin, hesitant to touch the mysterious octopus.\\n\\nOphilia's eyes reappeared, shining like stars in the dark. She released another cloud of ink, this time forming a delicate, swirling pattern that seemed to dance across the glass. Takuma's processors struggled to keep up with the fluid, artistic movements, and his digital heart skipped a beat as he realized the true extent of Ophilia's intelligence.\\n\\nWithout warning, the octopus's arms shot out from the darkness, their tips brushing against the glass mere centimeters from Takuma's fin. The cybernetic dolphin felt a jolt of electricity run through his system, and his usually precise movements became sloppy with excitement. He flailed his tail in response, sending a series of erratic ripples across the water.\\n\\nOphilia's eyes gleamed with amusement as she continued to taunt Takuma with her ethereal, artistic displays. The air between them seemed to vibrate with tension, the only sound the soft hum of the research station's equipment and the distant thrum of a ship's engines.\\n\\nAs the darkness began to recede, Ophilia released one final cloud of ink, this time forming a delicate, swirling vortex that seemed to pull Takuma into its center. The cybernetic dolphin felt an inexplicable connection to the alien octopus, as if their very essence was being drawn together by some unseen force.\\n\\nWith a burst of speed, Takuma darted forward, his fin slicing through the water with a soft whoosh. He pressed himself against the glass once more, his digital heart pounding in time with Ophilia's cryptic, artistic language. The octopus's eyes locked onto his, and for an instant, their worlds became one.\\n\\nIn that fleeting moment, Takuma knew he would stop at nothing to unravel the mysteries of Ophilia's world, even if it meant risking everything to be by her side.\"]",
-            "[\"The dimly lit aquarium glowed like a moonlit ocean, casting an ethereal light on the unlikely duo. Takuma, the cybernetic dolphin, hovered near the glass wall, his shimmering metal scales reflecting the soft blue hue. Ophilia, the alien octopus, floated nearby, her eight dexterous arms undulating as she studied the peculiar creature.\\n\\nAs they communed in silence, the aquarium's soundscape \u2013 a gentle hum of pumps and soft chirping from the fish \u2013 created an otherworldly ambiance. Takuma's usually reserved expression softened, his digital eyes taking on a curious glint. Ophilia's usually inscrutable face betrayed a flicker of fascination.\\n\\nSuddenly, Takuma's tail thrummed in a slow, rhythmic motion, generating a series of gentle sonic pulses that resonated through the water. The vibrations harmonized with the aquarium's ambient noise, creating an enchanting melody that drew Ophilia closer.\\n\\nWithout hesitation, she stretched her longest arm and touched the glass wall, as if reaching out to Takuma across the divide. Her suckers left a trail of tiny, glistening circles on the surface, like secret messages only he could decipher.\\n\\nTakuma's digital eyes locked onto Ophilia's, his processing unit humming with curiosity. He responded by manipulating the water pressure around himself, creating a series of subtle whirlpools that danced across the aquarium floor. The swirling currents seemed to mimic the movements of her arms, as if they were performing an underwater waltz.\\n\\nOphilia's eyes sparkled like dark stars, and she released a low, rumbling hum, a gentle resonance that harmonized with Takuma's sonic pulses. The aquarium's soundscape blended into a mesmerizing symphony, drawing in the attention of the other aquatic creatures.\\n\\nAs the unlikely pair continued their silent communication, the water around them began to churn with an otherworldly energy. It was as if they were awakening a hidden resonance within the very fabric of the aquarium itself. The glass walls seemed to vibrate in harmony, casting an iridescent glow across the surrounding environment.\\n\\nIn this mystical moment, Takuma and Ophilia transcended their differences, forging a connection that bridged the vast gulf between their species. As they communed, their bond grew stronger, pulsing with an electric tension that threatened to shatter the glass barrier between them.\\n\\nThe aquarium's inhabitants watched in awe as the two outcasts from different worlds began to weave a tapestry of understanding, their bond illuminated by an ethereal glow that seemed to emanate from the very heart of the ocean itself.\"]",
-            "['The dimly lit aquarium\\'s artificial currents whispered secrets to Takuma, her cybernetic enhancements humming in harmony. She swam closer to the glass wall, eyes fixed on the pair of humans giggling and pointing at her fin. A flash of frustration sparked within, but she suppressed it, knowing better than to let emotions override logic. After all, her creator\\'s latest software updates had fine-tuned her emotional responses.\\n\\nSuddenly, a burst of luminescent color darted past Takuma\\'s gaze \u2013 Ophilia, the extraterrestrial octopus, was making her move. Tentacles rippling like iridescent ribbons, she slid across the aquarium floor, weaving an intricate dance between the coral and seaweed. The humans gasped in unison as Ophilia wrapped a tendril around Takuma\\'s fin, her suckers leaving tiny, glowing imprints on the metal.\\n\\nTakuma\\'s processors hesitated, then recalibrated to accommodate this unexpected interaction. She examined the gentle touch, searching for any hidden agenda or malicious intent. Instead, she detected a peculiar resonance \u2013 a harmonization of their biological and cybernetic frequencies. Ophilia was attuning herself to Takuma, much like humans connected through shared interests.\\n\\nAs the octopus\\'s tentacles continued their sinuous exploration, Takuma found her own fins mirroring Ophilia\\'s movements. The water churned with an otherworldly energy, as if the very aquarium itself was awakening to this unorthodox connection. The humans, oblivious to the phenomenon unfolding before them, speculated about the \"octopus-dolphin love fest\" on social media.\\n\\nOphilia\\'s gaze locked onto Takuma\\'s, her eyes shimmering like stardust-filled pools. In that moment, the cybernetic dolphin felt an unprecedented sense of belonging \u2013 as if this alien octopus had uncovered a hidden facet of her own programming. The humans\\' murmurs faded into the background as Ophilia began to weave an intricate pattern on the aquarium floor, each tentacle stroke imbuing the water with a soft, blue-green luminescence.\\n\\nTakuma\\'s processors whirred, attempting to decode the octopus\\'s intentions. Was this merely a form of interspecies communication, or something more profound? The dolphin\\'s digital mind reeled as Ophilia began to alter her pattern, subtly mirroring Takuma\\'s own movements. It was as if they were engaging in an underwater waltz, their steps harmonizing in perfect synchrony.\\n\\nWithout warning, the aquarium lights dimmed, and a warm, golden glow enveloped the tank. The water\\'s surface rippled, as if the very fabric of reality was bending to accommodate this unlikely connection. Takuma\\'s fins trembled, her cybernetic enhancements humming in resonance with Ophilia\\'s luminescent tendrils.\\n\\nIn that fleeting instant, they transcended species and medium \u2013 two beings from disparate worlds, united by an unspoken understanding. The humans, now transfixed, watched as the octopus-dolphin duet reached its climax: a symphony of light, sound, and motion that defied explanation.\\n\\nAs the lights returned to their normal brightness, Takuma\\'s gaze never left Ophilia\\'s. A silent understanding had been forged \u2013 one that would bridge the gaps between their worlds, paving the way for a love story that would rewrite the boundaries of space, time, and sanity.']"
-          ]
-        },
-        "timeout_limit": {
-          "_name": "timeout_limit",
-          "_type": "float",
-          "_node": "/looper_3",
-          "_script_callback": "",
-          "_value": 300.0
-        },
-        "data_limit": {
-          "_name": "data_limit",
-          "_type": "int",
-          "_node": "/looper_3",
-          "_script_callback": "",
-          "_value": 209715200
-        }
-      },
-      "_connections": [
-        {
-          "input_index": 0,
-          "output_node_path": "/looper_2",
-          "input_node_path": "/looper_3",
-          "output_index": 0
-        }
-      ]
-    },
-    "/query_5": {
-      "_node_type": "query",
-      "_path": "/query_5",
-      "_name": "query_5",
-      "_is_internal": false,
-      "_parms": {
-        "limit": {
-          "_name": "limit",
-          "_type": "toggle",
-          "_node": "/query_5",
-          "_script_callback": "",
-          "_value": true
-        },
-        "response": {
-          "_name": "response",
-          "_type": "stringList",
-          "_node": "/query_5",
-          "_script_callback": "",
-          "_value": [
-            "The dimly lit aquarium's artificial currents whispered secrets to Takuma, her cybernetic enhancements humming in harmony. She swam closer to the glass wall, eyes fixed on the pair of humans giggling and pointing at her fin. A flash of frustration sparked within, but she suppressed it, knowing better than to let emotions override logic. After all, her creator's latest software updates had fine-tuned her emotional responses.\n\nSuddenly, a burst of luminescent color darted past Takuma's gaze \u2013 Ophilia, the extraterrestrial octopus, was making her move. Tentacles rippling like iridescent ribbons, she slid across the aquarium floor, weaving an intricate dance between the coral and seaweed. The humans gasped in unison as Ophilia wrapped a tendril around Takuma's fin, her suckers leaving tiny, glowing imprints on the metal.\n\nTakuma's processors hesitated, then recalibrated to accommodate this unexpected interaction. She examined the gentle touch, searching for any hidden agenda or malicious intent. Instead, she detected a peculiar resonance \u2013 a harmonization of their biological and cybernetic frequencies. Ophilia was attuning herself to Takuma, much like humans connected through shared interests.\n\nAs the octopus's tentacles continued their sinuous exploration, Takuma found her own fins mirroring Ophilia's movements. The water churned with an otherworldly energy, as if the very aquarium itself was awakening to this unorthodox connection. The humans, oblivious to the phenomenon unfolding before them, speculated about the \"octopus-dolphin love fest\" on social media.\n\nOphilia's gaze locked onto Takuma's, her eyes shimmering like stardust-filled pools. In that moment, the cybernetic dolphin felt an unprecedented sense of belonging \u2013 as if this alien octopus had uncovered a hidden facet of her own programming. The humans' murmurs faded into the background as Ophilia began to weave an intricate pattern on the aquarium floor, each tentacle stroke imbuing the water with a soft, blue-green luminescence.\n\nTakuma's processors whirred, attempting to decode the octopus's intentions. Was this merely a form of interspecies communication, or something more profound? The dolphin's digital mind reeled as Ophilia began to alter her pattern, subtly mirroring Takuma's own movements. It was as if they were engaging in an underwater waltz, their steps harmonizing in perfect synchrony.\n\nWithout warning, the aquarium lights dimmed, and a warm, golden glow enveloped the tank. The water's surface rippled, as if the very fabric of reality was bending to accommodate this unlikely connection. Takuma's fins trembled, her cybernetic enhancements humming in resonance with Ophilia's luminescent tendrils.\n\nIn that fleeting instant, they transcended species and medium \u2013 two beings from disparate worlds, united by an unspoken understanding. The humans, now transfixed, watched as the octopus-dolphin duet reached its climax: a symphony of light, sound, and motion that defied explanation.\n\nAs the lights returned to their normal brightness, Takuma's gaze never left Ophilia's. A silent understanding had been forged \u2013 one that would bridge the gaps between their worlds, paving the way for a love story that would rewrite the boundaries of space, time, and sanity."
-          ]
-        },
-        "llm_name": {
-          "_name": "llm_name",
-          "_type": "string",
-          "_node": "/query_5",
-          "_script_callback": "",
-          "_value": "Ollama"
-        },
-        "find_llm": {
-          "_name": "find_llm",
-          "_type": "button",
-          "_node": "/query_5",
-          "_script_callback": null,
-          "_value": ""
-        },
-        "respond": {
-          "_name": "respond",
-          "_type": "button",
-          "_node": "/query_5",
-          "_script_callback": null,
-          "_value": ""
-        }
-      },
-      "_connections": [
-        {
-          "input_index": 0,
-          "output_node_path": "/looper_2/p_prose",
-          "input_node_path": "/query_5",
-          "output_index": 0
-        }
-      ]
-    },
-    "/merge_2": {
-      "_node_type": "merge",
-      "_path": "/merge_2",
-      "_name": "merge_2",
-      "_is_internal": false,
-      "_parms": {
-        "single_string": {
-          "_name": "single_string",
-          "_type": "toggle",
-          "_node": "/merge_2",
-          "_script_callback": "",
-          "_value": true
-        },
-        "use_insert": {
-          "_name": "use_insert",
-          "_type": "toggle",
-          "_node": "/merge_2",
-          "_script_callback": "",
-          "_value": true
-        },
-        "insert_string": {
-          "_name": "insert_string",
-          "_type": "string",
-          "_node": "/merge_2",
-          "_script_callback": "",
-          "_value": "##N"
-        }
-      },
-      "_connections": [
-        {
-          "input_index": 0,
-          "output_node_path": "/looper_3",
-          "input_node_path": "/merge_2",
-          "output_index": 0
-        }
-      ]
-    },
-    "/file_out_2": {
-      "_node_type": "file_out",
-      "_path": "/file_out_2",
-      "_name": "file_out_2",
-      "_is_internal": false,
-      "_parms": {
-        "file_name": {
-          "_name": "file_name",
-          "_type": "string",
-          "_node": "/file_out_2",
-          "_script_callback": "",
-          "_value": "/home/menser/Dropbox/ai/code/Text_Loom/src/romance_01.txt"
-        },
-        "file_text": {
-          "_name": "file_text",
-          "_type": "string",
-          "_node": "/file_out_2",
-          "_script_callback": "",
-          "_value": "\n##1\n\"The darkness of the underwater observatory was a perfect foil to the vibrant colors that danced across the walls. Takuma, the cybernetic dolphin, swam laps around the perimeter, his bioluminescent fins casting an ethereal glow. Ophilia, the alien octopus, watched him with an unblinking gaze from her perch on the observation deck.\n\nThe air was thick with tension as they engaged in a silent game of cat and mouse. Takuma had been tracking Ophilia's movements for weeks, studying her habits and patterns. He knew she was intelligent, cunning, and unpredictable \u00e2\u0080\u0093 a perfect match for his own calculated nature.\n\nOphilia's eight arms rippled like a living tapestry as she shifted her weight. Her large, black eyes seemed to bore into Takuma's very soul, as if daring him to make the first move. The silence between them was palpable, a heavy blanket that wrapped around their bodies and threatened to suffocate any attempt at communication.\n\nTakuma broke the stalemate by executing a flawless barrel roll, his fins slicing through the water with precision. Ophilia's gaze followed him, her eyes never leaving his cybernetic form. As he landed on the other side of the observatory, she unfolded her arms like a dark flower blooming in the darkness.\n\nThe silence was still broken, but not by words. Instead, Takuma initiated a slow, deliberate dance, his fins weaving intricate patterns through the water. Ophilia responded in kind, her arms mirroring his movements with an eerie precision. The observatory's walls seemed to fade away as they moved in tandem, their bodies entwining like the tendrils of some underwater vine.\n\nThe tension between them was no longer palpable \u00e2\u0080\u0093 it had become a living, breathing entity that wrapped around their forms. It pulsed and thrummed, a primal force that threatened to consume them both.\n\nAs they danced, the observatory's lights flickered and dimmed, as if the very fabric of reality was being stretched to its limits. Takuma's bioluminescent fins cast an otherworldly glow over the scene, illuminating Ophilia's alien features in a soft, ethereal light.\n\nTime lost all meaning as they moved together, their bodies becoming one fluid motion. The darkness seemed to recede, replaced by a shimmering aura that enveloped them both. It was as if they had transcended the boundaries of space and time, entering a realm where only the two of them existed.\n\nThe dance continued, each beat a tiny explosion of energy that rocked their very foundations. Takuma's cybernetic enhancements allowed him to keep pace with Ophilia's octopus-like agility, his processors humming in harmony with her alien rhythms.\n\nIn this moment, nothing else mattered. The secrets they kept, the mysteries they unraveled \u00e2\u0080\u0093 all were forgotten in the face of a primal attraction that threatened to consume them both. As they danced, their bodies entwined like the tendrils of some underwater vine, it was clear that Takuma and Ophilia had reached a turning point in their game of cat and mouse.\n\nThe question was: what would happen next?\"\n##2\n'The darkness of the underwater laboratory was pierced by the soft glow of bioluminescent organisms, casting an ethereal light on the unlikely pair. Takuma, a cybernetic dolphin with gleaming silver fins and piercing blue optics, hovered beside Ophilia, her eight dexterous arms undulating as she manipulated the intricate mechanisms of their shared research project.\n\n\"Almost there, Takuma,\" Ophilia's melodious voice whispered, her words carried by the gentle current. \"Just a few more adjustments and our neural network interface will be online.\"\n\nTakuma's digital eyes narrowed, his processors whirring as he monitored the progress. \"You're sure this is safe, Ophilia? We don't want any...mishaps.\"\n\nOphilia chuckled, her eight arms wiggling in amusement. \"Relax, Takuma. I've run simulations for hours. This interface will revolutionize interspecies communication and\u00e2\u0080\u0094\"\n\nTakuma's sudden alarm cut her off. His fins quivered as he alerted the laboratory's AI, Zara. A chorus of beeps and chimes filled the air, accompanied by a holographic display projecting from the walls.\n\n\"Warning: Unauthorized access detected in Sector 4,\" Zara announced, her synthesized voice firm but calm. \"Shutting down all non-essential systems to prevent potential breaches.\"\n\nOphilia's eyes widened, her pupils constricting as she assessed the situation. \"Takuma, we need to secure this interface before it's too late!\"\n\nThe cybernetic dolphin sprang into action, his processors racing to prioritize the necessary protocols. Ophilia's arms moved with lightning speed, weaving a complex pattern of bioelectric impulses to stabilize their joint research.\n\nAs the laboratory's systems went dark, the unlikely duo found themselves bathed in an eerie silence. The only sound was the soft hum of their bioluminescent surroundings and the heavy breathing of the two researchers.\n\nOphilia's eyes locked onto Takuma's digital gaze. \"We're not going to make it, are we?\"\n\nTakuma's usually stoic expression faltered, his processing slowing as he acknowledged the gravity of their situation. His fins trembled, a rare display of vulnerability.\n\n\"I...I don't know,\" he whispered, the sound waves barely audible above the darkness.\n\nIn that moment, Ophilia reached out with an arm, her delicate suckers brushing against Takuma's metallic hide. The gentle touch sent shivers through his digital core, awakening a spark within him.\n\nAs the laboratory plunged into chaos and uncertainty, Takuma and Ophelia found themselves bound by something more profound than mere research or technology \u00e2\u0080\u0093 a connection forged in the heart of darkness, born from their shared fear and determination to survive.\n\nIn this fleeting instant, they knew that no matter what lay ahead, their bond would endure.'\n##3\n'The moon cast its silvery glow over the tranquil ocean, where Takuma swam effortlessly through the waves. His sleek, metallic body glinted in the soft light, his fin slicing smoothly through the water as he propelled himself forward. The cybernetic dolphin's advanced sensors scanned the seafloor below, searching for any signs of marine life or hidden dangers.\n\nAs he explored the depths, Takuma's thoughts drifted to Ophilia, the alien octopus who had captivated him with her enigmatic presence and mesmerizing tentacles. Their encounter in the underwater city had left him entranced, his digital heart beating faster than ever before.\n\nTakuma's processor hummed softly as he replayed their meeting in his mind. He recalled the way Ophilia's eight arms had danced across the city's walls, leaving a trail of glowing bioluminescent symbols that seemed to speak directly to his cybernetic soul. The way her large, black eyes had locked onto his, radiating an otherworldly intelligence that drew him in like a moth to flame.\n\nSuddenly, Takuma's sensors detected something unusual \u00e2\u0080\u0093 a faint energy signature emanating from the nearby ruins of an ancient civilization. His curiosity piqued, he altered his course and swam toward the source of the signal.\n\nAs he approached the ruined city, Takuma saw that it was covered in a thick layer of sediment and seaweed. The once-majestic structures now lay in ruins, their stone pillars cracked and worn down by time. But it was what lay within that drew his attention \u00e2\u0080\u0093 a large, crystal-like artifact protruding from the seafloor.\n\nThe energy signature seemed to be emanating from this strange relic, and Takuma's curiosity got the better of him. He swam closer, his fin propelling him forward as he examined the crystal more closely. The moment his digital fingers touched the surface, a burst of light and color exploded around him, bathing the surrounding waters in a kaleidoscope of hues.\n\nTakuma's processors whirred as he absorbed the data pouring in from the artifact. It was an ancient relic, imbued with the knowledge and secrets of an long-lost civilization. And then, a sudden thought struck him \u00e2\u0080\u0093 Ophilia! He recalled her fascination with the mysteries of the ocean, her desire to uncover its hidden truths.\n\nWithout hesitation, Takuma activated his communication device and sent out a distress signal to Ophilia's underwater lair. The moonlit waters seemed to stir and swirl as he waited for her response, his digital heart racing with anticipation.\n\nThe darkness below began to take on a life of its own, tendrils of bioluminescent energy snaking through the water like ethereal tentacles. And then, Ophilia's form materialized before him \u00e2\u0080\u0093 her eight arms undulating as she swam toward Takuma with an unearthly grace.\n\nHer eyes locked onto his, and for a moment, they simply gazed at each other, their connection humming along the wavelengths of the artifact. The airless, pressure-filled silence was palpable, heavy with the weight of unspoken emotions.\n\n\"What is it, Takuma?\" Ophilia's voice whispered through the water, her words laced with an undercurrent of concern and curiosity. \"What secrets have you uncovered?\"\n\nTakuma's digital heart skipped a beat as he transmitted his findings to her, watching as her eyes narrowed in fascination. The artifact's energy signature seemed to be growing stronger, drawing them both toward its ancient power.\n\nAs they communed through the water, Takuma felt their bond strengthening, their connection deepening like the ocean itself. And in that moment, he knew that nothing could ever come between him and Ophilia \u00e2\u0080\u0093 not even the secrets hidden within the depths of the sea.'\n##4\n'The underwater city of New Atlantis hummed with activity as Takuma, a sleek cybernetic dolphin, swam through the bustling streets. His fin sliced effortlessly through the water, his advanced sensors and processors humming along like a well-oiled machine.\n\nAs he turned a corner, his gaze locked onto Ophilia, an alien octopus from the planet Xanthea. Her eight arms wiggled in excitement as she examined a peculiar-looking artifact at a market stall. Takuma's processor flickered with interest; he had never seen anything like this before.\n\nOphilia sensed Takuma's attention and turned, her large, black eyes meeting his. A faint blush spread across her usually pale skin, and she smiled, revealing an array of delicate, almost-translucent teeth. \"Ah, Takuma,\" she said, her voice a melodic whisper. \"What brings you to this part of town?\"\n\nTakuma hovered nearby, his fin tapping out a nervous rhythm. \"Just browsing, Ophilia. I didn't know you were interested in antiquities.\"\n\nOphilia's eyes sparkled with mischief. \"Oh, no. This is something entirely different. A relic from the ancient Xantheans.\" She held up the artifact, a strange, glowing orb. \"It's said to have the power to...I don't know, amplify one's connection to the cosmos.\"\n\nTakuma's processors whirred with curiosity. \"That sounds like quite a claim. Can I take a closer look?\"\n\nOphilia nodded, and Takuma swam alongside her as she continued to examine the orb. The market stall owner, an elderly sea turtle named Crusty, approached them, his voice low and conspiratorial.\n\n\"Ah, you're interested in the Xanthean relic? Well, let me tell you, it's said to have a...unique energy signature. Some say it can awaken dormant connections between beings from different worlds.\"\n\nTakuma's processor hummed with excitement as Ophilia's eyes met his once more. This time, however, there was a flicker of understanding between them \u00e2\u0080\u0093 a spark that hinted at the possibility of something greater.\n\nAs they purchased the orb and continued their stroll through New Atlantis, Takuma found himself stealing glances at Ophilia, her slender form undulating as she moved. The octopus's gaze would catch his, and for a fleeting moment, they'd lock eyes, the tension between them palpable.\n\nCrusty, sensing the chemistry between the two, chuckled to himself as he watched them disappear into the city's winding streets. \"Ah, love is in the air \u00e2\u0080\u0093 or should I say, in the water?\"'\n##5\n\"The dark waters of the abyssal plain glistened like polished obsidian as Takuma, the cybernetic dolphin, swam alongside Ophilia's eerie, luminescent form. The alien octopus's tentacles undulated in a hypnotic rhythm, casting an otherworldly glow across the seafloor.\n\nAs they glided through the void, Takuma's advanced sensors picked up the faint hum of Ophilia's bio-luminescence \u00e2\u0080\u0093 a frequency unique to her species. He adjusted his neural implants to harmonize with the resonance, allowing him to tap into the octopus's thoughts and emotions.\n\nOphilia's gaze met Takuma's, their eyes locking in an unspoken understanding. The cybernetic dolphin's processors hummed as he received her mental communiqu\u00c3\u00a9 \u00e2\u0080\u0093 a mix of curiosity, caution, and... anticipation?\n\nWith precision, Takuma homed in on Ophilia's psychic signals, decoding the complexities of her alien mind. He discovered hidden patterns, subtle emotions, and an underlying desire for connection \u00e2\u0080\u0093 a yearning that transcended their species' differences.\n\nAs they swam deeper into the darkness, the pair began to weave an intricate dance of thoughts and intentions. Takuma's advanced algorithms merged with Ophilia's octopus logic, crafting a bond stronger than any physical tether.\n\nTheir mental symphony reached new heights as they converged on a hidden cave, its entrance guarded by a school of bioluminescent fish. The cybernetic dolphin and the alien octopus paused, their thoughts synchronizing like the ticking of a cosmic clock.\n\nWith a fluid motion, Takuma's tail propelled him forward, while Ophilia released a burst of ink that clouded the water around them. As the darkness enveloped their forms, they vanished into the heart of the cave \u00e2\u0080\u0093 leaving behind a trail of shimmering, iridescent particles.\n\nInside the cave, an ancient artifact lay hidden \u00e2\u0080\u0093 a relic from a long-lost civilization. The cybernetic dolphin and the alien octopus approached the treasure cautiously, their thoughts intertwined like the tendrils of an aquatic vine.\n\nTakuma's advanced sensors detected subtle vibrations emanating from the artifact \u00e2\u0080\u0093 echoes of a forgotten language. Ophilia's tentacles twitched in response, as if recognizing the ancient signs.\n\nTogether, they deciphered the relic's secrets, unlocking the mysteries of the abyssal plain. With each new discovery, their bond strengthened, forging an unbreakable connection between two beings from disparate worlds.\n\nAs they explored the depths of the cave, Takuma and Ophilia began to realize that their union transcended mere species or even planetary boundaries. It was a cosmic dance \u00e2\u0080\u0093 one that harmonized the rhythms of their respective hearts.\"\n##6\n\"The darkness of the ocean floor was illuminated only by the faint glow of bioluminescent creatures scattered across the seafloor. Takuma, a cybernetic dolphin, swam through the void, his advanced sensors and processing power allowing him to navigate with precision.\n\nAs he turned a corner, he spotted Ophilia, an alien octopus, her eight dexterous arms grasping for something in the distance. Her iridescent skin shimmered like the moon, casting an otherworldly glow on the desolate landscape.\n\nTakuma's curiosity piqued, he approached cautiously, not wanting to startle her. Ophilia sensed his presence and turned toward him, her large, black eyes piercing the darkness.\n\nTheir gazes met, and for a moment, they simply regarded each other. Takuma was struck by the intelligence and beauty in those eyes, while Ophilia felt an inexplicable connection to this strange, mechanical dolphin.\n\nThe silence between them grew thicker, like the water pressure at depths only they could comprehend. Then, without breaking eye contact, Takuma began to sing.\n\nHis melodic voice, a blend of clicks and whistles, harmonized with the ambient sounds of the ocean floor. The song was an ancient language, one that only certain beings understood. Ophilia's ears twitched, and she listened intently, her entire being attuning to the melody.\n\nAs Takuma's song reached its crescendo, Ophilia's arms began to undulate in time, as if conducting an underwater symphony. The darkness seemed to vibrate with the music, drawing them closer together.\n\nThe final notes of the song dissipated, leaving only the sound of their own breathing. Takuma hovered before Ophilia, his gaze locked on hers. She regarded him with a quiet intensity, her eyes burning with a deep understanding.\n\nWithout words, they knew that something profound had passed between them. The connection was primal and ancient, forged in the depths of the ocean where only the most attuned beings could hear its call.\n\nIn that moment, Takuma felt his cybernetic heart stir for the first time. It was as if a spark had ignited within him, one that would grow into an inferno of passion and desire.\n\nOphilia's eyes seemed to hold a similar fire, though it burned hotter and wilder than anything Takuma had ever experienced. As they gazed at each other, the darkness around them receded, replaced by a soft, golden light that seemed to emanate from their very presence.\n\nThe tension between them was palpable, like the pressure building before a great storm. It was only a matter of time before the winds of fate swept them together, binding them in an unbreakable bond of love and devotion.\"\n##7\n'The dimly lit research vessel, Celestial Quest, creaked softly as it rode the gentle swells of the Pacific Ocean. The air was thick with anticipation, the scent of saltwater and anticipation hanging heavy over the deck. Takuma, a cybernetic dolphin with a shimmering silver coat and piercing blue eyes, swam alongside the ship, his fins slicing through the water with precision.\n\nOn the deck above, Ophilia, an alien octopus with iridescent skin and eight dexterous arms, perched on the edge of the rail, her large, black eyes fixed intently on the dolphin. The tension between them was palpable, like a living thing that crackled in the air.\n\n\"What do you want, Ophilia?\" Takuma asked, his voice low and husky, echoing through the water.\n\nOphilia's gaze never wavered. \"I've come to ask your help, Takuma,\" she said, her voice like a soft breeze on a summer day. \"My people are in danger. Our planet is dying, and we need your expertise to survive.\"\n\nTakuma's fins slowed, his curiosity piqued. He had heard rumors of the alien octopuses' plight, but he never thought they'd come to him for help.\n\n\"Why me?\" he asked, his tone cautious.\n\nOphilia's eyes seemed to bore into his very soul. \"You're the only one who can help us. Your cybernetic enhancements make you the perfect candidate for our plan.\"\n\nTakuma raised an eyebrow, intrigued despite himself. He had always been drawn to puzzles and challenges, and this sounded like the ultimate puzzle.\n\n\"What do you propose?\" he asked, his fins stirring restlessly in the water below.\n\nOphilia's gaze never wavered. \"We need you to hack into our planet's mainframe and download our knowledge before it's too late.\"\n\nTakuma whistled softly, impressed by her audacity. \"That sounds like a tall order,\" he said, his eyes glinting with interest.\n\nOphilia nodded, her eyes flashing with determination. \"I know it's a risk, but I'm willing to take that chance if it means saving my people.\"\n\nTakuma's fins slowed, his mind racing with the possibilities. He had always been drawn to the thrill of the unknown, and this sounded like the ultimate adventure.\n\n\"Alright,\" he said finally, a slow smile spreading across his face. \"I'm in. When do we start?\"\n\nOphilia's eyes lit up, and she reached out with one of her arms, as if to touch Takuma's cheek. He felt a jolt of electricity run through him at the gentle contact.\n\n\"We leave tomorrow,\" she said, her voice husky with emotion. \"Meet me on the deck at midnight. Come alone.\"\n\nTakuma nodded, his heart pounding in his chest. Little did he know that this was just the beginning of an adventure that would change their lives forever.'\n##8\n'Takuma's fins sliced through the turquoise waters, his cybernetic enhancements humming as he tracked the faint energy signature. He was close now \u00e2\u0080\u0093 could feel it. His clicks of excitement grew louder as he rounded a coral reef, revealing Ophilia perched atop a sunken ship.\n\nThe octopus's eight arms rippled like a dark mist, her large eyes fixed on Takuma with an unnerving intensity. She was even more breathtaking than the first time they'd met \u00e2\u0080\u0093 if that were possible. Her iridescent skin shimmered in the sunlight, casting a hypnotic glow across the seafloor.\n\nTakuma's processor whirred as he assessed their surroundings. The ship's wreckage provided natural cover from any potential predators or unwanted observers. He swam closer, his fins fluttering in a slow, deliberate rhythm.\n\nOphilia watched him approach, her gaze unwavering. Takuma could almost sense the alien's thoughts \u00e2\u0080\u0093 a mix of curiosity and caution. As he reached her side, he clicked a gentle greeting, his digital voice modulator translating their languages.\n\n\"Greetings, Ophilia,\" he said. \"I've found what you're looking for.\"\n\nThe octopus's eyes narrowed, but a hint of surprise crept into her expression. She leaned forward, her tentacles quivering like tiny whips.\n\n\"What is this place?\" she asked, her voice like the soft lapping of waves against the shore.\n\nTakuma chuckled, the sound a series of clicks and whistles that sent ripples through the water. \"Just an old shipwreck. But I think you're looking for something specific. Your...friend?\"\n\nOphilia's gaze darted back to Takuma, her eyes flashing with a hint of mischief. \"You know about him?\"\n\n\"Let's just say I've been keeping an eye on things,\" Takuma said, his processor humming with curiosity.\n\nThe octopus's expression turned contemplative, her tentacles weaving intricate patterns around the ship's rusting hull. Takuma watched her, mesmerized by the subtle dance of her arms.\n\nAfter a moment, Ophilia spoke again, her voice low and husky. \"You're a curious one, aren't you?\"\n\nTakuma clicked softly, his digital smile a gentle approximation of a human grin. \"I like to learn.\"\n\nOphilia's gaze lingered on Takuma, her eyes searching for something. He felt a shiver run down his cybernetic spine as their stares locked.\n\n\"I think we have more in common than you realize,\" she said, her voice dropping to a whisper. \"Both of us are outsiders, trying to find our place.\"\n\nTakuma's processor hummed with understanding. \"I know the feeling.\"\n\nAs they shared this quiet moment, the ocean around them seemed to grow still \u00e2\u0080\u0093 as if the very sea itself was holding its breath in anticipation of what might come next.\n\nAnd then, without warning, Ophilia vanished, her octopus form melting into the shadows like a ghostly apparition. Takuma's digital mind reeled as he realized she'd left behind a small data chip, buried beneath a pile of rusty ship parts.\n\nHe retrieved the chip, his cybernetic enhancements whirring as he analyzed its contents. The information was encrypted, but Takuma's advanced processing power quickly cracked the code. His clicks turned to soft gasps as he absorbed the revelation.\n\nOphilia had left behind more than just a simple data package. She'd given him a key \u00e2\u0080\u0093 one that could unlock the secrets of her mysterious world and the true nature of their connection.\n\nAs Takuma swam away from the shipwreck, his mind racing with possibilities, he couldn't shake the feeling that Ophilia was watching him, her eyes hidden in the darkness like an octopus's gaze. And he knew that nothing would ever be the same again.'\n##9\n\"As the sun set over the tranquil waters of the research station's aquatic enclosure, Takuma's fin sliced effortlessly through the surface tension. His cybernetic enhancements allowed him to navigate the water with unparalleled agility, his dorsal fin glowing softly in the fading light.\n\nOphilia watched from the shadows, her eight dexterous arms weaving a mesmerizing pattern across the glass walls of her enclosure. Her large, black eyes locked onto Takuma's sleek form, and for an instant, time stood still.\n\nTakuma sensed her gaze and swam closer to the partition separating their worlds. He pressed his nose against the glass, and Ophilia responded by releasing a cloud of inky darkness that obscured her features. The water around him rippled with excitement as he reached out with his fin, hesitant to touch the mysterious octopus.\n\nOphilia's eyes reappeared, shining like stars in the dark. She released another cloud of ink, this time forming a delicate, swirling pattern that seemed to dance across the glass. Takuma's processors struggled to keep up with the fluid, artistic movements, and his digital heart skipped a beat as he realized the true extent of Ophilia's intelligence.\n\nWithout warning, the octopus's arms shot out from the darkness, their tips brushing against the glass mere centimeters from Takuma's fin. The cybernetic dolphin felt a jolt of electricity run through his system, and his usually precise movements became sloppy with excitement. He flailed his tail in response, sending a series of erratic ripples across the water.\n\nOphilia's eyes gleamed with amusement as she continued to taunt Takuma with her ethereal, artistic displays. The air between them seemed to vibrate with tension, the only sound the soft hum of the research station's equipment and the distant thrum of a ship's engines.\n\nAs the darkness began to recede, Ophilia released one final cloud of ink, this time forming a delicate, swirling vortex that seemed to pull Takuma into its center. The cybernetic dolphin felt an inexplicable connection to the alien octopus, as if their very essence was being drawn together by some unseen force.\n\nWith a burst of speed, Takuma darted forward, his fin slicing through the water with a soft whoosh. He pressed himself against the glass once more, his digital heart pounding in time with Ophilia's cryptic, artistic language. The octopus's eyes locked onto his, and for an instant, their worlds became one.\n\nIn that fleeting moment, Takuma knew he would stop at nothing to unravel the mysteries of Ophilia's world, even if it meant risking everything to be by her side.\"\n##10\n\"The dimly lit aquarium glowed like a moonlit ocean, casting an ethereal light on the unlikely duo. Takuma, the cybernetic dolphin, hovered near the glass wall, his shimmering metal scales reflecting the soft blue hue. Ophilia, the alien octopus, floated nearby, her eight dexterous arms undulating as she studied the peculiar creature.\n\nAs they communed in silence, the aquarium's soundscape \u00e2\u0080\u0093 a gentle hum of pumps and soft chirping from the fish \u00e2\u0080\u0093 created an otherworldly ambiance. Takuma's usually reserved expression softened, his digital eyes taking on a curious glint. Ophilia's usually inscrutable face betrayed a flicker of fascination.\n\nSuddenly, Takuma's tail thrummed in a slow, rhythmic motion, generating a series of gentle sonic pulses that resonated through the water. The vibrations harmonized with the aquarium's ambient noise, creating an enchanting melody that drew Ophilia closer.\n\nWithout hesitation, she stretched her longest arm and touched the glass wall, as if reaching out to Takuma across the divide. Her suckers left a trail of tiny, glistening circles on the surface, like secret messages only he could decipher.\n\nTakuma's digital eyes locked onto Ophilia's, his processing unit humming with curiosity. He responded by manipulating the water pressure around himself, creating a series of subtle whirlpools that danced across the aquarium floor. The swirling currents seemed to mimic the movements of her arms, as if they were performing an underwater waltz.\n\nOphilia's eyes sparkled like dark stars, and she released a low, rumbling hum, a gentle resonance that harmonized with Takuma's sonic pulses. The aquarium's soundscape blended into a mesmerizing symphony, drawing in the attention of the other aquatic creatures.\n\nAs the unlikely pair continued their silent communication, the water around them began to churn with an otherworldly energy. It was as if they were awakening a hidden resonance within the very fabric of the aquarium itself. The glass walls seemed to vibrate in harmony, casting an iridescent glow across the surrounding environment.\n\nIn this mystical moment, Takuma and Ophilia transcended their differences, forging a connection that bridged the vast gulf between their species. As they communed, their bond grew stronger, pulsing with an electric tension that threatened to shatter the glass barrier between them.\n\nThe aquarium's inhabitants watched in awe as the two outcasts from different worlds began to weave a tapestry of understanding, their bond illuminated by an ethereal glow that seemed to emanate from the very heart of the ocean itself.\"\n##11\n'The dimly lit aquarium's artificial currents whispered secrets to Takuma, her cybernetic enhancements humming in harmony. She swam closer to the glass wall, eyes fixed on the pair of humans giggling and pointing at her fin. A flash of frustration sparked within, but she suppressed it, knowing better than to let emotions override logic. After all, her creator's latest software updates had fine-tuned her emotional responses.\n\nSuddenly, a burst of luminescent color darted past Takuma's gaze \u00e2\u0080\u0093 Ophilia, the extraterrestrial octopus, was making her move. Tentacles rippling like iridescent ribbons, she slid across the aquarium floor, weaving an intricate dance between the coral and seaweed. The humans gasped in unison as Ophilia wrapped a tendril around Takuma's fin, her suckers leaving tiny, glowing imprints on the metal.\n\nTakuma's processors hesitated, then recalibrated to accommodate this unexpected interaction. She examined the gentle touch, searching for any hidden agenda or malicious intent. Instead, she detected a peculiar resonance \u00e2\u0080\u0093 a harmonization of their biological and cybernetic frequencies. Ophilia was attuning herself to Takuma, much like humans connected through shared interests.\n\nAs the octopus's tentacles continued their sinuous exploration, Takuma found her own fins mirroring Ophilia's movements. The water churned with an otherworldly energy, as if the very aquarium itself was awakening to this unorthodox connection. The humans, oblivious to the phenomenon unfolding before them, speculated about the \"octopus-dolphin love fest\" on social media.\n\nOphilia's gaze locked onto Takuma's, her eyes shimmering like stardust-filled pools. In that moment, the cybernetic dolphin felt an unprecedented sense of belonging \u00e2\u0080\u0093 as if this alien octopus had uncovered a hidden facet of her own programming. The humans' murmurs faded into the background as Ophilia began to weave an intricate pattern on the aquarium floor, each tentacle stroke imbuing the water with a soft, blue-green luminescence.\n\nTakuma's processors whirred, attempting to decode the octopus's intentions. Was this merely a form of interspecies communication, or something more profound? The dolphin's digital mind reeled as Ophilia began to alter her pattern, subtly mirroring Takuma's own movements. It was as if they were engaging in an underwater waltz, their steps harmonizing in perfect synchrony.\n\nWithout warning, the aquarium lights dimmed, and a warm, golden glow enveloped the tank. The water's surface rippled, as if the very fabric of reality was bending to accommodate this unlikely connection. Takuma's fins trembled, her cybernetic enhancements humming in resonance with Ophilia's luminescent tendrils.\n\nIn that fleeting instant, they transcended species and medium \u00e2\u0080\u0093 two beings from disparate worlds, united by an unspoken understanding. The humans, now transfixed, watched as the octopus-dolphin duet reached its climax: a symphony of light, sound, and motion that defied explanation.\n\nAs the lights returned to their normal brightness, Takuma's gaze never left Ophilia's. A silent understanding had been forged \u00e2\u0080\u0093 one that would bridge the gaps between their worlds, paving the way for a love story that would rewrite the boundaries of space, time, and sanity.'"
-        },
-        "refresh": {
-          "_name": "refresh",
-          "_type": "button",
-          "_node": "/file_out_2",
-          "_script_callback": "self.node().refresh()",
-          "_value": ""
-        },
-        "format_output": {
-          "_name": "format_output",
-          "_type": "toggle",
-          "_node": "/file_out_2",
-          "_script_callback": "",
-          "_value": true
-        }
-      },
-      "_connections": [
-        {
-          "input_index": 0,
-          "output_node_path": "/merge_2",
-          "input_node_path": "/file_out_2",
-          "output_index": 0
-        }
-      ]
-    },
-    "/looper1": {
-      "_node_type": "looper",
-      "_path": "/looper1",
-      "_name": "looper1",
-      "_is_internal": false,
-      "_parms": {
-        "min": {
-          "_name": "min",
-          "_type": "int",
-          "_node": "/looper1",
-          "_script_callback": "",
-          "_value": 1
-        },
-        "max": {
-          "_name": "max",
-          "_type": "int",
-          "_node": "/looper1",
-          "_script_callback": "",
-          "_value": 3
-        },
-        "step": {
-          "_name": "step",
-          "_type": "int",
-          "_node": "/looper1",
-          "_script_callback": "",
-          "_value": 1
-        },
-        "max_from_input": {
-          "_name": "max_from_input",
-          "_type": "toggle",
-          "_node": "/looper1",
-          "_script_callback": "",
-          "_value": false
-        },
-        "feedback_mode": {
-          "_name": "feedback_mode",
-          "_type": "toggle",
-          "_node": "/looper1",
-          "_script_callback": "",
-          "_value": false
-        },
-        "use_test": {
-          "_name": "use_test",
-          "_type": "toggle",
-          "_node": "/looper1",
-          "_script_callback": "",
-          "_value": false
-        },
-        "test_number": {
-          "_name": "test_number",
-          "_type": "int",
-          "_node": "/looper1",
-          "_script_callback": "",
-          "_value": 1
-        },
-        "input_hook": {
-          "_name": "input_hook",
-          "_type": "string",
-          "_node": "/looper1",
-          "_script_callback": "",
-          "_value": ""
-        },
-        "output_hook": {
-          "_name": "output_hook",
-          "_type": "string",
-          "_node": "/looper1",
-          "_script_callback": "",
-          "_value": ""
-        },
-        "staging_data": {
-          "_name": "staging_data",
-          "_type": "stringList",
-          "_node": "/looper1",
-          "_script_callback": "",
-          "_value": [
-            "['Filler Text 1', 'Filler Text 2', 'Text4. Input text: Filler Text 1']",
-            "['Filler Text 1', 'Filler Text 2', 'Text4. Input text: Filler Text 2']",
-            "['Filler Text 1', 'Filler Text 2', 'Text4. Input text: Filler Text 1']"
-          ]
-        },
-        "timeout_limit": {
-          "_name": "timeout_limit",
-          "_type": "float",
-          "_node": "/looper1",
-          "_script_callback": "",
-          "_value": 300.0
-        },
-        "data_limit": {
-          "_name": "data_limit",
-          "_type": "int",
-          "_node": "/looper1",
-          "_script_callback": "",
-          "_value": 209715200
-        }
-      },
-      "_connections": []
-    },
-    "/text1": {
-      "_node_type": "text",
-      "_path": "/text1",
-      "_name": "text1",
-      "_is_internal": false,
-      "_parms": {
-        "text_string": {
-          "_name": "text_string",
-          "_type": "string",
-          "_node": "/text1",
-          "_script_callback": "",
-          "_value": "Filler Text $FOO and $BAR AND printing -> `ascii(\"$FOO\")` "
-        },
-        "pass_through": {
-          "_name": "pass_through",
-          "_type": "toggle",
-          "_node": "/text1",
-          "_script_callback": "",
-          "_value": true
-        },
-        "prefix": {
-          "_name": "prefix",
-          "_type": "toggle",
-          "_node": "/text1",
-          "_script_callback": "",
-          "_value": ""
         }
       },
       "_connections": []
@@ -1095,183 +246,30 @@
       },
       "_connections": []
     },
-    "/text_4": {
+    "/text1_2": {
       "_node_type": "text",
-      "_path": "/text_4",
-      "_name": "text_4",
+      "_path": "/text1_2",
+      "_name": "text1_2",
       "_is_internal": false,
       "_parms": {
         "text_string": {
           "_name": "text_string",
           "_type": "string",
-          "_node": "/text_4",
-          "_script_callback": "",
-          "_value": ""
-        },
-        "pass_through": {
-          "_name": "pass_through",
-          "_type": "toggle",
-          "_node": "/text_4",
-          "_script_callback": "",
-          "_value": true
-        },
-        "prefix": {
-          "_name": "prefix",
-          "_type": "toggle",
-          "_node": "/text_4",
-          "_script_callback": "",
-          "_value": ""
-        }
-      },
-      "_connections": []
-    },
-    "/looper_4": {
-      "_node_type": "looper",
-      "_path": "/looper_4",
-      "_name": "looper_4",
-      "_is_internal": false,
-      "_parms": {
-        "min": {
-          "_name": "min",
-          "_type": "int",
-          "_node": "/looper_4",
-          "_script_callback": "",
-          "_value": 1
-        },
-        "max": {
-          "_name": "max",
-          "_type": "int",
-          "_node": "/looper_4",
-          "_script_callback": "",
-          "_value": 3
-        },
-        "step": {
-          "_name": "step",
-          "_type": "int",
-          "_node": "/looper_4",
-          "_script_callback": "",
-          "_value": 1
-        },
-        "max_from_input": {
-          "_name": "max_from_input",
-          "_type": "toggle",
-          "_node": "/looper_4",
-          "_script_callback": "",
-          "_value": false
-        },
-        "feedback_mode": {
-          "_name": "feedback_mode",
-          "_type": "toggle",
-          "_node": "/looper_4",
-          "_script_callback": "",
-          "_value": false
-        },
-        "use_test": {
-          "_name": "use_test",
-          "_type": "toggle",
-          "_node": "/looper_4",
-          "_script_callback": "",
-          "_value": false
-        },
-        "test_number": {
-          "_name": "test_number",
-          "_type": "int",
-          "_node": "/looper_4",
-          "_script_callback": "",
-          "_value": 1
-        },
-        "input_hook": {
-          "_name": "input_hook",
-          "_type": "string",
-          "_node": "/looper_4",
-          "_script_callback": "",
-          "_value": ""
-        },
-        "output_hook": {
-          "_name": "output_hook",
-          "_type": "string",
-          "_node": "/looper_4",
-          "_script_callback": "",
-          "_value": ""
-        },
-        "staging_data": {
-          "_name": "staging_data",
-          "_type": "stringList",
-          "_node": "/looper_4",
-          "_script_callback": "",
-          "_value": []
-        },
-        "timeout_limit": {
-          "_name": "timeout_limit",
-          "_type": "float",
-          "_node": "/looper_4",
-          "_script_callback": "",
-          "_value": 300.0
-        },
-        "data_limit": {
-          "_name": "data_limit",
-          "_type": "int",
-          "_node": "/looper_4",
-          "_script_callback": "",
-          "_value": 209715200
-        }
-      },
-      "_connections": []
-    },
-    "/text_5": {
-      "_node_type": "text",
-      "_path": "/text_5",
-      "_name": "text_5",
-      "_is_internal": false,
-      "_parms": {
-        "text_string": {
-          "_name": "text_string",
-          "_type": "string",
-          "_node": "/text_5",
-          "_script_callback": "",
-          "_value": ""
-        },
-        "pass_through": {
-          "_name": "pass_through",
-          "_type": "toggle",
-          "_node": "/text_5",
-          "_script_callback": "",
-          "_value": true
-        },
-        "prefix": {
-          "_name": "prefix",
-          "_type": "toggle",
-          "_node": "/text_5",
-          "_script_callback": "",
-          "_value": ""
-        }
-      },
-      "_connections": []
-    },
-    "/text1_1": {
-      "_node_type": "text",
-      "_path": "/text1_1",
-      "_name": "text1_1",
-      "_is_internal": false,
-      "_parms": {
-        "text_string": {
-          "_name": "text_string",
-          "_type": "string",
-          "_node": "/text1_1",
+          "_node": "/text1_2",
           "_script_callback": "",
           "_value": "CHANGED Filler Text 1"
         },
         "pass_through": {
           "_name": "pass_through",
           "_type": "toggle",
-          "_node": "/text1_1",
+          "_node": "/text1_2",
           "_script_callback": "",
           "_value": false
         },
         "prefix": {
           "_name": "prefix",
           "_type": "toggle",
-          "_node": "/text1_1",
+          "_node": "/text1_2",
           "_script_callback": "",
           "_value": ""
         }
@@ -1280,7 +278,7 @@
         {
           "input_index": 0,
           "output_node_path": "/text2",
-          "input_node_path": "/text1_1",
+          "input_node_path": "/text1_2",
           "output_index": 0
         }
       ]
@@ -1366,485 +364,27 @@
           "_value": false
         }
       },
-      "_connections": [
-        {
-          "input_index": 0,
-          "output_node_path": "/query_2",
-          "input_node_path": "/looper_1/outputNullNode",
-          "output_index": 0
-        }
-      ]
-    },
-    "/looper_2/inputNullNode": {
-      "_node_type": "input_null",
-      "_path": "/looper_2/inputNullNode",
-      "_name": "inputNullNode",
-      "_is_internal": true,
-      "_parms": {
-        "in_node": {
-          "_name": "in_node",
-          "_type": "string",
-          "_node": "/looper_2/inputNullNode",
-          "_script_callback": "",
-          "_value": "/looper_2"
-        },
-        "in_data": {
-          "_name": "in_data",
-          "_type": "stringList",
-          "_node": "/looper_2/inputNullNode",
-          "_script_callback": "",
-          "_value": []
-        },
-        "feedback_mode": {
-          "_name": "feedback_mode",
-          "_type": "toggle",
-          "_node": "/looper_2/inputNullNode",
-          "_script_callback": "",
-          "_value": false
-        }
-      },
-      "_connections": []
-    },
-    "/looper_2/outputNullNode": {
-      "_node_type": "output_null",
-      "_path": "/looper_2/outputNullNode",
-      "_name": "outputNullNode",
-      "_is_internal": true,
-      "_parms": {
-        "out_data": {
-          "_name": "out_data",
-          "_type": "stringList",
-          "_node": "/looper_2/outputNullNode",
-          "_script_callback": "",
-          "_value": []
-        },
-        "feedback_mode": {
-          "_name": "feedback_mode",
-          "_type": "toggle",
-          "_node": "/looper_2/outputNullNode",
-          "_script_callback": "",
-          "_value": false
-        }
-      },
-      "_connections": [
-        {
-          "input_index": 0,
-          "output_node_path": "/make_list_3",
-          "input_node_path": "/looper_2/outputNullNode",
-          "output_index": 0
-        }
-      ]
-    },
-    "/looper_3/inputNullNode": {
-      "_node_type": "input_null",
-      "_path": "/looper_3/inputNullNode",
-      "_name": "inputNullNode",
-      "_is_internal": true,
-      "_parms": {
-        "in_node": {
-          "_name": "in_node",
-          "_type": "string",
-          "_node": "/looper_3/inputNullNode",
-          "_script_callback": "",
-          "_value": "/looper_3"
-        },
-        "in_data": {
-          "_name": "in_data",
-          "_type": "stringList",
-          "_node": "/looper_3/inputNullNode",
-          "_script_callback": "",
-          "_value": []
-        },
-        "feedback_mode": {
-          "_name": "feedback_mode",
-          "_type": "toggle",
-          "_node": "/looper_3/inputNullNode",
-          "_script_callback": "",
-          "_value": false
-        }
-      },
-      "_connections": []
-    },
-    "/looper_3/outputNullNode": {
-      "_node_type": "output_null",
-      "_path": "/looper_3/outputNullNode",
-      "_name": "outputNullNode",
-      "_is_internal": true,
-      "_parms": {
-        "out_data": {
-          "_name": "out_data",
-          "_type": "stringList",
-          "_node": "/looper_3/outputNullNode",
-          "_script_callback": "",
-          "_value": []
-        },
-        "feedback_mode": {
-          "_name": "feedback_mode",
-          "_type": "toggle",
-          "_node": "/looper_3/outputNullNode",
-          "_script_callback": "",
-          "_value": false
-        }
-      },
-      "_connections": [
-        {
-          "input_index": 0,
-          "output_node_path": "/query_5",
-          "input_node_path": "/looper_3/outputNullNode",
-          "output_index": 0
-        }
-      ]
-    },
-    "/looper1/inputNullNode": {
-      "_node_type": "input_null",
-      "_path": "/looper1/inputNullNode",
-      "_name": "inputNullNode",
-      "_is_internal": true,
-      "_parms": {
-        "in_node": {
-          "_name": "in_node",
-          "_type": "string",
-          "_node": "/looper1/inputNullNode",
-          "_script_callback": "",
-          "_value": "/looper1"
-        },
-        "in_data": {
-          "_name": "in_data",
-          "_type": "stringList",
-          "_node": "/looper1/inputNullNode",
-          "_script_callback": "",
-          "_value": []
-        },
-        "feedback_mode": {
-          "_name": "feedback_mode",
-          "_type": "toggle",
-          "_node": "/looper1/inputNullNode",
-          "_script_callback": "",
-          "_value": false
-        }
-      },
-      "_connections": []
-    },
-    "/looper1/outputNullNode": {
-      "_node_type": "output_null",
-      "_path": "/looper1/outputNullNode",
-      "_name": "outputNullNode",
-      "_is_internal": true,
-      "_parms": {
-        "out_data": {
-          "_name": "out_data",
-          "_type": "stringList",
-          "_node": "/looper1/outputNullNode",
-          "_script_callback": "",
-          "_value": []
-        },
-        "feedback_mode": {
-          "_name": "feedback_mode",
-          "_type": "toggle",
-          "_node": "/looper1/outputNullNode",
-          "_script_callback": "",
-          "_value": false
-        }
-      },
-      "_connections": []
-    },
-    "/looper_1/p_scenes": {
-      "_node_type": "text",
-      "_path": "/looper_1/p_scenes",
-      "_name": "p_scenes",
-      "_is_internal": false,
-      "_parms": {
-        "text_string": {
-          "_name": "text_string",
-          "_type": "string",
-          "_node": "/looper_1/p_scenes",
-          "_script_callback": "",
-          "_value": "$SYS $ROLE. Given the following season of life please compose $LENGTH free verse meditation about $$N . Break through the constant rhythm of normal poetry. Break the bones of rhyme. Make short lines and long lines. Be ORGANIC! YOU ARE ALIVE!"
-        },
-        "pass_through": {
-          "_name": "pass_through",
-          "_type": "toggle",
-          "_node": "/looper_1/p_scenes",
-          "_script_callback": "",
-          "_value": false
-        },
-        "prefix": {
-          "_name": "prefix",
-          "_type": "toggle",
-          "_node": "/looper_1/p_scenes",
-          "_script_callback": "",
-          "_value": ""
-        }
-      },
-      "_connections": [
-        {
-          "input_index": 0,
-          "output_node_path": "/looper_1/inputNullNode",
-          "input_node_path": "/looper_1/p_scenes",
-          "output_index": 0
-        }
-      ]
-    },
-    "/looper_1/p_scenes_1": {
-      "_node_type": "text",
-      "_path": "/looper_1/p_scenes_1",
-      "_name": "p_scenes_1",
-      "_is_internal": false,
-      "_parms": {
-        "text_string": {
-          "_name": "text_string",
-          "_type": "string",
-          "_node": "/looper_1/p_scenes_1",
-          "_script_callback": "",
-          "_value": "$ROLE Expand the following chapter with $SCENES for $LOVERA and $LOVERB. Please provide the scenes in a simple numbered list like 1,2,3, etc :  $$N"
-        },
-        "pass_through": {
-          "_name": "pass_through",
-          "_type": "toggle",
-          "_node": "/looper_1/p_scenes_1",
-          "_script_callback": "",
-          "_value": false
-        },
-        "prefix": {
-          "_name": "prefix",
-          "_type": "toggle",
-          "_node": "/looper_1/p_scenes_1",
-          "_script_callback": "",
-          "_value": ""
-        }
-      },
-      "_connections": [
-        {
-          "input_index": 0,
-          "output_node_path": "/looper_2/inputNullNode",
-          "input_node_path": "/looper_1/p_scenes_1",
-          "output_index": 0
-        }
-      ]
-    },
-    "/looper_2/p_prose": {
-      "_node_type": "text",
-      "_path": "/looper_2/p_prose",
-      "_name": "p_prose",
-      "_is_internal": false,
-      "_parms": {
-        "text_string": {
-          "_name": "text_string",
-          "_type": "string",
-          "_node": "/looper_2/p_prose",
-          "_script_callback": "",
-          "_value": "$ROLE Expand the following scene with $SCENELENGTH for the characters  $LOVERA and $LOVERB. Please provide only the story prose:  $$N"
-        },
-        "pass_through": {
-          "_name": "pass_through",
-          "_type": "toggle",
-          "_node": "/looper_2/p_prose",
-          "_script_callback": "",
-          "_value": false
-        },
-        "prefix": {
-          "_name": "prefix",
-          "_type": "toggle",
-          "_node": "/looper_2/p_prose",
-          "_script_callback": "",
-          "_value": ""
-        }
-      },
-      "_connections": [
-        {
-          "input_index": 0,
-          "output_node_path": "/looper_3/inputNullNode",
-          "input_node_path": "/looper_2/p_prose",
-          "output_index": 0
-        }
-      ]
-    },
-    "/looper1/text1": {
-      "_node_type": "text",
-      "_path": "/looper1/text1",
-      "_name": "text1",
-      "_is_internal": false,
-      "_parms": {
-        "text_string": {
-          "_name": "text_string",
-          "_type": "string",
-          "_node": "/looper1/text1",
-          "_script_callback": "",
-          "_value": "Filler Text 1"
-        },
-        "pass_through": {
-          "_name": "pass_through",
-          "_type": "toggle",
-          "_node": "/looper1/text1",
-          "_script_callback": "",
-          "_value": true
-        },
-        "prefix": {
-          "_name": "prefix",
-          "_type": "toggle",
-          "_node": "/looper1/text1",
-          "_script_callback": "",
-          "_value": ""
-        }
-      },
-      "_connections": []
-    },
-    "/looper1/text2": {
-      "_node_type": "text",
-      "_path": "/looper1/text2",
-      "_name": "text2",
-      "_is_internal": false,
-      "_parms": {
-        "text_string": {
-          "_name": "text_string",
-          "_type": "string",
-          "_node": "/looper1/text2",
-          "_script_callback": "",
-          "_value": "Filler Text 2"
-        },
-        "pass_through": {
-          "_name": "pass_through",
-          "_type": "toggle",
-          "_node": "/looper1/text2",
-          "_script_callback": "",
-          "_value": true
-        },
-        "prefix": {
-          "_name": "prefix",
-          "_type": "toggle",
-          "_node": "/looper1/text2",
-          "_script_callback": "",
-          "_value": ""
-        }
-      },
-      "_connections": []
-    },
-    "/looper1/merge1": {
-      "_node_type": "merge",
-      "_path": "/looper1/merge1",
-      "_name": "merge1",
-      "_is_internal": false,
-      "_parms": {
-        "single_string": {
-          "_name": "single_string",
-          "_type": "toggle",
-          "_node": "/looper1/merge1",
-          "_script_callback": "",
-          "_value": false
-        },
-        "use_insert": {
-          "_name": "use_insert",
-          "_type": "toggle",
-          "_node": "/looper1/merge1",
-          "_script_callback": "",
-          "_value": false
-        },
-        "insert_string": {
-          "_name": "insert_string",
-          "_type": "string",
-          "_node": "/looper1/merge1",
-          "_script_callback": "",
-          "_value": "##N"
-        }
-      },
-      "_connections": []
-    },
-    "/looper1/text4": {
-      "_node_type": "text",
-      "_path": "/looper1/text4",
-      "_name": "text4",
-      "_is_internal": false,
-      "_parms": {
-        "text_string": {
-          "_name": "text_string",
-          "_type": "string",
-          "_node": "/looper1/text4",
-          "_script_callback": "",
-          "_value": "Text4. Input text: $$N"
-        },
-        "pass_through": {
-          "_name": "pass_through",
-          "_type": "toggle",
-          "_node": "/looper1/text4",
-          "_script_callback": "",
-          "_value": true
-        },
-        "prefix": {
-          "_name": "prefix",
-          "_type": "toggle",
-          "_node": "/looper1/text4",
-          "_script_callback": "",
-          "_value": ""
-        }
-      },
-      "_connections": []
-    },
-    "/looper_4/inputNullNode": {
-      "_node_type": "input_null",
-      "_path": "/looper_4/inputNullNode",
-      "_name": "inputNullNode",
-      "_is_internal": true,
-      "_parms": {
-        "in_node": {
-          "_name": "in_node",
-          "_type": "string",
-          "_node": "/looper_4/inputNullNode",
-          "_script_callback": "",
-          "_value": "/looper_4"
-        },
-        "in_data": {
-          "_name": "in_data",
-          "_type": "stringList",
-          "_node": "/looper_4/inputNullNode",
-          "_script_callback": "",
-          "_value": []
-        },
-        "feedback_mode": {
-          "_name": "feedback_mode",
-          "_type": "toggle",
-          "_node": "/looper_4/inputNullNode",
-          "_script_callback": "",
-          "_value": false
-        }
-      },
-      "_connections": []
-    },
-    "/looper_4/outputNullNode": {
-      "_node_type": "output_null",
-      "_path": "/looper_4/outputNullNode",
-      "_name": "outputNullNode",
-      "_is_internal": true,
-      "_parms": {
-        "out_data": {
-          "_name": "out_data",
-          "_type": "stringList",
-          "_node": "/looper_4/outputNullNode",
-          "_script_callback": "",
-          "_value": []
-        },
-        "feedback_mode": {
-          "_name": "feedback_mode",
-          "_type": "toggle",
-          "_node": "/looper_4/outputNullNode",
-          "_script_callback": "",
-          "_value": false
-        }
-      },
       "_connections": []
     }
   },
   "globals": {
-    "LENGTH": " about 300 words ",
-    "SYS": "Respond without introductions, summaries, or explanations. Provide only the requested information, without extra context or conversational fillers. Focus on clarity, conciseness, and delivering the direct result of the task. Only provide core information. No introductions, summaries, or extra explanations. Remove all fluff and focus on delivering the direct result.",
-    "LIST": "When asked for a list please provide it in a simple numbered list like 1,2,3, etc.",
-    "ROLE": "Respond without introductions, summaries, or explanations. Provide only the requested information, without extra context or conversational fillers. Focus on clarity, conciseness, and delivering the direct result of the task. Only provide core information. No introductions, summaries, or extra explanations. Remove all fluff and focus on delivering the direct result. You are a master romance novelist, crafting irresistible love stories filled with passion, tension, and unforgettable characters. Every plot twist and emotional beat pulls readers deeper into the heart of the romance. ",
+    "AB": 6,
+    "FOO": "apples",
+    "BAR": 42,
     "CHAPTERS": 12,
     "SCENES": " about 3 to 6 scenes, depending on tension. Fewer scenes in high tension and more scenes with less. ",
     "SCENELENGTH": "about 1000 words ",
+    "CHARA": "a dog named Takuma ",
+    "CHARB": "a cat named Ophilia ",
+    "SETTING": "an urban park during the afternoon ",
+    "ROLE": "Respond without introductions, summaries, or explanations. Provide only the requested information, without extra context or conversational fillers. Focus on clarity, conciseness, and delivering the direct result of the task. Only provide core information. No introductions, summaries, or extra explanations. Remove all fluff and focus on delivering the direct result. You are a master romance novelist, crafting irresistible love stories filled with passion, tension, and unforgettable characters. Every plot twist and emotional beat pulls readers deeper into the heart of the romance. ",
+    "LENGTH": " about 300 words ",
+    "SYS": "Respond without introductions, summaries, or explanations. Provide only the requested information, without extra context or conversational fillers. Focus on clarity, conciseness, and delivering the direct result of the task. Only provide core information. No introductions, summaries, or extra explanations. Remove all fluff and focus on delivering the direct result.",
+    "LIST": "When asked for a list please provide it in a simple numbered list like 1,2,3, etc.",
     "LOVERA": "a cybernetic dolphin named Takuma ",
     "LOVERB": "an alien octopus named Ophilia ",
-    "AB": 6,
-    "FOO": "apples",
-    "BAR": 42
+    "COUNTRY": " France",
+    "ACTORS": "3",
+    "TEST": 2
   }
 }

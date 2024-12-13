@@ -228,7 +228,20 @@ class Parm:
     def is_expression(self) -> bool:
         """Returns True if the parameter contains one or more valid functions accoring to self.__patterns ."""
         all_patterns = self._get_patterns()
-        return bool(re.search(all_patterns, self._value))
+        matches = re.finditer(all_patterns, self._value)
+        
+        # Store result before printing since we need to use matches twice
+        has_matches = False
+        matching_strings = []
+        
+        for match in matches:
+            has_matches = True
+            matching_strings.append(match.group(0))
+        
+        if matching_strings:
+            print(f"Expression matches in {self.name()}: {matching_strings}")
+            
+        return has_matches
 
     def _process_global(self, match) -> str:
         var_part = match.group(0)
@@ -349,7 +362,7 @@ class Parm:
 
     def _expand_and_evaluate(self, value: str) -> str:
         result = value
-        print(f"\n🔄 Processing: {value}")
+        #print(f"\n🔄 Processing: {value}")
 
         # Stage 1: Global Variables
         result = re.sub(self._get_patterns('GLOBAL'), 
@@ -369,7 +382,7 @@ class Parm:
         result = re.sub(self._get_patterns('PYTHON_CODE'), 
                        self._process_python_code, result)
 
-        print(f"🔄 Final result: {result}\n")
+        #print(f"🔄 Final result: {result}\n")
         return result
 
 #------------ END NEW
