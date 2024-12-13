@@ -50,13 +50,15 @@ class TextNode(Node):
         prefix = self._parms["prefix"].eval()
         print(f"text_string for {self.name()} is {text_string}")
 
-        if pass_through:
-            input_data = self.inputs()[0].output_node().eval() if self.inputs() else []
-            if not isinstance(input_data, list) or not all(isinstance(item, str) for item in input_data):
-                raise TypeError("Input data must be a list of strings")
-            
+        input_data = []
+        if pass_through and self.inputs():
+            input_data = self.inputs()[0].output_node().eval()
+            if not isinstance(input_data, list):
+                input_data = []
+
+        if pass_through and input_data:
             if prefix:
-                result = [f"{text_string}{item}" for item in input_data]
+                result = [f"{text_string}{item}" if isinstance(item, str) else str(item) for item in input_data]
             else:
                 result = input_data + [text_string]
         else:
@@ -64,7 +66,7 @@ class TextNode(Node):
 
         self._output = result
         self._param_hash = self._calculate_hash(text_string)
-        self._input_hash = self._calculate_hash(str(input_data)) if pass_through else None
+        self._input_hash = self._calculate_hash(str(input_data)) if pass_through and input_data else None
         self.set_state(NodeState.UNCHANGED)
 
         self._last_cook_time = (time.time() - start_time) * 1000

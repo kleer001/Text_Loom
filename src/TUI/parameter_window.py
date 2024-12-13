@@ -33,7 +33,7 @@ class Parameter:
 class ParameterRow(Horizontal):
     DEFAULT_CSS = """
     ParameterRow {
-        height: 2;
+        height: 3;
         margin: 0;
         padding: 0;
         width: 100%;

@@ -37,7 +37,7 @@ class StatusWindow(ScrollableContainer):
     DEFAULT_CSS = """
     StatusWindow {
         width: 100%;
-        height: 100%;
+        height: 50%;
         background: $background;
         border: solid $primary-muted;
         color: $foreground-muted;
