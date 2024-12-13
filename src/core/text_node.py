@@ -35,6 +35,7 @@ class TextNode(Node):
         # Set default value
         self._parms["text_string"].set("")
         self._parms["pass_through"].set(True)
+        self._parms["prefix"].set(False)
     
     def _internal_cook(self, force: bool = False) -> None:
         self.set_state(NodeState.COOKING)

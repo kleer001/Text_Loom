@@ -116,7 +116,8 @@ class TUIApp(App[None]):
     }
     
     ParameterWindow {
-        width: 2fr;
+        width: 1fr;
+        height: 50%;
         background: $surface;
         border: solid $primary;
         color: $foreground;

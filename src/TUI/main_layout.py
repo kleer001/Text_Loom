@@ -1,5 +1,5 @@
 from textual.app import ComposeResult
-from textual.containers import Grid, Vertical
+from textual.containers import Grid, Vertical, Horizontal
 from textual.widgets import Static
 
 from TUI.node_window import NodeWindow, NodeSelected
@@ -19,7 +19,7 @@ class MainLayout(Grid):
         height: 100%;
         width: 100%;
         grid-size: 3 1;
-        grid-columns: 3fr 3fr 2fr;
+        grid-columns: 2fr 5fr;
         grid-rows: 1fr;
         grid-gutter: 0;
         background: $background;
@@ -34,10 +34,11 @@ class MainLayout(Grid):
 
     def compose(self) -> ComposeResult:
         yield NodeWindow()
-        yield ParameterWindow()
+        with Vertical():
+            yield ParameterWindow()
+            yield OutputWindow()
         with Vertical():
             yield GlobalWindow()
-            yield OutputWindow()
             yield StatusWindow()
 
     def on_node_selected(self, event: NodeSelected) -> None:

@@ -15,7 +15,7 @@ class GlobalWindow(Container):
     DEFAULT_CSS = """
     GlobalWindow {
         width: 100%;
-        height: 20%;
+        height: 50%;
         background: $background;
         border: solid $primary;
         layout: vertical;
@@ -39,7 +39,7 @@ class GlobalWindow(Container):
         height: 3;
         dock: top;
         background: $secondary;
-        color: $foreground;
+        color: $text;
         border: solid $accent;
     }
     Input:focus {
