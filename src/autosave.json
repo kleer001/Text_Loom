@@ -1,7 +1,7 @@
 {
   "software": "Text Loom",
   "version": 0.01,
-  "timestamp": "2024-12-12T17:06:29.509412",
+  "timestamp": "2024-12-13T15:03:17.019721",
   "nodes": {
     "/text_1": {
       "_node_type": "text",
@@ -14,7 +14,7 @@
           "_type": "string",
           "_node": "/text_1",
           "_script_callback": "",
-          "_value": "bbanadad"
+          "_value": "Please give me a short simple numbered list of five types of trees. No introduction before the list and no summary after the list"
         },
         "pass_through": {
           "_name": "pass_through",
@@ -32,6 +32,96 @@
         }
       },
       "_connections": []
+    },
+    "/query_1": {
+      "_node_type": "query",
+      "_path": "/query_1",
+      "_name": "query_1",
+      "_is_internal": false,
+      "_parms": {
+        "limit": {
+          "_name": "limit",
+          "_type": "toggle",
+          "_node": "/query_1",
+          "_script_callback": "",
+          "_value": false
+        },
+        "response": {
+          "_name": "response",
+          "_type": "stringList",
+          "_node": "/query_1",
+          "_script_callback": "",
+          "_value": [
+            "1. Oak\n2. Pine\n3. Maple\n4. Willow\n5. Cherry"
+          ]
+        },
+        "llm_name": {
+          "_name": "llm_name",
+          "_type": "string",
+          "_node": "/query_1",
+          "_script_callback": "",
+          "_value": "Ollama"
+        },
+        "find_llm": {
+          "_name": "find_llm",
+          "_type": "button",
+          "_node": "/query_1",
+          "_script_callback": null,
+          "_value": ""
+        },
+        "respond": {
+          "_name": "respond",
+          "_type": "button",
+          "_node": "/query_1",
+          "_script_callback": null,
+          "_value": ""
+        }
+      },
+      "_connections": [
+        {
+          "input_index": 0,
+          "output_node_path": "/text_1",
+          "input_node_path": "/query_1",
+          "output_index": 0
+        }
+      ]
+    },
+    "/make_list_1": {
+      "_node_type": "make_list",
+      "_path": "/make_list_1",
+      "_name": "make_list_1",
+      "_is_internal": false,
+      "_parms": {
+        "limit": {
+          "_name": "limit",
+          "_type": "toggle",
+          "_node": "/make_list_1",
+          "_script_callback": "",
+          "_value": false
+        },
+        "max_list": {
+          "_name": "max_list",
+          "_type": "int",
+          "_node": "/make_list_1",
+          "_script_callback": "",
+          "_value": 5
+        },
+        "refresh": {
+          "_name": "refresh",
+          "_type": "button",
+          "_node": "/make_list_1",
+          "_script_callback": null,
+          "_value": ""
+        }
+      },
+      "_connections": [
+        {
+          "input_index": 0,
+          "output_node_path": "/query_1",
+          "input_node_path": "/make_list_1",
+          "output_index": 0
+        }
+      ]
     },
     "/text_2": {
       "_node_type": "text",
@@ -44,7 +134,7 @@
           "_type": "string",
           "_node": "/text_2",
           "_script_callback": "",
-          "_value": "apples"
+          "_value": "Given the following type of tree give me a haiku about it. No introduction and no summary. Just a haiku about this type of tree: "
         },
         "pass_through": {
           "_name": "pass_through",
@@ -58,123 +148,67 @@
           "_type": "toggle",
           "_node": "/text_2",
           "_script_callback": "",
-          "_value": false
-        }
-      },
-      "_connections": []
-    },
-    "/text_3": {
-      "_node_type": "text",
-      "_path": "/text_3",
-      "_name": "text_3",
-      "_is_internal": false,
-      "_parms": {
-        "text_string": {
-          "_name": "text_string",
-          "_type": "string",
-          "_node": "/text_3",
-          "_script_callback": "",
-          "_value": "fuirts"
-        },
-        "pass_through": {
-          "_name": "pass_through",
-          "_type": "toggle",
-          "_node": "/text_3",
-          "_script_callback": "",
           "_value": true
-        },
-        "prefix": {
-          "_name": "prefix",
-          "_type": "toggle",
-          "_node": "/text_3",
-          "_script_callback": "",
-          "_value": false
-        }
-      },
-      "_connections": []
-    },
-    "/merge_1": {
-      "_node_type": "merge",
-      "_path": "/merge_1",
-      "_name": "merge_1",
-      "_is_internal": false,
-      "_parms": {
-        "single_string": {
-          "_name": "single_string",
-          "_type": "toggle",
-          "_node": "/merge_1",
-          "_script_callback": "",
-          "_value": false
-        },
-        "use_insert": {
-          "_name": "use_insert",
-          "_type": "toggle",
-          "_node": "/merge_1",
-          "_script_callback": "",
-          "_value": false
-        },
-        "insert_string": {
-          "_name": "insert_string",
-          "_type": "string",
-          "_node": "/merge_1",
-          "_script_callback": "",
-          "_value": "##N"
         }
       },
       "_connections": [
         {
           "input_index": 0,
-          "output_node_path": "/text_3",
-          "input_node_path": "/merge_1",
-          "output_index": 0
-        },
-        {
-          "input_index": 1,
-          "output_node_path": "/text_2",
-          "input_node_path": "/merge_1",
-          "output_index": 0
-        },
-        {
-          "input_index": 2,
-          "output_node_path": "/text_1",
-          "input_node_path": "/merge_1",
+          "output_node_path": "/make_list_1",
+          "input_node_path": "/text_2",
           "output_index": 0
         }
       ]
     },
-    "/text_4": {
-      "_node_type": "text",
-      "_path": "/text_4",
-      "_name": "text_4",
+    "/query_2": {
+      "_node_type": "query",
+      "_path": "/query_2",
+      "_name": "query_2",
       "_is_internal": false,
       "_parms": {
-        "text_string": {
-          "_name": "text_string",
+        "limit": {
+          "_name": "limit",
+          "_type": "toggle",
+          "_node": "/query_2",
+          "_script_callback": "",
+          "_value": false
+        },
+        "response": {
+          "_name": "response",
+          "_type": "stringList",
+          "_node": "/query_2",
+          "_script_callback": "",
+          "_value": [
+            "Mighty branches stretch\nAcorns ripen in silence\nWisdom's ancient heart"
+          ]
+        },
+        "llm_name": {
+          "_name": "llm_name",
           "_type": "string",
-          "_node": "/text_4",
+          "_node": "/query_2",
           "_script_callback": "",
-          "_value": "FUCK"
+          "_value": "Ollama"
         },
-        "pass_through": {
-          "_name": "pass_through",
-          "_type": "toggle",
-          "_node": "/text_4",
-          "_script_callback": "",
-          "_value": true
+        "find_llm": {
+          "_name": "find_llm",
+          "_type": "button",
+          "_node": "/query_2",
+          "_script_callback": null,
+          "_value": ""
         },
-        "prefix": {
-          "_name": "prefix",
-          "_type": "toggle",
-          "_node": "/text_4",
-          "_script_callback": "",
-          "_value": true
+        "respond": {
+          "_name": "respond",
+          "_type": "button",
+          "_node": "/query_2",
+          "_script_callback": null,
+          "_value": ""
         }
       },
       "_connections": [
         {
           "input_index": 0,
-          "output_node_path": "/merge_1",
-          "input_node_path": "/text_4",
+          "output_node_path": "/text_2",
+          "input_node_path": "/query_2",
           "output_index": 0
         }
       ]

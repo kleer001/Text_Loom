@@ -94,7 +94,7 @@ class NodeWindow(ScrollableContainer):
                         if conn.output_node().path() == node_path:
                             return "←"
             elif self._source_node.path() == node_path:
-                return "↑" if self._connection_mode == ConnectionMode.INPUT else "↓"
+                return "↓" if self._connection_mode == ConnectionMode.INPUT else "↑"
                 
         return {
             NodeState.COOKED: "◆",
@@ -143,7 +143,7 @@ class NodeWindow(ScrollableContainer):
                 
                 if output_data is None:
                     logger.debug("Node returned None output")
-                    self.parent.post_message(OutputMessage([f"NO OUTPUT FROM NODE {node}"]))
+                    self.parent.post_message(OutputMessage([f"NO OUTPUT FROM NODE {node.name()}"]))
                     return
                     
                 if not isinstance(output_data, list):
@@ -339,25 +339,33 @@ class NodeWindow(ScrollableContainer):
 
 
     def action_rename_node(self) -> None:
-        logger.info("Began rename action")
-        if not self._initialized or self._selected_line >= len(self._node_data):
-            return
+        try:
+            logger.info("Beginning rename action")
+            
+            if not self._initialized or self._selected_line >= len(self._node_data):
+                return
 
-        node_data = self._node_data[self._selected_line]
-        indent_offset = node_data.indent_level + 2
-        #EYEBALLED IT! But it works. Hahaha! 
-        #relative_y = (- len(self._node_data) * 2) + 4 + self._selected_line 
-        relative_y = self._selected_line - len(self._node_data) - 2
-        logger.info("Creating RenameInput widget")
-        self._rename_input = RenameInput(node_data.path)
-        self.mount(self._rename_input)
-        
-        self._rename_input.styles.width = self.content.size.width - indent_offset
-        self._rename_input.styles.height = 3
-        self._rename_input.styles.offset = (indent_offset, relative_y)
-        self._rename_input.value = node_data.name
-        self._rename_input.focus()
-        logger.info("RenameInput widget created and focused")
+            node_data = self._node_data[self._selected_line]
+            
+            try:
+                indent_level = int(node_data.indent_level) if node_data.indent_level else 0
+            except ValueError:
+                indent_level = 0
+                
+            indent_offset = indent_level + 2
+            relative_y = self._selected_line - len(self._node_data) - 2
+            
+            self._rename_input = RenameInput(node_data.path)
+            self.mount(self._rename_input)
+            
+            self._rename_input.styles.width = self.content.size.width - indent_offset
+            self._rename_input.styles.height = 3
+            self._rename_input.styles.offset = (indent_offset, relative_y)
+            self._rename_input.value = node_data.name
+            self._rename_input.focus()
+            
+        except Exception as e:
+            logger.error(f"Error in rename action: {str(e)}", exc_info=True)
 
     def action_move_node(self) -> None:
             if not self._initialized or self._selected_line >= len(self._node_data):
@@ -431,8 +439,6 @@ class NodeWindow(ScrollableContainer):
         if not self._initialized or not self._env:
             return
 
-        logger.debug(f"Theme variables: {self.app.get_css_variables()}")
-
         try:
             # Get colors from theme
             css_vars = self.app.get_css_variables()
@@ -468,7 +474,6 @@ class NodeWindow(ScrollableContainer):
                 if node.path() == self._cooking_node:
                     style.append("underline")
                 
-                logger.debug(f"Node {node.name()} styles: {style}")
                 return f"{state_indicator} {node.name()}", " ".join(style) if style else ""
 
             rendered_lines = render_layout(layout_entries, format_node)
@@ -500,7 +505,6 @@ class NodeWindow(ScrollableContainer):
 
             self.content.update(rendered_text)
             self.content.refresh()
-            logger.info("REFRESHED NODE LAYOUT")
 
         except Exception as e:
             error_msg = f"Error refreshing layout: {str(e)}"
