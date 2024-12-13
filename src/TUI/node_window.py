@@ -52,7 +52,7 @@ class NodeWindow(ScrollableContainer):
             height: 100%;
             background: $background;
             border: solid $secondary;
-            color: $foreground;
+            
         }
 
         NodeWindow:focus {
@@ -431,7 +431,18 @@ class NodeWindow(ScrollableContainer):
         if not self._initialized or not self._env:
             return
 
+        logger.debug(f"Theme variables: {self.app.get_css_variables()}")
+
         try:
+            # Get colors from theme
+            css_vars = self.app.get_css_variables()
+            
+            # Define our segment styles using the theme colors
+            NODE_STYLE = f" {css_vars['text']}"              
+            ARROW_STYLE = f"bold {css_vars['accent']}"            
+            INPUT_STYLE = f"italic {css_vars['primary-muted']}"          
+            OUTPUT_STYLE = f"bold {css_vars['primary']}"       
+                
             self._env = NodeEnvironment.get_instance()
             layout_entries = layout_network(self._env)
             self._node_data = []
@@ -439,7 +450,6 @@ class NodeWindow(ScrollableContainer):
 
             def format_node(node: Node, indent: int) -> tuple[str, str]:
                 state_indicator = self._get_state_indicator(node.state(), node.path())
-                line = f"{state_indicator} {node.name()}"
                 
                 i = len(self._node_data)
                 self._node_data.append(NodeData(
@@ -449,18 +459,44 @@ class NodeWindow(ScrollableContainer):
                     indent_level=indent
                 ))
                 
+                self._current_line = i
+                
+                # Build style list for node name
                 style = []
                 if i == self._selected_line:
                     style.append("reverse")
                 if node.path() == self._cooking_node:
                     style.append("underline")
-                    
-                return line, " ".join(style) if style else ""
+                
+                logger.debug(f"Node {node.name()} styles: {style}")
+                return f"{state_indicator} {node.name()}", " ".join(style) if style else ""
 
             rendered_lines = render_layout(layout_entries, format_node)
             
-            for line, style in rendered_lines:
-                rendered_text.append(line + "\n", style=style)
+            for line_info in rendered_lines:
+                segments = []
+                node = line_info['node']
+                node_text, style = format_node(node, line_info['indent'])
+                
+                # Add segments with appropriate styling
+                segments.append((line_info['indent'], ""))
+                segments.append((node_text, style))  # Node name with potential reverse highlight
+                
+                if line_info['input_nodes']:
+                    segments.append((" < ", ARROW_STYLE))  # Arrow
+                    input_names = [n.name() for n in line_info['input_nodes']]
+                    segments.append((", ".join(input_names), INPUT_STYLE))  # Input nodes
+                
+                if line_info['output_nodes']:
+                    segments.append((" > (", ARROW_STYLE))  # Arrow
+                    output_names = [n.name() for n in line_info['output_nodes']]
+                    segments.append((", ".join(output_names), OUTPUT_STYLE))  # Output nodes
+                    segments.append((")", ARROW_STYLE))
+
+                # Add all segments to rendered text
+                for text, segment_style in segments:
+                    rendered_text.append(text, style=segment_style)
+                rendered_text.append("\n")
 
             self.content.update(rendered_text)
             self.content.refresh()
@@ -470,6 +506,8 @@ class NodeWindow(ScrollableContainer):
             error_msg = f"Error refreshing layout: {str(e)}"
             logger.error(error_msg, exc_info=True)
             self.content.update(f"[red]{error_msg}")
+
+
 
     async def _refresh_states(self) -> None:
         self._refresh_timer = self.set_timer(0.1, self._refresh_layout)

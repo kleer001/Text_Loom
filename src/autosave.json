@@ -1,220 +1,184 @@
 {
   "software": "Text Loom",
   "version": 0.01,
-  "timestamp": "2024-12-12T16:15:55.916418",
+  "timestamp": "2024-12-12T17:06:29.509412",
   "nodes": {
-    "/text2": {
+    "/text_1": {
       "_node_type": "text",
-      "_path": "/text2",
-      "_name": "text2",
+      "_path": "/text_1",
+      "_name": "text_1",
       "_is_internal": false,
       "_parms": {
         "text_string": {
           "_name": "text_string",
           "_type": "string",
-          "_node": "/text2",
+          "_node": "/text_1",
           "_script_callback": "",
-          "_value": "Given the following fantasy civilization please list their three greatest accomplisments. "
+          "_value": "bbanadad"
         },
         "pass_through": {
           "_name": "pass_through",
           "_type": "toggle",
-          "_node": "/text2",
+          "_node": "/text_1",
           "_script_callback": "",
           "_value": true
         },
         "prefix": {
           "_name": "prefix",
           "_type": "toggle",
-          "_node": "/text2",
-          "_script_callback": "",
-          "_value": true
-        }
-      },
-      "_connections": [
-        {
-          "input_index": 0,
-          "output_node_path": "/make_list_1",
-          "input_node_path": "/text2",
-          "output_index": 0
-        }
-      ]
-    },
-    "/text1": {
-      "_node_type": "text",
-      "_path": "/text1",
-      "_name": "text1",
-      "_is_internal": false,
-      "_parms": {
-        "text_string": {
-          "_name": "text_string",
-          "_type": "string",
-          "_node": "/text1",
-          "_script_callback": "",
-          "_value": "Please give us a simple list of 4 unique fantasy civilizations, each with a distinct cultural focus. Number them 1 to 4. Please put any and all information about each civilization after its number in the list. Omit any summary at the end of the list."
-        },
-        "pass_through": {
-          "_name": "pass_through",
-          "_type": "toggle",
-          "_node": "/text1",
-          "_script_callback": "",
-          "_value": true
-        },
-        "prefix": {
-          "_name": "prefix",
-          "_type": "toggle",
-          "_node": "/text1",
+          "_node": "/text_1",
           "_script_callback": "",
           "_value": false
         }
       },
       "_connections": []
     },
-    "/query1": {
-      "_node_type": "query",
-      "_path": "/query1",
-      "_name": "query1",
+    "/text_2": {
+      "_node_type": "text",
+      "_path": "/text_2",
+      "_name": "text_2",
       "_is_internal": false,
       "_parms": {
-        "limit": {
-          "_name": "limit",
+        "text_string": {
+          "_name": "text_string",
+          "_type": "string",
+          "_node": "/text_2",
+          "_script_callback": "",
+          "_value": "apples"
+        },
+        "pass_through": {
+          "_name": "pass_through",
           "_type": "toggle",
-          "_node": "/query1",
+          "_node": "/text_2",
           "_script_callback": "",
           "_value": true
         },
-        "response": {
-          "_name": "response",
-          "_type": "stringList",
-          "_node": "/query1",
+        "prefix": {
+          "_name": "prefix",
+          "_type": "toggle",
+          "_node": "/text_2",
           "_script_callback": "",
-          "_value": [
-            "Here are four unique fantasy civilizations, each with a distinct cultural focus:\n\n1.\nName: The Kyrennei\nCultural Focus: Illusions and Deception\nThe Kyrennei are a nomadic people who have honed their skills in manipulating light and shadow to create elaborate illusions. They live in tents that can change color and shape at will, allowing them to blend in with the surrounding environment. Their cities are hidden in plain sight, concealed behind veils of misdirection.\n\n2.\nName: The Kaelin\nCultural Focus: Music and Harmony\nThe Kaelin are a people who believe that music is the key to balance and harmony in the universe. They live in sprawling cities filled with intricate instruments and singing fountains. Their architecture is designed to create symphonies of sound, with buildings shaped like lyres and harps.\n\n3.\nName: The Xeridia\nCultural Focus: Botany and Alchemy\nThe Xeridia are a people who have developed a deep understanding of the properties of plants and their potential for alchemy. They live in lush gardens filled with rare and exotic flora, where they cultivate new potions and elixirs. Their cities are made from living trees and vines, blending seamlessly into the surrounding landscape.\n\n4.\nName: The Valtor\nCultural Focus: Time and Chronomancy\nThe Valtor are a people who have mastered the art of manipulating time and chronomancy. They live in cities that exist outside of linear time, where hours can stretch to days or compress to seconds. Their architecture is designed to defy gravity and perspective, with buildings that seem to shift and change as one watches."
-          ]
-        },
-        "llm_name": {
-          "_name": "llm_name",
-          "_type": "string",
-          "_node": "/query1",
-          "_script_callback": "",
-          "_value": "Ollama"
-        },
-        "find_llm": {
-          "_name": "find_llm",
-          "_type": "button",
-          "_node": "/query1",
-          "_script_callback": null,
-          "_value": ""
-        },
-        "respond": {
-          "_name": "respond",
-          "_type": "button",
-          "_node": "/query1",
-          "_script_callback": null,
-          "_value": ""
+          "_value": false
         }
       },
-      "_connections": [
-        {
-          "input_index": 0,
-          "output_node_path": "/text1",
-          "input_node_path": "/query1",
-          "output_index": 0
-        }
-      ]
+      "_connections": []
     },
-    "/query2": {
-      "_node_type": "query",
-      "_path": "/query2",
-      "_name": "query2",
+    "/text_3": {
+      "_node_type": "text",
+      "_path": "/text_3",
+      "_name": "text_3",
       "_is_internal": false,
       "_parms": {
-        "limit": {
-          "_name": "limit",
+        "text_string": {
+          "_name": "text_string",
+          "_type": "string",
+          "_node": "/text_3",
+          "_script_callback": "",
+          "_value": "fuirts"
+        },
+        "pass_through": {
+          "_name": "pass_through",
           "_type": "toggle",
-          "_node": "/query2",
+          "_node": "/text_3",
           "_script_callback": "",
           "_value": true
         },
-        "response": {
-          "_name": "response",
-          "_type": "stringList",
-          "_node": "/query2",
+        "prefix": {
+          "_name": "prefix",
+          "_type": "toggle",
+          "_node": "/text_3",
           "_script_callback": "",
-          "_value": [
-            "Here are the three greatest accomplishments for each of the four fantasy civilizations:\n\n**The Kyrennei**\n\n1. **Mastery of Shadow Weaving**: The Kyrennei have developed a sophisticated understanding of light and shadow manipulation, allowing them to create elaborate illusions that deceive even the most perceptive of observers.\n2. **Innovative Tent Architecture**: Their ability to change the color and shape of their tents has enabled them to blend in seamlessly with their surroundings, making them expertly camouflaged nomads.\n3. **Development of Misdirection Arts**: The Kyrennei have honed their skills in misdirection, creating complex deceptions that allow them to escape detection or influence others without being detected.\n\n**The Kaelin**\n\n1. **Creation of Harmonious Architecture**: The Kaelin's cities are renowned for their symphonies of sound, with buildings designed to create harmonious resonance throughout the city.\n2. **Invention of Intricate Instruments**: Their master craftsmen have created instruments that can produce a wide range of sounds, from soaring melodies to complex rhythms.\n3. **Discovery of Sonic Healing**: The Kaelin have developed a deep understanding of the healing properties of music, using it to soothe the sick and calm the troubled mind.\n\n**The Xeridia**\n\n1. **Development of Botanical Alchemy**: The Xeridia have perfected the art of extracting and combining the unique properties of plants to create powerful elixirs and potions.\n2. **Creation of Lush Gardens**: Their cities are renowned for their vibrant, thriving gardens, which provide a constant source of fresh herbs and medicinal plants.\n3. **Understanding of Plant Chronomancy**: The Xeridia have developed an ability to manipulate the growth and decay of plants, allowing them to cultivate rare and exotic species.\n\n**The Valtor**\n\n1. **Mastering Time Manipulation**: The Valtor have learned to control the flow of time, allowing them to slow down or speed up their perception of reality.\n2. **Development of Chrono-Architecture**: Their cities exist outside of linear time, defying gravity and perspective as buildings shift and change before one's eyes.\n3. **Understanding of Temporal Flux**: The Valtor have developed an intuitive sense of the flow of time, allowing them to navigate the complexities of chronomancy with ease."
-          ]
-        },
-        "llm_name": {
-          "_name": "llm_name",
-          "_type": "string",
-          "_node": "/query2",
-          "_script_callback": "",
-          "_value": "Ollama"
-        },
-        "find_llm": {
-          "_name": "find_llm",
-          "_type": "button",
-          "_node": "/query2",
-          "_script_callback": null,
-          "_value": ""
-        },
-        "respond": {
-          "_name": "respond",
-          "_type": "button",
-          "_node": "/query2",
-          "_script_callback": null,
-          "_value": ""
+          "_value": false
         }
       },
-      "_connections": [
-        {
-          "input_index": 0,
-          "output_node_path": "/text2",
-          "input_node_path": "/query2",
-          "output_index": 0
-        }
-      ]
+      "_connections": []
     },
-    "/make_list_1": {
-      "_node_type": "make_list",
-      "_path": "/make_list_1",
-      "_name": "make_list_1",
+    "/merge_1": {
+      "_node_type": "merge",
+      "_path": "/merge_1",
+      "_name": "merge_1",
       "_is_internal": false,
       "_parms": {
-        "limit": {
-          "_name": "limit",
+        "single_string": {
+          "_name": "single_string",
           "_type": "toggle",
-          "_node": "/make_list_1",
+          "_node": "/merge_1",
           "_script_callback": "",
           "_value": false
         },
-        "max_list": {
-          "_name": "max_list",
-          "_type": "int",
-          "_node": "/make_list_1",
+        "use_insert": {
+          "_name": "use_insert",
+          "_type": "toggle",
+          "_node": "/merge_1",
           "_script_callback": "",
-          "_value": 5
+          "_value": false
         },
-        "refresh": {
-          "_name": "refresh",
-          "_type": "button",
-          "_node": "/make_list_1",
-          "_script_callback": null,
-          "_value": ""
+        "insert_string": {
+          "_name": "insert_string",
+          "_type": "string",
+          "_node": "/merge_1",
+          "_script_callback": "",
+          "_value": "##N"
         }
       },
       "_connections": [
         {
           "input_index": 0,
-          "output_node_path": "/query1",
-          "input_node_path": "/make_list_1",
+          "output_node_path": "/text_3",
+          "input_node_path": "/merge_1",
+          "output_index": 0
+        },
+        {
+          "input_index": 1,
+          "output_node_path": "/text_2",
+          "input_node_path": "/merge_1",
+          "output_index": 0
+        },
+        {
+          "input_index": 2,
+          "output_node_path": "/text_1",
+          "input_node_path": "/merge_1",
+          "output_index": 0
+        }
+      ]
+    },
+    "/text_4": {
+      "_node_type": "text",
+      "_path": "/text_4",
+      "_name": "text_4",
+      "_is_internal": false,
+      "_parms": {
+        "text_string": {
+          "_name": "text_string",
+          "_type": "string",
+          "_node": "/text_4",
+          "_script_callback": "",
+          "_value": "FUCK"
+        },
+        "pass_through": {
+          "_name": "pass_through",
+          "_type": "toggle",
+          "_node": "/text_4",
+          "_script_callback": "",
+          "_value": true
+        },
+        "prefix": {
+          "_name": "prefix",
+          "_type": "toggle",
+          "_node": "/text_4",
+          "_script_callback": "",
+          "_value": true
+        }
+      },
+      "_connections": [
+        {
+          "input_index": 0,
+          "output_node_path": "/merge_1",
+          "input_node_path": "/text_4",
           "output_index": 0
         }
       ]
     }
   },
-  "globals": {
-    "NUMTRIM": "Please omit any summary after the list and omit any introduction before the list."
-  }
+  "globals": {}
 }

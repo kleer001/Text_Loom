@@ -5,7 +5,7 @@ from core.base_classes import NodeEnvironment, NodeType, generate_node_types, No
 from core.flowstate_manager import load_flowstate
 
 from dataclasses import dataclass
-from typing import List, Set, Optional, Callable
+from typing import List, Set, Optional, Callable, Dict
 from pathlib import Path
 from enum import Enum
 
@@ -87,10 +87,11 @@ def layout_network(env: NodeEnvironment) -> List[LayoutEntry]:
 
     return layout
 
+# In network_visualizer.py - just handle the structure:
 def render_layout(
     layout: List[LayoutEntry],
     format_node: Optional[Callable[[Node, int], tuple[str, str]]] = None
-) -> str:
+) -> list[dict]:
     result = []
     output_connections: Dict[Node, List[Node]] = {}
     
@@ -103,34 +104,23 @@ def render_layout(
                 output_connections[out_node].append(entry.node)
     
     for entry in layout:
-        prefix = " " * entry.indent
+        line_info = {
+            'indent': " " * entry.indent,
+            'node': entry.node,
+            'input_nodes': [],
+            'output_nodes': []
+        }
         
-        if format_node:
-            node_text, style = format_node(entry.node, entry.indent)
-            line = prefix + node_text
-        else:
-            line = prefix + entry.node.name()
-        
-        input_nodes = []
         if entry.node._inputs:
             for conn in entry.node._inputs.values():
-                input_nodes.append(conn.output_node().name())
-            if input_nodes:
-                line += f" < {', '.join(input_nodes)}"
-        
-        output_nodes = output_connections.get(entry.node, [])
-        if output_nodes:
-            output_names = [node.name() for node in output_nodes]
-            line += f" > ({', '.join(output_names)})"
+                line_info['input_nodes'].append(conn.output_node())
+                
+        if entry.node in output_connections:
+            line_info['output_nodes'] = output_connections[entry.node]
             
-        if format_node:
-            result.append((line, style))
-        else:
-            result.append(line)
+        result.append(line_info)
             
-    if format_node:
-        return result
-    return "\n".join(result)
+    return result
 
 def main():
     file_path = os.path.abspath("save_file.json")
