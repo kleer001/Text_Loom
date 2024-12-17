@@ -4,7 +4,7 @@ from typing import ClassVar
 from enum import Enum
 from dataclasses import dataclass
 import TUI.palette as pal
-from TUI.theme_variables import *
+
 
 class Mode(Enum):
     NODE = "NODE"
@@ -43,7 +43,7 @@ class ModeLine(Static):
         self._refresh_display()
 
     def _refresh_display(self) -> None:
-        display_text = f"[{self.mode}] {self.path}"
+        display_text = f"📝🧵 [{self.mode}] {self.path}"
         if self.debug_info:
             display_text += f" | {self.debug_info}"
         if self.keypress:

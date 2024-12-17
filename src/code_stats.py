@@ -54,13 +54,14 @@ def analyze_python_files(directory):
     earliest_timestamp = float('inf')
     latest_timestamp = 0
     analyzer = CodeAnalyzer()
+    python_file_count = 0
 
     for root, _, files in os.walk(directory):
         for file in files:
             if file.endswith('.py'):
+                python_file_count += 1
                 file_path = os.path.join(root, file)
                 
-                # File stats
                 file_stats = os.stat(file_path)
                 total_size += file_stats.st_size
                 earliest_timestamp = min(earliest_timestamp, file_stats.st_ctime)
@@ -70,12 +71,10 @@ def analyze_python_files(directory):
                 if content is None:
                     continue
 
-                # Line counts
                 lines = content.split('\n')
                 total_lines += len(lines)
                 total_comment_lines += sum(1 for line in lines if line.strip().startswith('#'))
 
-                # AST analysis
                 try:
                     tree = ast.parse(content)
                     for node in ast.walk(tree):
@@ -85,10 +84,9 @@ def analyze_python_files(directory):
                             child.parent = node
                     analyzer.visit(tree)
                 except SyntaxError:
-                    print(f"Warning: Syntax error in {file_path}. Skipping AST analysis for this file.")
+                    pass
 
-    # Calculate time difference
-    time_diff = (latest_timestamp - earliest_timestamp) / (24 * 3600)  # Convert to days
+    time_diff = (latest_timestamp - earliest_timestamp) / (24 * 3600)
 
     return {
         'earliest_timestamp': datetime.fromtimestamp(earliest_timestamp),
@@ -100,13 +98,14 @@ def analyze_python_files(directory):
         'total_objects': analyzer.objects,
         'total_methods': analyzer.methods,
         'total_loose_functions': analyzer.loose_functions,
-        'unique_imports': len(analyzer.unique_imports)
+        'unique_imports': len(analyzer.unique_imports),
+        'python_file_count': python_file_count
     }
 
 if __name__ == "__main__":
     current_dir = os.getcwd()
     results = analyze_python_files(current_dir)
-
+    print(f"Total number of Python files: {results['python_file_count']}")
     print(f"Earliest timestamp: {results['earliest_timestamp']}")
     print(f"Latest timestamp: {results['latest_timestamp']}")
     print(f"Time difference: {results['time_diff_days']:.2f} days")

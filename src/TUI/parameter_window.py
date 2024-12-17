@@ -17,11 +17,30 @@ from rich.style import Style
 from core.base_classes import NodeEnvironment, Node
 from core.parm import ParameterType
 from TUI.logging_config import get_logger
-from TUI.messages import ParameterChanged, ScrollMessage, NodeSelected, NodeTypeSelected
+from TUI.messages import ParameterChanged, ScrollMessage, NodeSelected, NodeTypeSelected, ClearAll
 import TUI.palette as pal
 
 logger = get_logger('parameter')
 
+"""Parameter window module for TUI node parameter management.
+
+This module provides a textual-based UI for managing node parameters in a scrollable window.
+The interface allows for viewing and editing parameters for multiple nodes simultaneously,
+with keyboard-based navigation and editing capabilities.
+
+Classes:
+    Parameter: Data class representing a single parameter with name, value, and type.
+    
+    ParameterRow: UI component representing a single parameter with label and input field.
+    Handles focus, editing, and value update events.
+    
+    ParameterSet: Container for a node's parameters, including title and parameter rows.
+    Manages parameter selection and value conversion.
+    
+    ParameterWindow: Main scrollable container managing multiple ParameterSets.
+    Provides keyboard navigation (up/down/enter), editing capabilities,
+    and parameter set management (ctrl+x to remove, ctrl+c to clear all).
+"""
 
 @dataclass
 class Parameter:
@@ -274,6 +293,8 @@ class ParameterWindow(ScrollableContainer):
         Binding("escape", "cancel_edit", "Cancel Edit"),
         Binding("pageup", "scroll_up", "Scroll Up"),
         Binding("pagedown", "scroll_down", "Scroll Down"),
+        Binding("ctrl+x", "remove_current_set", "Remove Current Set"),
+        Binding("ctrl+f", "clear_all_sets", "Clear All Sets"),
     ]
     
     can_focus = True
@@ -341,6 +362,42 @@ class ParameterWindow(ScrollableContainer):
             logger.info(f"Added/Updated parameter set for {node_key}, total sets: {len(self.parameter_sets)}")
         except Exception as e:
             logger.error(f"Error processing parameter set: {str(e)}")
+
+    def action_remove_current_set(self) -> None:
+        if not self.parameter_sets or self.is_editing:
+            return
+
+        current_set = self.parameter_sets[self.current_set_index]
+        node_key = current_set.node.name()
+
+        current_set.remove()
+        self.parameter_sets.pop(self.current_set_index)
+        self.node_to_param_set.pop(node_key)
+
+        if not self.parameter_sets:
+            self.current_set_index = -1
+            self.is_editing = False
+            return
+
+        self.current_set_index = 0
+        self.parameter_sets[0].select_parameter(0)
+
+    def action_clear_all_sets(self) -> None:
+        if self.is_editing:
+            return
+
+        stack = self.query_one("#parameter_stack")
+        
+        for param_set in self.parameter_sets:
+            param_set.remove()
+            
+        self.parameter_sets = []
+        self.current_set_index = -1
+        self.node_to_param_set = {}
+        self.is_editing = False
+        
+        stack.styles.offset = (0, 0)
+
 
     def action_move_up(self) -> None:
         if not self.parameter_sets or self.is_editing:
