@@ -52,6 +52,7 @@ from TUI.messages import (
     GlobalDeleted,
     NodeSelected,
     FileLoaded,
+    ClearAll,
 )
 
 logger = get_logger('tui.main')
@@ -389,7 +390,7 @@ class TUIApp(App[None]):
             if clear:
                 try:
                     self.logger.debug("Starting clear all process")
-                    self._perform_autosave()  # just in case
+                    self._perform_autosave()  
                     undo_manager = UndoManager()
                     self.logger.debug("Disabling undo manager")
                     undo_manager.disable()
@@ -398,6 +399,8 @@ class TUIApp(App[None]):
                     NodeEnvironment.flush_all_nodes()
                     self.logger.debug("Flushing globals")
                     GlobalStore().flush_all_globals()
+                    
+                    self.post_message(ClearAll())
                     
                     self.logger.debug("Re-enabling undo manager")
                     undo_manager.enable()

@@ -84,7 +84,7 @@ if __name__ == '__main__':
             TestScriptRuns.folder_path = sys.argv[1]
         sys.argv.pop(1)
     else:
-        print("Usage: python sloppy_testing.py [-c] <folder_path>")
+        print("Usage: python auto_testing.py [-c] <folder_path>")
         sys.exit(1)
 
     unittest.main()

@@ -42,14 +42,20 @@ class OutputWindow(ScrollableContainer):
                 self._output.update("[italic]NO OUTPUT DATA[/italic]")
                 return
 
-            formatted_output = "\n".join(str(line) for line in message.output_data if line is not None)
-            if not formatted_output.strip():
+            formatted_output = []
+            for index, line in enumerate(message.output_data, start=1):
+                if line is not None:
+                    formatted_output.append(f"---- ITEM #{index} ----")
+                    formatted_output.append(str(line))
+
+            if not formatted_output:
                 self.logger.debug("Output data was empty after formatting")
                 self._output.update("[italic]EMPTY OUTPUT[/italic]")
                 return
 
-            self.logger.debug(f"Updating display with output: {formatted_output}")
-            self._output.update(formatted_output)
+            final_output = "\n".join(formatted_output)
+            self.logger.debug(f"Updating display with output: {final_output}")
+            self._output.update(final_output)
             self.scroll_end(animate=False)
 
         except Exception as e:
@@ -57,3 +63,4 @@ class OutputWindow(ScrollableContainer):
             self.logger.error(error_msg, exc_info=True)
             self._output.update(f"[red]ERROR: {error_msg}[/red]")
             self.scroll_end(animate=False)
+

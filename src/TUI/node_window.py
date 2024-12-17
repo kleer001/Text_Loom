@@ -297,7 +297,7 @@ class NodeWindow(ScrollableContainer):
             new_node = Node.create_node(node_type, parent_path=reference_path)
             
             if new_node:
-                logger.debug(f"Successfully created node: {new_node.path()}")
+                logger.debug(f"Suessfully created node: {new_node.path()}")
                 self.post_message(NodeAdded(new_node.path(), node_type_str))
                 self._refresh_layout()
                 for i, node_data in enumerate(self._node_data):
@@ -331,7 +331,8 @@ class NodeWindow(ScrollableContainer):
                     if node:
                         node.destroy()
                         logger.info(f"Deleted node: {node_data.path}")
-                        self.post_message(NodeDeleted(node_data.path))
+                        # Post to parent instead of self
+                        self.app.post_message(NodeDeleted(node_data.path))
                         self._refresh_layout()
                 except Exception as e:
                     logger.error(f"Error deleting node: {str(e)}", exc_info=True)

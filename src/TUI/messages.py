@@ -53,6 +53,11 @@ class NodeMoveDestinationSelected(Message):
         self.destination_path = destination_path
         super().__init__()
 
+class ClearAll(Message):
+    """Message sent when all nodes should be cleared"""
+    def __init__(self) -> None:
+        super().__init__()
+
 #CONNECTIONS
 class ConnectionAdded(Message):
     def __init__(self, from_node: str, to_node: str) -> None:
