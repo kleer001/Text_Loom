@@ -17,7 +17,7 @@ from rich.style import Style
 from core.base_classes import NodeEnvironment, Node
 from core.parm import ParameterType
 from TUI.logging_config import get_logger
-from TUI.messages import ParameterChanged, ScrollMessage, NodeSelected, NodeTypeSelected, ClearAll
+from TUI.messages import ParameterChanged, ScrollMessage, NodeSelected, NodeTypeSelected, ClearAll, NodeDeleted
 import TUI.palette as pal
 
 logger = get_logger('parameter')
@@ -99,7 +99,7 @@ class ParameterRow(Horizontal):
         self._editing = False              
         self.param_type = param_type.value
         self.on_change = on_change
-        logger.info(f"ParameterRow.__init__: name={name}, value={value}")
+        #logger.info(f"ParameterRow.__init__: name={name}, value={value}")
 
     def compose(self):
         yield Static(f"{self.name}:", classes="label")
@@ -179,7 +179,8 @@ class ParameterSet(Vertical):
         self.parameter_rows: List[ParameterRow] = []
 
     def compose(self):
-        yield Static(self.node.name(), classes="title")
+        # Use path for id/reference, name for display
+        yield Static(self.node.name(), classes="title", id=f"title_{self.node.path()}")
         for parm_name, parm in self.node._parms.items():
             row = ParameterRow(
                 name=parm_name,
@@ -199,15 +200,16 @@ class ParameterSet(Vertical):
                     if row.name == parm_name:
                         row.update_value(new_value)
                         break
+                # Always use full path in messages
                 self.post_message(ParameterChanged(
-                    self.node.path(),
+                    self.node.path(),  # Using path consistently
                     parm_name,
                     new_value,
                     parm._type
                 ))
-                logger.info(f"Parameter {parm_name} updated to {new_value}")
+                logger.info(f"Parameter {parm_name} updated for node {self.node.path()}")
             except Exception as e:
-                logger.error(f"Error updating parameter {parm_name}: {str(e)}")
+                logger.error(f"Error updating parameter {parm_name} for node {self.node.path()}: {str(e)}")
         return handle_change
 
     def _convert_value(self, value: str, param_type: ParameterType) -> any:
@@ -344,7 +346,8 @@ class ParameterWindow(ScrollableContainer):
     def _process_parameter_set(self, node: Node) -> None:
         try:
             stack = self.query_one("#parameter_stack")
-            node_key = node.name()
+            # Use full path instead of just name
+            node_key = node.path()  # Changed from node.name()
             if node_key in self.node_to_param_set:
                 old_param_set = self.node_to_param_set[node_key]
                 self.parameter_sets.remove(old_param_set)
@@ -353,7 +356,7 @@ class ParameterWindow(ScrollableContainer):
             new_param_set = ParameterSet(node)
             self.parameter_sets.insert(0, new_param_set)
             self.stack.mount(new_param_set, before=0)
-            self.node_to_param_set[node_key] = new_param_set
+            self.node_to_param_set[node_key] = new_param_set  # Using full path here too
             self.current_set_index = 0
             new_param_set.select_parameter(0)
             
@@ -363,29 +366,34 @@ class ParameterWindow(ScrollableContainer):
         except Exception as e:
             logger.error(f"Error processing parameter set: {str(e)}")
 
-    def action_remove_current_set(self) -> None:
-        if not self.parameter_sets or self.is_editing:
-            return
+    def remove_named_set(self, node_path: str) -> None:
+        logger.debug(f"Attempting to remove parameter set for node: {node_path}")
+        
+        try:
+            if node_path in self.node_to_param_set:
+                param_set = self.node_to_param_set[node_path]
+                set_index = self.parameter_sets.index(param_set)
+                param_set.remove()
+                self.parameter_sets.pop(set_index)
+                self.node_to_param_set.pop(node_path)
+                
+                # Update selection
+                if not self.parameter_sets:
+                    self.current_set_index = -1
+                    self.is_editing = False
+                elif set_index <= self.current_set_index:
+                    self.current_set_index = max(0, min(self.current_set_index - 1, len(self.parameter_sets) - 1))
+                    
+            else:
+                logger.debug(f"No parameter set found for node path: {node_path}")
+                
+        except Exception as e:
+            logger.error(f"Error removing parameter set: {str(e)}", exc_info=True)
 
-        current_set = self.parameter_sets[self.current_set_index]
-        node_key = current_set.node.name()
-
-        current_set.remove()
-        self.parameter_sets.pop(self.current_set_index)
-        self.node_to_param_set.pop(node_key)
-
-        if not self.parameter_sets:
-            self.current_set_index = -1
-            self.is_editing = False
-            return
-
-        self.current_set_index = 0
-        self.parameter_sets[0].select_parameter(0)
-
-    def action_clear_all_sets(self) -> None:
+    def clear_all_sets(self) -> None:
         if self.is_editing:
             return
-
+            
         stack = self.query_one("#parameter_stack")
         
         for param_set in self.parameter_sets:
@@ -397,6 +405,27 @@ class ParameterWindow(ScrollableContainer):
         self.is_editing = False
         
         stack.styles.offset = (0, 0)
+
+    def action_remove_current_set(self) -> None:
+        if not self.parameter_sets or self.is_editing:
+            return
+
+        current_set = self.parameter_sets[self.current_set_index]
+        self.remove_named_set(current_set.node.name())
+
+    def action_clear_all_sets(self) -> None:
+        self.clear_all_sets()
+
+    def on_node_deleted(self, message: NodeDeleted) -> None:
+        logger.debug(f"NodeDeleted message received for node: {message.node_path}")
+        try:
+            self.remove_named_set(message.node_path)
+        except Exception as e:
+            logger.error(f"Error in on_node_deleted: {str(e)}", exc_info=True)
+
+    def on_clear_all(self, message: ClearAll) -> None:
+        logger.debug("ClearAll message gotten")
+        self.clear_all_sets()
 
 
     def action_move_up(self) -> None:

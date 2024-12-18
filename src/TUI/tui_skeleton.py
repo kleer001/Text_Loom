@@ -390,7 +390,7 @@ class TUIApp(App[None]):
             if clear:
                 try:
                     self.logger.debug("Starting clear all process")
-                    self._perform_autosave()  
+                    self._perform_autosave()
                     undo_manager = UndoManager()
                     self.logger.debug("Disabling undo manager")
                     undo_manager.disable()
@@ -400,7 +400,16 @@ class TUIApp(App[None]):
                     self.logger.debug("Flushing globals")
                     GlobalStore().flush_all_globals()
                     
-                    self.post_message(ClearAll())
+                    # Add debug logging for message posting
+                    self.logger.debug("About to post ClearAll message")
+                    main_content = self.query_one(MainContent)
+                    param_window = main_content.query_one(ParameterWindow)
+                    self.logger.debug(f"Found parameter window: {param_window}")
+                    
+                    clear_msg = ClearAll()
+                    param_window.post_message(clear_msg)
+                    self.post_message(clear_msg)
+                    self.logger.debug("Posted ClearAll message")
                     
                     self.logger.debug("Re-enabling undo manager")
                     undo_manager.enable()

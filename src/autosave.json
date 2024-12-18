@@ -1,68 +1,8 @@
 {
   "software": "Text Loom",
   "version": 0.01,
-  "timestamp": "2024-12-17T13:47:08.646679",
+  "timestamp": "2024-12-18T10:06:54.502114",
   "nodes": {
-    "/text_1": {
-      "_node_type": "text",
-      "_path": "/text_1",
-      "_name": "text_1",
-      "_is_internal": false,
-      "_parms": {
-        "text_string": {
-          "_name": "text_string",
-          "_type": "string",
-          "_node": "/text_1",
-          "_script_callback": "",
-          "_value": ""
-        },
-        "pass_through": {
-          "_name": "pass_through",
-          "_type": "toggle",
-          "_node": "/text_1",
-          "_script_callback": "",
-          "_value": true
-        },
-        "prefix": {
-          "_name": "prefix",
-          "_type": "toggle",
-          "_node": "/text_1",
-          "_script_callback": "",
-          "_value": false
-        }
-      },
-      "_connections": []
-    },
-    "/text_2": {
-      "_node_type": "text",
-      "_path": "/text_2",
-      "_name": "text_2",
-      "_is_internal": false,
-      "_parms": {
-        "text_string": {
-          "_name": "text_string",
-          "_type": "string",
-          "_node": "/text_2",
-          "_script_callback": "",
-          "_value": ""
-        },
-        "pass_through": {
-          "_name": "pass_through",
-          "_type": "toggle",
-          "_node": "/text_2",
-          "_script_callback": "",
-          "_value": true
-        },
-        "prefix": {
-          "_name": "prefix",
-          "_type": "toggle",
-          "_node": "/text_2",
-          "_script_callback": "",
-          "_value": false
-        }
-      },
-      "_connections": []
-    },
     "/text_3": {
       "_node_type": "text",
       "_path": "/text_3",

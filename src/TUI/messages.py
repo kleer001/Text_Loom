@@ -43,7 +43,7 @@ class NodeAdded(Message):
         self.node_type = node_type
         super().__init__()
 
-class NodeDeleted(Message):
+class NodeDeleted(Message, bubble = True):
     def __init__(self, node_path: str) -> None:
         self.node_path = node_path
         super().__init__()
@@ -53,7 +53,7 @@ class NodeMoveDestinationSelected(Message):
         self.destination_path = destination_path
         super().__init__()
 
-class ClearAll(Message):
+class ClearAll(Message, bubble = True, verbose = True):
     """Message sent when all nodes should be cleared"""
     def __init__(self) -> None:
         super().__init__()

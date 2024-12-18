@@ -43,8 +43,6 @@ S: Save As
 
 [HELP]
 This IS the help system. 
-Press Ctrl+h in any mode 
-to see relevant commands.
 Ctrl + n: Node 
 Ctrl + p: Parameter    
 Ctrl + g: Global
@@ -63,7 +61,6 @@ q: Exit to previous mode
 j/k: Scroll output
 G: Jump to bottom
 gg: Jump to top
-/: Search
 n: Next match
 N: Previous match
 
@@ -72,4 +69,3 @@ j/k: Scroll output
 G: Jump to bottom
 gg: Jump to top
 c: Clear output
-/: Search
