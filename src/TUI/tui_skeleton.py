@@ -113,7 +113,7 @@ class TUIApp(App[None]):
     }
     
     NodeWindow:focus {
-        border: double $primary;
+        border: double $secondary;
     }
     
     ParameterWindow {
@@ -124,8 +124,8 @@ class TUIApp(App[None]):
         color: $foreground;
     }
 
-    ParameterWindow:focus {
-        border: double $primary;
+    ParameterWindow:focus, ParameterWindow:focus-within  {
+        border: double $secondary;
     }
     
     .middle-section {
@@ -404,10 +404,10 @@ class TUIApp(App[None]):
                     self.logger.debug("About to post ClearAll message")
                     main_content = self.query_one(MainContent)
                     param_window = main_content.query_one(ParameterWindow)
-                    self.logger.debug(f"Found parameter window: {param_window}")
-                    
+                                        
                     clear_msg = ClearAll()
                     param_window.post_message(clear_msg)
+                    
                     self.post_message(clear_msg)
                     self.logger.debug("Posted ClearAll message")
                     
