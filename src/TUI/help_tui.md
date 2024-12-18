@@ -9,10 +9,10 @@ r: Rename node
 x: Delete connection
 i: Start input connection
 o: Start output connection
+Esc: Cancel connection
 e: Get node output
 m: Move node path
-Esc: Cancel connection
-C: Cook node
+shift-c: Cook node
 ctrl+o: Open File
 ctrl+s: Quick Save
 ctrl+d: Save As
@@ -27,11 +27,14 @@ j/k: Navigate parameters
 Enter: Edit parameter
 Esc: Exit edit mode
 Tab: Next field
+ctrl+x: Remove Current Set
+ctrl+f: Clear All Sets
 
 [GLOBAL]
 j/k: Navigate variables
 Enter: Edit value
-d: Delete variable
+cut <KEY>: Delete variable
+cut all globals: Delete all variables
 n: New variable
 
 [FILE]

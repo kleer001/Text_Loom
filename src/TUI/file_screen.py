@@ -111,6 +111,10 @@ class FileScreen(Screen):
             self.logger.error("Failed during mount", exc_info=True)
             raise
 
+    def action_pop_screen(self) -> None:
+        self.logger.info("Escape pressed, popping screen")
+        self.app.pop_screen()
+
     def action_handle_action(self) -> None:
         self.logger.info("Handle action called")
         try:
