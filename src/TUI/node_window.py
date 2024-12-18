@@ -331,11 +331,26 @@ class NodeWindow(ScrollableContainer):
                     if node:
                         node.destroy()
                         logger.info(f"Deleted node: {node_data.path}")
-                        # Post to parent instead of self
-                        self.app.post_message(NodeDeleted(node_data.path))
+                        
+                        # Get parameter window reference
+                        main_content = self.app.query_one("MainContent")
+                        param_window = main_content.query_one("ParameterWindow")
+                        
+                        # Create message once
+                        delete_msg = NodeDeleted(node_data.path)
+                        
+                        # Post to both parameter window and app
+                        if param_window:
+                            logger.debug("Posting NodeDeleted to parameter window")
+                            param_window.post_message(delete_msg)
+                        
+                        logger.debug("Posting NodeDeleted to app")
+                        self.app.post_message(delete_msg)
+                        
                         self._refresh_layout()
                 except Exception as e:
                     logger.error(f"Error deleting node: {str(e)}", exc_info=True)
+                    
         self.app.push_screen(DeleteConfirmation(node_data.name), delete_node)
 
 
