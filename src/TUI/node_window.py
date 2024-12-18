@@ -10,6 +10,7 @@ from textual.geometry import Region, Size
 from textual.timer import Timer
 from rich.text import Text
 import os
+import time
 from collections import namedtuple
 from enum import Enum, auto
 
@@ -46,6 +47,8 @@ class ConnectionMode(Enum):
     DELETE = auto()
 
 class NodeWindow(ScrollableContainer):
+    BRAILLE_SEQUENCE = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
+    ANIMATION_FRAME_TIME = .1  
     DEFAULT_CSS = """
         NodeWindow {
             width: 100%;
@@ -85,7 +88,8 @@ class NodeWindow(ScrollableContainer):
 
     def _get_state_indicator(self, node_state: NodeState, node_path: str) -> str:
         if self._cooking_node == node_path:
-            return "◇"
+            return self.BRAILLE_SEQUENCE[self._animation_frame]
+
         if self._connection_mode != ConnectionMode.NONE and self._source_node:
             if self._connection_mode == ConnectionMode.DELETE:
                 source_node = self._env.node_from_name(self._source_node.path())
@@ -102,7 +106,7 @@ class NodeWindow(ScrollableContainer):
             NodeState.UNCOOKED: "▪",
             NodeState.UNCHANGED: "▫",
         }[node_state]
-
+    
     def __init__(self) -> None:
         super().__init__()
         self._node_data: List[NodeData] = []
@@ -117,6 +121,8 @@ class NodeWindow(ScrollableContainer):
         self._cooking: bool = False
         self._cooking_node: Optional[str] = None
         self._refresh_timer: Optional[Timer] = None
+        self._animation_frame: int = 0
+        self._last_frame_time: float = 0
 
     can_focus = True
 
@@ -599,6 +605,11 @@ class NodeWindow(ScrollableContainer):
         # Future implementation for expanding/collapsing node hierarchies
         pass
 
+
+    def _animate_cooking(self) -> None:
+        self._animation_frame = (self._animation_frame + 1) % len(self.BRAILLE_SEQUENCE)
+        self._refresh_layout()
+
     async def action_cook_node(self) -> None:
         if not self._initialized or self._cooking:
             return
@@ -615,11 +626,11 @@ class NodeWindow(ScrollableContainer):
 
             self._cooking = True
             self._cooking_node = node.path()
+            self._animation_frame = 0
             
-            # Start the refresh timer
-            self._refresh_timer = self.set_timer(0.1, self._refresh_layout)
+            # Set up animation timer
+            self._animation_timer = self.set_interval(self.ANIMATION_FRAME_TIME, self._animate_cooking)
             
-            # Use regular worker for sync function
             def do_eval():
                 return node.eval(force=True)
                 
@@ -634,8 +645,8 @@ class NodeWindow(ScrollableContainer):
             self.app.post_message(OutputMessage([f"Error: {error_msg}"]))
         
         finally:
-            if self._refresh_timer:
-                self._refresh_timer.stop()
+            if self._animation_timer:
+                self._animation_timer.stop()
             self._cooking = False
             self._cooking_node = None
             self._refresh_layout()

@@ -42,6 +42,7 @@ Classes:
     and parameter set management (ctrl+x to remove, ctrl+c to clear all).
 """
 
+
 @dataclass
 class Parameter:
     name: str
@@ -73,7 +74,7 @@ class ParameterRow(Horizontal):
         padding: 0 1;
     }
     
-    ParameterRow > Input:focus {
+    ParameterRow > Input:focus{
         background: $accent;
         color: $foreground;
         border: tall $primary;
@@ -109,18 +110,34 @@ class ParameterRow(Horizontal):
 
     def on_focus(self, event: Focus) -> None:
         logger.info(f"ParameterRow.on_focus: {self.name}")
-        if not self._editing:
-            input_widget = self.query_one(Input)
-            self._editing = True
-            input_widget.value = ""
-            logger.info(f"Focus: Cleared input for editing. Original value: {self._original_value}")
+        try:
+            if not self._editing:
+                input_widget = self.query_one(Input)
+                self._editing = True
+                input_widget.value = ""
+                # Find parent ParameterWindow and update its border
+                param_window = self.ancestors_with_type(ParameterWindow)[0]
+                param_window.border = "double"
+                logger.info(f"Focus: Updated ParameterWindow border, cleared input for editing. Original value: {self._original_value}")
+        except IndexError as e:
+            logger.error(f"Could not find parent ParameterWindow: {str(e)}")
+        except Exception as e:
+            logger.error(f"Error in ParameterRow.on_focus: {str(e)}")
 
     def on_blur(self, event: Blur) -> None:
         logger.info(f"ParameterRow.on_blur: {self.name}")
-        input_widget = self.query_one(Input)
-        if not input_widget.value:
-            input_widget.value = self._original_value
-        self._editing = False
+        try:
+            input_widget = self.query_one(Input)
+            if not input_widget.value:
+                input_widget.value = self._original_value
+            self._editing = False
+            # Find parent ParameterWindow and update its border
+            param_window = self.ancestors_with_type(ParameterWindow)[0]
+            param_window.border = "solid"
+        except IndexError as e:
+            logger.error(f"Could not find parent ParameterWindow: {str(e)}")
+        except Exception as e:
+            logger.error(f"Error in ParameterRow.on_blur: {str(e)}")
 
     def key_escape(self) -> None:
         """Handle escape key"""
@@ -179,8 +196,7 @@ class ParameterSet(Vertical):
         self.parameter_rows: List[ParameterRow] = []
 
     def compose(self):
-        # Use path for id/reference, name for display
-        yield Static(self.node.name(), classes="title", id=f"title_{self.node.path()}")
+        yield Static(self.node.name(), classes="title")
         for parm_name, parm in self.node._parms.items():
             row = ParameterRow(
                 name=parm_name,
@@ -200,16 +216,15 @@ class ParameterSet(Vertical):
                     if row.name == parm_name:
                         row.update_value(new_value)
                         break
-                # Always use full path in messages
                 self.post_message(ParameterChanged(
-                    self.node.path(),  # Using path consistently
+                    self.node.path(),
                     parm_name,
                     new_value,
                     parm._type
                 ))
-                logger.info(f"Parameter {parm_name} updated for node {self.node.path()}")
+                logger.info(f"Parameter {parm_name} updated to {new_value}")
             except Exception as e:
-                logger.error(f"Error updating parameter {parm_name} for node {self.node.path()}: {str(e)}")
+                logger.error(f"Error updating parameter {parm_name}: {str(e)}")
         return handle_change
 
     def _convert_value(self, value: str, param_type: ParameterType) -> any:
@@ -268,24 +283,18 @@ class ParameterSet(Vertical):
         self.current_index = None
 
 class ParameterWindow(ScrollableContainer):
-    """Main container for parameter sets with keyboard navigation."""
-    
     DEFAULT_CSS = """
     ParameterWindow {
         width: 100%;
         height: 100%;
         background: $background;
-        border: solid $primary;
-    }
-    
-    ParameterWindow:focus {
-        border: double $secondary;
     }
     
     ParameterWindow #parameter_stack {
         width: 100%;
         height: auto;
     }
+
     """
 
     BINDINGS = [
@@ -317,10 +326,15 @@ class ParameterWindow(ScrollableContainer):
         self.border_title = "Parameter"
 
     def on_focus(self) -> None:
+        logger.debug(f"ParameterWindow gained focus (is_editing: {self.is_editing}, has_focus: {self.has_focus})")
         if self.parameter_sets and not self.is_editing:
             if self.current_set_index == -1:
                 self.current_set_index = 0
                 self.parameter_sets[0].select_parameter(0)
+
+    def on_blur(self, event: Blur) -> None:
+        logger.debug(f"ParameterWindow lost focus (is_editing: {self.is_editing}, has_focus: {self.has_focus}, focused: {self.screen.focused})")
+
 
     def parm_refresh(self) -> None:
         if not self.parameter_sets:
@@ -419,6 +433,7 @@ class ParameterWindow(ScrollableContainer):
     def on_node_deleted(self, message: NodeDeleted) -> None:
         logger.debug(f"NodeDeleted message received for node: {message.node_path}")
         try:
+
             self.remove_named_set(message.node_path)
         except Exception as e:
             logger.error(f"Error in on_node_deleted: {str(e)}", exc_info=True)
@@ -454,6 +469,7 @@ class ParameterWindow(ScrollableContainer):
             new_set.select_parameter(0)
 
     def action_edit_value(self) -> None:
+        logger.debug(f"ParameterWindow entering edit mode (current classes: {self.classes})")
         if not self.parameter_sets or self.is_editing:
             return
 
@@ -462,6 +478,7 @@ class ParameterWindow(ScrollableContainer):
             self.is_editing = True
             current_row = current_set.parameter_rows[current_set.current_index]
             input_widget = current_row.query_one(Input)
+            logger.debug("Focusing input widget")
             input_widget.focus()
 
     def action_cancel_edit(self) -> None:

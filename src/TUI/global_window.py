@@ -21,8 +21,8 @@ class GlobalWindow(Container):
         layout: vertical;
     }
 
-    GlobalWindow:focus {
-        border: double $primary;
+    GlobalWindow:focus, GlobalWindow:focus-within {
+        border: double $secondary;
     }
 
     DataTable {
@@ -38,12 +38,12 @@ class GlobalWindow(Container):
         width: 100%;
         height: 3;
         dock: top;
-        background: $secondary;
+        background: $background;
         color: $text;
         border: solid $accent;
     }
     Input:focus {
-        border: double $primary;
+        border: double $secondary;
     }
     """
 
@@ -95,7 +95,7 @@ class GlobalWindow(Container):
     def reset_background(self):
         logger.debug("Resetting background")
         try:
-            self.input.styles.background = "$secondary" #might need to be None ? 
+            self.input.styles.background = "$background" #might need to be None ? 
             logger.debug("Background reset complete")
         except Exception as e:
             logger.debug(f"Reset background failed: {str(e)}")
@@ -106,6 +106,18 @@ class GlobalWindow(Container):
     def on_input_submitted(self, event: Input.Submitted):
         logger.debug(f"Input submitted with value: {event.value}")
         
+        if event.value.lower() == "cut all globals":
+            logger.debug("Cut all globals command detected")
+            store = GlobalStore()
+            all_globals = store.list()
+            for key in list(all_globals):  # Create a copy of the list to iterate
+                try:
+                    self.delete_global(key)
+                except Exception as e:
+                    logger.debug(f"Error deleting global {key}: {str(e)}")
+            self.input.value = ""
+            return
+
         if "cut" in event.value:
             key_to_cut = event.value.split(" ", 1)[1]
             self.delete_global(key_to_cut)
