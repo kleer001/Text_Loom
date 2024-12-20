@@ -25,18 +25,18 @@ class TextNode(Node):
         self._input_hash = None
         self._param_hash = None
 
-        # Initialize parameters
         self._parms: Dict[str, Parm] = {
             "text_string": Parm("text_string", ParameterType.STRING, self),
             "pass_through": Parm("pass_through", ParameterType.TOGGLE, self),
+            "per_item": Parm("per_item", ParameterType.TOGGLE, self),
             "prefix": Parm("prefix", ParameterType.TOGGLE, self),
         }
 
-        # Set default value
         self._parms["text_string"].set("")
         self._parms["pass_through"].set(True)
+        self._parms["per_item"].set(True)
         self._parms["prefix"].set(False)
-    
+
     def _internal_cook(self, force: bool = False) -> None:
         self.set_state(NodeState.COOKING)
         self._cook_count += 1
@@ -46,6 +46,7 @@ class TextNode(Node):
         print("🍳 cooking", self.name())
 
         pass_through = self._parms["pass_through"].eval()
+        per_item = self._parms["per_item"].eval()
         text_string = self._parms["text_string"].eval()
         prefix = self._parms["prefix"].eval()
         print(f"text_string for {self.name()} is {text_string}")
@@ -57,15 +58,15 @@ class TextNode(Node):
                 input_data = []
 
         if pass_through and input_data:
-            if prefix:
-                result = [f"{text_string}{item}" if isinstance(item, str) else str(item) for item in input_data]
+            if per_item:
+                result = [f"{text_string}{item}" if prefix else f"{item}{text_string}" for item in input_data]
             else:
-                result = input_data + [text_string]
+                result = [text_string] + input_data if prefix else input_data + [text_string]
         else:
             result = [text_string]
 
         self._output = result
-        self._param_hash = self._calculate_hash(text_string)
+        self._param_hash = self._calculate_hash(text_string + str(per_item))
         self._input_hash = self._calculate_hash(str(input_data)) if pass_through and input_data else None
         self.set_state(NodeState.UNCHANGED)
 
@@ -92,7 +93,8 @@ class TextNode(Node):
             pass_through = self._parms["pass_through"].raw_value()
             text_string = self._parms["text_string"].raw_value()
             prefix = self._parms["prefix"].raw_value()
-            new_param_hash = self._calculate_hash(text_string + str(prefix))
+            per_item = self._parms["per_item"].raw_value()
+            new_param_hash = self._calculate_hash(text_string + str(prefix) + str(per_item))
 
             if pass_through:
                 input_data = self.inputs()[0].output_node().eval() if self.inputs() else []
@@ -102,7 +104,6 @@ class TextNode(Node):
                 return new_param_hash != self._param_hash
         except Exception:
             return True
-
     # def eval(self) -> List[str]:
     #     if self.state() != NodeState.UNCHANGED or self.needs_to_cook() or self._is_time_dependent() is True:
     #         self.cook()
