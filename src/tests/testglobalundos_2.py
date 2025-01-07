@@ -9,6 +9,8 @@ from core.undo_manager import UndoManager
 
 globals = GlobalStore()
 undomanager = UndoManager()
+undomanager.flush_all_undos()
+
 print("\nInitial state:")
 print("Globals:", globals.list())
 

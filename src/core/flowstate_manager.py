@@ -2,9 +2,9 @@ from typing import Any, Dict, List, Optional, Set
 from pathlib import Path, PurePosixPath
 from datetime import datetime
 import json
-from .base_classes import NodeEnvironment, Node, NodeConnection, NodeType
-from .global_store import GlobalStore
-from .parm import Parm, ParameterType
+from core.base_classes import NodeEnvironment, Node, NodeConnection, NodeType
+from core.global_store import GlobalStore
+from core.parm import Parm, ParameterType
 import traceback
 import inspect
 
