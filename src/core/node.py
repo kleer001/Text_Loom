@@ -329,9 +329,9 @@ class Node(MobileItem):
         print(f'☀ Starting cook for {self.name()}')
         dependencies = self.cook_dependencies()
         for node in dependencies:
-            print(
-                f'Cooking {node.name()} via _internal_cook() from {self.name()}'
-                )
+            # print(
+            #     f'Cooking {node.name()} via _internal_cook() from {self.name()}'
+            #     )
             node._internal_cook()
         self._internal_cook()
 
@@ -389,13 +389,20 @@ class Node(MobileItem):
             self.cook()
         
         if requesting_node and hasattr(self, 'SINGLE_OUTPUT') and not self.SINGLE_OUTPUT:
-            for output_idx, conns in self._outputs.items():
+            print(f"DEBUG EVAL: Output is: {self._output}")
+            for conns in self._outputs.values():
                 for conn in conns:
                     if conn.input_node() == requesting_node:
+                        print(f"DEBUG EVAL: Found requesting node {requesting_node.name()}, index {conn.input_index()}")
                         try:
-                            return self._output[int(output_idx)]
+                            if isinstance(self._output, list):
+                                result = self._output[conn.input_index()]
+                                print(f"DEBUG EVAL: Returning output[{conn.input_index()}]: {result}")
+                                return result
+                            return []
                         except (IndexError, TypeError):
                             return []
+        
         return self._output
 
     def get_output(self):

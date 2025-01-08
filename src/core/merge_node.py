@@ -77,7 +77,9 @@ class MergeNode(Node):
         input_data = []
 
         for input_connection in self.inputs():
-            node_data = input_connection.output_node().eval()
+            #does this work with the split node correctly? 
+            #TODO - Check. 
+            node_data = input_connection.output_node().eval(requesting_node=self)
             if not isinstance(node_data, list) or not all(isinstance(item, str) for item in node_data):
                 raise TypeError(f"Input from {input_connection.output_node().name()} must be a list of strings")
             input_data.extend(node_data)

@@ -39,7 +39,7 @@ class MakeListNode(Node):
         self.set_state(NodeState.COOKING)
         self._cook_count += 1
 
-        input_data = self.inputs()[0].output_node().eval() if self.inputs() else []
+        input_data = self.inputs()[0].output_node().eval(requesting_node=self) if self.inputs() else []
         
         if not input_data:
             self.add_error("Input data is empty")

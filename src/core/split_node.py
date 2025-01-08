@@ -12,7 +12,7 @@ class SplitNode(Node):
 
     def __init__(self, name: str, path: str, node_type: NodeType):
         super().__init__(name, path, [0.0, 0.0], node_type)
-        self._is_time_dependent = False
+        self._is_time_dependent = True
         self._input_hash = None
         self._param_hash = None
         self._output = [[], [], []]
@@ -33,24 +33,39 @@ class SplitNode(Node):
 
     def _process_list_expression(self, expr: str, input_list: List[str]) -> Tuple[List[str], List[str]]:
         try:
-            slice_expr = expr[1:-1]
+            slice_expr = expr[1:-1]  # Remove brackets
             if not slice_expr:
                 return [], input_list
-            slice_parts = list(map(lambda x: int(x) if x else None, slice_expr.split(':')))
-            if len(slice_parts) == 1:
-                idx = slice_parts[0]
+                
+            parts = slice_expr.split(':')
+            
+            if len(parts) == 1:
+                idx = int(parts[0])
                 if -len(input_list) <= idx < len(input_list):
-                    selected = [input_list[idx]]
-                    remainder = input_list[:idx] + input_list[idx + 1:]
-                else:
-                    return [], input_list
-            else:
-                selected = input_list[slice(*slice_parts)]
-                remainder = [x for x in input_list if x not in selected]
-            return selected, remainder
+                    item = input_list[idx]
+                    # For negative indices, we need to convert to positive
+                    pos_idx = idx if idx >= 0 else len(input_list) + idx
+                    remainder = input_list[:pos_idx] + input_list[pos_idx + 1:]
+                    return [item], remainder
+                return [], input_list
+
+            slice_args = [int(x) if x else None for x in parts]
+            selected = input_list[slice(*slice_args)]
+            
+            if not selected:
+                return [], input_list
+                
+            # Create a set of indices that were selected
+            slice_obj = slice(*slice_args)
+            selected_indices = set(range(*slice_obj.indices(len(input_list))))
+            
+            # Keep items that weren't selected, maintaining order
+            remainder = [x for i, x in enumerate(input_list) if i not in selected_indices]
+            
+            return list(selected), remainder
         except (ValueError, IndexError):
             return [], input_list
-
+        
     def _process_random_expression(self, expr: str, input_list: List[str]) -> Tuple[List[str], List[str]]:
         try:
             match = re.match(r'^random\((time|\d+)(?:,(\d+))?\)$', expr)
@@ -62,28 +77,34 @@ class SplitNode(Node):
             count = int(count_str) if count_str else 1
             count = min(count, len(input_list))
 
-            random.seed(seed)
-            input_copy = input_list.copy()
-            selected = []
-            for _ in range(count):
-                if not input_copy:
-                    break
-                idx = random.randint(0, len(input_copy) - 1)
-                selected.append(input_copy.pop(idx))
+            rng = random.Random(seed)
+            indices = list(range(len(input_list)))
+            selected_indices = set(rng.sample(indices, count))
+            
+            selected = [input_list[i] for i in sorted(selected_indices)]
+            remainder = [item for i, item in enumerate(input_list) if i not in selected_indices]
 
-            remainder = [x for x in input_list if x not in selected]
             return selected, remainder
         except (ValueError, IndexError):
             return [], input_list
 
     def _process_split(self, expr: str, input_list: List[str]) -> Tuple[List[str], List[str]]:
+        print(f"DEBUG _process_split: Expression: {expr}")
+        print(f"DEBUG _process_split: Input list: {input_list}")
+        
         if not expr:
             return input_list, []
         
         if self._validate_list_expression(expr):
-            return self._process_list_expression(expr, input_list)
+            print(f"DEBUG _process_split: Processing as list expression")
+            result = self._process_list_expression(expr, input_list)
+            print(f"DEBUG _process_split: List expression result: {result}")
+            return result
         elif self._validate_random_expression(expr):
-            return self._process_random_expression(expr, input_list)
+            print(f"DEBUG _process_split: Processing as random expression")
+            result = self._process_random_expression(expr, input_list)
+            print(f"DEBUG _process_split: Random expression result: {result}")
+            return result
         else:
             return input_list, []
         
@@ -106,12 +127,16 @@ class SplitNode(Node):
 
         if enabled and input_data and not self.errors():
             selected, remainder = self._process_split(split_expr, input_data)
-            self._output = [selected, remainder]
+            self._output = [selected, remainder, []]
         else:
-            self._output = [input_data if input_data else [], []]
+            self._output = [input_data if input_data else [], [], []]
 
         self._param_hash = self._calculate_hash(str(enabled) + split_expr)
         self._input_hash = self._calculate_hash(str(input_data))
+        
+        # Force only downstream nodes to cook
+        for downstream_node in self.outputs():
+            downstream_node.set_state(NodeState.UNCOOKED)
         
         self.set_state(NodeState.UNCHANGED)
         self._last_cook_time = (time.time() - start_time) * 1000
@@ -119,10 +144,10 @@ class SplitNode(Node):
     def needs_to_cook(self) -> bool:
         if super().needs_to_cook():
             return True
-            
+                
         try:
-            enabled = self._parms["enabled"].raw_value()
-            split_expr = self._parms["split_expr"].raw_value()
+            enabled = self._parms["enabled"].eval()  # Changed to eval()
+            split_expr = self._parms["split_expr"].eval()  # Changed to eval()
             new_param_hash = self._calculate_hash(str(enabled) + split_expr)
 
             input_data = []

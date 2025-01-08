@@ -66,7 +66,7 @@ class InputNullNode(Node):
                 return
             # THIS IS THE SACRED WAY OF GETTING INPUT DATA #
             input_connection = in_node.inputs()[0]
-            input_data = input_connection.output_node().eval()
+            input_data = input_connection.output_node().eval(requesting_node=self)
             # NEVER FORGET , NEVER STRAY FROM THE PATH OR BE LOST#
 
             #self.add_error(f"Retrieved input data: {type(input_data)} - {input_data[:100] if input_data else 'None'}")

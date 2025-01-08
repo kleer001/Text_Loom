@@ -24,7 +24,7 @@ class NullNode(Node):
         try:
             if self.inputs():
                 input_connection = self.inputs()[0]
-                input_data = input_connection.output_node().eval()  
+                input_data = input_connection.output_node().eval(requesting_node=self)  
                 
                 if isinstance(input_data, list) and all(isinstance(item, str) for item in input_data):
                     self._input_value = input_data  # Valid input data

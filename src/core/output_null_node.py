@@ -47,6 +47,7 @@ class OutputNullNode(Node):
         try:
             # Don't eval() again - just get the output directly since dependencies are already cooked
             input_node = self.inputs()[0].output_node() if self.inputs() else None
+            #TODO How will this work with the split node?! 
             input_data = input_node.get_output() if input_node else None
             print(f"Input data for outputnull:", input_data)
 
