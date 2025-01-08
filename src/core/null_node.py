@@ -10,6 +10,7 @@ class NullNode(Node):
     """
 
     SINGLE_INPUT = True
+    SINGLE_OUTPUT = True
 
     def __init__(self, name: str, path: str, position=[0, 0], node_type=NodeType.NULL):
         super().__init__(name, path, position, node_type)

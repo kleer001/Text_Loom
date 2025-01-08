@@ -15,6 +15,7 @@ class MakeListNode(Node):
     """
 
     SINGLE_INPUT = True
+    SINGLE_OUTPUT = True
 
     def __init__(self, name: str, path: str, position: List[float]):
         super().__init__(name, path, position, NodeType.MAKE_LIST)

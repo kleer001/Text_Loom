@@ -384,10 +384,18 @@ class Node(MobileItem):
                     result.append((input_node, output_index, input_index))
         return result
 
-    def eval(self, force: bool=False) ->List[str]:
-        if (self.state() != NodeState.UNCHANGED or force is True or self.
-            _is_time_dependent is True):
+    def eval(self, force: bool = False, requesting_node: Optional['Node'] = None) -> Any:
+        if self.state() != NodeState.UNCHANGED or force is True or self._is_time_dependent:
             self.cook()
+        
+        if requesting_node and hasattr(self, 'SINGLE_OUTPUT') and not self.SINGLE_OUTPUT:
+            for output_idx, conns in self._outputs.items():
+                for conn in conns:
+                    if conn.input_node() == requesting_node:
+                        try:
+                            return self._output[int(output_idx)]
+                        except (IndexError, TypeError):
+                            return []
         return self._output
 
     def get_output(self):
