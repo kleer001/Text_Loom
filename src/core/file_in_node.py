@@ -11,6 +11,7 @@ class FileInNode(Node):
     Provides functionality to refresh file content and track file changes."""
 
     SINGLE_INPUT = True
+    SINGLE_OUTPUT = True
 
     def __init__(self, name: str, path: str, position: List[float]):
         super().__init__(name, path, position, NodeType.FILE_IN)

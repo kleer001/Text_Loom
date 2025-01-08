@@ -52,12 +52,14 @@ print(NodeEnvironment.list_nodes())
 
 prompt_roles = create_node("text", node_name="p_scenes", parent_path="/looper_1")
 prompt_roles._parms["text_string"].set(
-    "$SYS $ROLE. Given the following season of life please compose $LENGTH free verse meditation about $$N . Break through the constant rhythm of normal poetry. Break the bones of rhyme. Make short lines and long lines. Be ORGANIC! YOU ARE ALIVE!"
+    "Given the following season of life $$N , please compose $LENGTH free verse meditation about $$N . Break through the constant rhythm of normal poetry. Break the bones of rhyme. Make short lines and long lines. Be ORGANIC! YOU ARE ALIVE! Tell us in poetry about $$N! $$N!"
 )
 prompt_roles._parms["pass_through"].set(False)
 
+
 role_prompt = create_node("query")
 role_prompt._parms["llm_name"].set("Ollama")
+role_prompt._is_time_dependent = True
 
 compile = create_node("merge")
 compile._parms["use_insert"].set(True)

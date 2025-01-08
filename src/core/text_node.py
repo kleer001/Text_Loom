@@ -18,6 +18,7 @@ class TextNode(Node):
     """
 
     SINGLE_INPUT = True
+    SINGLE_OUTPUT = True
 
     def __init__(self, name: str, path: str, node_type: NodeType):
         super().__init__(name, path, [0.0, 0.0], node_type)
