@@ -83,7 +83,7 @@ class FileOutNode(Node):
             if not self.inputs():
                 raise ValueError("No input connected to FileOutNode")
 
-            input_data = self.inputs()[0].output_node().eval()
+            input_data = self.inputs()[0].output_node().eval(requesting_node=self)
             #print(f"Debug: Input data received: {input_data}")
 
             if not isinstance(input_data, list) or not all(isinstance(item, str) for item in input_data):

@@ -50,11 +50,11 @@ class TextNode(Node):
         per_item = self._parms["per_item"].eval()
         text_string = self._parms["text_string"].eval()
         prefix = self._parms["prefix"].eval()
-        print(f"text_string for {self.name()} is {text_string}")
+        #print(f"text_string for {self.name()} is {text_string}")
 
         input_data = []
         if pass_through and self.inputs():
-            input_data = self.inputs()[0].output_node().eval()
+            input_data = self.inputs()[0].output_node().eval(requesting_node=self)
             if not isinstance(input_data, list):
                 input_data = []
 
