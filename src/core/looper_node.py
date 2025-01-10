@@ -12,10 +12,6 @@ from core.loop_manager import LoopManager, loop_manager
 
 from dataclasses import dataclass
 
-"""
-Looping functions for looper node type and what it does
-Called in looper_node.py too
-"""
 
 
 class LooperNode(Node):
@@ -41,6 +37,7 @@ class LooperNode(Node):
             "max_from_input": Parm("max_from_input", ParameterType.TOGGLE, self),
             "feedback_mode": Parm("feedback_mode", ParameterType.TOGGLE, self),
             "use_test": Parm("use_test", ParameterType.TOGGLE, self),
+            "cook_loops": Parm("cook_loops", ParameterType.TOGGLE, self), 
             "test_number": Parm("test_number", ParameterType.INT, self),
             "input_hook": Parm("input_hook", ParameterType.STRING, self), #WHY?
             "output_hook": Parm("output_hook", ParameterType.STRING, self), #WHY?
@@ -56,6 +53,7 @@ class LooperNode(Node):
         self._parms["max_from_input"].set(False)
         self._parms["feedback_mode"].set(False)
         self._parms["use_test"].set(False)
+        self._parms["cook_loops"].set(False)
         self._parms["test_number"].set(1)
         self._parms["input_hook"].set("")
         self._parms["output_hook"].set("")
@@ -128,7 +126,7 @@ class LooperNode(Node):
 
     def _perform_iterations(self):
         print("\n∞ loop: starting loop, cleaning up")
-        loop_manager.clean_stale_loops(self.path())  # Clean up stale loop variables at the start of cooking
+        loop_manager.clean_stale_loops(self.path())
 
         min_val = self._parms["min"].eval()
         max_val = self._parms["max"].eval()
@@ -137,6 +135,8 @@ class LooperNode(Node):
         test_number = self._parms["test_number"].eval()
         timeout_limit = self._parms["timeout_limit"].eval()
         feedback_mode = self._parms["feedback_mode"].eval()
+        cook_loops = self._parms["cook_loops"].eval()
+        
         self._input_node._parms["feedback_mode"].set(feedback_mode)
         self._output_node._parms["feedback_mode"].set(feedback_mode)
 
@@ -145,7 +145,6 @@ class LooperNode(Node):
             input_steps = len(self.inputs()[0].output_node().eval())
             max_val = input_steps
             print("RUNNING LOOP FROM INPUT, num = ", step)
-            #print("INPUTS ARE ", self.inputs()[0].output_node().eval())
 
         if use_test:
             iteration_range = [test_number]
@@ -153,6 +152,8 @@ class LooperNode(Node):
             iteration_range = range(min_val, max_val + 1, step) if step > 0 else range(max_val, min_val - 1, step)
 
         start_time = time.time()
+        self._parms["staging_data"].set([])
+        collected_outputs = []
 
         for i in iteration_range:
             if time.time() - start_time > timeout_limit:
@@ -160,21 +161,24 @@ class LooperNode(Node):
                 break
 
             loop_manager.set_loop(self.path(), i)
-            output_value = self._output_node.cook()
+            self._output_node.cook()
+            iteration_result = self._output_node._parms["out_data"].eval()
             
-            if output_value in (None, "", "  "):
-                self.add_warning(f"Iteration {i} created a blank value.")
-        
-        accumulated = self._output_node._parms["out_data"].eval()
-        self._parms["staging_data"].set(accumulated)
-        self._output = accumulated
+            if iteration_result:
+                collected_outputs.append(iteration_result)
+            else:
+                self.add_warning(f"Iteration {i} created a blank or null value.")
+
+        if collected_outputs:
+            last_valid_output = collected_outputs[-1]
+            self._parms["staging_data"].set(last_valid_output)
+            self._output = last_valid_output
+        else:
+            self._parms["staging_data"].set([])
+            self._output = []
+
         loop_manager.set_loop(self.path(), value=None)
         print("∞ loop: end of loop reached, cleaning up\n")
-
-    # def eval(self) -> List[str]:
-    #     if self.state() != NodeState.UNCHANGED:
-    #         self.cook()
-    #     return self._parms["staging_data"].eval()
 
     def input_names(self) -> Dict[str, str]:
         return {"input": "Input Data"}
@@ -192,20 +196,20 @@ class LooperNode(Node):
         if self._internal_nodes_created:
             return
         try:
-            # Create InputNull node
             input_node_name = "inputNullNode"
             self._input_node = Node.create_node(NodeType.INPUT_NULL, node_name=input_node_name, parent_path=self.path())
 
-            # Create OutputNull node
             output_node_name = "outputNullNode"
             self._output_node = Node.create_node(NodeType.OUTPUT_NULL, node_name=output_node_name, parent_path=self.path())
             
-            # Set input_node's in_node parameter to this looper node's path
             input_node_parms = self._input_node._parms
             if "in_node" in input_node_parms:
                 input_node_parms["in_node"].set(self.path())
+                
+            output_node_parms = self._output_node._parms
+            if "in_node" in output_node_parms:
+                output_node_parms["in_node"].set(self.path())
             
-            # Set parent-child relationships
             self._children.append(self._input_node)
             self._children.append(self._output_node)
             

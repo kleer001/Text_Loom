@@ -1,7 +1,7 @@
 import hashlib
 import time
 from typing import List, Dict, Any
-from core.base_classes import Node, NodeType, NodeState
+from core.base_classes import Node, NodeType, NodeState, NodeEnvironment
 from core.parm import Parm, ParameterType
 
 class OutputNullNode(Node):
@@ -29,15 +29,17 @@ class OutputNullNode(Node):
         self._last_input_size = 0
         self._parent_looper = True
 
-        # Initialize parameters
         self._parms: Dict[str, Parm] = {
             "out_data": Parm("out_data", ParameterType.STRINGLIST, self),
             "feedback_mode": Parm("feedback_mode", ParameterType.TOGGLE, self),
+            "cook_loops": Parm("cook_loops", ParameterType.TOGGLE, self),
+            "in_node": Parm("in_node", ParameterType.STRING, self),
         }
 
-        # Set default value
         self._parms["out_data"].set([])
         self._parms["feedback_mode"].set(False)
+        self._parms["cook_loops"].set(False)
+        self._parms["in_node"].set("")
         
     def _internal_cook(self) -> None:
         self.set_state(NodeState.COOKING)
@@ -46,7 +48,19 @@ class OutputNullNode(Node):
 
         try:
             input_node = self.inputs()[0].output_node() if self.inputs() else None
-            input_data = input_node.get_output(requesting_node=self) if input_node else None
+            
+            parent_path = self._parms["in_node"].eval()
+            parent_node = NodeEnvironment.nodes.get(parent_path)
+            cook_loops = parent_node._parms["cook_loops"].eval() if parent_node else False
+            
+            if input_node:
+                if cook_loops:
+                    input_data = input_node.eval(requesting_node=self)
+                else:
+                    input_data = input_node.get_output(requesting_node=self)
+            else:
+                input_data = None
+                
             print(f"Input data for outputnull:", input_data)
 
             if input_data is None:
@@ -63,7 +77,6 @@ class OutputNullNode(Node):
                 if self._parms["feedback_mode"].eval():
                     new_data = input_data
                 else:
-                    # Make sure all items are strings
                     if all(isinstance(x, str) for x in input_data):
                         current_data.extend(input_data)
                     else:

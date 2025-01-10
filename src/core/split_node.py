@@ -73,7 +73,7 @@ class SplitNode(Node):
                 return [], input_list
 
             seed_str, count_str = match.groups()
-            seed = int(time.time()) if seed_str == 'time' else int(seed_str)
+            seed = int(time.time() * 3000) if seed_str == 'time' else int(seed_str)
             count = int(count_str) if count_str else 1
             count = min(count, len(input_list))
 
