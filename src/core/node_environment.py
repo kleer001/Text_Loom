@@ -43,6 +43,80 @@ def OperationFailed(message: str):
     print()  # Add an empty line for better readability
 
 class NodeEnvironment:
+
+    """
+    NodeEnvironment: A singleton class managing the lifecycle and organization of nodes in a hierarchical node graph system.
+
+    This class serves as the central registry and manager for all nodes in the application, maintaining their 
+    relationships, paths, and execution environment. It implements the singleton pattern to ensure a single, 
+    consistent state across the entire application.
+
+    Key Features:
+        - Hierarchical Node Management:
+            * Maintains nodes in a tree-like structure using POSIX-style paths
+            * Handles node creation, deletion, and path updates
+            * Prevents duplicate node names through automatic renaming
+        
+        - Node Registration and Lookup:
+            * Tracks all active nodes in the system
+            * Provides methods to find nodes by name or path
+            * Supports post-registration initialization for specialized node types
+        
+        - Environment Control:
+            * Manages global execution environment for nodes
+            * Provides isolated namespace for code execution
+            * Maintains reference to current active node
+
+    Core Methods:
+        add_node(node): 
+            Registers a new node in the environment
+            Handles post-registration initialization
+        
+        remove_node(node_path):
+            Recursively removes a node and all its children
+            Cleans up associated resources
+        
+        update_node_path(old_path, new_parent_path):
+            Relocates nodes within the hierarchy
+            Handles path conflicts through automatic renaming
+            Updates all child nodes' paths accordingly
+        
+        flush_all_nodes():
+            Completely resets the environment
+            Removes all nodes except root
+            Rebuilds global execution context
+
+    Path Management:
+        - Uses POSIX-style paths (e.g., '/parent/child')
+        - Maintains unique paths through automatic renaming
+        - Handles path updates for entire node subtrees
+        
+    Safety Features:
+        - Prevents root node deletion
+        - Validates parent paths before node relocation
+        - Handles naming conflicts automatically
+        - Maintains node hierarchy integrity
+        
+    Error Handling:
+        - Provides detailed error traces through OperationFailed
+        - Validates paths and node existence
+        - Maintains environment stability during operations
+
+    Example Usage:
+        >>> env = NodeEnvironment.get_instance()
+        >>> env.add_node(some_node)  # Registers a new node
+        >>> node = env.node_from_name("myNode")  # Retrieves a node
+        >>> env.update_node_path("/old/path", "/new/parent")  # Relocates a node
+        >>> env.flush_all_nodes()  # Resets environment
+
+    Notes:
+        - Always use get_instance() to obtain the NodeEnvironment instance
+        - Node paths must be unique within the environment
+        - Child nodes' paths are automatically updated when parent nodes move
+        - The root path ('/') is protected and cannot be deleted
+        - Node names may be modified during path updates to maintain uniqueness
+    """
+
     _instance = None
     nodes: Dict[str, 'Node'] = {}
 

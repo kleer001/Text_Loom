@@ -12,9 +12,109 @@ from core.node_environment import NodeEnvironment
 
 class Node(MobileItem):
     """
-    Represents a Node in the workspace, inheriting from MobileItem.
-    This class implements the Composite pattern, allowing for a hierarchical structure of nodes.
-    It also implements the Observer pattern for NodeConnections.
+    Node: The foundational building block of a node-based graph processing system.
+
+    This abstract base class implements a composable, connectable processing unit that forms the 
+    backbone of a node graph architecture. Each Node can receive inputs, process data, and provide 
+    outputs while maintaining its state and position within a hierarchical structure.
+
+    Core Capabilities:
+        1. Graph Structure:
+            - Maintains input/output connections to other nodes
+            - Supports hierarchical parent-child relationships
+            - Handles both single and multi-input/output configurations
+            - Prevents circular dependencies and self-connections
+
+        2. Data Processing:
+            - Manages data flow between connected nodes
+            - Supports dependency-aware processing (cooking)
+            - Handles state management and cache invalidation
+            - Provides type-safe data connections
+
+        3. State Management:
+            - Tracks processing state (UNCOOKED, COOKING, UNCHANGED)
+            - Maintains error and warning messages
+            - Records performance metrics (cook time, cook count)
+            - Handles time-dependent behavior
+
+    Key Components:
+        Connections:
+            - Input connections: Dict[str, NodeConnection]
+            - Output connections: Dict[str, List[NodeConnection]]
+            - Supports multiple connection types and data validation
+            - Manages connection creation, removal, and updates
+
+        State Tracking:
+            - Processing state management
+            - Error and warning collection
+            - Cook time and count metrics
+            - Hash-based change detection
+
+        Hierarchical Structure:
+            - Parent-child relationships
+            - Path-based node location
+            - Child management and traversal
+            - Position management in workspace
+
+    Safety Features:
+        - Prevents circular dependencies
+        - Validates connection types
+        - Handles connection cleanup on node removal
+        - Maintains graph integrity during operations
+        - Supports undo/redo operations
+
+    Processing Behavior:
+        1. Evaluation (eval):
+            - Checks if cooking is needed
+            - Manages dependency cooking
+            - Returns processed output
+            - Handles force evaluation
+
+        2. Cooking Process:
+            - Dependency resolution
+            - Ordered processing
+            - State management
+            - Error handling
+
+    Common Usage:
+        >>> node = Node.create_node(NodeType.SPLIT, "my_splitter")  # Create new node
+        >>> node.set_input(0, input_node)  # Connect input
+        >>> result = node.eval()  # Process and get result
+        >>> node.cook()  # Force reprocessing
+        >>> node.set_parent("/new/path")  # Move in hierarchy
+
+    Subclassing Notes:
+        Required Implementations:
+            - _internal_cook(): Define node's processing logic
+            - input_names(): Define input connection names
+            - output_names(): Define output connection names
+            - input_data_types(): Define accepted input types
+            - output_data_types(): Define provided output types
+
+        Optional Overrides:
+            - needs_to_cook(): Custom processing triggers
+            - get_output(): Custom output handling
+            - post_registration_init(): Setup after creation
+
+    Key Properties:
+        SINGLE_INPUT: bool
+            If True, node accepts only one input connection
+        SINGLE_OUTPUT: bool
+            If True, node provides only one output connection
+        _is_time_dependent: bool
+            If True, node recooks on every evaluation
+
+    Error Handling:
+        - Maintains lists of errors and warnings
+        - Provides clear error messages
+        - Supports error state propagation
+        - Handles connection validation
+
+    Performance Features:
+        - Caches processed results
+        - Tracks processing time
+        - Implements smart reprocessing
+        - Supports forced evaluation
     """
 
     def __init__(self, name: str, path: str, position: List[float],

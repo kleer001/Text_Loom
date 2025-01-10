@@ -16,10 +16,81 @@ from dataclasses import dataclass
 
 class LooperNode(Node):
     """
-    A node that performs loop iterations, managing internal input and output nodes.
-    
-    This node creates internal inputNull and outputNull nodes, and iterates through
-    a range of values, collecting output data from each iteration.
+    LooperNode: A powerful node for iterative processing of data with configurable loop behavior.
+
+    This node enables iterative operations by managing internal input and output connections, making it 
+    ideal for tasks that require repeated processing or accumulation of results. Think of it as a 
+    sophisticated 'for' loop that can process data iteratively while maintaining node graph connectivity.
+
+    Parameters:
+        min (int): Starting value for the loop iteration (must be non-negative)
+        max (int): Ending value for the loop iteration (must be non-negative)
+        step (int): Increment value between iterations (cannot be zero)
+        max_from_input (bool): When enabled, sets max iterations based on input data length
+        feedback_mode (bool): Enables feedback loop mode where each iteration's output feeds into the next
+        use_test (bool): When enabled, runs only a single test iteration
+        cook_loops (bool): Controls whether to force cook operations on each loop iteration
+        test_number (int): Specific iteration to run when use_test is enabled (must be between min and max)
+        input_hook (str): Custom input processing hook (advanced usage)
+        output_hook (str): Custom output processing hook (advanced usage)
+        timeout_limit (float): Maximum execution time in seconds (default: 300.0)
+        data_limit (int): Maximum memory usage in bytes (default: 200MB)
+
+    Loop Behavior Modes:
+        1. Standard Loop:
+        - Iterates from min to max by step
+        - Each iteration processes fresh input data
+        Example use case: Processing a series of numbered files or generating sequences
+
+        2. Input-Driven Loop (max_from_input=True):
+        - Number of iterations matches input data length
+        - Useful for processing lists or arrays item by item
+        Example use case: Processing each item in a list with complex operations
+
+        3. Feedback Loop (feedback_mode=True):
+        - Output of each iteration becomes input for the next
+        - Useful for recursive or cumulative operations
+        Example use case: Iterative refinement or accumulation of results
+
+        4. Test Mode (use_test=True):
+        - Runs single iteration specified by test_number
+        - Useful for debugging and development
+        Example use case: Testing specific iteration behavior without running full loop
+
+    Safety Features:
+        - Timeout protection (timeout_limit parameter)
+        - Memory usage limits (data_limit parameter)
+        - Automatic cleanup of stale loops
+        - Parameter validation to prevent invalid configurations
+
+    Internal Structure:
+        The node creates and manages two internal nodes:
+        - inputNullNode: Handles input data for each iteration
+        - outputNullNode: Collects and manages output from each iteration
+
+    Notes:
+        - Iterations stop if timeout_limit is reached
+        - Warns if iterations produce null/blank values
+        - Last valid output is preserved in staging_data
+        - All iterations must process List[str] data types
+        - Step can be negative for reverse iteration
+
+    Example Usage:
+        1. Basic counting loop:
+        min=1, max=10, step=1
+        Result: Processes 10 iterations
+
+        2. Input-driven processing:
+        max_from_input=True
+        Result: Iterations match input data length
+
+        3. Feedback processing:
+        feedback_mode=True
+        Result: Each iteration processes previous iteration's output
+
+        4. Debug specific iteration:
+        use_test=True, test_number=5
+        Result: Only processes iteration #5
     """
 
     def __init__(self, name: str, path: str, node_type: NodeType):
