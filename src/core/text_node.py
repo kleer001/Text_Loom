@@ -44,7 +44,7 @@ class TextNode(Node):
         start_time = time.time()
 
         self._is_time_dependent = self._parms["text_string"].is_expression()
-        print("🍳 cooking", self.name())
+        #print("🍳 ", self.name(), end = ", ")
 
         pass_through = self._parms["pass_through"].eval()
         per_item = self._parms["per_item"].eval()

@@ -45,36 +45,39 @@ class OutputNullNode(Node):
         start_time = time.time()
 
         try:
-            # Don't eval() again - just get the output directly since dependencies are already cooked
             input_node = self.inputs()[0].output_node() if self.inputs() else None
-            #TODO How will this work with the split node?! 
-            input_data = input_node.get_output() if input_node else None
+            input_data = input_node.get_output(requesting_node=self) if input_node else None
             print(f"Input data for outputnull:", input_data)
 
             if input_data is None:
                 self.add_warning("Input data is None, setting empty list as output")
                 self._parms["out_data"].set([])
                 self._output = []
-            elif not isinstance(input_data, list) or not all(isinstance(item, str) for item in input_data):
-                raise TypeError("Input data must be a list of strings")
+            elif not isinstance(input_data, list):
+                raise TypeError("Input data must be a list")
             else:
                 current_data = self._parms["out_data"].raw_value()
-                if isinstance(current_data, list):
-                    if self._parms["feedback_mode"].eval():
-                        new_data = input_data
-                    else:
-                        current_data.append(input_data)
-                        new_data = current_data
+                if not isinstance(current_data, list):
+                    current_data = []
+                    
+                if self._parms["feedback_mode"].eval():
+                    new_data = input_data
                 else:
-                    new_data = [input_data]
+                    # Make sure all items are strings
+                    if all(isinstance(x, str) for x in input_data):
+                        current_data.extend(input_data)
+                    else:
+                        self.add_warning(f"Received non-string data: {input_data}")
+                        current_data.extend(str(x) for x in input_data if x)
+                    new_data = current_data
                 
                 self._parms["out_data"].set(new_data)
                 self._output = input_data
-                print("from-", self.name(), " set output:", self._output)
 
             self.set_state(NodeState.UNCHANGED)
 
         except Exception as e:
+            self.add_error(f"Error in OutputNullNode cook: {str(e)}")
             self.set_state(NodeState.UNCOOKED)
 
         self._last_cook_time = (time.time() - start_time) * 1000

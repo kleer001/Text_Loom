@@ -89,21 +89,17 @@ class SplitNode(Node):
             return [], input_list
 
     def _process_split(self, expr: str, input_list: List[str]) -> Tuple[List[str], List[str]]:
-        print(f"DEBUG _process_split: Expression: {expr}")
-        print(f"DEBUG _process_split: Input list: {input_list}")
+        #print(f"DEBUG _process_split: Expression: {expr}")
+        #print(f"DEBUG _process_split: Input list: {input_list}")
         
         if not expr:
             return input_list, []
         
         if self._validate_list_expression(expr):
-            print(f"DEBUG _process_split: Processing as list expression")
             result = self._process_list_expression(expr, input_list)
-            print(f"DEBUG _process_split: List expression result: {result}")
             return result
         elif self._validate_random_expression(expr):
-            print(f"DEBUG _process_split: Processing as random expression")
             result = self._process_random_expression(expr, input_list)
-            print(f"DEBUG _process_split: Random expression result: {result}")
             return result
         else:
             return input_list, []
@@ -128,15 +124,17 @@ class SplitNode(Node):
         if enabled and input_data and not self.errors():
             selected, remainder = self._process_split(split_expr, input_data)
             self._output = [selected, remainder, []]
+            
+            # Update just the directly connected output nodes
+            for output_idx in [0, 1]:  # Only for main and remainder outputs
+                if output_idx in self._outputs:
+                    for conn in self._outputs[output_idx]:
+                        conn.input_node().set_state(NodeState.UNCOOKED)
         else:
             self._output = [input_data if input_data else [], [], []]
 
         self._param_hash = self._calculate_hash(str(enabled) + split_expr)
         self._input_hash = self._calculate_hash(str(input_data))
-        
-        # Force only downstream nodes to cook
-        for downstream_node in self.outputs():
-            downstream_node.set_state(NodeState.UNCOOKED)
         
         self.set_state(NodeState.UNCHANGED)
         self._last_cook_time = (time.time() - start_time) * 1000

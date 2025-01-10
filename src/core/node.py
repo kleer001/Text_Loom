@@ -387,25 +387,15 @@ class Node(MobileItem):
     def eval(self, force: bool = False, requesting_node: Optional['Node'] = None) -> Any:
         if self.state() != NodeState.UNCHANGED or force is True or self._is_time_dependent:
             self.cook()
-        
+        return self.get_output(requesting_node)
+
+    def get_output(self, requesting_node: Optional['Node'] = None):
         if requesting_node and hasattr(self, 'SINGLE_OUTPUT') and not self.SINGLE_OUTPUT:
-            print(f"DEBUG EVAL: Output is: {self._output}")
             for conns in self._outputs.values():
                 for conn in conns:
                     if conn.input_node() == requesting_node:
-                        print(f"DEBUG EVAL: Found requesting node {requesting_node.name()}, index {conn.input_index()}")
-                        try:
-                            if isinstance(self._output, list):
-                                result = self._output[conn.input_index()]
-                                print(f"DEBUG EVAL: Returning output[{conn.input_index()}]: {result}")
-                                return result
-                            return []
-                        except (IndexError, TypeError):
-                            return []
-        
-        return self._output
-
-    def get_output(self):
+                        if isinstance(self._output, list) and len(self._output) > conn.output_index():
+                            return self._output[conn.output_index()]
         return self._output
 
     def __repr__(self) ->str:
