@@ -53,6 +53,7 @@ class NodeTypeSelector(ModalScreen):
         'l': 'LOOPER',
         'M': 'MAKE_LIST',
         'e': 'MERGE',
+        's': 'SPLIT',
         'u': 'NULL',
         'q': 'QUERY',
         't': 'TEXT'

@@ -10,6 +10,50 @@ class SplitNode(Node):
     SINGLE_OUTPUT = False
     SINGLE_INPUT = True
 
+"""
+SplitNode: A versatile node for splitting lists of strings into two parts based on various expressions.
+
+This node takes a list of strings as input and splits it into two outputs: selected items and remaining items.
+The split behavior is controlled by the 'split_expr' parameter which supports two types of expressions:
+
+1. List Selection Expression: [index] or [start:end:step]
+    - Uses Python-style list slicing syntax
+    - Examples:
+        - [0]     -> Selects the first item
+        - [-1]    -> Selects the last item
+        - [1:3]   -> Selects items at indices 1 and 2
+        - [::2]   -> Selects every other item
+        - [::-1]  -> Selects all items in reverse order
+        - [1:]    -> Selects all items from index 1 onwards
+        - [:-1]   -> Selects all items except the last one
+
+2. Random Selection Expression: random(seed[,count])
+    - Randomly selects items from the input list
+    - seed can be either:
+        - 'time' for time-based randomization
+        - a number for deterministic randomization
+    - Optional count parameter specifies how many items to select
+    - Examples:
+        - random(time)      -> Randomly selects 1 item using current time as seed
+        - random(42)        -> Randomly selects 1 item using seed 42
+        - random(time,3)    -> Randomly selects 3 items using current time as seed
+        - random(42,5)      -> Randomly selects 5 items using seed 42
+
+Parameters:
+    enabled (bool): Enables/disables the node's functionality
+    split_expr (str): Expression defining how to split the input list
+
+Outputs:
+    Selected Items (output 0): Items that match the split expression criteria
+    Remaining Items (output 1): Items that weren't selected
+    Empty (output 2): Always empty list (reserved for future use)
+
+Notes:
+    - If the split expression is invalid or empty, all items go to the Selected Items output
+    - The node maintains order of items within both selected and remaining outputs
+    - For random selection, count is capped at the input list length
+"""
+
     def __init__(self, name: str, path: str, node_type: NodeType):
         super().__init__(name, path, [0.0, 0.0], node_type)
         self._is_time_dependent = True
