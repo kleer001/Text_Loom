@@ -64,8 +64,7 @@ def get_active_llm_from_config(file_path='settings.cfg'):
         return None
 
 
-def find_local_LLM():
-
+def find_local_LLM(choose=False):
     config = load_config()
     llms = []
     for section in config.sections():
@@ -95,9 +94,14 @@ def find_local_LLM():
         print("\nMultiple active LLMs found:")
         for i, llm in enumerate(active_llms):
             print(f"{i + 1}: {llm}")
-        choice = int(input("Select the LLM number: ")) - 1
-        selected_llm = active_llms[choice]
-        print(f"Returning active LLM: {selected_llm}")
+        
+        if choose:
+            choice = int(input("Select the LLM number: ")) - 1
+            selected_llm = active_llms[choice]
+        else:
+            selected_llm = active_llms[0]
+            print(f"Automatically selected first available LLM: {selected_llm}")
+        
         return selected_llm
     elif active_llms:
         selected_llm = active_llms[0]
