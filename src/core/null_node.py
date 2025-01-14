@@ -17,9 +17,6 @@ class NullNode(Node):
         self._input_value: Optional[List[str]] = None
 
     def _internal_cook(self, force: bool = False) -> None:
-        """
-        Evaluate and store the input value without modifying it.
-        """
         self.set_state(NodeState.COOKING)
         try:
             if self.inputs():
@@ -27,18 +24,17 @@ class NullNode(Node):
                 input_data = input_connection.output_node().eval(requesting_node=self)  
                 
                 if isinstance(input_data, list) and all(isinstance(item, str) for item in input_data):
-                    self._input_value = input_data  # Valid input data
+                    self._input_value = input_data
+                    self._output = input_data  # Add this line to set the output
                 else:
                     raise TypeError("Input data must be a list of strings")
             else:
                 self._input_value = []
+                self._output = []  # Add this line to set empty output
             
             self.set_state(NodeState.UNCHANGED)
 
         except Exception as e:
             self.add_error(f"Error in NullNode cook: {str(e)}")
             self.set_state(NodeState.UNCOOKED)
-
-    def eval(self, force: bool = False) -> Optional[List[str]]:
-        return self._input_value
 

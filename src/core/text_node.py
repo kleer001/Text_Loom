@@ -202,10 +202,6 @@ class TextNode(Node):
                 return new_param_hash != self._param_hash
         except Exception:
             return True
-    # def eval(self) -> List[str]:
-    #     if self.state() != NodeState.UNCHANGED or self.needs_to_cook() or self._is_time_dependent() is True:
-    #         self.cook()
-    #     return self._output
     
     def _calculate_hash(self, content: str) -> str:
         return hashlib.md5(content.encode()).hexdigest()

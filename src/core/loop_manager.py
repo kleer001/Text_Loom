@@ -4,7 +4,38 @@ from typing import Optional, Dict
 
 import inspect
 
+
+
 class LoopManager:
+
+    """
+    A singleton manager for handling loop iteration states in Text Loom's node system.
+
+    This class tracks the current iteration state for each looper node in the system,
+    allowing nodes within loops to access their current iteration context. It uses
+    a path-based key system to maintain separate loop counters for different looper nodes.
+
+    Path Key Format:
+    - Keys are prefixed with 'loop_'
+    - Followed by the full path of the looper node
+    Example: 'loop_/root/mylooper'
+
+    Methods:
+    get_current_loop(path): Gets iteration count for a node's containing loop
+        Example: iteration = loop_manager.get_current_loop('/root/myloop/node1')
+        Returns 0 if no loop context is found (failsafe behavior)
+    
+    set_loop(looper_name, value): Sets or clears loop iteration state
+        Example: loop_manager.set_loop('/root/myloop', 5)  # Set to iteration 5
+                loop_manager.set_loop('/root/myloop', None)  # Clear loop state
+    
+    clean_stale_loops(looper_name): Removes loop tracking for inactive loopers
+        Example: loop_manager.clean_stale_loops('/root/oldloop')
+
+    The class maintains thread safety through singleton pattern implementation and
+    provides cleanup methods to prevent memory leaks from stale loop contexts.
+    """
+
     _instance = None
 
     def __new__(cls):
