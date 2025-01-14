@@ -6,6 +6,44 @@ import os
 from core.text_utils import parse_list
 from core.findLLM import get_active_llm_from_config
 
+
+"""
+    Utility functions for interacting with Local Language Models (LLMs) in Text Loom.
+
+    This module provides functionality for configuring, connecting to, and querying local
+    LLM servers. It handles configuration loading, server health checks, request formatting,
+    and response parsing.
+
+    Key Functions:
+    load_config(file_path): Loads LLM configuration from settings.cfg
+        Example: config = load_config()
+        Default location: script_directory/settings.cfg
+
+    check_llm(name, url, endpoint): Validates LLM server availability
+        Example: status = check_llm('mistral', 'http://localhost:8000', '/health')
+
+    query_llm(prompt, active_llm, config): Sends prompts to the active LLM
+        Example: response = query_llm("Hello world", "mistral", config)
+        Handles request formatting based on configuration settings
+        
+    get_clean_llm_response(prompt): Simplified interface for LLM queries
+        Example: response = get_clean_llm_response("Summarize this text")
+        Handles configuration loading and response parsing automatically
+
+    Configuration Format:
+    [DEFAULT]
+    url = base_url
+    model = model_name
+    stream = false/true
+
+    [LLM_NAME]
+    endpoint = /v1/generate
+    response_key = response.content
+
+    Error handling includes connection timeouts, server errors, and configuration
+    validation with detailed logging for troubleshooting.
+"""
+
 def load_config(file_path=None):
     if file_path is None:
         # Get the directory of the current script (findLLM.py)
@@ -137,20 +175,6 @@ def get_response(response, active_llm, config=None):
     settings = {**config["DEFAULT"], **config[active_llm]}
     response_key = settings.get("response_key", "")
     return extract_response(response, response_key)
-
-
-def get_llm_response(prompt):
-    # applies segmentation filtering to response
-    config = load_config()
-    active_llm = get_active_llm_from_config()
-
-    if active_llm:
-        response = query_llm(prompt, active_llm, config)
-        if response:
-            content = get_response(response, active_llm, config)
-            return parse_list(content)  # only if it's a list item!
-        return "Error: Failed to get a response from the LLM"
-    return "Error: No active Local LLM found"
 
 
 def get_clean_llm_response(prompt):

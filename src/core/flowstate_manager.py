@@ -8,6 +8,28 @@ from core.parm import Parm, ParameterType
 import traceback
 import inspect
 
+
+"""
+Manages the serialization and deserialization of node-based workflows in Text Loom.
+
+This module provides functionality to save and load the complete state of a node graph,
+including node attributes, parameters, connections, and global variables. It handles
+the conversion of complex node objects and their relationships into JSON-serializable
+format and back.
+
+Key components:
+- NodeEncoder: Custom JSON encoder for Node objects and related types
+- save_flowstate(): Saves the current node environment to a JSON file
+- load_flowstate(): Restores a node environment from a JSON file
+- Helper functions for serializing/deserializing individual nodes, parameters, and connections
+
+The module ensures data integrity through careful error handling and maintains
+backwards compatibility through version tracking. Internal nodes (e.g., those created
+by Looper nodes) are handled specially during the save/load process.
+
+Version: 0.01
+"""
+
 SOFTWARE_NAME = "Text Loom"
 VERSION = 0.01
 

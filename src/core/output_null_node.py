@@ -99,10 +99,6 @@ class OutputNullNode(Node):
     def _calculate_hash(self, content: str) -> str:
         return hashlib.md5(content.encode()).hexdigest()
 
-    def eval(self, force: bool = True ) -> List[str]:
-        # always cook because we always want output for each iteration
-        return self._output
-
     def input_names(self) -> Dict[str, str]:
         return {"input": "Input Data"}
 
