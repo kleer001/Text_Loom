@@ -5,14 +5,91 @@ from core.llm_utils import get_clean_llm_response
 from core.findLLM import *
 
 class QueryNode(Node):
+
     """
-    A node that sends prompts to an LLM and stores the responses.
+    QueryNode: A node that interfaces with Large Language Models (LLMs) to process text prompts and generate responses.
 
-    This node takes a list of strings as input, optionally limits it to one item,
-    sends each prompt to the specified LLM, and stores the responses.
+    This node serves as a bridge between the node graph system and local LLM installations, enabling prompt-based
+    text generation and processing. It can handle single or multiple prompts, with options to limit processing
+    for development or resource management.
 
-    Attributes:
-        _is_time_dependent (bool): Always True for this node.
+    Key Features:
+        1. LLM Integration:
+            - Automatically detects and connects to local LLM installations
+            - Supports dynamic LLM selection and switching
+            - Provides fallback mechanisms when preferred LLM is unavailable
+            
+        2. Prompt Processing:
+            - Handles both single and batch prompt processing
+            - Maintains response history
+            - Supports forced response regeneration
+            - Provides clean, formatted LLM responses
+
+    Parameters:
+        limit (bool): 
+            When True, restricts processing to only the first prompt
+            Useful for testing or managing resource usage
+            
+        response (List[str]): 
+            Stores the history of LLM responses
+            Updated after each successful processing
+            
+        llm_name (str): 
+            Identifier for the target LLM (e.g., "Ollama")
+            Defaults to "Ollama" but can be auto-detected
+            
+        find_llm (button): 
+            Triggers automatic LLM detection
+            Updates llm_name with found installation
+            
+        respond (button):
+            Forces reprocessing of current prompts
+            Updates responses regardless of cache
+
+    Input/Output:
+        Input: 
+            - List[str]: Collection of prompts to process
+            - Must be properly formatted strings
+            - Size may be limited by 'limit' parameter
+            
+        Output:
+            - List[str]: Generated LLM responses
+            - Maintains order corresponding to input prompts
+            - Empty strings for failed responses
+
+    Error Handling:
+        - Validates input data type and format
+        - Provides clear error messages for LLM connection issues
+        - Handles processing failures gracefully
+        - Maintains partial results on partial failures
+
+    Safety Features:
+        - Input validation and sanitization
+        - Resource usage management through limiting
+        - Graceful handling of LLM unavailability
+        - Clean response formatting
+
+    Usage Notes:
+        1. Single Prompt Mode:
+            - Enable 'limit' parameter
+            - Best for development and testing
+            - Provides more detailed error feedback
+            
+        2. Batch Processing Mode:
+            - Disable 'limit' parameter
+            - Processes all input prompts
+            - May take longer based on input size
+            
+        3. LLM Management:
+            - Use find_llm to detect available LLMs
+            - Manually set llm_name for specific installations
+            - Check error messages for connection issues
+
+    Performance Considerations:
+        - Always time-dependent (_is_time_dependent = True)
+        - Response caching available but not forced
+        - Resource usage scales with input size
+        - Consider using 'limit' for large prompt sets
     """
 
     SINGLE_INPUT = True
