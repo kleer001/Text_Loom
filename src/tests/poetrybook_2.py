@@ -46,7 +46,7 @@ list_months = create_node("make_list")
 
 
 looper1 = create_node("looper")
-looper1._parms["step_from_input"].set(True)
+looper1._parms["max_from_input"].set(True)
 
 print(NodeEnvironment.list_nodes())
 

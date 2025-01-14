@@ -1,3 +1,7 @@
+    
+"""
+Print Node Info, for testing node contents and states during hand rolled tests. 
+"""
 
 def print_node_info(node):
     print(f"\n--- {node.name()} Node Information ---")

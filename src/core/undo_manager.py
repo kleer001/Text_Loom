@@ -46,6 +46,7 @@ MAX_STACK_SIZE = 100
 
 @dataclass
 class ParmState:
+    """Captures the state of a parameter including its type, value, and callback"""
     name: str
     parm_type: str
     value: Union[int, float, str, List[str], bool]
@@ -53,6 +54,7 @@ class ParmState:
 
 @dataclass
 class NodeConnectionState:
+    """Represents a connection between two nodes with input/output references"""
     output_node_path: str
     input_node_path: str
     output_index: int
@@ -62,6 +64,7 @@ class NodeConnectionState:
 
 @dataclass
 class FullNodeState:
+    """Complete snapshot of a node's state including position, parameters, and connections"""
     name: str
     path: str
     position: List[float]
@@ -83,15 +86,23 @@ class FullNodeState:
 
 @dataclass
 class GlobalStoreState:
+    """Captures the state of the global store dictionary"""
     store: Dict[str, Any]
 
 @dataclass
 class NetworkState:
+    """Complete network state including all nodes and global store data"""
     nodes: Dict[str, FullNodeState]
     global_store: GlobalStoreState
     restore_order: List[str]
 
 class UndoManager:
+    """Singleton manager handling undo/redo operations for the node network.
+    
+    Maintains stacks of network states and provides methods to capture, restore,
+    and manage the history of network operations. Uses a singleton pattern to 
+    ensure consistent state management across the application.
+    """
     _instance: Optional['UndoManager'] = None
     _initialized: bool = False
     _undo_active: bool = True  # Class level variable
@@ -126,6 +137,10 @@ class UndoManager:
     def capture_network_state(self) -> NetworkState:
         from core.global_store import GlobalStore
         
+        """Captures the complete current state of the network including all nodes and global store.
+        Returns a NetworkState object containing all node states, connections, and global variables.
+        """
+
         self.logger.debug("Capturing network state")
         node_order = []
         captured_nodes = {}
@@ -155,6 +170,13 @@ class UndoManager:
         return network_state
 
     def _capture_node_state(self, node: 'Node') -> FullNodeState:
+
+        """
+        Creates a comprehensive snapshot of a single node's current state.
+        Includes parameters, connections, position, and internal state variables.
+        Returns a FullNodeState object.
+        """
+
         parms = {}
         if hasattr(node, '_parms'):
             for parm_name, parm in node._parms.items():
@@ -208,6 +230,14 @@ class UndoManager:
         )
     
     def restore_network_state(self, state: NetworkState) -> None:
+
+        """
+        Two-phase restoration of a previously captured network state.
+        First removes nodes not present in target state, then rebuilds network
+        from stored state including all connections and parameters.
+        """
+
+
         if self._restoring:
             self.logger.debug("Already restoring state, skipping")
             return
@@ -283,6 +313,14 @@ class UndoManager:
         self._node_paths_restored.add(state.path)
 
     def _restore_connections(self, state: NetworkState) -> None:
+
+        """
+        Reconstructs all node connections from a stored network state.
+        Handles clearing existing connections and rebuilding them based on
+        stored input/output relationships.
+        """
+
+
         self.logger.debug("Starting connection restoration")
         try:
             for node_path, node_state in state.nodes.items():
