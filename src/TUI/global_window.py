@@ -169,21 +169,3 @@ class GlobalWindow(Container):
             store.cut(key)
             self.post_message(GlobalDeleted(key))
             self.refresh_table()
-
-            store.set(key, value)
-            logger.debug("Successfully set global value")
-            self.refresh_table()
-            self.input.value = ""
-        except Exception as e:
-            logger.debug(f"Exception occurred: {str(e)}")
-            self.flash_error()
-            self.input.value = ""
-
-    def delete_global(self, key: str) -> None:
-        logger.debug(f"Deleting global: {key}")
-        """Deletes a global variable based on the provided key."""
-        store = GlobalStore()
-        if key in store.list():
-            store.cut(key)
-            self.post_message(GlobalDeleted(key))
-            self.refresh_table()
