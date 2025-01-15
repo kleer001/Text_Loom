@@ -450,6 +450,82 @@ class Node(MobileItem):
         """Returns the number of times this node has cooked in the current session."""
         return self._cook_count
 
+    def _parse_string_list(self, s: str) -> list[str]:
+
+        """
+        Parses a text string as either a plain string or a Python-style list of strings.
+        
+        Supports:
+        - Python list syntax: ["item1", "item2"]
+        - Mixed quotes: ["item1", 'item2']
+        - Escaped quotes: ["escaped\"quote"]
+        - Empty strings: ["", "test", ""]
+        - Empty lists: [] -> [""]
+        
+        Fallback behavior:
+        - Invalid syntax (unclosed quotes, bad escapes) -> treats entire input as plain string
+        - Unmatched brackets -> treats entire input as plain string
+        - Plain string without brackets -> returns single-item list
+        
+        Args:
+            s: Input string to parse
+            
+        Returns:
+            list[str]: Parsed strings as list. Always returns at least a single item list.
+        """  
+
+        if not (s.startswith('[') and s.endswith(']')):
+            return [s]
+            
+        result = []
+        s = s[1:-1].strip()
+        if not s:
+            return ['']
+            
+        current = []
+        in_string = False
+        quote_char = None
+        escape = False
+        
+        try:
+            for c in s:
+                if escape:
+                    current.append(c)
+                    escape = False
+                    continue
+                    
+                if c == '\\':
+                    escape = True
+                    continue
+                    
+                if c in ['"', "'"]:
+                    if not in_string:
+                        in_string = True
+                        quote_char = c
+                    elif c == quote_char:
+                        in_string = False
+                        quote_char = None
+                    else:
+                        current.append(c)
+                elif c == ',' and not in_string:
+                    result.append(''.join(current))
+                    current = []
+                elif c.isspace() and not in_string:
+                    continue
+                else:
+                    current.append(c)
+                    
+            if escape or in_string:  # Invalid syntax
+                return [s]
+                
+            if current:
+                result.append(''.join(current))
+                
+            return [x for x in result if x or x == '']  # Preserve empty strings
+            
+        except:
+            return [s]
+
     def inputs_with_indices(self, use_names: bool=False) ->Sequence[Tuple[
         'Node', Union[int, str], Union[int, str]]]:
         """Returns a sequence of tuples representing each connected input of this node."""
