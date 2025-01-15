@@ -10,7 +10,6 @@ from core.parm import Parm, ParameterType
 
 
 class FileOutNode(Node):
-
     """
     Write the given content to a text file. The function provides a refresh button to force the write.
 
@@ -20,12 +19,23 @@ class FileOutNode(Node):
         filename (str): The name of the file to write to.
         content (list of str): A list of strings to be written to the file.
         refresh (button): Force the file to be written regardless of content changes or hash matching. Default is False.
+        format_output (bool): When True (default), formats output by stripping brackets and joining with newlines. 
+                            When False, preserves Python list format (e.g. ["item1", "item2"]) for round-trip processing.
 
     Returns:
         None
 
     Raises:
         FileNotFoundError: If the specified file does not exist.
+
+    Example Usage:
+        With format_output=True (default):
+            Input: ["a", "b", "c"]
+            Output file content: a\n\n\nb\n\n\nc
+
+        With format_output=False:
+            Input: ["a", "b", "c"]
+            Output file content: ["a", "b", "c"]
     """
 
     SINGLE_INPUT = True
@@ -89,10 +99,12 @@ class FileOutNode(Node):
             if not isinstance(input_data, list) or not all(isinstance(item, str) for item in input_data):
                 raise TypeError("Input data must be a list of strings")
 
-            content = "\n\n\n".join(input_data)
             if (self._parms["format_output"].eval()):
+                content = "\n\n\n".join(input_data)
                 content = content.replace("[", "").replace("]", "")
                 content = content.encode('utf-8').decode('unicode_escape')
+            else:
+                content = str(input_data)  # This will preserve proper Python list format
 
             self._parms["file_text"].set(content)
             self._output = content

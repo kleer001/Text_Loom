@@ -14,6 +14,7 @@ from TUI.screens_registry import MAIN_SCREEN, Mode, ModeChanged
 from TUI.messages import FileLoaded
 
 class FileMode(Container):
+    """A container for displaying the input field to save files."""
     DEFAULT_CSS = """
     FileMode {
         height: auto;
@@ -28,11 +29,13 @@ class FileMode(Container):
     """
     
     def compose(self) -> ComposeResult:
+        """Compose the FileMode container."""
         self.logger = get_logger('tui.file_mode')
         self.logger.debug("Composing FileMode")
         yield Input(placeholder="Enter file path to save...", id="file_path")
 
 class FileScreen(Screen):
+    """A screen for handling file operations."""
     BINDINGS = [
         Binding("escape", "pop_screen", "Back"),
         Binding("enter", "handle_action", "Select/Save"),
@@ -56,6 +59,7 @@ class FileScreen(Screen):
     current_path = reactive("")
 
     def __init__(self, save_mode: bool = False):
+        """Initialize the FileScreen with save mode."""
         self.logger = get_logger('tui.file_screen')
         self.logger.info(f"Initializing FileScreen with save_mode={save_mode}")
         try:
@@ -69,6 +73,7 @@ class FileScreen(Screen):
             raise
 
     def compose(self) -> ComposeResult:
+        """Compose the main layout of the FileScreen."""
         self.logger.info("Starting compose")
         try:
             self.logger.debug("Creating DirectoryTree")
@@ -83,6 +88,7 @@ class FileScreen(Screen):
             raise
 
     def on_input_submitted(self, event: Input.Submitted) -> None:
+        """Handle the submission of input for file path."""
         self.logger.info("Input submitted")
         try:
             path_value = event.value.strip()
@@ -93,7 +99,8 @@ class FileScreen(Screen):
             self.logger.error("Failed handling input submission", exc_info=True)
             raise
 
-    def on_mount(self):
+    def On_mount(self):
+        """Handle the mounting of the FileScreen."""
         self.logger.info("Starting on_mount")
         try:
             self.logger.debug("Querying for DirectoryTree")
@@ -112,10 +119,12 @@ class FileScreen(Screen):
             raise
 
     def action_pop_screen(self) -> None:
+        """Perform an action to pop the current screen."""
         self.logger.info("Escape pressed, popping screen")
         self.app.pop_screen()
 
     def action_handle_action(self) -> None:
+        """Handle an action for selecting or saving files."""
         self.logger.info("Handle action called")
         try:
             if self.is_save_mode:
@@ -138,6 +147,7 @@ class FileScreen(Screen):
             raise
 
     def _handle_save(self, path: Path) -> None:
+        """Handle the saving of a file."""
         self.logger.info(f"Handling save to: {path}")
         try:
             self.logger.debug("About to call save_flowstate")
@@ -155,6 +165,7 @@ class FileScreen(Screen):
             raise
 
     def _handle_load(self, path: Path) -> None:
+        """Handle the loading of a file."""
         from core.undo_manager import UndoManager
         from TUI.node_window import NodeWindow
         self.logger.info(f"Handling load from: {path}")
@@ -177,9 +188,8 @@ class FileScreen(Screen):
             self.logger.error(f"Failed to load file", exc_info=True)
             raise
 
-
-
-    def on_directory_tree_file_selected(self, event: DirectoryTree.FileSelected) -> None:
+    def On_directory_tree_file_selected(self, event: DirectoryTree.FileSelected) -> None:
+        """Handle the selection of a file in the directory tree."""
         self.logger.info(f"File selected: {event.path}")
         try:
             if self.is_save_mode:

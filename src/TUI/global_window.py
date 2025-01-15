@@ -61,24 +61,24 @@ class GlobalWindow(Container):
     def compose(self):
         yield self.input
         yield self.table
-    
+
     def on_focus(self) -> None:
         self.input.focus()
 
     def on_mount(self):
         self.table.add_column(" ", key="key")
         self.table.add_column(" ", key="value")
-        self.border_title = "Globals"    
+        self.border_title = "Globals"
         self.refresh_table()
 
     def refresh_table(self):
         self.table.clear()
         global_store = GlobalStore().list()
-        
+
         if not global_store:
             self.table.add_row("NONE", "NONE")
             return
-            
+
         for key, value in global_store.items():
             self.table.add_row(key, str(value))
 
@@ -95,7 +95,7 @@ class GlobalWindow(Container):
     def reset_background(self):
         logger.debug("Resetting background")
         try:
-            self.input.styles.background = "$background" #might need to be None ? 
+            self.input.styles.background = "$background" #might need to be None ?
             logger.debug("Background reset complete")
         except Exception as e:
             logger.debug(f"Reset background failed: {str(e)}")
@@ -105,7 +105,7 @@ class GlobalWindow(Container):
 
     def on_input_submitted(self, event: Input.Submitted):
         logger.debug(f"Input submitted with value: {event.value}")
-        
+
         if event.value.lower() == "cut all globals":
             logger.debug("Cut all globals command detected")
             store = GlobalStore()
@@ -123,22 +123,22 @@ class GlobalWindow(Container):
             self.delete_global(key_to_cut)
             self.input.value = ""
             return
-            
+
 
         if ":" not in event.value:
             logger.debug("No colon found in input")
             self.flash_error()
             self.input.value = ""
             return
-            
+
         try:
             key, value = event.value.split(":", 1)
             logger.debug(f"Split input into key: {key}, value: {value}")
-            
+
             key = "".join(c for c in key.upper() if c.isupper())
             value = value.strip()
             logger.debug(f"Processed key: {key}, processed value: {value}")
-            
+
             if len(key) < 2:
                 logger.debug("Key length less than 2")
                 self.flash_error()
@@ -152,7 +152,7 @@ class GlobalWindow(Container):
             else:
                 logger.debug(f"Adding new global: {key}")
                 self.post_message(GlobalAdded(key, value))
-                
+
             store.set(key, value)
             logger.debug("Successfully set global value")
             self.refresh_table()
@@ -164,6 +164,24 @@ class GlobalWindow(Container):
 
     def delete_global(self, key: str) -> None:
         logger.debug(f"Deleting global: {key}")
+        store = GlobalStore()
+        if key in store.list():
+            store.cut(key)
+            self.post_message(GlobalDeleted(key))
+            self.refresh_table()
+
+            store.set(key, value)
+            logger.debug("Successfully set global value")
+            self.refresh_table()
+            self.input.value = ""
+        except Exception as e:
+            logger.debug(f"Exception occurred: {str(e)}")
+            self.flash_error()
+            self.input.value = ""
+
+    def delete_global(self, key: str) -> None:
+        logger.debug(f"Deleting global: {key}")
+        """Deletes a global variable based on the provided key."""
         store = GlobalStore()
         if key in store.list():
             store.cut(key)
