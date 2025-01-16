@@ -1,7 +1,10 @@
-# texting local saves, no need to share
+# local saves, no need to share
 *.txt
 *.api
 *.ppm
+*.gif
+*.mp4
+*.cast
 
 # Default from github, thanks y'all
 # Byte-compiled / optimized / DLL files
