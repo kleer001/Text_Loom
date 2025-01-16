@@ -88,6 +88,31 @@ class SectionNode(Node):
         self._parms["trim_prefix"].set(True)
 
     def _process_sections(self, input_list: List[str]) -> Tuple[List[str], List[str], List[str]]:
+        """
+        Processes input strings and sections them based on prefix patterns.
+
+        Takes a list of strings and divides them into three groups based on prefix matching.
+        Handles wildcard patterns in prefixes (* for any sequence, ? for single character)
+        and normalizes whitespace. Lines matching first prefix pattern go to first output,
+        lines matching second prefix pattern go to second output, and unmatched lines go
+        to third output.
+
+        Args:
+            input_list (List[str]): List of strings to section
+
+        Returns:
+            Tuple[List[str], List[str], List[str]]: Three lists containing:
+                - Lines matching first prefix pattern (trimmed if trim_prefix is True)
+                - Lines matching second prefix pattern (trimmed if trim_prefix is True)
+                - Unmatched lines
+
+        Example:
+            input_list = ["Q1: Hello", "A1: Hi", "Other"]
+            prefix1 = "Q?"
+            prefix2 = "A?"
+            delimiter = ":"
+            Returns: (["Hello"], ["Hi"], ["Other"])
+        """
         prefix1 = self._parms["prefix1"].eval().strip()
         prefix2 = self._parms["prefix2"].eval().strip()
         delimiter = self._parms["delimiter"].eval()

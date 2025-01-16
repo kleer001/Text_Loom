@@ -177,3 +177,60 @@ Outputs:
     Remaining Items (output 1): Items that weren't selected
     Empty (output 2): Always empty list (reserved for future use)
 ```
+
+1. SectionNode:
+```
+A node that sections input text based on prefixes, supporting wildcards and custom delimiters.
+
+This node takes a list of strings as input and separates them into three outputs based on
+prefix matching patterns. Each line is matched against two prefix patterns and sorted into
+the corresponding output. Lines that don't match either prefix go to the unmatched output.
+
+Prefix Patterns:
+    - Support exact string matching: "Speaker", "Q", "A"
+    - Support wildcards:
+        * matches any sequence of characters
+        ? matches exactly one character
+    - Examples:
+        "Q*" matches "Q:", "Query:", "Question:"
+        "Speaker?" matches "Speaker1:", "Speaker2:", "SpeakerA:"
+        "*Bot" matches "ChatBot:", "TestBot:"
+
+Parameters:
+    prefix1 (str): First prefix to match (with optional wildcards)
+    prefix2 (str): Second prefix to match (with optional wildcards)
+    delimiter (str): Character(s) that separate prefix from content (default: ":")
+    trim_prefix (bool): When True, removes prefix and delimiter from matched lines
+    enabled (bool): Enables/disables the node's functionality
+
+Inputs:
+    input (List[str]): List of strings to process
+
+Outputs:
+    output[0]: Lines matching prefix1
+    output[1]: Lines matching prefix2
+    output[2]: Unmatched lines
+
+Example Usage:
+    # Basic Q&A sectioning
+    prefix1 = "Q"
+    prefix2 = "A"
+    Input: ["Q: What time is it?", "A: 3 PM", "Note: check later"]
+    Output[0]: ["What time is it?"]
+    Output[1]: ["3 PM"]
+    Output[2]: ["Note: check later"]
+
+    # Interview transcript with wildcards
+    prefix1 = "Speaker?"  # Matches Speaker1, Speaker2, etc.
+    prefix2 = "*viewer"   # Matches Interviewer, Reviewer, etc.
+    delimiter = ":"
+    Input: ["Speaker1: Hello", "Interviewer: Hi", "Random text"]
+    Output[0]: ["Hello"]
+    Output[1]: ["Hi"]
+    Output[2]: ["Random text"]
+
+Notes:
+    - Whitespace around prefixes and delimiters is normalized
+    - Empty outputs contain [""] rather than []
+    - Wildcard patterns are converted to simple regex patterns internally
+```
