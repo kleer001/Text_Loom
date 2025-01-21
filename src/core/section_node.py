@@ -9,56 +9,71 @@ import json
 
 class SectionNode(Node):
     """
-    A node that sections input text based on prefixes, supporting wildcards and custom delimiters.
-    
-    This node takes a list of strings as input and separates them into three outputs based on
-    prefix matching patterns. Each line is matched against two prefix patterns and sorted into
-    the corresponding output. Lines that don't match either prefix go to the unmatched output.
+    A node that sections input text based on prefix matching patterns.
 
-    Prefix Patterns:
-        - Support exact string matching: "Speaker", "Q", "A"
-        - Support wildcards:
-            * matches any sequence of characters
-            ? matches exactly one character
-        - Examples:
-            "Q*" matches "Q:", "Query:", "Question:"
-            "Speaker?" matches "Speaker1:", "Speaker2:", "SpeakerA:"
-            "*Bot" matches "ChatBot:", "TestBot:"
-    
+    Separates input text into three outputs based on two prefix patterns. 
+    Lines matching either prefix are routed to corresponding outputs, 
+    with unmatched lines sent to the third output.
+
+    Prefix Pattern Types:
+        1. Wildcard Patterns:
+            * Matches any sequence of characters
+            ? Matches exactly one character
+            Examples:
+            - "Q*" matches "Q:", "Query:", "Question:"
+            - "Speaker?" matches "Speaker1:", "Speaker2:"
+            - "*Bot" matches "ChatBot:", "TestBot:"
+
+        2. Regex Patterns (starting with ^):
+            Supports full regex matching
+            Example: "^Chapter\d+" matches "Chapter1", "Chapter22"
+
+        3. Shortcut Patterns (starting with @):
+            Predefined regex patterns from a configuration file
+            Example: "@scene" might match scene headings
+            
     Parameters:
-        prefix1 (str): First prefix to match (with optional wildcards)
-        prefix2 (str): Second prefix to match (with optional wildcards)
-        delimiter (str): Character(s) that separate prefix from content (default: ":")
-        trim_prefix (bool): When True, removes prefix and delimiter from matched lines
-        enabled (bool): Enables/disables the node's functionality
-    
+        prefix1 (str): First prefix to match
+        prefix2 (str): Second prefix to match
+        delimiter (str): Separates prefix from content (default: ":")
+        trim_prefix (bool): Removes prefix when True
+        enabled (bool): Enables/disables node functionality
+
     Inputs:
-        input (List[str]): List of strings to process
+        input (List[str]): Strings to process
 
     Outputs:
-        output[0]: Lines matching prefix1
-        output[1]: Lines matching prefix2
+        output[0]: Lines matching first prefix
+        output[1]: Lines matching second prefix
         output[2]: Unmatched lines
-    
-    Example Usage:
-        # Basic Q&A sectioning
-        prefix1 = "Q"
-        prefix2 = "A"
-        Input: ["Q: What time is it?", "A: 3 PM", "Note: check later"]
-        Output[0]: ["What time is it?"]
+
+    Example Usage (Simple):
+        Input: ["Q: What time?", "A: 3 PM", "Note: check later"]
+        prefix1 = "Q*"
+        prefix2 = "A*"
+        Output[0]: ["What time?"]
         Output[1]: ["3 PM"]
         Output[2]: ["Note: check later"]
 
-        # Interview transcript with wildcards
-        prefix1 = "Speaker?"  # Matches Speaker1, Speaker2, etc.If the prefix1 has an invalid shortcut then the first output shout be empty [''],
-        Output[1]: ["Hi"]
-        Output[2]: ["Random text"]
+    Example Usage (Complex):
+        Input: [
+            "INT. COFFEE SHOP - DAY",
+            "DETECTIVE SMITH: Hello",
+            "Q: First question",
+            "(looking around)",
+            "A: Detailed answer"
+        ]
+        prefix1 = "@scene"
+        prefix2 = "Q*"
+        Output[0]: ["COFFEE SHOP - DAY"]
+        Output[1]: ["First question"]
+        Output[2]: ["DETECTIVE SMITH: Hello", "(looking around)", "A: Detailed answer"]
 
     Notes:
         - Whitespace around prefixes and delimiters is normalized
         - Empty outputs contain [""] rather than []
-        - Wildcard patterns are converted to simple regex patterns internally
-        - If the delimiter appears in the prefix itself, it will be treated as a delimiter
+        - Wildcard patterns are converted to regex internally
+        - Delimiter within prefix is treated as part of the prefix
     """
 
     SINGLE_OUTPUT = False
@@ -86,6 +101,19 @@ class SectionNode(Node):
         self._parms["regex_file"].set("regex.dat.json")
 
     def _process_sections(self, input_list: List[str]) -> Tuple[List[str], List[str], List[str]]:
+        
+        """
+        Processes input list using two prefix patterns.
+        
+        Applies first and second prefix patterns to input list,
+        handling cases of invalid or missing prefixes.
+        
+        Returns:
+        - Matches for first prefix
+        - Matches for second prefix
+        - Unmatched lines
+        """
+        
         prefix1 = self._parms["prefix1"].eval().strip()
         prefix2 = self._parms["prefix2"].eval().strip()
         
@@ -116,6 +144,18 @@ class SectionNode(Node):
 
 
     def _process_single_pattern(self, input_list: List[str], prefix: str) -> Tuple[List[str], List[str]]:
+        """
+        Routes input list processing to appropriate pattern matching method.
+        
+        Detects pattern type by prefix:
+        - Regex patterns (starts with ^)
+        - Shortcut patterns (starts with @)
+        - Wildcard patterns (default)
+        
+        Returns:
+        - Matching lines
+        - Non-matching lines
+        """
         if prefix.startswith('^'):
             return self._regex_single_pattern(input_list, prefix)
         elif prefix.startswith('@'):
@@ -126,6 +166,16 @@ class SectionNode(Node):
 
 
     def _wildcard_single_pattern(self, input_list: List[str], prefix: str) -> Tuple[List[str], List[str]]:
+        """
+        Matches lines using wildcard (*,?) pattern with optional delimiter.
+        
+        Converts wildcard to regex pattern.
+        Supports optional prefix trimming.
+        
+        Returns:
+        - Lines matching wildcard pattern
+        - Lines not matching pattern
+        """
         trim_prefix = self._parms["trim_prefix"].eval()
         
         def pattern_to_regex(pattern: str) -> str:
@@ -151,6 +201,16 @@ class SectionNode(Node):
         return matches, non_matches
 
     def _regex_single_pattern(self, input_list: List[str], prefix: str) -> Tuple[List[str], List[str]]:
+        """
+        Matches lines using full regex pattern.
+        
+        Uses regex pattern directly after removing ^ prefix.
+        Supports optional prefix trimming.
+        
+        Returns:
+        - Lines matching regex pattern
+        - Lines not matching pattern
+        """
         trim_prefix = self._parms["trim_prefix"].eval()
         pattern = prefix[1:]  # Remove the ^ trigger
         
@@ -169,8 +229,18 @@ class SectionNode(Node):
                 non_matches.append(line)
                 
         return matches, non_matches
-
+    
     def _shortcut_single_pattern(self, input_list: List[str], prefix: str) -> Tuple[List[str], List[str]]:
+        """
+        Matches lines using predefined regex patterns from configuration.
+        
+        Loads patterns from regex configuration file.
+        Handles missing or undefined shortcut patterns.
+        
+        Returns:
+        - Lines matching shortcut pattern
+        - Lines not matching pattern
+        """
         trim_prefix = self._parms["trim_prefix"].eval()
         regex_file = self._parms["regex_file"].eval()
         
