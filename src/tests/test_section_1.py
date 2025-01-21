@@ -14,7 +14,6 @@ def test_section_node():
     out3 = Node.create_node(NodeType.TEXT, node_name="unmatched_out")
 
     print("\n=== Setting up connections ===")
-# Change these lines:
     section.set_input(0, input_node)
     out1.set_input(0, section, output_index=0)
     out2.set_input(0, section, output_index=1)
@@ -29,7 +28,7 @@ def test_section_node():
     test_input = [
         "Interviewer: First question",
         "  Interviewer:Second question",
-        "Participant : First answer",
+        "Participant: First answer",
         "Random line",
         "Interviewer:   Third question",
         "Participant: Second answer",
@@ -44,11 +43,18 @@ def test_section_node():
     input_node._parms["text_string"].set(str(test_input))
 
     print("\n=== Basic Section Test ===")
+    section._parms["prefix1"].set("Interviewer:")
+    section._parms["prefix2"].set("Participant:")
+    section._parms["trim_prefix"].set(True)
+    #section._parms["regex_file"].set("regex.dat.json")
+    
     print("Current section node parameters:")
     print(f"Enabled: {section._parms['enabled'].eval()}")
     print(f"Prefix1: '{section._parms['prefix1'].eval()}'")
     print(f"Prefix2: '{section._parms['prefix2'].eval()}'")
     print(f"Trim prefix: {section._parms['trim_prefix'].eval()}")
+    #print(f"Regex file: '{section._parms['regex_file'].eval()}'")
+
 
     print("\nEvaluating outputs...")
     result1 = out1.eval()
@@ -63,6 +69,7 @@ def test_section_node():
     print(f"Section node cook count: {section._cook_count}")
     print(f"Section node output lists: {section._output}")
 
+    # Expected results after prefix trimming
     expected1 = ["First question", "Second question", "Third question"]
     expected2 = ["First answer", "Second answer", "Third answer"]
     expected3 = ["Random line", "Some other text"]
