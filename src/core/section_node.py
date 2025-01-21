@@ -50,11 +50,7 @@ class SectionNode(Node):
         Output[2]: ["Note: check later"]
 
         # Interview transcript with wildcards
-        prefix1 = "Speaker?"  # Matches Speaker1, Speaker2, etc.
-        prefix2 = "*viewer"   # Matches Interviewer, Reviewer, etc.
-        delimiter = ":"
-        Input: ["Speaker1: Hello", "Interviewer: Hi", "Random text"]
-        Output[0]: ["Hello"]
+        prefix1 = "Speaker?"  # Matches Speaker1, Speaker2, etc.If the prefix1 has an invalid shortcut then the first output shout be empty [''],
         Output[1]: ["Hi"]
         Output[2]: ["Random text"]
 
@@ -89,11 +85,94 @@ class SectionNode(Node):
         self._parms["trim_prefix"].set(True)
         self._parms["regex_file"].set("regex.dat.json")
 
-    def _shortcut_sections(self, input_list: List[str]) -> Tuple[List[str], List[str], List[str]]:
+    def _process_sections(self, input_list: List[str]) -> Tuple[List[str], List[str], List[str]]:
         prefix1 = self._parms["prefix1"].eval().strip()
         prefix2 = self._parms["prefix2"].eval().strip()
-        regex_file = self._parms["regex_file"].eval()
+        
+        matches1, non_matches1 = self._process_single_pattern(input_list, prefix1)
+        matches2, non_matches2 = self._process_single_pattern(input_list, prefix2)
+        
+        # If first prefix is invalid (returns full non-matches)
+        if not matches1 and len(non_matches1) == len(input_list):
+            matches1 = [""]
+            non_matches1 = input_list
+
+        # If second prefix is invalid (returns full non-matches)
+        if not matches2 and len(non_matches2) == len(input_list):
+            matches2 = [""]
+            non_matches2 = input_list
+
+        # Determine unmatched lines
+        unmatched = [line for line in input_list if line in non_matches1 and line in non_matches2]
+        
+        # If unmatched is empty, use non_matches from the first non-invalid pattern
+        if not unmatched:
+            unmatched = non_matches1 if len(non_matches1) < len(input_list) else non_matches2
+
+        matches1 = matches1 if matches1 else [""]
+        matches2 = matches2 if matches2 else [""]
+        
+        return matches1, matches2, unmatched
+
+
+    def _process_single_pattern(self, input_list: List[str], prefix: str) -> Tuple[List[str], List[str]]:
+        if prefix.startswith('^'):
+            return self._regex_single_pattern(input_list, prefix)
+        elif prefix.startswith('@'):
+            return self._shortcut_single_pattern(input_list, prefix)
+        else:
+            return self._wildcard_single_pattern(input_list, prefix)
+
+
+
+    def _wildcard_single_pattern(self, input_list: List[str], prefix: str) -> Tuple[List[str], List[str]]:
         trim_prefix = self._parms["trim_prefix"].eval()
+        
+        def pattern_to_regex(pattern: str) -> str:
+            pattern = re.escape(pattern)
+            pattern = pattern.replace('\\*', '.*').replace('\\?', '.')
+            return f'^{pattern}\s*:'
+        
+        pattern = pattern_to_regex(prefix)
+        matches = []
+        non_matches = []
+        
+        for line in input_list:
+            line = line.strip()
+            clean_line = ' '.join(line.split())
+            
+            match = re.match(pattern, clean_line)
+            if match:
+                content = clean_line[len(match.group(0)):] if trim_prefix else line
+                matches.append(content.strip())
+            else:
+                non_matches.append(line)
+                
+        return matches, non_matches
+
+    def _regex_single_pattern(self, input_list: List[str], prefix: str) -> Tuple[List[str], List[str]]:
+        trim_prefix = self._parms["trim_prefix"].eval()
+        pattern = prefix[1:]  # Remove the ^ trigger
+        
+        matches = []
+        non_matches = []
+        
+        for line in input_list:
+            line = line.strip()
+            clean_line = ' '.join(line.split())
+            
+            match = re.match(pattern, clean_line)
+            if match:
+                content = clean_line[len(match.group(0)):] if trim_prefix else line
+                matches.append(content.strip())
+            else:
+                non_matches.append(line)
+                
+        return matches, non_matches
+
+    def _shortcut_single_pattern(self, input_list: List[str], prefix: str) -> Tuple[List[str], List[str]]:
+        trim_prefix = self._parms["trim_prefix"].eval()
+        regex_file = self._parms["regex_file"].eval()
         
         current_dir = os.path.dirname(os.path.abspath(__file__))
         regex_file_path = os.path.join(current_dir, regex_file)
@@ -103,151 +182,37 @@ class SectionNode(Node):
                 regex_data = json.load(f)
         except (FileNotFoundError, json.JSONDecodeError) as e:
             self.add_error(f"Failed to load regex file {regex_file_path}: {str(e)}")
-            return [], [], input_list
-        
-        def find_pattern(shortcut: str) -> str:
-            if shortcut in regex_data:
-                pattern = regex_data[shortcut]["pattern"]
-                pattern = pattern.encode().decode('unicode-escape')
-                print(f"Found pattern for {shortcut}: {pattern}")
-                return pattern
-            print(f"No pattern found for {shortcut}")
-            return ""
-                    
-        matches1, matches2, unmatched = [], [], []
-        pattern1 = find_pattern(prefix1) if prefix1.startswith('@') else prefix1
-        pattern2 = find_pattern(prefix2) if prefix2.startswith('@') else prefix2
-        
-        if prefix1.startswith('@') and not pattern1:
-            print(f"Warning: Shortcut {prefix1} not found in regex file")
-            self.add_warning(f"Shortcut {prefix1} not found in regex file")
-            return [], [], input_list
-        
-        for line in input_list:
-            line = line.strip()
-            match1 = re.match(pattern1, line)
-            if match1:
-                print(f"Pattern 1 matched: '{line}'")
-                content = line[match1.end():] if trim_prefix and prefix1.startswith('@scene') else line
-                matches1.append(content.strip())
-                continue
+            return [""], input_list
+
+        if not prefix.startswith('@'):
+            return [], input_list
+
+        if prefix not in regex_data:
+            print(f"Warning: Shortcut {prefix} not found in regex file")
+            self.add_warning(f"Shortcut {prefix} not found in regex file")
+            return [""], input_list
                 
-            if pattern2:
-                match2 = re.match(pattern2, line)
-                print(f"Testing pattern2 '{pattern2}' against '{line}' -> {'match' if match2 else 'no match'}")
-                if match2:
-                    print(f"Pattern 2 matched: '{line}'")
-                    content = line[match2.end():] if trim_prefix and prefix2.startswith('@scene') else line
-                    matches2.append(content.strip())
-                    continue
-                    
-            unmatched.append(line)
+        pattern = regex_data[prefix]["pattern"]
+        pattern = pattern.encode().decode('unicode-escape')
+        print(f"Found pattern for {prefix}: {pattern}")
         
-        matches1 = matches1 if matches1 else [""]
-        matches2 = matches2 if matches2 else [""]
-        
-        return matches1, matches2, unmatched
-
-    def _process_sections(self, input_list: List[str]) -> Tuple[List[str], List[str], List[str]]:
-        """
-        Processes input strings and sections them based on prefix patterns.
-
-        Takes a list of strings and divides them into three groups based on prefix matching.
-        Handles wildcard patterns in prefixes (* for any sequence, ? for single character)
-        and normalizes whitespace. Lines matching first prefix pattern go to first output,
-        lines matching second prefix pattern go to second output, and unmatched lines go
-        to third output.
-
-        Args:
-            input_list (List[str]): List of strings to section
-
-        Returns:
-            Tuple[List[str], List[str], List[str]]: Three lists containing:
-                - Lines matching first prefix pattern (trimmed if trim_prefix is True)
-                - Lines matching second prefix pattern (trimmed if trim_prefix is True)
-                - Unmatched lines
-
-        Example:
-            input_list = ["Q1: Hello", "A1: Hi", "Other"]
-            prefix1 = "Q?"
-            prefix2 = "A?"
-            delimiter = ":"
-            Returns: (["Hello"], ["Hi"], ["Other"])
-        """
-        prefix1 = self._parms["prefix1"].eval().strip()
-        prefix2 = self._parms["prefix2"].eval().strip()
-        trim_prefix = self._parms["trim_prefix"].eval()
-        print(f"\nDebug _process_sections:")
-        print(f"prefix1: {prefix1}, prefix2: {prefix2}")
-        
-        if prefix1.startswith('^'):
-            print("Using regex mode")
-            return self._regex_sections(input_list)
-        elif prefix1.startswith('@'):
-            print("Using shortcut mode")
-            return self._shortcut_sections(input_list)
-
-        print("Using wildcard mode")
-
-        def pattern_to_regex(pattern: str) -> str:
-            pattern = re.escape(pattern)  # Escape special regex chars
-            pattern = pattern.replace('\\*', '.*').replace('\\?', '.')
-            return f'^{pattern}'
-        
-        pattern1 = pattern_to_regex(prefix1)
-        pattern2 = pattern_to_regex(prefix2)
-        
-        matches1 = []
-        matches2 = []
-        unmatched = []
+        matches = []
+        non_matches = []
         
         for line in input_list:
             line = line.strip()
-            clean_line = ' '.join(line.split())
-            
-            if re.match(pattern1, clean_line):
-                content = clean_line[len(re.match(pattern1, clean_line).group(0)):] if trim_prefix else line
-                matches1.append(content.strip())
-            elif re.match(pattern2, clean_line):
-                content = clean_line[len(re.match(pattern2, clean_line).group(0)):] if trim_prefix else line
-                matches2.append(content.strip())
+            match = re.match(pattern, line)
+            if match:
+                content = line[match.end():] if trim_prefix and prefix.startswith('@scene') else line
+                matches.append(content.strip())
             else:
-                unmatched.append(line)
+                non_matches.append(line)
                 
-        return matches1, matches2, unmatched
-
-    def _regex_sections(self, input_list: List[str]) -> Tuple[List[str], List[str], List[str]]:
-        prefix1 = self._parms["prefix1"].eval().strip()
-        prefix2 = self._parms["prefix2"].eval().strip()
-        trim_prefix = self._parms["trim_prefix"].eval()
-        
-        pattern1 = prefix1[1:]  # Remove the ^ trigger
-        pattern2 = prefix2[1:] if prefix2.startswith('^') else None
-        
-        matches1 = []
-        matches2 = []
-        unmatched = []
-        
-        for line in input_list:
-            line = line.strip()
-            clean_line = ' '.join(line.split())
+        if not matches:
+            matches = [""]
             
-            match1 = re.match(pattern1, clean_line)
-            if match1:
-                content = clean_line[len(match1.group(0)):] if trim_prefix else line
-                matches1.append(content.strip())
-                continue
-                
-            if pattern2:
-                match2 = re.match(pattern2, clean_line)
-                if match2:
-                    content = clean_line[len(match2.group(0)):] if trim_prefix else line
-                    matches2.append(content.strip())
-                    continue
-                    
-            unmatched.append(line)
-        
-        return matches1, matches2, unmatched
+        return matches, non_matches
+
 
     def _internal_cook(self, force: bool = False) -> None:
         print(f"\n☀ Starting cook for {self._name}")

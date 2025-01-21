@@ -63,9 +63,9 @@ def test_section_node():
                 "Some text",
                 "EXT. PARK - NIGHT"
             ],
-            "expected1": [],
-            "expected2": [],
-            "expected3": ["INT. ROOM - DAY", "Some text", "EXT. PARK - NIGHT"]
+            "expected1": [''],
+            "expected2": ["ROOM - DAY", "PARK - NIGHT"],
+            "expected3": ["Some text"]
         },
         {
             "name": "Basic * wildcard",
