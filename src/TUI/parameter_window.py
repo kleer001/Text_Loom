@@ -18,7 +18,6 @@ from core.base_classes import NodeEnvironment, Node
 from core.parm import ParameterType
 from TUI.logging_config import get_logger
 from TUI.messages import ParameterChanged, ScrollMessage, NodeSelected, NodeTypeSelected, ClearAll, NodeDeleted
-import TUI.palette as pal
 
 logger = get_logger('parameter')
 

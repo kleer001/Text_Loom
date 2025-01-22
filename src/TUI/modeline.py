@@ -3,7 +3,6 @@ from textual.widgets import Static
 from typing import ClassVar
 from enum import Enum
 from dataclasses import dataclass
-import TUI.palette as pal
 
 
 class Mode(Enum):

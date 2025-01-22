@@ -5,7 +5,6 @@ from textual.containers import Container
 from textual.widgets import Static
 
 from TUI.logging_config import get_logger
-import TUI.palette as pal
 
 logger = get_logger('keymap')
 

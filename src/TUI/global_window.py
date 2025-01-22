@@ -4,7 +4,6 @@ from textual.binding import Binding
 from rich.text import Text
 
 from core.global_store import GlobalStore
-import TUI.palette as pal
 from TUI.logging_config import get_logger
 from TUI.messages import GlobalAdded, GlobalChanged, GlobalDeleted
 
