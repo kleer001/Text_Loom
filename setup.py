@@ -5,34 +5,31 @@ setup(
     version="0.0.1",
     author="Clear Menser",
     author_email="kleer001code@gmail.com",
-    description="A node based text, queery, and results editor",
+    description="A terminal-based node editor for batch text manipulation",
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
     url="https://github.com/kleer001/Text_Loom",
-    packages=find_packages(exclude=["tests*"]),
+    package_dir={"": "src"},
+    packages=find_packages(where="src"),
     install_requires=[
-        # List your package dependencies here
-        "numpy>=1.18.0",
-        "pandas>=1.0.0",
+        "textual>=0.52.1",
     ],
     classifiers=[
         "Development Status :: 3 - Alpha",
+        "Environment :: Console",
         "Intended Audience :: Developers",
         "License :: OSI Approved :: MIT License",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.12.3",
+        "Programming Language :: Python :: 3.12",
     ],
     python_requires=">=3.12",
-    extras_require={
-        "dev": [
-            "pytest>=6.0",
-            "pytest-cov>=2.10",
-            "flake8>=3.8",
-        ],
-    },
     entry_points={
         "console_scripts": [
-            "your-command=your_package.module:main_function",
+            "text-loom=TUI.tui_skeleton:main",
         ],
+    },
+    include_package_data=True,
+    package_data={
+        "TUI": ["themes/*"],
     },
 )

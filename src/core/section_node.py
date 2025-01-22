@@ -20,9 +20,9 @@ class SectionNode(Node):
             * Matches any sequence of characters
             ? Matches exactly one character
             Examples:
-            - "Q*" matches "Q:", "Query:", "Question:"
-            - "Speaker?" matches "Speaker1:", "Speaker2:"
-            - "*Bot" matches "ChatBot:", "TestBot:"
+            - "Q*" matches "Q:", "Query", "Question"
+            - "Speaker?" matches "Speaker1", "Speaker2"
+            - "*Bot" matches "ChatBot", "TestBot"
 
         2. Regex Patterns (starting with ^):
             Supports full regex matching
@@ -117,8 +117,8 @@ class SectionNode(Node):
         prefix1 = self._parms["prefix1"].eval().strip()
         prefix2 = self._parms["prefix2"].eval().strip()
         
-        matches1, non_matches1 = self._process_single_pattern(input_list, prefix1)
-        matches2, non_matches2 = self._process_single_pattern(input_list, prefix2)
+        matches1, non_matches1 = self._process_pattern(input_list, prefix1)
+        matches2, non_matches2 = self._process_pattern(input_list, prefix2)
         
         # If first prefix is invalid (returns full non-matches)
         if not matches1 and len(non_matches1) == len(input_list):
@@ -143,7 +143,7 @@ class SectionNode(Node):
         return matches1, matches2, unmatched
 
 
-    def _process_single_pattern(self, input_list: List[str], prefix: str) -> Tuple[List[str], List[str]]:
+    def _process_pattern(self, input_list: List[str], prefix: str) -> Tuple[List[str], List[str]]:
         """
         Routes input list processing to appropriate pattern matching method.
         
@@ -157,15 +157,15 @@ class SectionNode(Node):
         - Non-matching lines
         """
         if prefix.startswith('^'):
-            return self._regex_single_pattern(input_list, prefix)
+            return self._regex_pattern(input_list, prefix)
         elif prefix.startswith('@'):
-            return self._shortcut_single_pattern(input_list, prefix)
+            return self._shortcut_pattern(input_list, prefix)
         else:
-            return self._wildcard_single_pattern(input_list, prefix)
+            return self._wildcard_pattern(input_list, prefix)
 
 
 
-    def _wildcard_single_pattern(self, input_list: List[str], prefix: str) -> Tuple[List[str], List[str]]:
+    def _wildcard_pattern(self, input_list: List[str], prefix: str) -> Tuple[List[str], List[str]]:
         """
         Matches lines using wildcard (*,?) pattern with optional delimiter.
         
@@ -200,7 +200,7 @@ class SectionNode(Node):
                 
         return matches, non_matches
 
-    def _regex_single_pattern(self, input_list: List[str], prefix: str) -> Tuple[List[str], List[str]]:
+    def _regex_pattern(self, input_list: List[str], prefix: str) -> Tuple[List[str], List[str]]:
         """
         Matches lines using full regex pattern.
         
@@ -230,7 +230,7 @@ class SectionNode(Node):
                 
         return matches, non_matches
     
-    def _shortcut_single_pattern(self, input_list: List[str], prefix: str) -> Tuple[List[str], List[str]]:
+    def _shortcut_pattern(self, input_list: List[str], prefix: str) -> Tuple[List[str], List[str]]:
         """
         Matches lines using predefined regex patterns from configuration.
         
@@ -264,7 +264,7 @@ class SectionNode(Node):
                 
         pattern = regex_data[prefix]["pattern"]
         pattern = pattern.encode().decode('unicode-escape')
-        print(f"Found pattern for {prefix}: {pattern}")
+        #print(f"Found pattern for {prefix}: {pattern}")
         
         matches = []
         non_matches = []
@@ -285,10 +285,6 @@ class SectionNode(Node):
 
 
     def _internal_cook(self, force: bool = False) -> None:
-        print(f"\n☀ Starting cook for {self._name}")
-        print(f"Current state: {self._state}")
-        print(f"Force: {force}")
-        print(f"Needs to cook: {self.needs_to_cook()}")
         self.set_state(NodeState.COOKING)
         self._cook_count += 1
         start_time = time.time()
@@ -348,11 +344,11 @@ class SectionNode(Node):
         new_input_hash = self._calculate_hash(str(input_data))
         
         if new_input_hash != self._input_hash:
-            print(f"Input hash changed: {new_input_hash} != {self._input_hash}")
+            #print(f"Input hash changed: {new_input_hash} != {self._input_hash}")
             return True
             
         if new_param_hash != self._param_hash:
-            print(f"Param hash changed: {new_param_hash} != {self._param_hash}")
+            #print(f"Param hash changed: {new_param_hash} != {self._param_hash}")
             return True
             
         return False

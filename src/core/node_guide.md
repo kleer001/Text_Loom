@@ -178,59 +178,146 @@ Outputs:
     Empty (output 2): Always empty list (reserved for future use)
 ```
 
-1. SectionNode:
-```
-A node that sections input text based on prefixes, supporting wildcards and custom delimiters.
+8. SectionNode:
+"""
+A node that sections input text based on prefix matching patterns.
 
-This node takes a list of strings as input and separates them into three outputs based on
-prefix matching patterns. Each line is matched against two prefix patterns and sorted into
-the corresponding output. Lines that don't match either prefix go to the unmatched output.
+Separates input text into three outputs based on two prefix patterns. 
+Lines matching either prefix are routed to corresponding outputs, 
+with unmatched lines sent to the third output.
 
-Prefix Patterns:
-    - Support exact string matching: "Speaker", "Q", "A"
-    - Support wildcards:
-        * matches any sequence of characters
-        ? matches exactly one character
-    - Examples:
-        "Q*" matches "Q:", "Query:", "Question:"
-        "Speaker?" matches "Speaker1:", "Speaker2:", "SpeakerA:"
-        "*Bot" matches "ChatBot:", "TestBot:"
+Prefix Pattern Types:
+    1. Wildcard Patterns:
+        * Matches any sequence of characters
+        ? Matches exactly one character
+        Examples:
+        - "Q*" matches "Q:", "Query", "Question"
+        - "Speaker?" matches "Speaker1", "Speaker2"
+        - "*Bot" matches "ChatBot", "TestBot"
 
+    2. Regex Patterns (starting with ^):
+        Supports full regex matching
+        Example: "^Chapter\d+" matches "Chapter1", "Chapter22"
+
+    3. Shortcut Patterns (starting with @):
+        Predefined regex patterns from a configuration file
+        Example: "@scene" might match scene headings
+        
 Parameters:
-    prefix1 (str): First prefix to match (with optional wildcards)
-    prefix2 (str): Second prefix to match (with optional wildcards)
-    delimiter (str): Character(s) that separate prefix from content (default: ":")
-    trim_prefix (bool): When True, removes prefix and delimiter from matched lines
-    enabled (bool): Enables/disables the node's functionality
+    prefix1 (str): First prefix to match
+    prefix2 (str): Second prefix to match
+    delimiter (str): Separates prefix from content (default: ":")
+    trim_prefix (bool): Removes prefix when True
+    enabled (bool): Enables/disables node functionality
 
 Inputs:
-    input (List[str]): List of strings to process
+    input (List[str]): Strings to process
 
 Outputs:
-    output[0]: Lines matching prefix1
-    output[1]: Lines matching prefix2
+    output[0]: Lines matching first prefix
+    output[1]: Lines matching second prefix
     output[2]: Unmatched lines
 
-Example Usage:
-    # Basic Q&A sectioning
-    prefix1 = "Q"
-    prefix2 = "A"
-    Input: ["Q: What time is it?", "A: 3 PM", "Note: check later"]
-    Output[0]: ["What time is it?"]
+Example Usage (Simple):
+    Input: ["Q: What time?", "A: 3 PM", "Note: check later"]
+    prefix1 = "Q*"
+    prefix2 = "A*"
+    Output[0]: ["What time?"]
     Output[1]: ["3 PM"]
     Output[2]: ["Note: check later"]
 
-    # Interview transcript with wildcards
-    prefix1 = "Speaker?"  # Matches Speaker1, Speaker2, etc.
-    prefix2 = "*viewer"   # Matches Interviewer, Reviewer, etc.
-    delimiter = ":"
-    Input: ["Speaker1: Hello", "Interviewer: Hi", "Random text"]
-    Output[0]: ["Hello"]
-    Output[1]: ["Hi"]
-    Output[2]: ["Random text"]
+Example Usage (Complex):
+    Input: [
+        "INT. COFFEE SHOP - DAY",
+        "DETECTIVE SMITH: Hello",
+        "Q: First question",
+        "(looking around)",
+        "A: Detailed answer"
+    ]
+    prefix1 = "@scene"
+    prefix2 = "Q*"
+    Output[0]: ["COFFEE SHOP - DAY"]
+    Output[1]: ["First question"]
+    Output[2]: ["DETECTIVE SMITH: Hello", "(looking around)", "A: Detailed answer"]
 
 Notes:
     - Whitespace around prefixes and delimiters is normalized
     - Empty outputs contain [""] rather than []
-    - Wildcard patterns are converted to simple regex patterns internally
-```
+    - Wildcard patterns are converted to regex internally
+    - Delimiter within prefix is treated as part of the prefix
+"""
+
+
+9. MakeListNode(Node):
+"""
+A node that takes a string list as input, parses the first item, and outputs a new string list.
+
+This node uses the parse_list function to split the input string into a list of strings.
+It can optionally limit the number of output items based on the 'limit' and 'max_list' parameters.
+
+Attributes:
+    _is_time_dependent (bool): Always False for this node.
+
+parse_list: 
+
+Parse numbered lists from text into a list of strings, supporting both numeric and word-based numbering.
+
+This function intelligently extracts numbered lists from text while handling various numbering formats
+and multi-line items. It's particularly useful for processing structured text content like meeting notes,
+instructions, or any text containing numbered lists.
+
+Capabilities:
+    - Supports multiple numbering formats:
+        * Arabic numerals (1., 2., 3.)
+        * Written numbers (one., two., three.)
+        * Ordinal numbers (first., second., third.)
+        * Compound numbers (twenty-one, ninety-nine)
+    - Handles various separators between numbers and text (. : - _)
+    - Preserves multi-line list items
+    - Maintains original text formatting within list items
+    - Case-insensitive number word recognition
+
+Limitations:
+    - Only processes the first numbered list encountered in the text
+    - Cannot handle nested lists
+    - Maximum number support up to thousands
+    - Does not preserve the original numbering format
+    - Cannot process Roman numerals (i., ii., iii.)
+    - Does not handle lettered lists (a., b., c.)
+
+Args:
+    text (str): Input text containing a numbered list
+
+Returns:
+    Union[str, List[str]]: 
+        - If a numbered list is found: List of strings, each representing a list item
+        - If no list is found or input is not a string: Original text or empty string
+
+Examples:
+    >>> text = '''
+    ... Meeting Agenda:
+    ... 1. Review previous minutes
+    ...    Additional notes about minutes
+    ... 2. Discuss new projects
+    ... 3. Plan next meeting'''
+    >>> parse_list(text)
+    ['Review previous minutes Additional notes about minutes',
+    'Discuss new projects',
+    'Plan next meeting']
+
+    >>> text = '''
+    ... Project Steps:
+    ... First: Initialize repository
+    ... Second: Set up environment
+    ... Third: Begin development'''
+    >>> parse_list(text)
+    ['Initialize repository',
+    'Set up environment',
+    'Begin development']
+
+Notes:
+    - List items are assumed to start with a number or number word followed by a separator
+    - Subsequent lines without numbers are considered continuation of the previous item
+    - The function preserves internal spacing but trims leading/trailing whitespace
+    - Non-string inputs return an empty string rather than raising an error
+"""

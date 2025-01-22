@@ -1,98 +1,8 @@
 {
   "software": "Text Loom",
   "version": 0.01,
-  "timestamp": "2025-01-10T14:52:15.951997",
+  "timestamp": "2025-01-22T10:39:30.928064",
   "nodes": {
-    "/query_countries": {
-      "_node_type": "query",
-      "_path": "/query_countries",
-      "_name": "query_countries",
-      "_is_internal": false,
-      "_parms": {
-        "limit": {
-          "_name": "limit",
-          "_type": "toggle",
-          "_node": "/query_countries",
-          "_script_callback": "",
-          "_value": true
-        },
-        "response": {
-          "_name": "response",
-          "_type": "stringList",
-          "_node": "/query_countries",
-          "_script_callback": "",
-          "_value": [
-            "1. Egypt\n2. South Africa\n3. Morocco\n4. Ghana\n5. Tanzania"
-          ]
-        },
-        "llm_name": {
-          "_name": "llm_name",
-          "_type": "string",
-          "_node": "/query_countries",
-          "_script_callback": "",
-          "_value": "Ollama"
-        },
-        "find_llm": {
-          "_name": "find_llm",
-          "_type": "button",
-          "_node": "/query_countries",
-          "_script_callback": null,
-          "_value": ""
-        },
-        "respond": {
-          "_name": "respond",
-          "_type": "button",
-          "_node": "/query_countries",
-          "_script_callback": null,
-          "_value": ""
-        }
-      },
-      "_connections": [
-        {
-          "input_index": 0,
-          "output_node_path": "/text_1",
-          "input_node_path": "/query_countries",
-          "output_index": 0
-        }
-      ]
-    },
-    "/make_list_1": {
-      "_node_type": "make_list",
-      "_path": "/make_list_1",
-      "_name": "make_list_1",
-      "_is_internal": false,
-      "_parms": {
-        "limit": {
-          "_name": "limit",
-          "_type": "toggle",
-          "_node": "/make_list_1",
-          "_script_callback": "",
-          "_value": false
-        },
-        "max_list": {
-          "_name": "max_list",
-          "_type": "int",
-          "_node": "/make_list_1",
-          "_script_callback": "",
-          "_value": 5
-        },
-        "refresh": {
-          "_name": "refresh",
-          "_type": "button",
-          "_node": "/make_list_1",
-          "_script_callback": null,
-          "_value": ""
-        }
-      },
-      "_connections": [
-        {
-          "input_index": 0,
-          "output_node_path": "/query_countries",
-          "input_node_path": "/make_list_1",
-          "output_index": 0
-        }
-      ]
-    },
     "/text_1": {
       "_node_type": "text",
       "_path": "/text_1",
@@ -104,7 +14,7 @@
           "_type": "string",
           "_node": "/text_1",
           "_script_callback": "",
-          "_value": "Please give us a simple numbered list of 25 countries in Africa. $FOO"
+          "_value": "Random Text!"
         },
         "pass_through": {
           "_name": "pass_through",
@@ -132,9 +42,6 @@
     }
   },
   "globals": {
-    "FOO": "Please omit any introduction before the list. Please omit any summary after the list.",
-    "POO": "Loopy",
-    "GOO": "1233",
-    "FOOL": "69"
+    "FOO": "123"
   }
 }
