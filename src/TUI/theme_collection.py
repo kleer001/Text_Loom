@@ -308,20 +308,20 @@ def create_themes():
         panel="#FFFFFF",
     ),
 
-    "dark_pitta": Theme(
-        name="dark_pitta",
-        dark=True,
-        background="#000D1A",  # Deep water
-        foreground="#FF4D00",  # Fire orange
-        primary="#0080FF",     # Water blue
-        secondary="#FF3300",   # Fire red
-        accent="#000D1A",
-        error="#8B0000",
-        success="#4CAF50",
-        warning="#FFA726",
-        surface="#001529",
-        panel="#001529",
-    ),
+"dark_pitta": Theme(
+    name="dark_pitta",
+    dark=True,
+    background="#000D1A",  # Deep water
+    foreground="#FF4D00",  # Fire orange
+    primary="#0080FF",     # Water blue
+    secondary="#FF3300",   # Fire red
+    accent="#000D1A",
+    error="#8B0000",
+    success="#4CAF50",
+    warning="#FFA726",
+    surface="#001529",
+    panel="#001529",
+),
 
     "light_kapha": Theme(
         name="light_kapha",

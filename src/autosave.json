@@ -1,7 +1,7 @@
 {
   "software": "Text Loom",
   "version": 0.01,
-  "timestamp": "2025-01-22T10:39:30.928064",
+  "timestamp": "2025-01-22T14:06:24.269607",
   "nodes": {
     "/text_1": {
       "_node_type": "text",
@@ -14,7 +14,7 @@
           "_type": "string",
           "_node": "/text_1",
           "_script_callback": "",
-          "_value": "Random Text!"
+          "_value": "Random Text"
         },
         "pass_through": {
           "_name": "pass_through",

@@ -52,33 +52,59 @@ class Parameter:
 
 class ParameterRow(Horizontal):
     DEFAULT_CSS = """
-    ParameterRow {
-        height: 3;
-        margin: 0;
-        padding: 0;
-        width: 100%;
-    }
-    
-    ParameterRow > Static {
-        width: 20;
-        background: $surface;
-        color: $text-muted;
-        padding: 0 1;
-    }
-    
-    ParameterRow > Input {
-        width: 1fr;
-        background: $panel;
-        color: $foreground;
-        border: none;
-        padding: 0 1;
-    }
-    
-    ParameterRow > Input:focus{
-        background: $accent;
-        color: $foreground;
-        border: tall $primary;
-    }
+        ParameterRow {
+            height: 3;
+            margin: 0;
+            padding: 0;
+            width: 100%;
+        }
+        
+        ParameterRow > Static {
+            width: 20;
+            background: $surface;
+            color: $text-muted;
+            padding: 0 1;
+        }
+        
+        ParameterRow Input.-text-input {
+            width: 1fr;
+            background: $surface-darken-1;
+            color: $text;
+            border: none;
+            padding: 0 1;
+        }
+        
+        ParameterRow Input.-text-input:hover {
+            background: $surface;
+            border: tall $primary-darken-2;
+        }
+        
+        ParameterRow Input.-text-input:focus {
+            background: $surface-lighten-1;
+            color: $text;
+            border: tall $primary;
+        }
+
+        ParameterRow Input.-text-input.-invalid {
+            background: $error-darken-2;
+            color: $text-error;
+            border: tall $error;
+        }
+
+        ParameterRow Input.-text-input:disabled {
+            background: $surface-darken-2;
+            color: $text-disabled;
+        }
+        
+        Input {
+            background: $surface-darken-1;
+            color: $text;
+        }
+
+        ParameterRow.-selected > Input {
+            background: $primary-muted;
+            color: $text-primary;
+        }
     """
 
     is_selected = reactive(False)
@@ -107,6 +133,10 @@ class ParameterRow(Horizontal):
         input_widget = Input(value=self._original_value, id=f"input_{self.name}")
         input_widget.can_focus = True
         yield input_widget
+
+
+    def watch_is_selected(self, selected: bool) -> None:
+        self.set_class(selected, "-selected")
 
     def on_focus(self, event: Focus) -> None:
         logger.info(f"ParameterRow.on_focus: {self.name}")
@@ -165,10 +195,10 @@ class ParameterRow(Horizontal):
         input_widget = self.query_one(Input)
         input_widget.value = str(new_value)
 
-    def watch_is_selected(self, selected: bool) -> None:
-        input_widget = self.query_one(Input)
-        input_widget.styles.background = pal.PARAM_INPUT_SELECTED_BG if selected else pal.PARAM_INPUT_BG
-        input_widget.styles.color = pal.PARAM_INPUT_SELECTED_COLOR if selected else pal.PARAM_INPUT_COLOR
+    # def watch_is_selected(self, selected: bool) -> None:
+    #     input_widget = self.query_one(Input)
+    #     input_widget.styles.background = pal.PARAM_INPUT_SELECTED_BG if selected else pal.PARAM_INPUT_BG
+    #     input_widget.styles.color = pal.PARAM_INPUT_SELECTED_COLOR if selected else pal.PARAM_INPUT_COLOR
 
 class ParameterSet(Vertical):
     """A container for a node's parameters with title and parameter rows."""
