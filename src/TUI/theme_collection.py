@@ -1,5 +1,12 @@
 from textual.theme import Theme
 
+"""
+    Huge pile of semi-sorted color palettes for Text_Loom. 
+    Probably too many and in a weird organization. 
+    They're not saved with the file.
+    Which ever one is first in the list is the one that's loaded.
+"""
+
 def create_themes():
     return {
         "default_powder": Theme(
