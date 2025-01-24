@@ -32,22 +32,32 @@ command_exists() {
     command -v "$1" >/dev/null 2>&1
 }
 
+check_python_version() {
+    PYTHON_VERSION=$(python3 -c 'import sys; ver = sys.version_info; print(f"{ver.major}.{ver.minor}")')
+    MAJOR=$(echo $PYTHON_VERSION | cut -d. -f1)
+    MINOR=$(echo $PYTHON_VERSION | cut -d. -f2)
+    
+    if [ "$MAJOR" -lt 3 ] || ([ "$MAJOR" -eq 3 ] && [ "$MINOR" -lt 8 ]); then
+        log "Error: Python 3.8 or higher is required. Current version: $PYTHON_VERSION"
+        exit 1
+    fi
+    log "Python version $PYTHON_VERSION OK"
+}
+
 check_prerequisites() {
     log "Checking prerequisites..."
+    
     if ! command_exists git; then
         log "Error: git is not installed. Please install git and try again."
         exit 1
     fi
+    
     if ! command_exists python3; then
         log "Error: python3 is not installed. Please install python3 and try again."
         exit 1
     fi
     
-    PYTHON_VERSION=$(python3 -c 'import sys; print(".".join(map(str, sys.version_info[:2])))')
-    if (( $(echo "$PYTHON_VERSION < 3.8" | bc -l) )); then
-        log "Error: Python 3.8 or higher is required. Current version: $PYTHON_VERSION"
-        exit 1
-    fi
+    check_python_version
 }
 
 clone_repo() {

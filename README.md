@@ -33,21 +33,25 @@ Text Loom is a fun little workspace to create networks to manage queries and bui
 
 ## :rocket: Start (automagically)
 
-<code>curl -fsSL https://raw.githubusercontent.com/kleer001/Text_Loom/master/install.sh | bash ; cd cuesubplot </code>
+<code>curl -fsSL https://raw.githubusercontent.com/kleer001/Text_Loom/master/install.sh | bash ; cd Text_Loom </code>
  
 
 ## :sparkles: Start (manual) 
-* Make sure you have **git** installed (and **python3**, at least 3.8)
-* **Copy** the repo  
-<code>git clone https://github.com/kleer001/Text_Loom ; cd Text_Loom </code>
-* **Create** a local venv
-* <code> python3 -m venv venv </code>
-* **Activate** it
-* <code> source venv/bin/activate </code>
-* **Install** the dependencies  
-<code> pip install textual </code>
+* Make sure you have **git** installed and **python3** (version 3.8 or higher)
+* **Clone** the repository  
+<code>git clone https://github.com/kleer001/Text_Loom ; cd Text_Loom</code>
+* **Create** a local venv  
+<code>python3 -m venv .venv</code>
+* **Activate** it and set PYTHONPATH  
+<code>source .venv/bin/activate ; export PYTHONPATH=\$PYTHONPATH:$(pwd)/src</code>
+* **Install** in development mode  
+<code>pip install -e .</code>
 * **Run** the program  
-<code> python3 src/TUI/tui_skeleon.py</code>
+<code>python3 src/TUI/tui_skeleton.py</code>
+
+Note for Windows users:  
+<code>Replace  **source .venv/bin/activate** with **.venv\Scripts\activate**  
+and **export PYTHONPATH=\$PYTHONPATH:$(pwd)/src** with **set PYTHONPATH=%PYTHONPATH%;%cd%\src**</code>
 
 
 
