@@ -6,6 +6,10 @@
 *.mp4
 *.cast
 
+#except for this one: 
+#But keep requirements.txt
+!requirements.txt
+
 # Default from github, thanks y'all
 # Byte-compiled / optimized / DLL files
 __pycache__/
