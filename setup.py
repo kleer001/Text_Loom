@@ -24,11 +24,6 @@ setup(
         "Programming Language :: Python :: 3.8",
     ],
     python_requires=">=3.8",
-    entry_points={
-        "console_scripts": [
-            "text-loom=TUI.tui_skeleton:main",
-        ],
-    },
     include_package_data=True,
     package_data={
         "TUI": ["themes/*"],
