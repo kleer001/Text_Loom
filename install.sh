@@ -91,10 +91,12 @@ create_launcher() {
     INSTALL_DIR="$SCRIPT_DIR/Text_Loom"
     cat > "$INSTALL_DIR/text-loom" << EOL
 #!/bin/bash
+echo "=== Text_Loom Launcher ==="
 SCRIPT_PATH="\$(cd "\$(dirname "\${BASH_SOURCE[0]}")" && pwd)"
 INSTALL_DIR="\${SCRIPT_PATH}"
-echo $SCRIPT_PATH
-echo $INSTALL_DIR
+echo "Install directory: \$INSTALL_DIR"
+
+echo "Activating virtual environment..."
 source "\$INSTALL_DIR/.venv/bin/activate"
 
 if [ -z "\$PYTHONPATH" ]; then
@@ -104,8 +106,17 @@ else
     CLEAN_PYTHONPATH=\$(echo "\$PYTHONPATH" | tr ':' '\n' | grep -v '^$' | tr '\n' ':' | sed 's/:$//')
     export PYTHONPATH="\$INSTALL_DIR/src:\$CLEAN_PYTHONPATH"
 fi
+echo "PYTHONPATH: \$PYTHONPATH"
 
-python3 "\$INSTALL_DIR/src/TUI/tui_skeleton.py" "\$@"
+echo "Changing to src directory..."
+cd "\$INSTALL_DIR/src" || {
+    echo "Error: Could not change to src directory"
+    exit 1
+}
+echo "Current directory: \$(pwd)"
+
+echo "Starting Text_Loom..."
+python3 TUI/tui_skeleton.py "\$@"
 EOL
     chmod +x "$INSTALL_DIR/text-loom"
     log "Launcher created at: $INSTALL_DIR/text-loom"
