@@ -88,17 +88,26 @@ setup_venv() {
 
 create_launcher() {
     log "Creating text-loom launcher..."
-    INSTALL_DIR="$SCRIPT_DIR/Text_Loom"
     cat > "$SCRIPT_DIR/text-loom" << EOL
 #!/bin/bash
 SCRIPT_PATH="\$(cd "\$(dirname "\${BASH_SOURCE[0]}")" && pwd)"
 INSTALL_DIR="\${SCRIPT_PATH}/Text_Loom"
+
 source "\$INSTALL_DIR/.venv/bin/activate"
-export PYTHONPATH="\$INSTALL_DIR/src:\$PYTHONPATH"
+
+if [ -z "\$PYTHONPATH" ]; then
+    export PYTHONPATH="\$INSTALL_DIR/src"
+else
+    # Remove any empty elements from PYTHONPATH
+    CLEAN_PYTHONPATH=\$(echo "\$PYTHONPATH" | tr ':' '\n' | grep -v '^$' | tr '\n' ':' | sed 's/:$//')
+    export PYTHONPATH="\$INSTALL_DIR/src:\$CLEAN_PYTHONPATH"
+fi
+
 python3 "\$INSTALL_DIR/src/TUI/tui_skeleton.py" "\$@"
 EOL
     chmod +x "$SCRIPT_DIR/text-loom"
 }
+
 main() {
     setup_logging
     trap cleanup EXIT
