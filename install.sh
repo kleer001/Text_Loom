@@ -88,11 +88,13 @@ setup_venv() {
 
 create_launcher() {
     log "Creating text-loom launcher..."
-    cat > "$SCRIPT_DIR/text-loom" << EOL
+    INSTALL_DIR="$SCRIPT_DIR/Text_Loom"
+    cat > "$INSTALL_DIR/text-loom" << EOL
 #!/bin/bash
 SCRIPT_PATH="\$(cd "\$(dirname "\${BASH_SOURCE[0]}")" && pwd)"
-INSTALL_DIR="\${SCRIPT_PATH}/Text_Loom"
-
+INSTALL_DIR="\${SCRIPT_PATH}"
+echo $SCRIPT_PATH
+echo $INSTALL_DIR
 source "\$INSTALL_DIR/.venv/bin/activate"
 
 if [ -z "\$PYTHONPATH" ]; then
@@ -105,7 +107,8 @@ fi
 
 python3 "\$INSTALL_DIR/src/TUI/tui_skeleton.py" "\$@"
 EOL
-    chmod +x "$SCRIPT_DIR/text-loom"
+    chmod +x "$INSTALL_DIR/text-loom"
+    log "Launcher created at: $INSTALL_DIR/text-loom"
 }
 
 main() {
