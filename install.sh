@@ -1,5 +1,10 @@
 #!/bin/bash
 
+CYAN='\033[1;36m'    
+MAGENTA='\033[1;35m' 
+BOLD='\033[1m'       
+NC='\033[0m'         
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LOG_DIR="$SCRIPT_DIR/logs"
 LOG_FILE=""
@@ -132,11 +137,11 @@ main() {
     create_launcher
     
     log "Installation complete!"
-    log "IF YOU WANT TO USE THE QUERY NODE THEN..." 
-    log "PLEASE MAKE SURE YOUR LLM IS SETUP CORRECTLY!"
-    log " - - - - - - - - - - - - - - - - - - - - "
-    log "You can now run Text_Loom by executing:"
-    log "  $SCRIPT_DIR/text-loom"
+    echo -e "${MAGENTA}IF YOU WANT TO USE THE QUERY NODE THEN...${NC}"
+    echo -e "${MAGENTA}PLEASE MAKE SURE YOUR LLM IS SETUP CORRECTLY!${NC}"
+    echo -e "${BOLD} - - - - - - - - - - - - - - - - - - - -${NC}"
+    echo -e "${CYAN}You can now run Text_Loom by executing:${NC}"
+    echo -e "${CYAN}  ./text-loom${NC}"
     trap - EXIT
 }
 
