@@ -48,15 +48,16 @@ class NodeTypeSelector(ModalScreen):
     """
 
     HOTKEYS = {
-        'n': 'FILE_IN',
+        'c': 'SECTION',
         'o': 'FILE_OUT',
-        'l': 'LOOPER',
-        'M': 'MAKE_LIST',
+        'n': 'FILE_IN',
+        'q': 'QUERY',
+        'u': 'NULL',
         'e': 'MERGE',
         's': 'SPLIT',
-        'u': 'NULL',
-        'q': 'QUERY',
-        't': 'TEXT'
+        't': 'TEXT',
+        'M': 'MAKE_LIST',
+        'l': 'LOOPER'
     }
 
     BINDINGS = [
@@ -75,9 +76,10 @@ class NodeTypeSelector(ModalScreen):
 
     def compose(self):
         with Vertical():
-            type_list = sorted(self.node_types.keys())
-            type_list.remove('INPUT_NULL')
-            type_list.remove('OUTPUT_NULL')
+            #type_list = sorted(self.node_types.keys())
+            type_list = list(self.HOTKEYS.values())
+            #type_list.remove('INPUT_NULL')
+            #type_list.remove('OUTPUT_NULL')
             logger.debug(f"Available node types: {type_list}")
             
             options = []
