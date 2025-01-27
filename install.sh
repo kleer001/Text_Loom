@@ -66,28 +66,39 @@ clone_repo() {
     cd "$SCRIPT_DIR/Text_Loom" || exit 1
 }
 
+
+
 setup_venv() {
     log "Setting up virtual environment..."
+    cd "$SCRIPT_DIR/Text_Loom" || {
+        log "Error: Could not change to Text_Loom directory"
+        exit 1
+    }
     python3 -m venv .venv
     source .venv/bin/activate
     pip install --upgrade pip
     log "Installing requirements..."
+    if [ ! -f requirements.txt ]; then
+        log "Error: requirements.txt not found in $(pwd)"
+        exit 1
+    fi
     pip install -r requirements.txt
     pip install -e .
 }
 
 create_launcher() {
     log "Creating text-loom launcher..."
+    INSTALL_DIR="$SCRIPT_DIR/Text_Loom"
     cat > "$SCRIPT_DIR/text-loom" << EOL
 #!/bin/bash
-INSTALL_DIR="$SCRIPT_DIR/Text_Loom"
+SCRIPT_PATH="\$(cd "\$(dirname "\${BASH_SOURCE[0]}")" && pwd)"
+INSTALL_DIR="\${SCRIPT_PATH}/Text_Loom"
 source "\$INSTALL_DIR/.venv/bin/activate"
 export PYTHONPATH="\$INSTALL_DIR/src:\$PYTHONPATH"
 python3 "\$INSTALL_DIR/src/TUI/tui_skeleton.py" "\$@"
 EOL
     chmod +x "$SCRIPT_DIR/text-loom"
 }
-
 main() {
     setup_logging
     trap cleanup EXIT

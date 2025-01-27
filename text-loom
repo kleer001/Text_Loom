@@ -1,5 +1,0 @@
-#!/bin/bash
-INSTALL_DIR="/home/menser/Dropbox/ai/code/Text_Loom/Text_Loom"
-source "$INSTALL_DIR/.venv/bin/activate"
-export PYTHONPATH="$INSTALL_DIR/src:$PYTHONPATH"
-python3 "$INSTALL_DIR/src/TUI/tui_skeleton.py" "$@"
