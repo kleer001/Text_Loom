@@ -1,7 +1,7 @@
 {
   "software": "Text Loom",
   "version": 0.01,
-  "timestamp": "2025-01-27T15:35:40.823822",
+  "timestamp": "2025-01-28T11:48:51.736340",
   "nodes": {
     "/text_1": {
       "_node_type": "text",
@@ -14,7 +14,7 @@
           "_type": "string",
           "_node": "/text_1",
           "_script_callback": "",
-          "_value": "Random Text"
+          "_value": "Please list 5 European countries."
         },
         "pass_through": {
           "_name": "pass_through",
@@ -39,6 +39,197 @@
         }
       },
       "_connections": []
+    },
+    "/query_1": {
+      "_node_type": "query",
+      "_path": "/query_1",
+      "_name": "query_1",
+      "_is_internal": false,
+      "_parms": {
+        "limit": {
+          "_name": "limit",
+          "_type": "toggle",
+          "_node": "/query_1",
+          "_script_callback": "",
+          "_value": false
+        },
+        "response": {
+          "_name": "response",
+          "_type": "stringList",
+          "_node": "/query_1",
+          "_script_callback": "",
+          "_value": [
+            "Here are 5 European countries:\n\n1. France\n2. Germany\n3. Italy\n4. Spain\n5. Sweden"
+          ]
+        },
+        "llm_name": {
+          "_name": "llm_name",
+          "_type": "string",
+          "_node": "/query_1",
+          "_script_callback": "",
+          "_value": "Ollama"
+        },
+        "find_llm": {
+          "_name": "find_llm",
+          "_type": "button",
+          "_node": "/query_1",
+          "_script_callback": null,
+          "_value": ""
+        },
+        "respond": {
+          "_name": "respond",
+          "_type": "button",
+          "_node": "/query_1",
+          "_script_callback": null,
+          "_value": ""
+        }
+      },
+      "_connections": [
+        {
+          "input_index": 0,
+          "output_node_path": "/text_1",
+          "input_node_path": "/query_1",
+          "output_index": 0
+        }
+      ]
+    },
+    "/text_2": {
+      "_node_type": "text",
+      "_path": "/text_2",
+      "_name": "text_2",
+      "_is_internal": false,
+      "_parms": {
+        "text_string": {
+          "_name": "text_string",
+          "_type": "string",
+          "_node": "/text_2",
+          "_script_callback": "",
+          "_value": "What is the capital of "
+        },
+        "pass_through": {
+          "_name": "pass_through",
+          "_type": "toggle",
+          "_node": "/text_2",
+          "_script_callback": "",
+          "_value": true
+        },
+        "per_item": {
+          "_name": "per_item",
+          "_type": "toggle",
+          "_node": "/text_2",
+          "_script_callback": "",
+          "_value": true
+        },
+        "prefix": {
+          "_name": "prefix",
+          "_type": "toggle",
+          "_node": "/text_2",
+          "_script_callback": "",
+          "_value": true
+        }
+      },
+      "_connections": [
+        {
+          "input_index": 0,
+          "output_node_path": "/make_list_1",
+          "input_node_path": "/text_2",
+          "output_index": 0
+        }
+      ]
+    },
+    "/make_list_1": {
+      "_node_type": "make_list",
+      "_path": "/make_list_1",
+      "_name": "make_list_1",
+      "_is_internal": false,
+      "_parms": {
+        "limit": {
+          "_name": "limit",
+          "_type": "toggle",
+          "_node": "/make_list_1",
+          "_script_callback": "",
+          "_value": false
+        },
+        "max_list": {
+          "_name": "max_list",
+          "_type": "int",
+          "_node": "/make_list_1",
+          "_script_callback": "",
+          "_value": 5
+        },
+        "refresh": {
+          "_name": "refresh",
+          "_type": "button",
+          "_node": "/make_list_1",
+          "_script_callback": null,
+          "_value": ""
+        }
+      },
+      "_connections": [
+        {
+          "input_index": 0,
+          "output_node_path": "/query_1",
+          "input_node_path": "/make_list_1",
+          "output_index": 0
+        }
+      ]
+    },
+    "/query_2": {
+      "_node_type": "query",
+      "_path": "/query_2",
+      "_name": "query_2",
+      "_is_internal": false,
+      "_parms": {
+        "limit": {
+          "_name": "limit",
+          "_type": "toggle",
+          "_node": "/query_2",
+          "_script_callback": "",
+          "_value": false
+        },
+        "response": {
+          "_name": "response",
+          "_type": "stringList",
+          "_node": "/query_2",
+          "_script_callback": "",
+          "_value": [
+            "France!\n\nKnown as the land of love, art, fashion, and cuisine, France is a country that exudes elegance and sophistication. Here are some interesting facts about France:\n\n1. **Capital City:** The capital city is Paris (population: approximately 2.2 million), also known as the City of Light.\n2. **Language:** The official language is French, but many people speak English, especially in tourist areas.\n3. **Cuisine:** French cuisine is renowned for its sophistication and elegance. Famous dishes include escargots, ratatouille, croissants, baguettes, cheese, and wine (of course!).\n4. **Wine:** France is famous for its wine production, with regions like Bordeaux, Burgundy, Champagne, and Alsace producing some of the world's best wines.\n5. **Art and Culture:** France has a rich cultural heritage, with famous artists like Claude Monet, Pierre-Auguste Renoir, and Henri Matisse having hailed from there.\n6. **Fashion:** Paris is considered the fashion capital of the world, with top designers like Chanel, Dior, and Yves Saint Laurent calling it home.\n7. **History:** France has a complex history, with significant events including the French Revolution (1789-1799), Napoleon Bonaparte's rule (1804-1815), and World War I and II.\n8. **Landmarks:** The Eiffel Tower (Paris), Notre-Dame Cathedral (Paris), the Louvre Museum (Paris), Mont Saint-Michel (Normandy), and the Palace of Versailles (\u00cele-de-France) are just a few of the many iconic landmarks in France.\n9. **Regions:** France is divided into 13 regions, including \u00cele-de-France (where Paris is located), Normandy, Brittany, Provence, and more.\n10. **Population:** The population of France is approximately 67 million people.\n\nSome popular destinations in France include:\n\n1. Paris: Explore the City of Light's famous landmarks, museums, and art galleries.\n2. The French Riviera (C\u00f4te d'Azur): Enjoy the stunning beaches and luxury resorts along the Mediterranean coast.\n3. Bordeaux: Visit the famous wine region and sample some of the world's best wines.\n4. Normandy: Explore the D-Day beaches and historical sites from World War II.\n5. Provence: Discover the charming villages, lavender fields, and sun-kissed landscapes of this picturesque region.\n\nThere are many reasons to love France \u2013 its rich history, stunning landscapes, vibrant culture, and delicious cuisine make it a popular destination for travelers and locals alike!",
+            "Germany!\n\nHere are some interesting facts and tidbits about Germany:\n\n**Capital:** Berlin\n**Population:** approximately 83 million people\n**Language:** German (official), but many Germans also speak English as a second language\n**Currency:** Euro\n**Government:** Federal parliamentary republic\n**Major cities:**\n\n1. Berlin - capital city, known for its rich history and cultural attractions like the Berlin Wall Memorial and Museum Island.\n2. Munich - largest city in Bavaria, famous for Oktoberfest celebrations and its picturesque old town.\n3. Hamburg - major port city and economic hub, with a vibrant music scene and nightlife.\n4. Cologne - cultural and trade center, known for its stunning cathedral (K\u00f6lner Dom) and festive atmosphere.\n\n**Culture:**\n\n1. Beer culture: Germany is famous for its beer festivals (Oktoberfest), brews over 5,000 types of beer, and has a strong brewing tradition.\n2. Christmas markets: Germans love their Christmas markets (Weihnachtsmarkt), which offer traditional food, drinks, and festive atmosphere during the holiday season.\n3. Cuisine: Think sausages (Bratwurst), schnitzel, Black Forest cake, and hearty meat dishes like Sauerbraten and Rouladen.\n\n**History:**\n\n1. Nazi Germany: The country has a complex history with the Nazi regime (1933-1945), which led to World War II and the Holocaust.\n2. Cold War era: Germany was divided into East Germany (GDR) and West Germany (FRG) during the Cold War, with Berlin as the divided city.\n3. Reunification: In 1990, East Germany merged with West Germany, marking the end of the division.\n\n**Economy:**\n\n1. Strong economy: Germany has a robust economy, with major industries like automotive manufacturing (Mercedes-Benz, BMW), chemicals, and machinery.\n2. Exports: Germany is one of the world's largest exporters, with major markets in Europe, Asia, and the Americas.\n3. High-tech sector: Germany is home to many innovative companies in areas like software development, robotics, and renewable energy.\n\n**Education:**\n\n1. Excellent education system: Germany has a well-regarded education system, with universities like Heidelberg, T\u00fcbingen, and Freiburg ranking highly globally.\n2. Apprenticeships: Many Germans learn a trade through apprenticeships (Dual Learning), combining theoretical knowledge with hands-on experience.\n\nThese are just a few of the many interesting aspects about Germany. Whether you're interested in history, culture, economy, or education, there's something for everyone in this fascinating country!",
+            "Italy!\n\nKnown for its rich history, art, architecture, delicious food, and stunning landscapes, Italy is a country that has something to offer for everyone. Here are some of the top attractions and experiences you can have in Italy:\n\n**Must-see cities:**\n\n1. Rome - The Eternal City, home to the Colosseum, Roman Forum, and Pantheon.\n2. Florence - The birthplace of the Renaissance, with iconic landmarks like the Duomo and Ponte Vecchio.\n3. Venice - A city built on water, famous for its canals, St. Mark's Square, and gondola rides.\n4. Milan - Fashion capital, home to the famous Duomo and Galleria Vittorio Emanuele II.\n\n**Natural wonders:**\n\n1. Amalfi Coast - A stunning coastline with picturesque towns like Positano and Amalfi.\n2. Lake Como - A beautiful lake in the north, perfect for boat rides and hiking.\n3. Cinque Terre - Five colorful coastal towns connected by hiking trails and scenic views.\n4. Dolomites - A mountain range with breathtaking scenery, popular for skiing and hiking.\n\n**Food and drink:**\n\n1. Pizza - Try authentic Neapolitan-style pizza in Naples or Rome.\n2. Pasta - Indulge in a variety of pasta dishes, like spaghetti carbonara or fettuccine Alfredo.\n3. Gelato - Enjoy delicious Italian ice cream in flavors like hazelnut, pistachio, and stracciatella.\n4. Wine - Explore Italy's famous wine regions, such as Tuscany, Piedmont, and Veneto.\n\n**Cultural experiences:**\n\n1. Opera - Attend a performance at La Scala in Milan or the Teatro alla Scala in Rome.\n2. Museums - Visit world-class museums like the Uffizi Gallery in Florence or the Vatican Museums in Rome.\n3. Festivals - Enjoy festivals like Carnevale di Venezia, Festa dei Noantri, and Opera Festival.\n4. Cooking classes - Learn traditional Italian cooking techniques and recipes.\n\n**History and architecture:**\n\n1. Roman ruins - Explore ancient Roman sites like Pompeii, Herculaneum, and Ostia Antica.\n2. Castles - Visit famous castles like the Castello Sforzesco in Milan or the Castel del Monte in Puglia.\n3. Cathedrals - Marvel at stunning cathedrals like the Duomo di Milano or the Cathedral of Santa Maria Assunta in Siena.\n4. Medieval towns - Wander through charming medieval towns like San Gimignano, Volterra, and Cortina d'Ampezzo.\n\nThese are just a few examples of what Italy has to offer. With its rich history, stunning landscapes, delicious food, and vibrant culture, you're sure to have an unforgettable experience in this beautiful country!",
+            "Spain!\n\nLocated in southwestern Europe, Spain is a country with a rich history, culture, and natural beauty. Here are some interesting facts about Spain:\n\n** Geography **\n\n* Spain is the second-largest country in the European Union by land area.\n* It has a diverse geography, including mountains (Pyrenees), deserts (Tabernas), coastlines along the Atlantic Ocean, Mediterranean Sea, and the Gulf of Cadiz.\n* The country has a number of islands, including the Balearic Islands (Ibiza, Mallorca, Menorca) and the Canary Islands.\n\n** Culture **\n\n* Spain has a vibrant culture, with a strong emphasis on art, architecture, music, dance, and cuisine.\n* The country is home to many UNESCO World Heritage Sites, including the Alhambra palace in Granada, the Sagrada Familia cathedral in Barcelona, and the city of Toledo.\n* Spanish is the official language, but Catalan, Basque, and Galician are also recognized as national languages.\n\n** History **\n\n* Spain has a complex history, with various civilizations having left their mark on the country. The Romans, Visigoths, Moors, and Christian kingdoms all played significant roles in shaping Spanish culture and architecture.\n* The Reconquista period saw the reconquest of the Iberian Peninsula from Moorish rule, leading to the establishment of the Kingdom of Spain.\n\n** Economy **\n\n* Spain has a developed economy, with a strong service sector and a growing industrial sector.\n* The country is a member of the European Union and the Eurozone, making it part of the single currency zone.\n\n** Tourism **\n\n* Spain is a popular tourist destination, attracting millions of visitors each year.\n* The country is home to many famous landmarks, including the Alhambra, the Royal Palace in Madrid, and the Camino de Santiago pilgrimage route.\n* Beach destinations like Costa Brava, Costa del Sol, and the Balearic Islands are also popular among tourists.\n\n** Cuisine **\n\n* Spanish cuisine is known for its rich flavors, aromas, and textures. Popular dishes include paella, tortilla espa\u00f1ola, gazpacho, jam\u00f3n ib\u00e9rico, and seafood stews.\n* Wine production is a significant industry in Spain, with regions like Rioja, Jerez, and Priorat producing well-known varieties.\n\n** Fun Facts **\n\n* The Tomatina festival in Bu\u00f1ol is one of the most famous festivals in the world, where participants throw tomatoes at each other!\n* Spain has the highest number of UNESCO World Heritage Sites (49) after Italy.\n* The country is home to a wide range of wildlife, including ibex, bears, and wolves.\n\nThis is just a brief introduction to Spain! Is there something specific you'd like to know or explore further?",
+            "Sweden!\n\nHere are some interesting facts and tidbits about Sweden:\n\n1. **Land of lakes**: Sweden has over 95,000 lakes, which is more than any other country in Europe.\n2. **Design capital**: Stockholm, the capital city, is often referred to as the \"Capital of Design\" due to its vibrant design scene, including furniture, fashion, and architecture.\n3. **Midsummer magic**: The Swedish midsummer festival (Midsommar) on June 24th is a beloved national holiday, celebrated with singing, dancing, and feasting under the midnight sun.\n4. **Viking heritage**: Sweden has a rich Viking history, with archaeological findings like the iconic Viking ship Oseberg in Oslo, Norway.\n5. **Innovation hub**: Stockholm is home to many startups and innovation centers, earning it the nickname \"Silicon Valley of Europe.\"\n6. **Meatball mania**: Swedish meatballs (K\u00f6ttbullar) are a staple dish, often served with potatoes, lingonberry jam, and cream sauce.\n7. **Fika culture**: Swedes have a unique coffee break tradition called Fika, which involves taking time to relax, socialize, and enjoy a cup of coffee or tea.\n8. **Nature lover's paradise**: Sweden is home to stunning natural landscapes, including the Abisko National Park, Lapland, and the scenic West Coast islands.\n9. **Education excellence**: Sweden has an excellent education system, with free public schools and universities, and a strong emphasis on literacy and numeracy.\n10. **Social welfare**: Sweden is known for its comprehensive social welfare system, which includes universal healthcare, unemployment insurance, and parental leave policies.\n\nSome popular Swedish traditions and customs include:\n\n* Celebrating Lucia (St. Lucy's Day) on December 13th\n* Enjoying traditional folk music and dance, such as polska and hambo\n* Participating in the annual Nobel Prize ceremonies in Stockholm\n* Observing the quiet reverence of All Saints' Eve (Alla Helgons Dag)\n\nSweden is a wonderful country with a unique blend of modernity, tradition, and natural beauty."
+          ]
+        },
+        "llm_name": {
+          "_name": "llm_name",
+          "_type": "string",
+          "_node": "/query_2",
+          "_script_callback": "",
+          "_value": "Ollama"
+        },
+        "find_llm": {
+          "_name": "find_llm",
+          "_type": "button",
+          "_node": "/query_2",
+          "_script_callback": null,
+          "_value": ""
+        },
+        "respond": {
+          "_name": "respond",
+          "_type": "button",
+          "_node": "/query_2",
+          "_script_callback": null,
+          "_value": ""
+        }
+      },
+      "_connections": [
+        {
+          "input_index": 0,
+          "output_node_path": "/text_2",
+          "input_node_path": "/query_2",
+          "output_index": 0
+        }
+      ]
     }
   },
   "globals": {

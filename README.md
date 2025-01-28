@@ -1,9 +1,14 @@
+<!-- <p align="center">
+  <img src="images/TL_logo.png" alt="Leaderloop GIF">
+</p> -->
+
 # ***Text Loom:*** :thread: :pencil:
-# **The unlimited power to procedurally create your text!**
+# **Procedurally create your text!**
 
 ## :speech_balloon: What? 
-Text Loom is a new way to work with LLMs. Batch processing!  
-Text Loom is a fun little workspace to create networks to manage queries and build on them in a way that is stable and  **reliable**. All from the comfort of your terminal!
+Text Loom is a fun new way to work with LLMs. Batch processing!  
+Text Loom is a workspace for creating networks that manage queries and build on them.  
+All from the comfort of your terminal!
 
 
 # :bulb: Why?
@@ -76,3 +81,5 @@ and **export PYTHONPATH=\$PYTHONPATH:$(pwd)/src** with **set PYTHONPATH=%PYTHONP
 
 ## :walking: GUI WALK THROUGH 
 ### :eyes: MAIN WINDOW 
+
+<img src="images/leaderloop_trim_4.gif" alt="Demo of MakeList functionality GIF">
