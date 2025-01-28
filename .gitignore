@@ -7,8 +7,9 @@
 *.cast
 
 #except for this one: 
-#But keep requirements.txt
+#But keep requirements.txt and the rest
 !requirements.txt
+!images/*.gif
 
 # Default from github, thanks y'all
 # Byte-compiled / optimized / DLL files
