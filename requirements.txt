@@ -1,3 +1,2 @@
 textual>=0.52.1
-bandit>=1.7.5
 

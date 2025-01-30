@@ -1,6 +1,4 @@
 import ast
-import bandit
-from bandit.core import manager
 from typing import Dict, Tuple, Union, Any
 import re
 import operator

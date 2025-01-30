@@ -13,7 +13,6 @@ setup(
     packages=find_packages(where="src"),
     install_requires=[
         "textual>=0.52.1",
-        "bandit>=1.7.5",
     ],
     classifiers=[
         "Development Status :: 3 - Alpha",
