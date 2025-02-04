@@ -67,7 +67,7 @@ class GlobalWindow(Container):
     def on_mount(self):
         self.table.add_column(" ", key="key")
         self.table.add_column(" ", key="value")
-        self.border_title = "Globals"
+        self.border_title = "[b]G[/]lobals"
         self.refresh_table()
 
     def refresh_table(self):

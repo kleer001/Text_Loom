@@ -415,7 +415,7 @@ class NodeWindow(ScrollableContainer):
     def on_mount(self) -> None:
         logger.debug("NodeWindow mounted")
         self._init_empty_network() #uncomment for forced load
-        self.border_title = "Node Network"
+        self.border_title = "[b]N[/]ode Network"
 
     def _init_empty_network(self) -> None: 
         logger.debug("Initializing empty network")

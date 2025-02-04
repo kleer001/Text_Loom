@@ -352,7 +352,7 @@ class ParameterWindow(ScrollableContainer):
     def on_mount(self) -> None:
         self.stack = self.query_one("#parameter_stack")
         logger.info("Parameter window mounted")
-        self.border_title = "Parameter"
+        self.border_title = "P[b]a[/]rameter"
 
     def on_focus(self) -> None:
         logger.debug(f"ParameterWindow gained focus (is_editing: {self.is_editing}, has_focus: {self.has_focus})")
