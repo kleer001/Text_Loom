@@ -508,17 +508,18 @@ class NodeWindow(ScrollableContainer):
                 # Add segments with appropriate styling
                 segments.append((line_info['indent'], ""))
                 segments.append((node_text, style))  # Node name with potential reverse highlight
-                
-                if line_info['input_nodes']:
-                    segments.append((" < ", ARROW_STYLE))  # Arrow
-                    input_names = [n.name() for n in line_info['input_nodes']]
-                    segments.append((", ".join(input_names), INPUT_STYLE))  # Input nodes
-                
+
                 if line_info['output_nodes']:
                     segments.append((" > (", ARROW_STYLE))  # Arrow
                     output_names = [n.name() for n in line_info['output_nodes']]
                     segments.append((", ".join(output_names), OUTPUT_STYLE))  # Output nodes
                     segments.append((")", ARROW_STYLE))
+
+                if line_info['input_nodes']:
+                    segments.append((" < ", ARROW_STYLE))  # Arrow
+                    input_names = [n.name() for n in line_info['input_nodes']]
+                    segments.append((", ".join(input_names), INPUT_STYLE))  # Input nodes
+                
 
                 # Add all segments to rendered text
                 for text, segment_style in segments:
