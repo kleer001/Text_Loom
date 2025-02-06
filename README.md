@@ -2,7 +2,7 @@
   <img src="images/TL_logo.png" alt="Leaderloop GIF">
 </p> -->
 
-# <p style="text-align: center;">  ***Text Loom:*** :thread: :pencil: <p>
+# <p style="text-align: center;">  ***Text Loom:***:pencil::thread:  <p>
 
 
 ## :speech_balloon: What? 
