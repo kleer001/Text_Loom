@@ -2,8 +2,8 @@
   <img src="images/TL_logo.png" alt="Leaderloop GIF">
 </p> -->
 
-# ***Text Loom:*** :thread: :pencil:
-# **Procedurally create your text!**
+# <p style="text-align: center;">  ***Text Loom:*** :thread: :pencil: <p>
+
 
 ## :speech_balloon: What? 
 Text Loom is a fun workspace for creating networks that manage queries and build on them.  
@@ -16,13 +16,13 @@ The Text Loom philosophy, it's backend, is all about **text**.
 *Specifically* **lists of text.**  
 
 ## Nodes pass text to each other:  
-* One node creates text **(Text)**
-* Some nodes read and write text files. **(FileIn & FileOut)**
-* Some nodes create lists **(Section, Split, & MakeList)**
-* One node combines lists **(Merge)**
-* One node talks to an LLM **(Query)**
-* One node can contain other nodes and iterate over them in loops **(Looper)**
-* And one node does nothing at all except pass the text along **(Null)**
+* One node creates text: **([Text](https://github.com/kleer001/Text_Loom/wiki/Text-Node))**
+* Some nodes read and write text files: **([FileIn](https://github.com/kleer001/Text_Loom/wiki/FileIn-Node), [FileOut](https://github.com/kleer001/Text_Loom/wiki/FileOut-Node))**
+* Some nodes create lists: **([Section](https://github.com/kleer001/Text_Loom/wiki/Section-Node), [Split](https://github.com/kleer001/Text_Loom/wiki/Split-Node),  [MakeList](https://github.com/kleer001/Text_Loom/wiki/MakeList-Node))**
+* One node combines lists: **([Merge](https://github.com/kleer001/Text_Loom/wiki/Merge-Node))**
+* One node talks to an LLM: **([Query](https://github.com/kleer001/Text_Loom/wiki/Query-Node))**
+* One node can contain other nodes and iterate over them in loops: **([Looper](https://github.com/kleer001/Text_Loom/wiki/Looper-Node))**
+* And one node does nothing at all except pass the text along: **([Null](https://github.com/kleer001/Text_Loom/wiki/Null-Node))**
 
 
 
@@ -32,6 +32,7 @@ The Text Loom philosophy, it's backend, is all about **text**.
  
 
 ## :sparkles: Start (manual) 
+<details>
 * Make sure you have **git** installed and **python3** (version 3.8 or higher)
 * **Clone** the repository  
 <code>git clone https://github.com/kleer001/Text_Loom ; cd Text_Loom</code>
@@ -47,11 +48,13 @@ The Text Loom philosophy, it's backend, is all about **text**.
 Note for Windows users:  
 <code>Replace  **source .venv/bin/activate** with **.venv\Scripts\activate**  
 and **export PYTHONPATH=\$PYTHONPATH:$(pwd)/src** with **set PYTHONPATH=%PYTHONPATH%;%cd%\src**</code>
-
+</details>
 
 
 ## :package: Currently supported LLMS platforms 
-*in  src/core/settings.cfg*  
+<details>
+  
+**in  src/core/settings.cfg**
 
 | LLM Platform | URL                                    | Endpoint                                     |
 |--------------|----------------------------------------|----------------------------------------------|
@@ -67,9 +70,27 @@ and **export PYTHONPATH=\$PYTHONPATH:$(pwd)/src** with **set PYTHONPATH=%PYTHONP
 | Gemini       | https://generativelanguage.googleapis.com | /v1/models/gemini-1.5-pro:generateContent   |
 
 * Please suggest more free local LLMs if you like. And feel free to change your local settings.cfg to fit your own purposes. The structure should be self-evident from the examples in it.  
-
+</details>
 
 ## :walking: GUI WALK THROUGH 
 ### :eyes: MAIN WINDOW 
 
-<img src="images/leaderloop_trim_4.gif" alt="Demo of MakeList functionality GIF">
+<img src="images/mainwin3_trim.gif" alt="Demo of MakeList functionality GIF">
+
+
+### Primary Workspace
+Each Primary window can be navigated to with the keycommand **CTRL+(n/a/g)** 
+- [**N**ode Network](#node-network) - Central workspace for creating and connecting nodes. Displays [node](https://github.com/kleer001/Text_Loom/wiki/Nodes,-nodes,-nodes) states, connections, and hierarchies using visual indicators.
+- [P**a**rameters](#parameters) - Center Top panel showing properties of selected nodes.
+- [**G**lobals](#globals) - Right Top panel. System-wide variables accessible across the network.
+
+### Execution and Output
+- **[Output Display](#output-display)** - Center bottom. Shows formatted results from node evaluations with clear item separation.
+- **[Status Window](#status-window)** - Right bottom. Real-time system message monitoring, capturing stdout and stderr streams.
+- **Help window** - Bottom. Shows the key commands available for the active window.
+- **Mode Line** - Gutter. Show the active window, current filename, last window switched to, and keypressed.
+
+---
+
+# Please see the extensive [wiki](https://github.com/kleer001/Text_Loom/wiki) for more detailed information.
+

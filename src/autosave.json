@@ -1,7 +1,7 @@
 {
   "software": "Text Loom",
   "version": 0.01,
-  "timestamp": "2025-01-28T11:48:51.736340",
+  "timestamp": "2025-02-06T14:35:20.122590",
   "nodes": {
     "/text_1": {
       "_node_type": "text",
@@ -233,6 +233,7 @@
     }
   },
   "globals": {
-    "FOO": "123"
+    "FOO": "123",
+    "TEST": "4321"
   }
 }
