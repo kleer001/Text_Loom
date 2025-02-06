@@ -48,8 +48,9 @@ The Null Node is a simple pass-through node that doesn't modify its input.
 It has a single input and can connect its output to multiple other nodes.
 ```
 
-3. LooperNode:
 ```
+3. LooperNode:
+
 LooperNode: A powerful node for iterative processing of data with configurable loop behavior.
 
 This node enables iterative operations by managing internal input and output connections, making it 
@@ -71,8 +72,8 @@ Parameters:
     data_limit (int): Maximum memory usage in bytes (default: 200MB)
 ```
 
-4. FileOutNode:
 ```
+4. FileOutNode:
 Write the given content to a text file. The function provides a refresh button to force the write.
 
 The hash check helps to determine whether the file needs to be written again. If the hash of the input content matches the previously recorded hash and `force_write` is False, the function will skip writing the file.
@@ -85,8 +86,8 @@ Parameters:
                         When False, preserves Python list format (e.g. ["item1", "item2"]) for round-trip processing.
 ```
 
-5. FileInNode:
 ```
+5. FileInNode:
 FileInNode: A node that reads and parses text files or input strings into lists.
 
 This node can either read from a file or take input text, parsing formatted string lists 
@@ -111,8 +112,8 @@ Features:
     - Supports force refresh via button
 ```
 
-6. TextNode:
 ```
+6. TextNode:
 A node that manipulates text strings with advanced list support.
 
 Takes a list of strings as input and either appends or prepends text based on the node's parameters.
@@ -138,8 +139,8 @@ per_item: When True, applies each text string to every input item
 prefix: When True, adds text before input. When False, adds after
 ```
 
-7. SplitNode:
 ```
+7. SplitNode:
 SplitNode: A versatile node for splitting lists of strings into two parts based on various expressions.
 
 This node takes a list of strings as input and splits it into two outputs: selected items and remaining items.
@@ -178,8 +179,8 @@ Outputs:
     Empty (output 2): Always empty list (reserved for future use)
 ```
 
+```
 8. SectionNode:
-"""
 A node that sections input text based on prefix matching patterns.
 
 Separates input text into three outputs based on two prefix patterns. 
@@ -245,11 +246,11 @@ Notes:
     - Empty outputs contain [""] rather than []
     - Wildcard patterns are converted to regex internally
     - Delimiter within prefix is treated as part of the prefix
-"""
+```
 
 
+```
 9. MakeListNode(Node):
-"""
 A node that takes a string list as input, parses the first item, and outputs a new string list.
 
 This node uses the parse_list function to split the input string into a list of strings.
@@ -320,4 +321,67 @@ Notes:
     - Subsequent lines without numbers are considered continuation of the previous item
     - The function preserves internal spacing but trims leading/trailing whitespace
     - Non-string inputs return an empty string rather than raising an error
-"""
+```
+
+```
+10. Merge Node: 
+
+
+# Merge Node
+
+A node that combines multiple input string lists into a single output list. Can combine inputs with optional formatting and indexing features.
+
+## Parameters
+
+### `single_string` (bool)
+When True, merges all input strings into a single-item list.
+
+### `insert_string` (str)
+String to insert before each list item. Use 'N' as a placeholder for the item's index number (starting at 1). Automatically wrapped with newline characters.
+
+### `use_insert` (bool)
+When True, adds the `insert_string` before each item during merge.
+
+## Features
+* Accepts unlimited input connections
+* Produces single output list
+* Optional index-based item labeling
+* Flexible input reordering
+* Maintains input string formatting
+
+## Usage Example
+
+### Basic Merge
+```text
+Input 1: ["Hello", "World"]
+Input 2: ["How", "Are", "You"]
+Input 3: ["Today?"]
+
+Output: ["Hello", "World", "How", "Are", "You", "Today?"]
+```
+
+### With Indexed Insertion
+```text
+Inputs: Same as above
+insert_string: "Section N:"
+use_insert: True
+
+Output: [
+    "Section 1: Hello",
+    "Section 2: World",
+    "Section 3: How",
+    "Section 4: Are",
+    "Section 5: You",
+    "Section 6: Today?"
+]
+```
+
+### Single String Mode
+```text
+Inputs: Same as above
+single_string: True
+
+Output: ["Hello World How Are You Today?"]
+```
+
+```

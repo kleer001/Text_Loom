@@ -6,35 +6,25 @@
 # **Procedurally create your text!**
 
 ## :speech_balloon: What? 
-Text Loom is a fun new way to work with LLMs. Batch processing!  
-Text Loom is a workspace for creating networks that manage queries and build on them.  
+Text Loom is a fun workspace for creating networks that manage queries and build on them.  
 All from the comfort of your terminal!
 
+# :page_with_curl: How?
 
-# :bulb: Why?
+*Text flows from one node to the next.*  
+The Text Loom philosophy, it's backend, is all about **text**.  
+*Specifically* **lists of text.**  
 
-<details>
-  <summary>Enhance LLM Capabilities & Streamline Workflow</summary>
+## Nodes pass text to each other:  
+* One node creates text **(Text)**
+* Some nodes read and write text files. **(FileIn & FileOut)**
+* Some nodes create lists **(Section, Split, & MakeList)**
+* One node combines lists **(Merge)**
+* One node talks to an LLM **(Query)**
+* One node can contain other nodes and iterate over them in loops **(Looper)**
+* And one node does nothing at all except pass the text along **(Null)**
 
-- Develop a solution that enables (local and remote) LLMs to generate long and complex multistep outputs effectively, such as detailed learning programs or comprehensive critiques or flesh out novel length ideas.
 
-- Eliminate the need for manual copy-pasting in workflows to improve efficiency and maintain the quality of generated content while trying new things.
-
-</details>
-
-<details>
-  <summary>Create a Custom Solution</summary>
-
-- Leverage insights from experts like Jonathan Mast to design a tailored programming solution that integrates the strengths of LLMs and utilizes innovative tools like [Gradio](https://www.gradio.app/) and inspiration from [Automatic1111](https://github.com/AUTOMATIC1111/stable-diffusion-webui).
-
-</details>
-
-<details>
-  <summary>Contribute to the Community</summary>
-
-- Actively participate in the local LLM evolution among programmers and users who share a passion for generating text and exploring the capabilities of LLMs and enhancing the ease of the chat workflow.
-
-</details>
 
 ## :rocket: Start (automagically)
 
