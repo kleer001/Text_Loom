@@ -23,6 +23,7 @@ from textual.containers import Vertical
 from core.base_classes import NodeEnvironment, generate_node_types, NodeType
 from TUI.logging_config import get_logger
 from TUI.messages import NodeTypeSelected, NodeMoveDestinationSelected
+from TUI.node_type_emojis import get_node_emoji, NODE_TYPE_EMOJIS
 import os 
 from textual import on
 from rich.text import Text
@@ -45,6 +46,7 @@ class NodeTypeSelector(ModalScreen):
         height: auto;
         max-height: 20;
     }
+
     """
 
     HOTKEYS = {
@@ -76,29 +78,25 @@ class NodeTypeSelector(ModalScreen):
 
     def compose(self):
         with Vertical():
-            #type_list = sorted(self.node_types.keys())
             type_list = list(self.HOTKEYS.values())
-            #type_list.remove('INPUT_NULL')
-            #type_list.remove('OUTPUT_NULL')
             logger.debug(f"Available node types: {type_list}")
             
             options = []
             for node_type in type_list:
                 try:
                     display_text = Text()
-                    display_text.append(node_type)
+                    emoji = get_node_emoji(node_type)
+                    display_text.append(f"{emoji} {node_type}")
                     
                     if node_type in self.reverse_hotkeys:
                         hotkey = self.reverse_hotkeys[node_type]
                         display_text.append(f" [{hotkey}]", style="bold")
-                        logger.debug(f"Created styled option for {node_type} with hotkey {hotkey}")
                     
                     options.append(display_text)
                 except Exception as e:
                     logger.error(f"Error creating styled text for {node_type}: {str(e)}", exc_info=True)
 
             option_list = OptionList(*options)
-            logger.debug(f"Created OptionList with {len(options)} styled options")
             yield option_list
 
     def on_key(self, event) -> None:

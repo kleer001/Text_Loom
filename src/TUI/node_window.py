@@ -22,6 +22,7 @@ from TUI.logging_config import get_logger
 from TUI.messages import (NodeAdded, NodeDeleted, ConnectionAdded, 
 ConnectionDeleted, NodeSelected, NodeTypeSelected, OutputMessage, FileLoaded)
 from TUI.node_support_modals import NodeTypeSelector, DeleteConfirmation, RenameInput, NodeMoveDestinationSelected, NodeMoveSelector
+from TUI.node_type_emojis import get_node_emoji, NODE_TYPE_EMOJIS
 
 logger = get_logger('node')
 
@@ -478,6 +479,7 @@ class NodeWindow(ScrollableContainer):
 
             def format_node(node: Node, indent: int) -> tuple[str, str]:
                 state_indicator = self._get_state_indicator(node.state(), node.path())
+                type_indicator = get_node_emoji(node.type().name)
                 
                 i = len(self._node_data)
                 self._node_data.append(NodeData(
@@ -489,14 +491,13 @@ class NodeWindow(ScrollableContainer):
                 
                 self._current_line = i
                 
-                # Build style list for node name
                 style = []
                 if i == self._selected_line:
                     style.append("reverse")
                 if node.path() == self._cooking_node:
                     style.append("underline")
                 
-                return f"{state_indicator} {node.name()}", " ".join(style) if style else ""
+                return f"{state_indicator}{type_indicator} {node.name()}", " ".join(style) if style else ""
 
             rendered_lines = render_layout(layout_entries, format_node)
             
