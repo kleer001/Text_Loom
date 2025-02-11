@@ -18,6 +18,7 @@ from core.base_classes import NodeEnvironment, Node
 from core.parm import ParameterType
 from TUI.logging_config import get_logger
 from TUI.messages import ParameterChanged, ScrollMessage, NodeSelected, NodeTypeSelected, ClearAll, NodeDeleted
+from TUI.node_type_emojis import get_node_emoji
 
 logger = get_logger('parameter')
 
@@ -225,7 +226,10 @@ class ParameterSet(Vertical):
         self.parameter_rows: List[ParameterRow] = []
 
     def compose(self):
-        yield Static(self.node.name(), classes="title")
+        node_type = self.node.type().name
+        emoji = get_node_emoji(node_type)
+        title = f"{emoji} {self.node.name()}" if emoji else self.node.name()
+        yield Static(title, classes="title")
         for parm_name, parm in self.node._parms.items():
             row = ParameterRow(
                 name=parm_name,
