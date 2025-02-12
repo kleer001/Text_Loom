@@ -4,31 +4,30 @@ from core.base_classes import NodeEnvironment, Node, NodeType
 from core.global_store import GlobalStore
 from core.parm import ParameterType
 
-'''Handles serialization and deserialization of node-based workflows in a compact single-line format.
+'''Handles serialization and deserialization of node-based workflows in a compact single-line format
 
-This module provides a lightweight text-based format for saving and loading node graphs. 
 Each line represents one of:
 - V:<version> - Version identifier
 - G:<key=value,...> - Global variables
-- path:type{param=value,...} - Node definition
-- C:input_node>output_node - Node connection
+- path:type{param=value,...}>target1,target2 - Node definition with connections
 
-Functions:
-    save_flowstate(filepath: str) -> bool: 
-        Saves current node environment to file.
-    
-    load_flowstate(filepath: str) -> bool:
-        Restores node environment from file using two-pass loading.
-
-The format prioritizes human readability and quick manual editing while maintaining
-all necessary node relationships and parameter values.
+Lines are ordered to reflect data flow from source to destination. Later nodes in the file 
+receive data from earlier nodes. Multiple target connections are comma-separated.
 
 Example file:
     V:0.01
     G:last_run=2024-02-11
+    /text2:TEXT{text_string="World"}>/text1,/text3
     /text1:TEXT{text_string="Hello",pass_through=F}
-    /text2:TEXT{text_string="World"}
-    C:/text2>/text1
+    /text3:TEXT{text_string="!"}
+
+Functions:
+    save_flowstate(filepath: str) -> bool: Saves current node environment to file
+    load_flowstate(filepath: str) -> bool: Restores node environment using two-pass loading
+
+Format preserves human readability while maintaining node relationships and parameter values.
+Node parameters are optional - only non-default values are stored. Parameters with double quotes
+or commas are escaped automatically.
 
 Raises:
     Exception: On file IO errors or invalid node/parameter data
@@ -90,7 +89,7 @@ def _deserialize_value(value: str, parm_type: ParameterType) -> Any:
     return value
 
 def _parse_node_line(line: str) -> Dict:
-    if line.startswith(("V:", "G:", "C:")):
+    if line.startswith("V:") or line.startswith("G:"):
         return {}
         
     path_part, *rest = line.split("{", 1)
@@ -99,19 +98,24 @@ def _parse_node_line(line: str) -> Dict:
     result = {
         "path": path,
         "type": node_type,
-        "parms": {}
+        "parms": {},
+        "feeds_into": []
     }
     
-    if rest:
-        parm_part = rest[0]
-        if "}" in parm_part:
-            parm_part = parm_part.split("}")[0]
-            if parm_part:
-                pairs = parm_part.split(",")
-                for pair in pairs:
-                    if "=" in pair:
-                        key, value = pair.split("=", 1)
-                        result["parms"][key.strip()] = value.strip()
+    remaining = rest[0] if rest else ""
+    if "}" in remaining:
+        parm_part, *conn_part = remaining.split("}")
+        if parm_part:
+            pairs = parm_part.split(",")
+            for pair in pairs:
+                if "=" in pair:
+                    key, value = pair.split("=", 1)
+                    result["parms"][key.strip()] = value.strip()
+        
+        if conn_part and ">" in conn_part[0]:
+            targets = conn_part[0].split(">")[1]
+            if targets:
+                result["feeds_into"] = [x.strip() for x in targets.split(",")]
     
     return result
 
@@ -127,6 +131,15 @@ def _serialize_node(node: Node) -> str:
         parm_str = ",".join(f"{k}={v}" for k, v in non_default_parms.items())
         parts.append(f"{{{parm_str}}}")
     
+    connected_inputs = []
+    for other_node in NodeEnvironment.get_instance().nodes.values():
+        for input_conn in other_node._inputs.values():
+            if input_conn and input_conn.output_node() == node:
+                connected_inputs.append(other_node.path())
+    
+    if connected_inputs:
+        parts.append(">" + ",".join(str(p) for p in connected_inputs))
+    
     return "".join(parts)
 
 def save_flowstate(filepath: str) -> bool:
@@ -141,16 +154,14 @@ def save_flowstate(filepath: str) -> bool:
             lines.append(f"G:{globals_str}")
         
         sorted_nodes = sorted(env.nodes.items(), key=lambda x: len(str(x[0]).split("/")))
+        node_lines = []
         
         for node_path, node in sorted_nodes:
             node_str = _serialize_node(node)
             if node_str:
-                lines.append(node_str)
+                node_lines.append(node_str)
         
-        for node_path, node in sorted_nodes:
-            for input_idx, conn in node._inputs.items():
-                if conn and conn.output_node():
-                    lines.append(f"C:{node.path()}>{conn.output_node().path()}")
+        lines.extend(reversed(node_lines))
         
         with open(filepath, "w", encoding="utf-8", errors="surrogateescape") as f:
             f.write("\n".join(lines))
@@ -159,6 +170,7 @@ def save_flowstate(filepath: str) -> bool:
     except Exception as e:
         print(f"Error saving flow: {e}")
         return False
+    
 def _create_node_from_data(node_data: Dict) -> Optional[Node]:
     try:
         node_type = getattr(NodeType, node_data["type"])
@@ -184,13 +196,14 @@ def load_flowstate(filepath: str) -> bool:
     try:
         env = NodeEnvironment.get_instance()
         env.nodes.clear()
+        node_data_list = []
         
         with open(filepath, "r", encoding="utf-8") as f:
             lines = [line.strip() for line in f if line.strip()]
         
         if not lines or not lines[0].startswith("V:"):
             return False
-            
+        
         # First pass: Create nodes
         for line in lines[1:]:
             if line.startswith("G:"):
@@ -201,21 +214,19 @@ def load_flowstate(filepath: str) -> bool:
                         key, value = pair.split("=", 1)
                         global_store.set(key, value)
                 continue
-                
-            if line.startswith("C:"):
-                continue  # Skip connections on first pass
-                
+            
             node_data = _parse_node_line(line)
-            _create_node_from_data(node_data)
+            if node_data:
+                node = _create_node_from_data(node_data)
+                if node:
+                    node_data_list.append((node, node_data))
         
         # Second pass: Restore connections
-        for line in lines[1:]:
-            if line.startswith("C:"):
-                input_path, output_path = line[2:].split(">")
-                input_node = env.node_from_name(input_path.strip())
-                output_node = env.node_from_name(output_path.strip())
-                if input_node and output_node:
-                    input_node.set_next_input(output_node)
+        for source_node, data in node_data_list:
+            for target_path in data["feeds_into"]:
+                target_node = env.node_from_name(target_path)
+                if target_node:
+                    target_node.set_next_input(source_node)
         
         return True
         
