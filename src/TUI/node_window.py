@@ -9,6 +9,8 @@ from textual.message import Message
 from textual.geometry import Region, Size
 from textual.timer import Timer
 from rich.text import Text
+from rich.style import Style
+
 import os
 import time
 from collections import namedtuple
@@ -463,14 +465,10 @@ class NodeWindow(ScrollableContainer):
             return
 
         try:
-            # Get colors from theme
-            css_vars = self.app.get_css_variables()
-            
-            # Define our segment styles using the theme colors
-            NODE_STYLE = f" {css_vars['text']}"              
-            ARROW_STYLE = f"bold {css_vars['accent']}"            
-            INPUT_STYLE = f"italic {css_vars['primary-muted']}"          
-            OUTPUT_STYLE = f"bold {css_vars['primary']}"       
+            NODE_STYLE = "$text"              
+            ARROW_STYLE = "[bold]$accent[/bold]"            
+            INPUT_STYLE = "[italic dim]$primary-muted[/italic dim]"          
+            OUTPUT_STYLE = "[bold bright]$primary[/bold bright]" 
                 
             self._env = NodeEnvironment.get_instance()
             layout_entries = layout_network(self._env)
@@ -506,23 +504,20 @@ class NodeWindow(ScrollableContainer):
                 node = line_info['node']
                 node_text, style = format_node(node, line_info['indent'])
                 
-                # Add segments with appropriate styling
                 segments.append((line_info['indent'], ""))
-                segments.append((node_text, style))  # Node name with potential reverse highlight
+                segments.append((node_text, style))
 
                 if line_info['output_nodes']:
-                    segments.append((" > (", ARROW_STYLE))  # Arrow
+                    segments.append((" > (", " ".join(ARROW_STYLE)))
                     output_names = [n.name() for n in line_info['output_nodes']]
-                    segments.append((", ".join(output_names), OUTPUT_STYLE))  # Output nodes
-                    segments.append((")", ARROW_STYLE))
+                    segments.append((", ".join(output_names), " ".join(OUTPUT_STYLE)))
+                    segments.append((")", " ".join(ARROW_STYLE)))
 
                 if line_info['input_nodes']:
-                    segments.append((" < ", ARROW_STYLE))  # Arrow
+                    segments.append((" < ", " ".join(ARROW_STYLE)))
                     input_names = [n.name() for n in line_info['input_nodes']]
-                    segments.append((", ".join(input_names), INPUT_STYLE))  # Input nodes
-                
+                    segments.append((", ".join(input_names), " ".join(INPUT_STYLE)))
 
-                # Add all segments to rendered text
                 for text, segment_style in segments:
                     rendered_text.append(text, style=segment_style)
                 rendered_text.append("\n")
@@ -534,7 +529,6 @@ class NodeWindow(ScrollableContainer):
             error_msg = f"Error refreshing layout: {str(e)}"
             logger.error(error_msg, exc_info=True)
             self.content.update(f"[red]{error_msg}")
-
 
 
     async def _refresh_states(self) -> None:

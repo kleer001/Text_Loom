@@ -16,7 +16,7 @@ receive data from earlier nodes. Multiple target connections are comma-separated
 
 Example file:
     V:0.01
-    G:last_run=2024-02-11
+    G:LASTRUN=2024-02-11
     /text2:TEXT{text_string="World"}>/text1,/text3
     /text1:TEXT{text_string="Hello",pass_through=F}
     /text3:TEXT{text_string="!"}

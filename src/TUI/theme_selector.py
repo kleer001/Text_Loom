@@ -14,8 +14,8 @@ class ThemeSelector(ModalScreen[str]):
     }
 
     #dialog {
-        width: 60;
-        height: 50%;
+        width: 120;
+        height: 75%;
         border: solid $primary;
         background: $surface;
         padding: 1;
