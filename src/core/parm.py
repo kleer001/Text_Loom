@@ -51,9 +51,10 @@ class Parm:
         self._type: ParameterType = parm_type
         self._node: "Node" = node
         self._script_callback: str = ""
-        self._value: Union[int, float, str, List[str], bool] = (
-            ""  # Initial value, to be set later
-        )
+        self._value: Union[int, float, str, List[str], bool] = ""
+        self._default_value: Union[int, float, str, List[str], bool] = ""
+        self._is_default: bool = True
+
 
     def name(self) -> str:
         """Returns this parameter's name."""
@@ -75,6 +76,14 @@ class Parm:
         """Returns the node on which this parameter exists."""
         return self._node
 
+    @property
+    def is_default(self) -> bool:
+        return self._is_default
+        
+    @property 
+    def default_value(self):
+        return self._default_value
+
     def set(self, value: Union[int, float, str, List[str], bool]) -> None:
         from core.undo_manager import UndoManager
         
@@ -95,7 +104,10 @@ class Parm:
             
         if new_value != self._value:
             UndoManager().push_state(f"Set {self.node().name()} parm: {self.name()} to {value}")
+            if self._default_value == "":
+                self._default_value = new_value
             self._value = new_value
+            self._is_default = (self._value == self._default_value)
 
     def script_callback(self) -> str:
         """Return the contents of the script that gets runs when this parameter changes."""
@@ -383,7 +395,6 @@ class Parm:
         #print(f"🔄 Final result: {result}\n")
         return result
 
-#------------ END NEW
 
     def create_safe_globals(self):
         allowed_builtins = [
