@@ -20,7 +20,7 @@ texteval2 = text1.eval()
 print_node_info(text1)
 print("text1 evals to:", texteval2)
 
-text1._parms["pass_through"].set(False)
+#text1._parms["pass_through"].set(False)
 text1._parms["text_string"].set("CHANGED Filler Text 1")
 text2._parms["text_string"].set("CHANGED Boopah Text 2")
 

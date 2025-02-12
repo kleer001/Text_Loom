@@ -4,6 +4,37 @@ from core.base_classes import NodeEnvironment, Node, NodeType
 from core.global_store import GlobalStore
 from core.parm import ParameterType
 
+'''Handles serialization and deserialization of node-based workflows in a compact single-line format.
+
+This module provides a lightweight text-based format for saving and loading node graphs. 
+Each line represents one of:
+- V:<version> - Version identifier
+- G:<key=value,...> - Global variables
+- path:type{param=value,...} - Node definition
+- C:input_node>output_node - Node connection
+
+Functions:
+    save_flowstate(filepath: str) -> bool: 
+        Saves current node environment to file.
+    
+    load_flowstate(filepath: str) -> bool:
+        Restores node environment from file using two-pass loading.
+
+The format prioritizes human readability and quick manual editing while maintaining
+all necessary node relationships and parameter values.
+
+Example file:
+    V:0.01
+    G:last_run=2024-02-11
+    /text1:TEXT{text_string="Hello",pass_through=F}
+    /text2:TEXT{text_string="World"}
+    C:/text2>/text1
+
+Raises:
+    Exception: On file IO errors or invalid node/parameter data
+'''
+
+
 VERSION = "0.01"
 
 def _serialize_value(value: Any, parm_type: ParameterType) -> str:
@@ -20,30 +51,36 @@ def _serialize_value(value: Any, parm_type: ParameterType) -> str:
         return 'T' if value else 'F'
     return str(value)
 
+def _parse_stringlist(value: str) -> List[str]:
+    if not (value.startswith('[') and value.endswith(']')):
+        return []
+        
+    items = []
+    current = []
+    escaped = False
+    
+    for char in value[1:-1]:
+        if escaped:
+            current.append(char)
+            escaped = False
+        elif char == '\\':
+            escaped = True
+        elif char == ',' and not escaped:
+            if current:
+                items.append(''.join(current).strip().strip('"').replace('\\"', '"'))
+                current = []
+        else:
+            current.append(char)
+            
+    if current:
+        items.append(''.join(current).strip().strip('"').replace('\\"', '"'))
+    return items
+
 def _deserialize_value(value: str, parm_type: ParameterType) -> Any:
     if parm_type == ParameterType.STRING:
         return value.strip('"').replace('\\"', '"')
     elif parm_type == ParameterType.STRINGLIST:
-        if value.startswith('[') and value.endswith(']'):
-            items = []
-            current = []
-            escaped = False
-            for char in value[1:-1]:
-                if escaped:
-                    current.append(char)
-                    escaped = False
-                elif char == '\\':
-                    escaped = True
-                elif char == ',' and not escaped:
-                    if current:
-                        items.append(''.join(current).strip().strip('"').replace('\\"', '"'))
-                        current = []
-                else:
-                    current.append(char)
-            if current:
-                items.append(''.join(current).strip().strip('"').replace('\\"', '"'))
-            return items
-        return []
+        return _parse_stringlist(value)
     elif parm_type == ParameterType.INT:
         return int(value)
     elif parm_type == ParameterType.FLOAT:
@@ -52,31 +89,31 @@ def _deserialize_value(value: str, parm_type: ParameterType) -> Any:
         return value == 'T'
     return value
 
-def save_flowstate(filepath: str) -> bool:
-    try:
-        env = NodeEnvironment.get_instance()
-        lines = [f"V:{VERSION}"]
+def _parse_node_line(line: str) -> Dict:
+    if line.startswith(("V:", "G:", "C:")):
+        return {}
         
-        global_store = GlobalStore()
-        globals_dict = global_store.list()
-        if globals_dict:
-            globals_str = ",".join(f"{k}={v}" for k, v in globals_dict.items())
-            lines.append(f"G:{globals_str}")
-        
-        sorted_nodes = sorted(env.nodes.items(), key=lambda x: len(str(x[0]).split("/")))
-        for node_path, node in sorted_nodes:
-            node_str = _serialize_node(node)
-            if node_str:
-                lines.append(node_str)
-        
-        with open(filepath, "w", encoding="utf-8", errors="surrogateescape") as f:
-            f.write("\n".join(lines))
-        return True
-        
-    except Exception as e:
-        print(f"Error saving flow: {e}")
-        return False
-
+    path_part, *rest = line.split("{", 1)
+    path, node_type = path_part.split(":")
+    
+    result = {
+        "path": path,
+        "type": node_type,
+        "parms": {}
+    }
+    
+    if rest:
+        parm_part = rest[0]
+        if "}" in parm_part:
+            parm_part = parm_part.split("}")[0]
+            if parm_part:
+                pairs = parm_part.split(",")
+                for pair in pairs:
+                    if "=" in pair:
+                        key, value = pair.split("=", 1)
+                        result["parms"][key.strip()] = value.strip()
+    
+    return result
 
 def _serialize_node(node: Node) -> str:
     parts = [f"{node.path()}:{node.type().name}"]
@@ -90,61 +127,38 @@ def _serialize_node(node: Node) -> str:
         parm_str = ",".join(f"{k}={v}" for k, v in non_default_parms.items())
         parts.append(f"{{{parm_str}}}")
     
-    inputs = []
-    outputs = []
-    
-    for idx, input_conn in node._inputs.items():
-        if input_conn and input_conn.output_node():
-            inputs.append(input_conn.output_node().path())
-            
-    for other_node in NodeEnvironment.get_instance().nodes.values():
-        for input_conn in other_node._inputs.values():
-            if input_conn and input_conn.output_node() == node:
-                outputs.append(other_node.path())
-    
-    if inputs:
-        parts.append("<" + ",".join(str(p) for p in inputs))
-    if outputs:
-        parts.append(">" + ",".join(str(p) for p in outputs))
-    
     return "".join(parts)
 
-def _parse_node_line(line: str) -> Dict:
-    path_part, *rest = line.split("{", 1)
-    path, node_type = path_part.split(":")
-    
-    result = {
-        "path": path,
-        "type": node_type,
-        "parms": {},
-        "inputs": [],
-        "outputs": []
-    }
-    
-    if rest:
-        parm_conn = rest[0]
-        if "}" in parm_conn:
-            parm_part, *conn_part = parm_conn.split("}")
-            if parm_part:
-                pairs = parm_part.split(",")
-                for pair in pairs:
-                    if "=" in pair:
-                        key, value = pair.split("=", 1)
-                        result["parms"][key.strip()] = value.strip()
-            
-            if conn_part:
-                conn_str = conn_part[0]
-                if "<" in conn_str:
-                    inputs = conn_str.split("<")[1].split(">")[0]
-                    if inputs:
-                        result["inputs"] = inputs.split(",")
-                if ">" in conn_str:
-                    outputs = conn_str.split(">")[-1]
-                    if outputs:
-                        result["outputs"] = outputs.split(",")
-    
-    return result
-
+def save_flowstate(filepath: str) -> bool:
+    try:
+        env = NodeEnvironment.get_instance()
+        lines = [f"V:{VERSION}"]
+        
+        global_store = GlobalStore()
+        globals_dict = global_store.list()
+        if globals_dict:
+            globals_str = ",".join(f"{k}={v}" for k, v in globals_dict.items())
+            lines.append(f"G:{globals_str}")
+        
+        sorted_nodes = sorted(env.nodes.items(), key=lambda x: len(str(x[0]).split("/")))
+        
+        for node_path, node in sorted_nodes:
+            node_str = _serialize_node(node)
+            if node_str:
+                lines.append(node_str)
+        
+        for node_path, node in sorted_nodes:
+            for input_idx, conn in node._inputs.items():
+                if conn and conn.output_node():
+                    lines.append(f"C:{node.path()}>{conn.output_node().path()}")
+        
+        with open(filepath, "w", encoding="utf-8", errors="surrogateescape") as f:
+            f.write("\n".join(lines))
+        return True
+        
+    except Exception as e:
+        print(f"Error saving flow: {e}")
+        return False
 def _create_node_from_data(node_data: Dict) -> Optional[Node]:
     try:
         node_type = getattr(NodeType, node_data["type"])
@@ -171,13 +185,13 @@ def load_flowstate(filepath: str) -> bool:
         env = NodeEnvironment.get_instance()
         env.nodes.clear()
         
-        connections = []
         with open(filepath, "r", encoding="utf-8") as f:
             lines = [line.strip() for line in f if line.strip()]
         
         if not lines or not lines[0].startswith("V:"):
             return False
-        
+            
+        # First pass: Create nodes
         for line in lines[1:]:
             if line.startswith("G:"):
                 global_store = GlobalStore()
@@ -187,24 +201,21 @@ def load_flowstate(filepath: str) -> bool:
                         key, value = pair.split("=", 1)
                         global_store.set(key, value)
                 continue
-            
+                
+            if line.startswith("C:"):
+                continue  # Skip connections on first pass
+                
             node_data = _parse_node_line(line)
-            node = _create_node_from_data(node_data)
-            
-            if node:
-                if node_data["inputs"]:
-                    connections.append((node, node_data["inputs"], True))
-                if node_data["outputs"]:
-                    connections.append((node, node_data["outputs"], False))
+            _create_node_from_data(node_data)
         
-        for node, paths, is_input in connections:
-            for path in paths:
-                other_node = env.node_from_name(path.strip())
-                if other_node:
-                    if is_input:
-                        node.set_next_input(other_node)
-                    else:
-                        other_node.set_next_input(node)
+        # Second pass: Restore connections
+        for line in lines[1:]:
+            if line.startswith("C:"):
+                input_path, output_path = line[2:].split(">")
+                input_node = env.node_from_name(input_path.strip())
+                output_node = env.node_from_name(output_path.strip())
+                if input_node and output_node:
+                    input_node.set_next_input(output_node)
         
         return True
         
