@@ -465,11 +465,15 @@ class NodeWindow(ScrollableContainer):
             return
 
         try:
-            NODE_STYLE = "$text"              
-            ARROW_STYLE = "[bold]$accent[/bold]"            
-            INPUT_STYLE = "[italic dim]$primary-muted[/italic dim]"          
-            OUTPUT_STYLE = "[bold bright]$primary[/bold bright]" 
-                
+            # Get colors from theme
+            css_vars = self.app.get_css_variables()
+            
+            # Define our segment styles using the theme colors
+            NODE_STYLE = f" {css_vars['text']}"              
+            ARROW_STYLE = f"bold {css_vars['text-secondary']}"            
+            INPUT_STYLE = f"italic {css_vars['primary-muted']}"          
+            OUTPUT_STYLE = f"bold {css_vars['primary']}"       
+
             self._env = NodeEnvironment.get_instance()
             layout_entries = layout_network(self._env)
             self._node_data = []
@@ -504,20 +508,23 @@ class NodeWindow(ScrollableContainer):
                 node = line_info['node']
                 node_text, style = format_node(node, line_info['indent'])
                 
+                # Add segments with appropriate styling
                 segments.append((line_info['indent'], ""))
-                segments.append((node_text, style))
+                segments.append((node_text, style))  # Node name with potential reverse highlight
 
                 if line_info['output_nodes']:
-                    segments.append((" > (", " ".join(ARROW_STYLE)))
+                    segments.append((" > (", ARROW_STYLE))  # Arrow
                     output_names = [n.name() for n in line_info['output_nodes']]
-                    segments.append((", ".join(output_names), " ".join(OUTPUT_STYLE)))
-                    segments.append((")", " ".join(ARROW_STYLE)))
+                    segments.append((", ".join(output_names), OUTPUT_STYLE))  # Output nodes
+                    segments.append((")", ARROW_STYLE))
 
                 if line_info['input_nodes']:
-                    segments.append((" < ", " ".join(ARROW_STYLE)))
+                    segments.append((" < ", ARROW_STYLE))  # Arrow
                     input_names = [n.name() for n in line_info['input_nodes']]
-                    segments.append((", ".join(input_names), " ".join(INPUT_STYLE)))
+                    segments.append((", ".join(input_names), INPUT_STYLE))  # Input nodes
+                
 
+                # Add all segments to rendered text
                 for text, segment_style in segments:
                     rendered_text.append(text, style=segment_style)
                 rendered_text.append("\n")

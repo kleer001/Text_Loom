@@ -145,11 +145,14 @@ class TUIApp(App[None]):
         theme = await self.push_screen(ThemeSelector())
         logger.info(f"Selected theme name: {theme}")
         if theme:
+            self.logger.debug("Setting theme")
             self.theme = theme
+            self.logger.debug("Refreshing layout")
             self._refresh_all_windows()
+            self.logger.debug("Updating mode line")
             mode_line = self.query_one(ModeLine)
             mode_line.debug_info = f"Applied theme: {theme}"
-            logger.info(f"Theme {theme} applied with refresh")
+            self.logger.debug("Theme change complete")
 
     def __init__(self):
         try:
