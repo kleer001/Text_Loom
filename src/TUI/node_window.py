@@ -292,7 +292,19 @@ class NodeWindow(ScrollableContainer):
                 
     def on_node_type_selected(self, message: NodeTypeSelected) -> None:
         logger.debug(f"NodeWindow received NodeTypeSelected message: {message.node_type}")
-        self._create_new_node(message.node_type)
+        
+        # Map emoji back to node type if needed
+        node_type = message.node_type
+        
+        # Quick check for if we got an emoji instead of a type name
+        if node_type not in generate_node_types() and len(node_type) == 1:
+            # Find the matching node type for this emoji
+            for type_name in generate_node_types():
+                if get_node_emoji(type_name) == node_type:
+                    node_type = type_name
+                    break
+        
+        self._create_new_node(node_type)
 
     def _create_new_node(self, node_type_str: str) -> None:
         logger.debug(f"_create_new_node called with node_type_str: {node_type_str}")
