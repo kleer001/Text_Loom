@@ -5,6 +5,11 @@
 # <p style="text-align: center;">  ***Text Loom:***:pencil::thread:  <p>
 
 
+## :tired_face: Why? 
+I was fed up with copying and pasting between an LLM and a text editor when trying to work procedurally with a limited context window (this was early 2024).  
+3D VFX has Houdini, images have Nuke, games have Unreal's Blueprint, music has Reaktor, sound has PureData. ***Why is there no node based editor for text?!***
+> Well, actually there's Nodysseus (https://nodysseus.io/) and Nodes (https://nodes.io) , but they have different use cases.
+
 ## :speech_balloon: What? 
 Text Loom is a fun workspace for creating networks that manage queries and build on them.  
 All from the comfort of your terminal!
