@@ -119,7 +119,7 @@ class TextNode(Node):
             new_param_hash = self._calculate_hash(text_string + str(prefix) + str(per_item))
 
             if pass_through:
-                input_data = self.inputs()[0].output_node().eval() if self.inputs() else []
+                input_data = self.inputs()[0].output_node().get_output() if self.inputs() else []  # CHANGED: use get_output() instead of eval()
                 new_input_hash = self._calculate_hash(str(input_data))
                 return new_input_hash != self._input_hash or new_param_hash != self._param_hash
             else:

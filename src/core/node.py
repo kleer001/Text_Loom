@@ -273,8 +273,8 @@ class Node(MobileItem):
             UndoManager().enable()
         connection = NodeConnection(input_node, self, output_index, input_index
             )
-        print('New Connection: from input ', self.name(), ' to output: ',
-            input_node.name())
+        print('New Connection: from input ', self.name(), 'at ', input_index, ' to output: ',
+            input_node.name(), 'at ', output_index)
         self._inputs[input_index] = connection
         input_node._outputs.setdefault(output_index, []).append(connection)
 

@@ -16,7 +16,7 @@ class InputNullNode(Node):
     Attributes:
         _input_hash (str): Hash of the last processed input.
         _last_input_size (int): Size of the last processed input.
-    Parameters: 
+    Parameters:
         in_node (STRING) : path to the node
         in_data (STRINGLIST) : data from that node
     """
@@ -44,17 +44,15 @@ class InputNullNode(Node):
         self.set_state(NodeState.COOKING)
         self._cook_count += 1
         start_time = time.time()
-        #loop_manager = LoopManager()
 
         try:
             in_node_path = self._parms["in_node"].eval()
-            #self.add_error(f"Input node path: {in_node_path}")
 
             if not in_node_path:
                 raise ValueError("Input node path is empty")
 
             in_node = NodeEnvironment.nodes.get(in_node_path)
-            
+
             if not in_node:
                 raise ValueError(f"Invalid node path: {in_node_path}")
 
@@ -64,12 +62,12 @@ class InputNullNode(Node):
                 self._output = []
                 self.set_state(NodeState.COOKED)
                 return
-            # THIS IS THE SACRED WAY OF GETTING INPUT DATA #
-            input_connection = in_node.inputs()[0]
-            input_data = input_connection.output_node().eval(requesting_node=self)
-            # NEVER FORGET , NEVER STRAY FROM THE PATH OR BE LOST#
 
-            #self.add_error(f"Retrieved input data: {type(input_data)} - {input_data[:100] if input_data else 'None'}")
+            input_connection = in_node.inputs()[0]
+
+            output_node = input_connection.output_node()
+
+            input_data = output_node.get_output(requesting_node=in_node)  # CHANGED: use get_output() with requesting_node
 
             if input_data is None:
                 self.add_warning("Input data is None, setting empty list as output")
@@ -79,18 +77,24 @@ class InputNullNode(Node):
                 raise TypeError(f"Input data must be a list, got {type(input_data)}")
             elif not all(isinstance(item, str) for item in input_data):
                 raise TypeError("All items in input data must be strings")
-            else:    
+            else:
                 loopnumber = loop_manager.get_current_loop(self.path())
+
                 if(self._parms["feedback_mode"].eval() is True and loopnumber > 1):
                     parent_looper_name = os.path.dirname(self.path())
                     parent_looper = NodeEnvironment.node_from_name(parent_looper_name)
                     input_data = parent_looper._output_node._parms["out_data"].eval()
+
                 self._parms["in_data"].set(input_data)
                 self._output = input_data
 
-    
-
             self.set_state(NodeState.COOKED)
+
+        except Exception as e:
+            import traceback
+            self.add_error(f"Error in InputNullNode: {str(e)}")
+            self._output = []
+            self.set_state(NodeState.UNCOOKED)
 
         except Exception as e:
             self.add_error(f"Error in InputNullNode cook: {str(e)}")

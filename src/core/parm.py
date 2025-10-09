@@ -10,7 +10,7 @@ from typing import List, Optional
 from core.base_classes import OperationFailed
 from core.loop_manager import *
 from core.global_store import GlobalStore
-
+from core.base_classes import OperationFailed, NodeState
 
 """Defines parameter types and the Parm class for node-based operations.
 Provides functionality for parameter management, evaluation, and script execution."""
@@ -84,9 +84,9 @@ class Parm:
     def default_value(self):
         return self._default_value
 
-    def set(self, value: Union[int, float, str, List[str], bool]) -> None:
+    def set(self, value: Union[int, float, str, List[str], bool, Dict[str, str]]) -> None:
         from core.undo_manager import UndoManager
-        
+
         if self._type == ParameterType.STRINGLIST:
             if not isinstance(value, list):
                 raise TypeError(f"Expected list for STRINGLIST, got {type(value)}")
@@ -99,15 +99,22 @@ class Parm:
             new_value = str(value)
         elif self._type == ParameterType.TOGGLE:
             new_value = bool(value)
+        elif self._type == ParameterType.MENU:
+            # MENU accepts either a dict (to set menu options) or a string (to select an option)
+            if isinstance(value, dict):
+                new_value = str(value)
+            else:
+                new_value = str(value)
         else:
             raise TypeError(f"Cannot set value type {type(value)} for parameter type {self._type}")
-            
+
         if new_value != self._value:
             UndoManager().push_state(f"Set {self.node().name()} parm: {self.name()} to {value}")
             if self._default_value == "":
                 self._default_value = new_value
             self._value = new_value
             self._is_default = (self._value == self._default_value)
+            self._node.set_state(NodeState.UNCOOKED)
 
     def script_callback(self) -> str:
         """Return the contents of the script that gets runs when this parameter changes."""

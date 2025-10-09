@@ -18,8 +18,8 @@ class LooperNode(Node):
     """
     LooperNode: A powerful node for iterative processing of data with configurable loop behavior.
 
-    This node enables iterative operations by managing internal input and output connections, making it 
-    ideal for tasks that require repeated processing or accumulation of results. Think of it as a 
+    This node enables iterative operations by managing internal input and output connections, making it
+    ideal for tasks that require repeated processing or accumulation of results. Think of it as a
     sophisticated 'for' loop that can process data iteratively while maintaining node graph connectivity.
 
     Parameters:
@@ -92,6 +92,8 @@ class LooperNode(Node):
         use_test=True, test_number=5
         Result: Only processes iteration #5
     """
+    SINGLE_INPUT = True
+    SINGLE_OUTPUT = True
 
     def __init__(self, name: str, path: str, node_type: NodeType):
         super().__init__(name, path, [0.0, 0.0], node_type)
@@ -99,7 +101,7 @@ class LooperNode(Node):
         self._input_node = None
         self._output_node = None
         self._internal_nodes_created = False
-        
+
         # Initialize parameters
         self._parms: Dict[str, Parm] = {
             "min": Parm("min", ParameterType.INT, self),
@@ -108,7 +110,7 @@ class LooperNode(Node):
             "max_from_input": Parm("max_from_input", ParameterType.TOGGLE, self),
             "feedback_mode": Parm("feedback_mode", ParameterType.TOGGLE, self),
             "use_test": Parm("use_test", ParameterType.TOGGLE, self),
-            "cook_loops": Parm("cook_loops", ParameterType.TOGGLE, self), 
+            "cook_loops": Parm("cook_loops", ParameterType.TOGGLE, self),
             "test_number": Parm("test_number", ParameterType.INT, self),
             "input_hook": Parm("input_hook", ParameterType.STRING, self), #WHY?
             "output_hook": Parm("output_hook", ParameterType.STRING, self), #WHY?
@@ -158,12 +160,12 @@ class LooperNode(Node):
             self.add_error("'min' must be greater than or equal to 'max' when step is negative.")
         if use_test and (test_number < min_val or test_number > max_val):
             self.add_error("'test_number' must be between 'min' and 'max' when 'use_test' is True.")
-        
+
         if (max_val - min_val) // step == 0:
             self.add_warning("The current parameter values will result in no iterations.")
 
     def _internal_cook(self, force: bool = False) -> None:
-        
+
         self.set_state(NodeState.COOKING)
         self._cook_count += 1
         start_time = time.time()
@@ -173,7 +175,10 @@ class LooperNode(Node):
             return
 
         # Clear staging_data at the beginning of a major cook
+        print("LOOPER DATA = ",self._parms["staging_data"].eval())
+        print("LOOPER CLEARING DATA?")
         self._parms["staging_data"].set([])
+        print("LOOPER DATA = ",self._parms["staging_data"].eval())
 
         # Check if we need to cook
         if not self.inputs() and not self._output_node.inputs():
@@ -188,7 +193,7 @@ class LooperNode(Node):
 
 
         self._last_cook_time = (time.time() - start_time) * 1000  # Convert to milliseconds
-        
+
         if self.state() == NodeState.COOKING:
             self.set_state(NodeState.UNCHANGED)
 
@@ -207,15 +212,17 @@ class LooperNode(Node):
         timeout_limit = self._parms["timeout_limit"].eval()
         feedback_mode = self._parms["feedback_mode"].eval()
         cook_loops = self._parms["cook_loops"].eval()
-        
+
         self._input_node._parms["feedback_mode"].set(feedback_mode)
         self._output_node._parms["feedback_mode"].set(feedback_mode)
 
-        step_ref = self._parms["max_from_input"].eval()
-        if step_ref is True:
-            input_steps = len(self.inputs()[0].output_node().eval())
+        max_from_input = self._parms["max_from_input"].eval()
+        if max_from_input is True:
+            # Get the actual input data (which for FolderNode will be a list of file contents)
+            input_data = self.inputs()[0].output_node().eval(requesting_node=self)
+            input_steps = len(input_data)
             max_val = input_steps
-            print("RUNNING LOOP FROM INPUT, num = ", step)
+            print("RUNNING LOOP FROM INPUT, num = ", input_steps)
 
         if use_test:
             iteration_range = [test_number]
@@ -234,7 +241,7 @@ class LooperNode(Node):
             loop_manager.set_loop(self.path(), i)
             self._output_node.cook()
             iteration_result = self._output_node._parms["out_data"].eval()
-            
+
             if iteration_result:
                 collected_outputs.append(iteration_result)
             else:
@@ -272,18 +279,18 @@ class LooperNode(Node):
 
             output_node_name = "outputNullNode"
             self._output_node = Node.create_node(NodeType.OUTPUT_NULL, node_name=output_node_name, parent_path=self.path())
-            
+
             input_node_parms = self._input_node._parms
             if "in_node" in input_node_parms:
                 input_node_parms["in_node"].set(self.path())
-                
+
             output_node_parms = self._output_node._parms
             if "in_node" in output_node_parms:
                 output_node_parms["in_node"].set(self.path())
-            
+
             self._children.append(self._input_node)
             self._children.append(self._output_node)
-            
+
         except Exception as e:
             self.add_error(f"Failed to create internal nodes: {str(e)}")
 
