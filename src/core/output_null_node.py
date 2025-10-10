@@ -61,7 +61,7 @@ class OutputNullNode(Node):
             else:
                 input_data = None
                 
-            print(f"Input data for outputnull:", input_data)
+            #print(f"Input data for outputnull:", input_data)
 
             if input_data is None:
                 self.add_warning("Input data is None, setting empty list as output")

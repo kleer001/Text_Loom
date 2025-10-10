@@ -318,17 +318,36 @@ class Node(MobileItem):
         UndoManager().push_state(
             f'Remove connection between {connection.output_node().name()} and {connection.input_node().name()}'
             )
+
+        # Clean up input side
         if connection.input_node() == self:
             input_idx = connection.input_index()
-            if input_idx in self._inputs and self._inputs[input_idx
-                ] == connection:
+            if input_idx in self._inputs and self._inputs[input_idx] == connection:
                 del self._inputs[input_idx]
                 self.set_state(NodeState.UNCOOKED)
+
+        # Clean up output side
         if connection.output_node() == self:
             output_idx = connection.output_index()
             if output_idx in self._outputs:
                 if connection in self._outputs[output_idx]:
                     self._outputs[output_idx].remove(connection)
+
+        # NEW: Also clean up the OTHER node's side
+        # If we're the input node, clean up the output node's outputs
+        if connection.input_node() == self:
+            output_node = connection.output_node()
+            output_idx = connection.output_index()
+            if output_idx in output_node._outputs:
+                if connection in output_node._outputs[output_idx]:
+                    output_node._outputs[output_idx].remove(connection)
+
+        # If we're the output node, clean up the input node's inputs
+        elif connection.output_node() == self:
+            input_node = connection.input_node()
+            input_idx = connection.input_index()
+            if input_idx in input_node._inputs and input_node._inputs[input_idx] == connection:
+                del input_node._inputs[input_idx]
 
     def set_parent(self, new_parent_path: str) ->None:
         from core.undo_manager import UndoManager

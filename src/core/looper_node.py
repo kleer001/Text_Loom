@@ -186,10 +186,10 @@ class LooperNode(Node):
         print("LOOPER DATA = ",self._parms["staging_data"].eval())
 
         # 🔧 ADD THIS LINE - Clear the OutputNullNode's accumulated data
+        print("STAGING DATA = ",self._output_node._parms["out_data"].eval())
         if self._output_node:
             self._output_node._parms["out_data"].set([])
-
-        print("LOOPER DATA = ",self._parms["staging_data"].eval())
+        print("STAGING DATA = ",self._output_node._parms["out_data"].eval())
 
         try:
             self._perform_iterations()

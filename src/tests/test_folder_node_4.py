@@ -30,10 +30,11 @@ for i in range(5):
         f.write(f"Content {i}")
 
 # Set up node network:
-# FolderNode (names output) -> Looper -> TextNode (adds prefix) -> Output
+# FolderNode (names output) -> Looper -> Split -> TextNode (adds prefix) -> Output
 folder_node = Node.create_node(NodeType.FOLDER, node_name="folder")
 looper = Node.create_node(NodeType.LOOPER, node_name="looper")
 text_node = Node.create_node(NodeType.TEXT, node_name="text_names", parent_path="/looper")
+split_node = Node.create_node(NodeType.SPLIT, node_name="split_current", parent_path="/looper")
 
 # Configure FolderNode
 folder_node._parms["folder_path"].set(test_dir)
@@ -46,8 +47,10 @@ looper.set_input(0, folder_node, output_index=1)
 # Configure looper to iterate over all filenames
 looper._parms["max_from_input"].set(True)
 
-# Inside looper: add prefix to show we're processing filenames
-text_node.set_input(0, looper._input_node)
+# Inside looper: connect split and add prefix to show we're processing filenames
+split_node.set_input(0,looper._input_node,0)
+split_node._parms["split_expr"].set("[$$L]")
+text_node.set_input(0, split_node, 0)
 text_node._parms["text_string"].set("Processing file: ")
 text_node._parms["prefix"].set(True)
 text_node._parms["per_item"].set(True)
