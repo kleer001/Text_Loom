@@ -1,4 +1,4 @@
-1. QueryNode:
+##1. QueryNode:
 ```
 QueryNode: A node that interfaces with Large Language Models (LLMs) to process text prompts and generate responses.
 
@@ -40,7 +40,7 @@ Parameters:
         Updates responses regardless of cache
 ```
 
-2. NullNode:
+##2. NullNode:
 ```
 Represents a Null Node in the workspace.
 
@@ -49,7 +49,7 @@ It has a single input and can connect its output to multiple other nodes.
 ```
 
 ```
-3. LooperNode:
+##3. LooperNode:
 
 LooperNode: A powerful node for iterative processing of data with configurable loop behavior.
 
@@ -73,7 +73,7 @@ Parameters:
 ```
 
 ```
-4. FileOutNode:
+##4. FileOutNode:
 Write the given content to a text file. The function provides a refresh button to force the write.
 
 The hash check helps to determine whether the file needs to be written again. If the hash of the input content matches the previously recorded hash and `force_write` is False, the function will skip writing the file.
@@ -113,7 +113,7 @@ Features:
 ```
 
 ```
-6. TextNode:
+##6. TextNode:
 A node that manipulates text strings with advanced list support.
 
 Takes a list of strings as input and either appends or prepends text based on the node's parameters.
@@ -140,7 +140,7 @@ prefix: When True, adds text before input. When False, adds after
 ```
 
 ```
-7. SplitNode:
+##7. SplitNode:
 SplitNode: A versatile node for splitting lists of strings into two parts based on various expressions.
 
 This node takes a list of strings as input and splits it into two outputs: selected items and remaining items.
@@ -180,7 +180,7 @@ Outputs:
 ```
 
 ```
-8. SectionNode:
+##8. SectionNode:
 A node that sections input text based on prefix matching patterns.
 
 Separates input text into three outputs based on two prefix patterns. 
@@ -250,7 +250,7 @@ Notes:
 
 
 ```
-9. MakeListNode(Node):
+##9. MakeListNode(Node):
 A node that takes a string list as input, parses the first item, and outputs a new string list.
 
 This node uses the parse_list function to split the input string into a list of strings.
@@ -324,7 +324,7 @@ Notes:
 ```
 
 ```
-10. Merge Node: 
+##10. Merge Node: 
 
 
 # Merge Node
@@ -385,3 +385,270 @@ Output: ["Hello World How Are You Today?"]
 ```
 
 ```
+
+##11. Folder Node: 
+
+
+**FolderNode: A directory scanning node for batch file processing workflows.**
+
+This node enables batch processing of text files by scanning directories, filtering files based on various criteria, and reading their contents. The primary use case is processing entire directories of text files through LLM pipelines without manually specifying each file.
+
+**Core Functionality:**
+- Scans directories for matching text files
+- Filters files by pattern, size, and visibility
+- Reads file contents and returns them as a list
+- Supports both recursive and non-recursive directory traversal
+- Provides flexible sorting and limiting options
+
+**Parameters:**
+
+**folder_path** (str): Path to the directory to scan. Supports $GLOBAL variable substitution for dynamic paths. Default: "./input"
+
+**pattern** (str): Filename matching pattern supporting both wildcards and regex:
+- Wildcards: Use `*.txt` for all text files, `test*.log` for logs starting with "test"
+- Regex: Use `^alpha.*\.txt` for regex pattern matching
+- Default: `*` (matches all files)
+
+**recursive** (bool): When True, includes files from subdirectories in the scan. When False, only scans the immediate directory. Default: False
+
+**sort_by** (str): Determines the file ordering method:
+- `"name"`: Sort alphabetically by filename (ascending)
+- `"name_desc"`: Sort alphabetically by filename (descending)
+- `"date"`: Sort by modification time (oldest first)
+- `"date_desc"`: Sort by modification time (newest first)
+- `"size"`: Sort by file size (smallest first)
+- `"size_desc"`: Sort by file size (largest first)
+- `"none"`: No sorting, files in directory order
+- Default: `"name"`
+
+**max_files** (int): Maximum number of files to process. Set to 0 for unlimited files. Useful for testing large directories or limiting processing time. Default: 0 (unlimited)
+
+**min_size** (int): Minimum file size in bytes. Files smaller than this are excluded. Set to 0 for no minimum. Default: 0
+
+**max_size** (int): Maximum file size in bytes. Files larger than this are excluded. Set to 0 for no maximum. Default: 0
+
+**include_hidden** (bool): When True, includes hidden files (those starting with a dot). When False, skips hidden files. Default: False
+
+**on_error** (str): Error handling behavior:
+- `"stop"`: Stop processing and raise error on first file read failure
+- `"warn"`: Continue processing but log warnings for failed files
+- `"ignore"`: Silently skip files that cannot be read
+- Default: `"warn"`
+
+**follow_symlinks** (bool): When True, follows symbolic links to files and directories. When False, ignores symlinks. Default: False
+
+**Outputs:**
+
+**Output 0 (File Contents)**: List of strings containing the contents of each matched file. Each list item is the complete content of one file.
+
+**Output 1 (File Names)**: List of strings containing the full paths of each successfully read file. Corresponds 1-to-1 with Output 0.
+
+**Output 2 (Errors)**: List of strings containing error messages for each file. Empty strings indicate successful reads. Non-empty strings indicate read failures.
+
+**Usage Examples:**
+
+**Example 1: Simple directory scan**
+```
+Input: None (uses folder_path parameter)
+folder_path = "./documents"
+pattern = "*.txt"
+recursive = False
+
+Output 0: ["Content of doc1.txt", "Content of doc2.txt", ...]
+Output 1: ["./documents/doc1.txt", "./documents/doc2.txt", ...]
+Output 2: ["", "", ...]
+```
+
+**Example 2: Recursive scan with size filtering**
+```
+folder_path = "./data"
+pattern = "*.log"
+recursive = True
+min_size = 1000
+max_size = 100000
+sort_by = "date_desc"
+
+Output 0: [Most recent log contents within size range]
+Output 1: [Corresponding log file paths]
+Output 2: [Error messages or empty strings]
+```
+
+**Example 3: Limited file processing**
+```
+folder_path = "./training_data"
+pattern = "*.csv"
+max_files = 10
+sort_by = "size_desc"
+
+Output 0: [Contents of 10 largest CSV files]
+Output 1: [Paths to those 10 files]
+Output 2: [Error status for each file]
+```
+
+**Example 4: Regex pattern matching**
+```
+folder_path = "./logs"
+pattern = "^error_.*\.log"
+recursive = True
+include_hidden = False
+
+Output 0: [Contents of files matching regex "^error_.*\.log"]
+Output 1: [Paths to matched files]
+Output 2: [Error messages]
+```
+
+**Features:**
+
+- **Pattern Matching**: Supports both glob-style wildcards (`*.txt`) and full regex patterns for flexible file selection
+- **Size Filtering**: Filters files by minimum and maximum size constraints to manage memory and processing time
+- **Sorting Options**: Six different sorting methods plus unsorted option for controlling file processing order
+- **Error Handling**: Configurable error behavior allows either strict processing or best-effort file reading
+- **Hidden Files**: Optional inclusion of hidden files for comprehensive directory processing
+- **Symlink Support**: Configurable symbolic link following for complex directory structures
+- **File Limiting**: Process a specific number of files for testing or batch processing
+- **Path Variables**: Supports $GLOBAL variable substitution in folder paths for dynamic configuration
+
+**Notes:**
+
+- All file contents are read as UTF-8 text strings
+- The node validates directory existence before scanning
+- Empty outputs contain `[""]` rather than `[]` to maintain consistent list structure
+- Permission errors are handled according to the `on_error` parameter
+- File paths in Output 1 are always absolute paths for reliable access
+- The node is not time-dependent and caches results until input or parameters change
+
+
+
+
+##12. JSON Node: 
+
+
+A node that parses JSON text and extracts data as text lists.
+
+Takes JSON text as input and extracts values based on JSONPath-style queries. All output is returned as List[str] with everything stringified for text processing. This node acts as a bridge between JSON data and text-based node processing, allowing you to extract specific fields, arrays, or nested values from JSON structures.
+
+### Path Syntax
+
+The `json_path` parameter supports a lightweight JSONPath syntax:
+
+**Dot Notation:**
+- `items` - Access top-level key
+- `data.results` - Access nested keys
+- `user.profile.name` - Multiple levels deep
+
+**Array Indexing:**
+- `items[0]` - First item
+- `users[-1]` - Last item
+- `data.results[2]` - Specific index
+
+**Wildcards:**
+- `users[*].name` - Extract name from all users
+- `items[*]` - Get all array items
+- `users[*].tags[*]` - Nested wildcard (flattens all results)
+
+**Empty Path:**
+- `""` (empty string) - Process entire JSON based on extraction_mode
+
+### Parameters
+
+**json_path** (str, default: "")
+- JSONPath or dot notation to extract data
+- Empty string returns entire JSON structure
+- Supports nested paths and wildcards
+
+**extraction_mode** (str, default: "array")
+- `array` - Extract array items as list
+- `values` - Extract object values as list (ignores keys)
+- `keys` - Extract object keys as list (ignores values)
+- `flatten` - Flatten nested structure with full paths
+
+**format_output** (str, default: "raw")
+- `raw` - Plain string values: `["Alice", "Bob"]`
+- `labeled` - Key-value pairs: `["name: Alice", "age: 30"]`
+- `json` - Each item as JSON string: `['{"name":"Alice"}', '{"name":"Bob"}']`
+
+**on_parse_error** (str, default: "warn")
+- `warn` - Log warning, output `[""]`
+- `passthrough` - Return original text unchanged
+- `empty` - Return `[""]`
+
+**max_depth** (int, default: 0)
+- Maximum nesting level to traverse (0 = unlimited)
+- Prevents infinite recursion on circular references
+- Only applies to flatten mode
+
+**enabled** (bool, default: True)
+- When False, passes through input unchanged
+- Useful for temporarily disabling JSON parsing
+
+### Input/Output
+
+**Input:** List[str] (expects first item to be JSON string)
+**Output:** List[str] (extracted values as strings)
+
+### Usage Examples
+
+**Simple Array Extraction:**
+```
+Input: '{"items": ["apple", "banana", "cherry"]}'
+json_path: "items"
+Output: ["apple", "banana", "cherry"]
+```
+
+**Wildcard Path:**
+```
+Input: '{"users": [{"name": "Alice"}, {"name": "Bob"}]}'
+json_path: "users[*].name"
+Output: ["Alice", "Bob"]
+```
+
+**Extract Object Values:**
+```
+Input: '{"count": 42, "status": "ok", "active": true}'
+json_path: ""
+extraction_mode: "values"
+Output: ["42", "ok", "true"]
+```
+
+**Extract Object Keys:**
+```
+Input: '{"count": 42, "status": "ok"}'
+extraction_mode: "keys"
+Output: ["count", "status"]
+```
+
+**Flatten Nested Structure:**
+```
+Input: '{"user": {"name": "Alice", "profile": {"age": 30}}}'
+json_path: ""
+extraction_mode: "flatten"
+Output: ["user.name: Alice", "user.profile.age: 30"]
+```
+
+**Nested Wildcards:**
+```
+Input: '{"users": [
+    {"name": "Alice", "tags": ["admin", "user"]},
+    {"name": "Bob", "tags": ["user", "guest"]}
+]}'
+json_path: "users[*].tags[*]"
+Output: ["admin", "user", "user", "guest"]
+```
+
+**JSON Format Output:**
+```
+Input: '{"items": [{"id": 1, "name": "Item1"}, {"id": 2, "name": "Item2"}]}'
+json_path: "items"
+format_output: "json"
+Output: ['{"id": 1, "name": "Item1"}', '{"id": 2, "name": "Item2"}']
+```
+
+### Notes
+
+- All values are converted to strings (numbers become "42", booleans become "true"/"false")
+- Empty or null values become empty strings ""
+- Single values are always wrapped in a list: `["value"]`
+- Invalid JSON triggers the error handling behavior (warn/passthrough/empty)
+- Wildcard expansion collects all matching values into a flat list
+- The node stays text-only - no data type conversion or schema validation
+- For complex JSON manipulation, chain multiple JsonNodes together
