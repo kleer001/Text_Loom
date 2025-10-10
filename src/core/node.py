@@ -277,6 +277,7 @@ class Node(MobileItem):
             input_node.name(), 'at ', output_index)
         self._inputs[input_index] = connection
         input_node._outputs.setdefault(output_index, []).append(connection)
+        self.set_state(NodeState.UNCOOKED)
 
     def set_next_input(self, input_node: 'Node', output_index: int=0) ->None:
         from core.undo_manager import UndoManager
@@ -322,6 +323,7 @@ class Node(MobileItem):
             if input_idx in self._inputs and self._inputs[input_idx
                 ] == connection:
                 del self._inputs[input_idx]
+                self.set_state(NodeState.UNCOOKED)
         if connection.output_node() == self:
             output_idx = connection.output_index()
             if output_idx in self._outputs:

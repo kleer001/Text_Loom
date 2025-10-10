@@ -256,9 +256,9 @@ class Parm:
             matching_strings.append(match.group(0))
         
         if matching_strings:
-            print(f"Expression matches in {self.name()}: {matching_strings}")
+            #print(f"Expression matches in {self.name()}: {matching_strings}")
             
-        return has_matches
+            return has_matches
 
     def _process_global(self, match) -> str:
         var_part = match.group(0)
