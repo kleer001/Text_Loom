@@ -174,16 +174,22 @@ class LooperNode(Node):
             self.set_state(NodeState.UNCOOKED)
             return
 
+        # Check if we need to cook
+        if not self.inputs() and not self._output_node.inputs():
+            self.set_state(NodeState.UNCHANGED)
+            return
+
         # Clear staging_data at the beginning of a major cook
         print("LOOPER DATA = ",self._parms["staging_data"].eval())
         print("LOOPER CLEARING DATA?")
         self._parms["staging_data"].set([])
         print("LOOPER DATA = ",self._parms["staging_data"].eval())
 
-        # Check if we need to cook
-        if not self.inputs() and not self._output_node.inputs():
-            self.set_state(NodeState.UNCHANGED)
-            return
+        # 🔧 ADD THIS LINE - Clear the OutputNullNode's accumulated data
+        if self._output_node:
+            self._output_node._parms["out_data"].set([])
+
+        print("LOOPER DATA = ",self._parms["staging_data"].eval())
 
         try:
             self._perform_iterations()

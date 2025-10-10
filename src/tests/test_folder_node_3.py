@@ -76,6 +76,9 @@ verify(all_have_prefix, True, "All files have prefix")
 has_numbers = all(any(f"Number: {i}" in item for item in output) for i in range(5))
 verify(has_numbers, True, "Original content preserved")
 
+#### END TEST 1 ####
+#### START TEST 2 ####
+
 print("\n=== Test: FolderNode Filenames → Looper → Split -> TextNode ===")
 
 # Connect FolderNode file names (output[1]) to Looper
