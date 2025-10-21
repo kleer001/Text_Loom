@@ -4,12 +4,26 @@ TextLoom API - Node Endpoints
 Handles node-related API operations:
 - List all nodes
 - Get single node details
+- Create new nodes
+- Update existing nodes
+- Delete nodes
+- Execute nodes
 """
 
 from typing import List
-from fastapi import APIRouter, HTTPException, Path
-from api.models import NodeResponse, ErrorResponse, node_to_response
-from core.base_classes import NodeEnvironment
+import time
+from fastapi import APIRouter, HTTPException, Path, status
+from api.models import (
+    NodeResponse, 
+    NodeCreateRequest, 
+    NodeUpdateRequest,
+    ExecutionResponse,
+    ErrorResponse, 
+    SuccessResponse,
+    node_to_response
+)
+from core.base_classes import Node, NodeType, NodeEnvironment, NodeState
+from core.enums import generate_node_types
 
 router = APIRouter()
 
@@ -176,6 +190,343 @@ def get_node(
                 "message": f"Node with session_id {session_id} does not exist",
                 "session_id": session_id
             }
+        )
+
+
+@router.post(
+    "/nodes",
+    response_model=NodeResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Create a new node",
+    description="Creates a new node of the specified type. Name collisions are automatically handled by the backend.",
+    responses={
+        201: {"description": "Node created successfully"},
+        400: {"description": "Invalid request", "model": ErrorResponse}
+    }
+)
+def create_node(request: NodeCreateRequest) -> NodeResponse:
+    """
+    Create a new node.
+    
+    The backend automatically handles name collisions by appending _1, _2, etc.
+    The response includes the actual name and path assigned to the node.
+    
+    Node type must match enum names exactly (case-insensitive).
+    Use underscores: "file_out" not "fileout", "make_list" not "makelist".
+    
+    Args:
+        request: Node creation parameters
+        
+    Returns:
+        NodeResponse: Complete details of the created node
+        
+    Raises:
+        HTTPException: 400 if node type is invalid or creation fails
+    """
+    # Get available node types dynamically
+    available_types = generate_node_types()
+    valid_type_names = list(available_types.keys())
+    
+    # Convert to uppercase for enum lookup
+    node_type_str = request.type.upper()
+    
+    # Check if type exists
+    if node_type_str not in valid_type_names:
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "error": "invalid_node_type",
+                "message": f"Unknown node type: '{request.type}'. Use underscores in type names (e.g., 'file_out' not 'fileout').",
+                "valid_types": [name.lower() for name in valid_type_names]
+            }
+        )
+    
+    try:
+        # Get the NodeType enum value
+        node_type = getattr(NodeType, node_type_str)
+        
+        # Create the node (backend handles name collisions)
+        node = Node.create_node(
+            node_type=node_type,
+            node_name=request.name,
+            parent_path=request.parent_path
+        )
+        
+        # Set initial position if provided
+        if request.position:
+            node._position = request.position
+        
+        return node_to_response(node)
+        
+    except ValueError as e:
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "error": "invalid_request",
+                "message": str(e)
+            }
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "error": "internal_error",
+                "message": f"Failed to create node: {str(e)}"
+            }
+        )
+
+
+@router.put(
+    "/nodes/{session_id}",
+    response_model=NodeResponse,
+    summary="Update a node",
+    description="Updates node parameters and/or UI state. Only provided fields are updated (partial update).",
+    responses={
+        200: {"description": "Node updated successfully"},
+        404: {"description": "Node not found", "model": ErrorResponse},
+        400: {"description": "Invalid request", "model": ErrorResponse}
+    }
+)
+def update_node(
+    session_id: int = Path(..., description="Node session ID"),
+    request: NodeUpdateRequest = ...
+) -> NodeResponse:
+    """
+    Update an existing node.
+    
+    Supports partial updates - only the provided fields are modified.
+    Can update parameters, position, color, and selection state.
+    
+    Args:
+        session_id: The unique session identifier for the node
+        request: Update parameters
+        
+    Returns:
+        NodeResponse: Updated node details
+        
+    Raises:
+        HTTPException: 404 if node not found, 400 if update invalid
+    """
+    # Find the node
+    target_node = None
+    for path in NodeEnvironment.list_nodes():
+        node = NodeEnvironment.node_from_name(path)
+        if node and node.session_id() == session_id:
+            target_node = node
+            break
+    
+    if not target_node:
+        raise HTTPException(
+            status_code=404,
+            detail={
+                "error": "node_not_found",
+                "message": f"Node with session_id {session_id} does not exist"
+            }
+        )
+    
+    try:
+        # Update parameters if provided
+        if request.parameters:
+            for param_name, param_value in request.parameters.items():
+                if param_name in target_node._parms:
+                    target_node._parms[param_name].set(param_value)
+                else:
+                    raise ValueError(f"Unknown parameter: {param_name}")
+        
+        # Update UI state if provided
+        if request.position is not None:
+            target_node._position = request.position
+        
+        if request.color is not None:
+            target_node._color = tuple(request.color)
+        
+        if request.selected is not None:
+            target_node._selected = request.selected
+        
+        return node_to_response(target_node)
+        
+    except ValueError as e:
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "error": "invalid_parameter",
+                "message": str(e)
+            }
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "error": "internal_error",
+                "message": f"Failed to update node: {str(e)}"
+            }
+        )
+
+
+@router.delete(
+    "/nodes/{session_id}",
+    response_model=SuccessResponse,
+    summary="Delete a node",
+    description="Deletes a node and automatically removes all its connections.",
+    responses={
+        200: {"description": "Node deleted successfully"},
+        404: {"description": "Node not found", "model": ErrorResponse}
+    }
+)
+def delete_node(
+    session_id: int = Path(..., description="Node session ID")
+) -> SuccessResponse:
+    """
+    Delete a node.
+    
+    The node's destroy() method automatically handles disconnecting all
+    input and output connections before removal.
+    
+    Args:
+        session_id: The unique session identifier for the node
+        
+    Returns:
+        SuccessResponse: Confirmation of deletion
+        
+    Raises:
+        HTTPException: 404 if node not found
+    """
+    # Find the node
+    target_node = None
+    for path in NodeEnvironment.list_nodes():
+        node = NodeEnvironment.node_from_name(path)
+        if node and node.session_id() == session_id:
+            target_node = node
+            break
+    
+    if not target_node:
+        raise HTTPException(
+            status_code=404,
+            detail={
+                "error": "node_not_found",
+                "message": f"Node with session_id {session_id} does not exist"
+            }
+        )
+    
+    try:
+        node_name = target_node.name()
+        node_path = target_node.path()
+        
+        # Destroy the node (handles all connections automatically)
+        target_node.destroy()
+        
+        return SuccessResponse(
+            success=True,
+            message=f"Node '{node_name}' at {node_path} deleted successfully"
+        )
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "error": "internal_error",
+                "message": f"Failed to delete node: {str(e)}"
+            }
+        )
+
+
+@router.post(
+    "/nodes/{session_id}/execute",
+    response_model=ExecutionResponse,
+    summary="Execute/cook a node",
+    description="Executes a node, cooking it and all its dependencies. Returns execution results and updated state.",
+    responses={
+        200: {"description": "Execution completed (check success field for result)"},
+        404: {"description": "Node not found", "model": ErrorResponse}
+    }
+)
+def execute_node(
+    session_id: int = Path(..., description="Node session ID")
+) -> ExecutionResponse:
+    """
+    Execute a node (cook it).
+    
+    Triggers the node's eval() method, which cooks the node and all its
+    dependencies. Returns execution results including any output data,
+    errors, and performance metrics.
+    
+    Note: Even if execution fails, returns HTTP 200 with success=false.
+    This distinguishes between HTTP errors and domain execution errors.
+    
+    Args:
+        session_id: The unique session identifier for the node
+        
+    Returns:
+        ExecutionResponse: Execution results including output data and status
+        
+    Raises:
+        HTTPException: 404 if node not found
+    """
+    # Find the node
+    target_node = None
+    for path in NodeEnvironment.list_nodes():
+        node = NodeEnvironment.node_from_name(path)
+        if node and node.session_id() == session_id:
+            target_node = node
+            break
+    
+    if not target_node:
+        raise HTTPException(
+            status_code=404,
+            detail={
+                "error": "node_not_found",
+                "message": f"Node with session_id {session_id} does not exist"
+            }
+        )
+    
+    try:
+        # Record start time
+        start_time = time.time()
+        
+        # Execute the node
+        output_data = target_node.eval()
+        
+        # Calculate execution time
+        execution_time = (time.time() - start_time) * 1000  # Convert to milliseconds
+        
+        # Determine success based on node state and errors
+        success = (target_node._state in [NodeState.UNCHANGED, NodeState.COOKED] 
+                   and len(target_node._errors) == 0)
+        
+        # Prepare output data (handle single vs multiple outputs)
+        output_list = None
+        if output_data is not None:
+            if isinstance(output_data, list):
+                # Check if it's a list of lists (multi-output) or just list of strings
+                if output_data and isinstance(output_data[0], list):
+                    output_list = output_data  # Multi-output node
+                else:
+                    output_list = [output_data]  # Single output, wrap it
+            else:
+                output_list = [[str(output_data)]]  # Fallback
+        
+        message = "Execution completed successfully" if success else "Execution completed with errors"
+        
+        return ExecutionResponse(
+            success=success,
+            message=message,
+            output_data=output_list,
+            execution_time=execution_time,
+            node_state=NodeState(target_node._state),
+            errors=list(target_node._errors),
+            warnings=list(target_node._warnings)
+        )
+        
+    except Exception as e:
+        # Execution threw an exception
+        return ExecutionResponse(
+            success=False,
+            message=f"Execution failed with exception: {str(e)}",
+            output_data=None,
+            execution_time=0.0,
+            node_state=NodeState.UNCOOKED,
+            errors=[str(e)],
+            warnings=[]
         )
     
     try:

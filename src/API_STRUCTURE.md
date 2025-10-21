@@ -12,9 +12,12 @@ TextLoom/
 │   ├── models.py                   # Pydantic DTOs & conversion utilities
 │   └── routers/
 │       ├── __init__.py             # Routers package
-│       ├── nodes.py                # Node endpoints
-│       └── workspace.py            # Workspace endpoints
-├── test_api_endpoints.py           # Complete test script
+│       ├── nodes.py                # Node endpoints (CRUD + execute)
+│       ├── workspace.py            # Workspace endpoints
+│       ├── connections.py          # Connection endpoints
+│       └── globals.py              # Global variables endpoints
+├── test_api_endpoints.py           # Read-only endpoints test
+├── test_api_write_endpoints.py    # Write endpoints test
 ├── API_TESTING_GUIDE.md           # Testing documentation
 └── API_STRUCTURE.md               # This file
 ```
@@ -66,12 +69,44 @@ TextLoom/
 **Endpoints:**
 - `GET /api/v1/nodes` - List all nodes
 - `GET /api/v1/nodes/{session_id}` - Get single node details
+- `POST /api/v1/nodes` - Create new node
+- `PUT /api/v1/nodes/{session_id}` - Update node (parameters & UI state)
+- `DELETE /api/v1/nodes/{session_id}` - Delete node
+- `POST /api/v1/nodes/{session_id}/execute` - Execute/cook node
 
 **Features:**
 - Full node details in responses
+- Auto-handles name collisions on creation
+- Partial updates (only change what's sent)
 - 404 handling for missing nodes
 - Error handling for conversion failures
 - Session ID-based lookup
+- Execution with performance metrics
+
+### `api/routers/connections.py`
+**Purpose:** Connection management endpoints
+
+**Endpoints:**
+- `POST /api/v1/connections` - Create connection between nodes
+- `DELETE /api/v1/connections` - Delete specific connection
+
+**Features:**
+- Auto-replaces existing connections
+- Validates socket indices
+- Handles connection cleanup on both nodes
+
+### `api/routers/globals.py`
+**Purpose:** Global variables management
+
+**Endpoints:**
+- `GET /api/v1/globals` - List all globals
+- `GET /api/v1/globals/{key}` - Get single global
+- `PUT /api/v1/globals/{key}` - Set/update global
+- `DELETE /api/v1/globals/{key}` - Delete global
+
+**Features:**
+- Key validation (uppercase, 2+ chars, no '$' prefix)
+- Integrates with GlobalStore undo system
 
 ### `api/routers/workspace.py`
 **Purpose:** Workspace state endpoint
@@ -85,13 +120,24 @@ TextLoom/
 - Comprehensive error handling
 
 ### `test_api_endpoints.py`
-**Purpose:** Automated testing script
+**Purpose:** Automated testing for read-only endpoints
 
 **Features:**
 - Creates test workspace with nodes
-- Tests all endpoints
+- Tests all read-only endpoints
 - Displays formatted results
 - Provides usage examples
+
+### `test_api_write_endpoints.py`
+**Purpose:** Comprehensive testing for write endpoints
+
+**Features:**
+- Tests complete CRUD workflow
+- Node creation, update, deletion
+- Connection management
+- Node execution
+- Global variables operations
+- Validates workspace state at end
 
 ## 🔄 Data Flow
 
@@ -134,7 +180,7 @@ Open browser to: http://127.0.0.1:8000/api/v1/docs
 
 ## 📊 API Endpoints
 
-### Read-Only Endpoints (Implemented)
+### Read-Only Endpoints
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
@@ -143,18 +189,21 @@ Open browser to: http://127.0.0.1:8000/api/v1/docs
 | GET | `/api/v1/workspace` | Complete workspace state |
 | GET | `/api/v1/nodes` | List all nodes |
 | GET | `/api/v1/nodes/{session_id}` | Get single node |
+| GET | `/api/v1/globals` | List all global variables |
+| GET | `/api/v1/globals/{key}` | Get single global |
 
-### Write Endpoints (Future)
+### Write Endpoints
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | POST | `/api/v1/nodes` | Create new node |
 | PUT | `/api/v1/nodes/{session_id}` | Update node |
 | DELETE | `/api/v1/nodes/{session_id}` | Delete node |
+| POST | `/api/v1/nodes/{session_id}/execute` | Execute node |
 | POST | `/api/v1/connections` | Create connection |
 | DELETE | `/api/v1/connections` | Delete connection |
-| POST | `/api/v1/nodes/{session_id}/execute` | Execute node |
 | PUT | `/api/v1/globals/{key}` | Set global variable |
+| DELETE | `/api/v1/globals/{key}` | Delete global |
 
 ## 🔧 Configuration
 
@@ -271,14 +320,21 @@ uvicorn api.main:app --reload
 - Add your frontend URL to `origins` list in `api/main.py`
 - Restart server after changes
 
-## 🎯 Next Steps
+## 🎯 Completed Features
 
-1. ✅ **Read-only endpoints** (Done!)
-2. 🔄 **Write endpoints** - Create, update, delete nodes
-3. 🔄 **Execution endpoints** - Trigger node cooking
-4. 🔄 **Connection management** - Create/delete connections
-5. 🔄 **Global variables** - CRUD operations
-6. 🔄 **WebSocket support** - Real-time updates (optional)
+1. ✅ **Read-only endpoints** - List and query workspace state
+2. ✅ **Write endpoints** - Create, update, delete nodes
+3. ✅ **Execution endpoints** - Trigger node cooking
+4. ✅ **Connection management** - Create/delete connections
+5. ✅ **Global variables** - Full CRUD operations
+
+## 🚀 Future Enhancements
+
+1. 🔄 **Async execution for long-running nodes** (QueryNode, etc.)
+2. 🔄 **WebSocket support** - Real-time updates (optional)
+3. 🔄 **Undo/Redo endpoints** - Expose UndoManager via API
+4. 🔄 **Batch operations** - Create multiple nodes/connections at once
+5. 🔄 **Workspace save/load** - Serialize to disk via API
 
 ## 📚 Additional Resources
 

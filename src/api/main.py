@@ -10,7 +10,8 @@ Usage:
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from api.routers import nodes, workspace
+from api.routers import nodes, workspace, connections
+from api.routers import globals as globals_router
 
 # Create FastAPI application
 app = FastAPI(
@@ -53,6 +54,18 @@ app.include_router(
     tags=["workspace"]
 )
 
+app.include_router(
+    connections.router,
+    prefix="/api/v1",
+    tags=["connections"]
+)
+
+app.include_router(
+    globals_router.router,
+    prefix="/api/v1",
+    tags=["globals"]
+)
+
 
 # Root endpoint for health check
 @app.get("/")
@@ -82,8 +95,24 @@ def api_info():
         "version": "1.0.0",
         "endpoints": {
             "workspace": "/api/v1/workspace",
-            "nodes": "/api/v1/nodes",
-            "node_detail": "/api/v1/nodes/{session_id}",
+            "nodes": {
+                "list": "/api/v1/nodes",
+                "get": "/api/v1/nodes/{session_id}",
+                "create": "POST /api/v1/nodes",
+                "update": "PUT /api/v1/nodes/{session_id}",
+                "delete": "DELETE /api/v1/nodes/{session_id}",
+                "execute": "POST /api/v1/nodes/{session_id}/execute"
+            },
+            "connections": {
+                "create": "POST /api/v1/connections",
+                "delete": "DELETE /api/v1/connections"
+            },
+            "globals": {
+                "list": "/api/v1/globals",
+                "get": "/api/v1/globals/{key}",
+                "set": "PUT /api/v1/globals/{key}",
+                "delete": "DELETE /api/v1/globals/{key}"
+            },
             "documentation": "/api/v1/docs"
         }
     }
