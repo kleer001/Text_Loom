@@ -25,6 +25,9 @@ from api.models import (
 from core.base_classes import Node, NodeType, NodeEnvironment, NodeState
 from core.enums import generate_node_types
 
+import logging
+logger = logging.getLogger("api.routers.nodes")
+
 router = APIRouter()
 
 
@@ -44,7 +47,7 @@ router = APIRouter()
                             "name": "text1",
                             "path": "/text1",
                             "type": "text",
-                            "state": "unchanged",
+                            "state": "UNCHANGED",
                             "parameters": {},
                             "inputs": [],
                             "outputs": [],
@@ -105,7 +108,7 @@ def list_nodes() -> List[NodeResponse]:
                         "name": "text1",
                         "path": "/text1",
                         "type": "text",
-                        "state": "unchanged",
+                        "state": "UNCHANGED",
                         "parameters": {
                             "text_string": {
                                 "type": "STRING",
@@ -204,9 +207,9 @@ def get_node(
         400: {"description": "Invalid request", "model": ErrorResponse}
     }
 )
-def create_node(request: NodeCreateRequest) -> NodeResponse:
+def create_node(request: 'NodeCreateRequest') -> 'NodeResponse':
     """
-    Create a new node.
+    Create a new node with enhanced logging.
     
     The backend automatically handles name collisions by appending _1, _2, etc.
     The response includes the actual name and path assigned to the node.
@@ -223,6 +226,13 @@ def create_node(request: NodeCreateRequest) -> NodeResponse:
     Raises:
         HTTPException: 400 if node type is invalid or creation fails
     """
+    from fastapi import HTTPException, status
+    from api.models import node_to_response
+    from core.base_classes import Node, NodeType
+    from core.node_environment import generate_node_types
+    
+    logger.info(f"Creating node: type={request.type}, name={request.name}, parent={request.parent_path}")
+    
     # Get available node types dynamically
     available_types = generate_node_types()
     valid_type_names = list(available_types.keys())
@@ -232,6 +242,7 @@ def create_node(request: NodeCreateRequest) -> NodeResponse:
     
     # Check if type exists
     if node_type_str not in valid_type_names:
+        logger.warning(f"Invalid node type: {request.type}")
         raise HTTPException(
             status_code=400,
             detail={
@@ -244,21 +255,35 @@ def create_node(request: NodeCreateRequest) -> NodeResponse:
     try:
         # Get the NodeType enum value
         node_type = getattr(NodeType, node_type_str)
+        logger.debug(f"  Resolved NodeType: {node_type}")
         
         # Create the node (backend handles name collisions)
+        logger.debug(f"  Calling Node.create_node()")
         node = Node.create_node(
             node_type=node_type,
             node_name=request.name,
             parent_path=request.parent_path
         )
         
+        logger.info(f"  Node created: path={node.path()}, session_id={node.session_id()}")
+        logger.debug(f"  Node has _parms: {hasattr(node, '_parms')}")
+        logger.debug(f"  Node has _inputs: {hasattr(node, '_inputs')}")
+        logger.debug(f"  Node has _outputs: {hasattr(node, '_outputs')}")
+        
         # Set initial position if provided
         if request.position:
             node._position = request.position
+            logger.debug(f"  Position set: {request.position}")
         
-        return node_to_response(node)
+        # Convert to response
+        logger.debug(f"  Converting node to response")
+        response = node_to_response(node)
+        
+        logger.info(f"  Successfully created node {node.path()} with session_id {node.session_id()}")
+        return response
         
     except ValueError as e:
+        logger.error(f"ValueError creating node: {e}")
         raise HTTPException(
             status_code=400,
             detail={
@@ -267,6 +292,9 @@ def create_node(request: NodeCreateRequest) -> NodeResponse:
             }
         )
     except Exception as e:
+        logger.error(f"Exception creating node: {type(e).__name__}: {e}")
+        import traceback
+        logger.error(traceback.format_exc())
         raise HTTPException(
             status_code=500,
             detail={
@@ -274,6 +302,8 @@ def create_node(request: NodeCreateRequest) -> NodeResponse:
                 "message": f"Failed to create node: {str(e)}"
             }
         )
+
+
 
 
 @router.put(

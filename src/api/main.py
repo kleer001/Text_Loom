@@ -12,6 +12,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from api.routers import nodes, workspace, connections
 from api.routers import globals as globals_router
+import logging
 
 # Create FastAPI application
 app = FastAPI(
@@ -66,6 +67,13 @@ app.include_router(
     tags=["globals"]
 )
 
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+
+
+logger = logging.getLogger("api.models")
 
 # Root endpoint for health check
 @app.get("/")
