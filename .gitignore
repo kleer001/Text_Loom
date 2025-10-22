@@ -11,6 +11,13 @@
 !requirements.txt
 !images/*.gif
 
+## React and Vite: 
+
+node_modules/
+dist/
+.env
+.env.local
+
 # Default from github, thanks y'all
 # Byte-compiled / optimized / DLL files
 __pycache__/
