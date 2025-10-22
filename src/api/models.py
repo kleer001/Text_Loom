@@ -30,11 +30,10 @@ logger.setLevel(logging.DEBUG)
 # ============================================================================
 
 class NodeStateEnum(str, Enum):
-    """Node processing state"""
-    COOKING = "COOKING"
-    UNCHANGED = "UNCHANGE"
-    UNCOOKED = "UNCOOKED"
-    COOKED = "COOKED"
+    COOKING = "cooking"
+    UNCHANGED = "unchanged"
+    UNCOOKED = "uncooked"
+    COOKED = "cooked"
 
 
 # ============================================================================
@@ -375,12 +374,87 @@ class SuccessResponse(BaseModel):
 # Conversion Utilities
 # ============================================================================
 
+"""
+Refactored node_to_response() with helper functions
+Replace the node_to_response() function in api/models.py with these functions.
+"""
+
+import logging
+from typing import Dict, List
+
+logger = logging.getLogger("api.models")
+
+
+def _convert_parameters(node: 'Node', full_state) -> Dict[str, 'ParameterInfo']:
+    """Convert node parameters to ParameterInfo DTOs."""
+    from api.models import ParameterInfo
+    
+    parameters = {}
+    for parm_name, parm_state in full_state.parms.items():
+        # Determine if parameter is read_only (output parameters)
+        is_read_only = parm_name in ['response', 'file_text', 'out_data', 'in_data', 'staging_data']
+        
+        # Get default value safely
+        default_value = parm_state.value
+        if hasattr(node, '_parms') and parm_name in node._parms:
+            if hasattr(node._parms[parm_name], '_default'):
+                default_value = node._parms[parm_name]._default
+        
+        parameters[parm_name] = ParameterInfo(
+            type=parm_state.parm_type.replace("ParameterType.", ""),
+            value=parm_state.value,
+            default=default_value,
+            read_only=is_read_only
+        )
+    
+    logger.debug(f"  Converted {len(parameters)} parameters")
+    return parameters
+
+
+def _convert_inputs(node: 'Node') -> List['InputInfo']:
+    """Convert node input sockets to InputInfo DTOs."""
+    from api.models import InputInfo
+    
+    inputs = []
+    input_names_dict = node.input_names()
+    input_data_types_dict = node.input_data_types()
+    
+    for socket_key, socket_name in input_names_dict.items():
+        inputs.append(InputInfo(
+            index=socket_key,
+            name=socket_name,
+            data_type=input_data_types_dict.get(socket_key, "Any"),
+            connected=socket_key in node._inputs
+        ))
+    
+    logger.debug(f"  Converted {len(inputs)} inputs")
+    return inputs
+
+
+def _convert_outputs(node: 'Node') -> List['OutputInfo']:
+    """Convert node output sockets to OutputInfo DTOs."""
+    from api.models import OutputInfo
+    
+    outputs = []
+    output_names_dict = node.output_names()
+    output_data_types_dict = node.output_data_types()
+    
+    for socket_key, socket_name in output_names_dict.items():
+        connection_count = len(node._outputs.get(socket_key, []))
+        outputs.append(OutputInfo(
+            index=socket_key,
+            name=socket_name,
+            data_type=output_data_types_dict.get(socket_key, "Any"),
+            connection_count=connection_count
+        ))
+    
+    logger.debug(f"  Converted {len(outputs)} outputs")
+    return outputs
 
 
 def node_to_response(node: 'Node') -> 'NodeResponse':
     """
     Convert an internal Node object to a NodeResponse DTO.
-    FIXED: Properly handles dictionary keys (strings or integers) for sockets.
     
     Args:
         node: Internal Node instance
@@ -391,86 +465,29 @@ def node_to_response(node: 'Node') -> 'NodeResponse':
     Raises:
         ValueError: If node state cannot be captured
     """
-    from api.models import NodeResponse, ParameterInfo, InputInfo, OutputInfo, NodeStateEnum
+    from api.models import NodeResponse, NodeStateEnum
+    from core.undo_manager import UndoManager
     
     logger.debug(f"Converting node to response: {node.path()}, type={node.type()}")
     
     try:
-        from core.undo_manager import UndoManager
-        
         # Capture node state
         undo_mgr = UndoManager()
-        logger.debug(f"  Capturing node state via UndoManager")
         full_state = undo_mgr._capture_node_state(node)
         logger.debug(f"  State captured successfully")
         
-        # Convert parameters
-        parameters = {}
-        for parm_name, parm_state in full_state.parms.items():
-            # Determine if parameter is read_only (output parameters)
-            is_read_only = parm_name in ['response', 'file_text', 'out_data', 'in_data', 'staging_data']
-            
-            # Get default value safely
-            default_value = parm_state.value
-            if hasattr(node, '_parms') and parm_name in node._parms:
-                if hasattr(node._parms[parm_name], '_default'):
-                    default_value = node._parms[parm_name]._default
-            
-            parameters[parm_name] = ParameterInfo(
-                type=parm_state.parm_type.replace("ParameterType.", ""),
-                value=parm_state.value,
-                default=default_value,
-                read_only=is_read_only
-            )
-        
-        logger.debug(f"  Converted {len(parameters)} parameters")
-        
-        # Convert inputs - FIXED: Use actual dictionary keys, not enumerate
-        inputs = []
-        input_names_dict = node.input_names()
-        input_data_types_dict = node.input_data_types()
-        
-        logger.debug(f"  Input names dict: {input_names_dict}")
-        logger.debug(f"  Input data types dict: {input_data_types_dict}")
-        
-        for socket_key, socket_name in input_names_dict.items():
-            # Use the actual socket_key from the dictionary
-            inputs.append(InputInfo(
-                index=socket_key,  # Use actual key (could be int or string)
-                name=socket_name,
-                data_type=input_data_types_dict.get(socket_key, "Any"),
-                connected=socket_key in node._inputs
-            ))
-        
-        logger.debug(f"  Converted {len(inputs)} inputs")
-        
-        # Convert outputs - FIXED: Use actual dictionary keys, not enumerate
-        outputs = []
-        output_names_dict = node.output_names()
-        output_data_types_dict = node.output_data_types()
-        
-        logger.debug(f"  Output names dict: {output_names_dict}")
-        logger.debug(f"  Output data types dict: {output_data_types_dict}")
-        
-        for socket_key, socket_name in output_names_dict.items():
-            # Use the actual socket_key from the dictionary
-            connection_count = len(node._outputs.get(socket_key, []))
-            outputs.append(OutputInfo(
-                index=socket_key,  # Use actual key (could be int or string)
-                name=socket_name,
-                data_type=output_data_types_dict.get(socket_key, "Any"),
-                connection_count=connection_count
-            ))
-        
-        logger.debug(f"  Converted {len(outputs)} outputs")
+        # Convert all node components
+        parameters = _convert_parameters(node, full_state)
+        inputs = _convert_inputs(node)
+        outputs = _convert_outputs(node)
         
         # Build response
         response = NodeResponse(
             session_id=node.session_id(),
             name=node.name(),
             path=node.path(),
-            type=full_state.node_type.replace("NodeType.", "").lower(),
-            state=NodeStateEnum(full_state.state),
+            type=node.type().value,  # Use enum's value directly
+            state=full_state.state.value,
             errors=full_state.errors,
             warnings=full_state.warnings,
             parameters=parameters,
@@ -489,9 +506,6 @@ def node_to_response(node: 'Node') -> 'NodeResponse':
         
     except AttributeError as e:
         logger.error(f"AttributeError converting node {node.path()}: {e}")
-        logger.error(f"  Node has _parms: {hasattr(node, '_parms')}")
-        logger.error(f"  Node has _inputs: {hasattr(node, '_inputs')}")
-        logger.error(f"  Node has _outputs: {hasattr(node, '_outputs')}")
         raise ValueError(f"Node state incomplete: {e}")
         
     except Exception as e:
