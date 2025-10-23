@@ -1,7 +1,7 @@
 import React from 'react';
 import { Handle, Position, NodeProps } from 'reactflow';
 import { Card, CardHeader, CardContent, Chip, Box, Typography } from '@mui/material';
-import { NodeFlowData } from '../../../types/workspace';
+import { NodeData } from '../../../types/workspace';
 import ErrorIcon from '@mui/icons-material/Error';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
@@ -24,8 +24,8 @@ const getStateColor = (state: string) => {
   }
 };
 
-const CustomNode: React.FC<NodeProps<NodeFlowData>> = ({ data, selected }) => {
-  const displayName = data.nodeType.replace(/_/g, ' ');
+const CustomNode: React.FC<NodeProps<NodeData>> = ({ data, selected }) => {
+  const displayName = data.type.replace(/_/g, ' ');
   const hasErrors = data.errors.length > 0;
 
   return (
@@ -38,24 +38,24 @@ const CustomNode: React.FC<NodeProps<NodeFlowData>> = ({ data, selected }) => {
       }}
     >
       {/* Input Handles */}
-      {data.inputSockets.map((socket) => (
+      {data.inputs.map((socket) => (
         <Handle
           key={`in-${socket.index}`}
           type="target"
           position={Position.Left}
           id={`in-${socket.index}`}
-          style={{ top: `${((socket.index + 1) * 100) / (data.inputSockets.length + 1)}%` }}
+          style={{ top: `${((socket.index + 1) * 100) / (data.inputs.length + 1)}%` }}
         />
       ))}
 
       {/* Output Handles */}
-      {data.outputSockets.map((socket) => (
+      {data.outputs.map((socket) => (
         <Handle
           key={`out-${socket.index}`}
           type="source"
           position={Position.Right}
           id={`out-${socket.index}`}
-          style={{ top: `${((socket.index + 1) * 100) / (data.outputSockets.length + 1)}%` }}
+          style={{ top: `${((socket.index + 1) * 100) / (data.outputs.length + 1)}%` }}
         />
       ))}
 
@@ -63,7 +63,7 @@ const CustomNode: React.FC<NodeProps<NodeFlowData>> = ({ data, selected }) => {
         title={
           <Box display="flex" alignItems="center" gap={1}>
             <Typography variant="subtitle2" noWrap>
-              {data.label}
+              {data.name}
             </Typography>
             {hasErrors && <ErrorIcon fontSize="small" color="error" />}
             {getStateIcon(data.state)}

@@ -1,5 +1,21 @@
 // src/GUI/src/types/workspace.ts
 
+
+
+export interface Parameter {
+  type: 'STRING' | 'INT' | 'FLOAT' | 'TOGGLE' | 'BUTTON' | 'STRINGLIST';
+  value: unknown;  // Better than 'any' for values that could be anything
+  default: unknown;
+  read_only: boolean;
+}
+
+export interface Socket {
+  index: number;
+  name: string;
+  data_type: string;
+  connected: boolean;
+}
+
 export interface NodeData {
   session_id: number;
   name: string;
@@ -12,22 +28,8 @@ export interface NodeData {
   errors: string[];
   warnings: string[];
   position: [number, number];
-  selected: boolean;
-  _output?: any[];  // Output data from execution
-}
-
-export interface Parameter {
-  type: 'STRING' | 'INT' | 'FLOAT' | 'TOGGLE' | 'BUTTON' | 'STRINGLIST';
-  value: any;
-  default: any;
-  read_only: boolean;
-}
-
-export interface Socket {
-  index: number;
-  name: string;
-  data_type: string;
-  connected: boolean;
+  // Removed: selected - handled by ReactFlow
+  output_data?: unknown[];  // Renamed and better typed than any[]
 }
 
 export interface ConnectionData {
