@@ -1,7 +1,7 @@
 // src/GUI/src/api/endpoints.ts
 
 import { apiClient } from './client';
-import { NodeData, ConnectionData } from '../types/workspace';
+import type { NodeData, ConnectionData } from '../types/workspace';
 
 export const fetchWorkspace = async () => {
   const response = await apiClient.get('/workspace');

@@ -2,7 +2,7 @@ import React from 'react';
 import { Box, Typography, TextField, Switch, Button, FormControlLabel, Paper } from '@mui/material';
 import { useWorkspace } from '../../contexts/WorkspaceContext';
 import { useSelection } from '../../contexts/SelectionContext';
-import { Parameter } from '../../types/workspace';
+import type { Parameter } from '../../types/workspace';
 
 const ParameterPanel: React.FC = () => {
   const { state, updateNodeParameter } = useWorkspace();

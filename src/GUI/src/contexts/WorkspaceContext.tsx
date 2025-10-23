@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useReducer, useCallback, useEffect } from 'react';
-import { WorkspaceState, WorkspaceAction, WorkspaceResponse, NodeData, ConnectionData } from './../types/workspace';
+import type { WorkspaceState, WorkspaceAction, WorkspaceResponse, NodeData, ConnectionData } from './../types/workspace';
 
 const API_BASE = 'http://127.0.0.1:8000/api/v1';
 

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Handle, Position, NodeProps } from 'reactflow';
 import { Card, CardHeader, CardContent, Chip, Box, Typography } from '@mui/material';
-import { NodeData } from '../../../types/workspace';
+import type { NodeData } from '../../../types/workspace';
 import ErrorIcon from '@mui/icons-material/Error';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
