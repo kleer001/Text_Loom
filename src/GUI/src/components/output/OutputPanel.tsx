@@ -4,7 +4,7 @@ import { useWorkspace } from '../../contexts/WorkspaceContext';
 import { useSelection } from '../../contexts/SelectionContext';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 
-const OutputPanel: React.FC = () => {
+export const OutputPanel: React.FC = () => {
   const { state, executeNode } = useWorkspace();
   const { selectedNodePaths } = useSelection();
   const [executing, setExecuting] = useState(false);

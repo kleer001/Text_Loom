@@ -1,5 +1,5 @@
 import React from 'react';
-import { Handle, Position, NodeProps } from 'reactflow';
+import { Handle, Position, type NodeProps } from '@xyflow/react';
 import { Card, CardHeader, CardContent, Chip, Box, Typography } from '@mui/material';
 import type { NodeData } from '../../../types/workspace';
 import ErrorIcon from '@mui/icons-material/Error';

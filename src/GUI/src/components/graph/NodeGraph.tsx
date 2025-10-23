@@ -1,14 +1,16 @@
 // src/GUI/src/components/graph/NodeGraph.tsx
 
 import { useCallback, useMemo } from 'react';
-import ReactFlow, { 
+import { 
+  ReactFlow,
   Background, 
   Controls, 
-  OnConnect, 
-  OnNodeDrag,
-  Node as RFNode,
-  Edge as RFEdge,
-} from 'reactflow';
+  type OnConnect, 
+  type OnNodeDrag,
+  type Node as RFNode,
+  type Edge as RFEdge,
+} from '@xyflow/react';
+import '@xyflow/react/dist/style.css';
 import { useWorkspace } from '../../contexts/WorkspaceContext';
 import { useSelection } from '../../contexts/SelectionContext';
 import CustomNode from './nodes/CustomNode';

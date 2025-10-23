@@ -11,8 +11,11 @@
   },
   "dependencies": {
     "@mui/icons-material": "^7.3.4",
+    "@xyflow/react": "^12.3.5",
+    "axios": "^1.7.2",
     "react": "^19.1.1",
-    "react-dom": "^19.1.1"
+    "react-dom": "^19.1.1",
+    "react-resizable-panels": "^2.1.7"
   },
   "devDependencies": {
     "@eslint/js": "^9.36.0",

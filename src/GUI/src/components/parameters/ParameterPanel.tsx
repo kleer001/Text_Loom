@@ -4,7 +4,7 @@ import { useWorkspace } from '../../contexts/WorkspaceContext';
 import { useSelection } from '../../contexts/SelectionContext';
 import type { Parameter } from '../../types/workspace';
 
-const ParameterPanel: React.FC = () => {
+export const ParameterPanel: React.FC = () => {
   const { state, updateNodeParameter } = useWorkspace();
   const { selectedNodePaths } = useSelection();
 
@@ -128,4 +128,4 @@ const ParameterPanel: React.FC = () => {
   );
 };
 
-export default ParameterPanel;
+export { ParameterPanel };

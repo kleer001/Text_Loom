@@ -6,7 +6,7 @@ import AddIcon from '@mui/icons-material/Add';
 import { useWorkspace } from '../../contexts/WorkspaceContext';
 import { fetchAvailableNodeTypes } from '../../api/endpoints';
 
-const NodePalette: React.FC = () => {
+export const NodePalette: React.FC = () => {
   const [open, setOpen] = useState(false);
   const [nodeTypes, setNodeTypes] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);

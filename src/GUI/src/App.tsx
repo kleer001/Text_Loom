@@ -3,10 +3,10 @@ import { ThemeProvider, createTheme, CssBaseline, AppBar, Toolbar, Typography, B
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 import { WorkspaceProvider, useWorkspace } from './contexts/WorkspaceContext';
 import { SelectionProvider } from './contexts/SelectionContext';
-import NodeGraph from './components/graph/NodeGraph';
-import ParameterPanel from './components/parameters/ParameterPanel';
-import OutputPanel from './components/output/OutputPanel';
-import NodePalette from './components/palette/NodePalette';
+import { NodeGraph } from './components/graph/NodeGraph';  // Named import (stays the same)
+import ParameterPanel from './components/parameters/ParameterPanel';  // Default import
+import OutputPanel from './components/output/OutputPanel';  // Default import
+import NodePalette from './components/palette/NodePalette';  // Default import
 
 const theme = createTheme({
   palette: {
