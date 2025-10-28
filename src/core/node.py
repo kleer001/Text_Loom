@@ -205,7 +205,7 @@ class Node(MobileItem):
                 value.split('_'))
             node_class = getattr(module, f'{class_name}Node')
             new_node = node_class(new_name, new_path, node_type)
-            new_node._session_id = new_node._generate_unique_session_id()
+            # Note: session_id is already generated in MobileItem.__init__()
             NodeEnvironment.add_node(new_node)
             if hasattr(new_node.__class__, 'post_registration_init'):
                 UndoManager().disable()
