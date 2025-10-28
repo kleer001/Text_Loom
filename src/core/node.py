@@ -143,6 +143,14 @@ class Node(MobileItem):
         self._internal_nodes_created = False
         self._parent_looper = False
 
+        # Universal enabled toggle - initialized in base class before child classes init their _parms
+        # Import at runtime to avoid circular dependency
+        from core.parm import Parm, ParameterType
+        self._parms: Dict[str, 'Parm'] = {
+            "enabled": Parm("enabled", ParameterType.TOGGLE, self)
+        }
+        self._parms["enabled"].set(True)
+
     def node_path(self) ->str:
         """Returns the current location in the hierarchy of the workspace."""
         return self.path()
