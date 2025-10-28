@@ -12,7 +12,7 @@ Handles node-related API operations:
 
 from typing import List
 import time
-from fastapi import APIRouter, HTTPException, Path, status
+from fastapi import APIRouter, HTTPException, Path, Body, status
 from api.models import (
     NodeResponse, 
     NodeCreateRequest, 
@@ -320,25 +320,27 @@ def create_node(request: 'NodeCreateRequest') -> 'NodeResponse':
     }
 )
 def update_node(
-    session_id: int = Path(..., description="Node session ID"),
-    request: NodeUpdateRequest = ...
+    session_id: int,
+    request: NodeUpdateRequest = Body(...)
 ) -> NodeResponse:
     """
     Update an existing node.
-    
+
     Supports partial updates - only the provided fields are modified.
     Can update parameters, position, color, and selection state.
-    
+
     Args:
         session_id: The unique session identifier for the node
         request: Update parameters
-        
+
     Returns:
         NodeResponse: Updated node details
-        
+
     Raises:
         HTTPException: 404 if node not found, 400 if update invalid
     """
+    logger.info(f"Updating node with session_id={session_id}, request={request}")
+
     # Find the node
     target_node = None
     for path in NodeEnvironment.list_nodes():
@@ -346,8 +348,9 @@ def update_node(
         if node and node.session_id() == session_id:
             target_node = node
             break
-    
+
     if not target_node:
+        logger.warning(f"Node with session_id {session_id} not found")
         raise HTTPException(
             status_code=404,
             detail={
@@ -367,17 +370,22 @@ def update_node(
         
         # Update UI state if provided
         if request.position is not None:
+            logger.debug(f"  Updating position to {request.position}")
             target_node._position = request.position
-        
+
         if request.color is not None:
+            logger.debug(f"  Updating color to {request.color}")
             target_node._color = tuple(request.color)
-        
+
         if request.selected is not None:
+            logger.debug(f"  Updating selected to {request.selected}")
             target_node._selected = request.selected
-        
+
+        logger.info(f"Successfully updated node {target_node.path()}")
         return node_to_response(target_node)
         
     except ValueError as e:
+        logger.error(f"ValueError updating node: {e}")
         raise HTTPException(
             status_code=400,
             detail={
@@ -386,6 +394,9 @@ def update_node(
             }
         )
     except Exception as e:
+        logger.error(f"Exception updating node: {type(e).__name__}: {e}")
+        import traceback
+        logger.error(traceback.format_exc())
         raise HTTPException(
             status_code=500,
             detail={
