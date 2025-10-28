@@ -1,17 +1,15 @@
 // Graph Canvas - React Flow visualization of workspace
 
-import React, { useMemo, useCallback, useEffect } from 'react';
-import type {
+import React, { useCallback, useEffect } from 'react';
+import {
   ReactFlow,
   Background,
   Controls,
-  Node,
-  Edge,
   useNodesState,
   useEdgesState,
   BackgroundVariant,
-  ConnectionLineType,
 } from '@xyflow/react';
+import type { Node, Edge } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { CustomNode } from './CustomNode';
 import { useWorkspace } from './WorkspaceContext';
@@ -23,8 +21,8 @@ const nodeTypes = {
 
 export const GraphCanvas: React.FC = () => {
   const { nodes: workspaceNodes, connections, selectNode } = useWorkspace();
-  const [nodes, setNodes, onNodesChange] = useNodesState([]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
 
   // Convert workspace nodes to React Flow nodes
   useEffect(() => {
@@ -45,7 +43,7 @@ export const GraphCanvas: React.FC = () => {
       target: String(conn.target_node_session_id),
       sourceHandle: `output-${conn.source_output_index}`,
       targetHandle: `input-${conn.target_input_index}`,
-      type: ConnectionLineType.SmoothStep,
+      type: 'smoothstep',
       animated: false,
       style: { stroke: '#888', strokeWidth: 2 },
     }));
