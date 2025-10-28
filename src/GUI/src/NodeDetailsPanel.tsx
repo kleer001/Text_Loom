@@ -1,14 +1,43 @@
 // Node Details Panel - Shows information about selected node
 
-import React from 'react';
-import { Box, Typography, Divider, Chip } from '@mui/material';
+import React, { useState, useEffect, useRef } from 'react';
+import { Box, Typography, Divider, Chip, TextField, IconButton } from '@mui/material';
+import EditIcon from '@mui/icons-material/Edit';
+import CheckIcon from '@mui/icons-material/Check';
+import CloseIcon from '@mui/icons-material/Close';
 import type { NodeResponse } from './types';
 
 interface NodeDetailsPanelProps {
   node: NodeResponse | null;
+  triggerRename?: boolean;
+  onRenameTriggerHandled?: () => void;
 }
 
-export const NodeDetailsPanel: React.FC<NodeDetailsPanelProps> = ({ node }) => {
+export const NodeDetailsPanel: React.FC<NodeDetailsPanelProps> = ({
+  node,
+  triggerRename,
+  onRenameTriggerHandled,
+}) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editName, setEditName] = useState('');
+  const [nameError, setNameError] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Reset editing state when node changes
+  useEffect(() => {
+    setIsEditing(false);
+    setEditName('');
+    setNameError('');
+  }, [node?.session_id]);
+
+  // Handle external rename trigger (e.g., F2 key)
+  useEffect(() => {
+    if (triggerRename && node) {
+      handleEditClick();
+      onRenameTriggerHandled?.();
+    }
+  }, [triggerRename]);
+
   if (!node) {
     return (
       <Box sx={{ p: 2, color: 'text.secondary' }}>
@@ -19,12 +48,84 @@ export const NodeDetailsPanel: React.FC<NodeDetailsPanelProps> = ({ node }) => {
     );
   }
 
+  const handleEditClick = () => {
+    setEditName(node.name);
+    setIsEditing(true);
+    setNameError('');
+    setTimeout(() => inputRef.current?.focus(), 0);
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    setEditName('');
+    setNameError('');
+  };
+
+  const handleSaveEdit = async () => {
+    const trimmedName = editName.trim();
+
+    if (!trimmedName) {
+      setNameError('Name cannot be empty');
+      return;
+    }
+
+    if (trimmedName === node.name) {
+      handleCancelEdit();
+      return;
+    }
+
+    // TODO: Backend API limitation - node names cannot be changed after creation
+    // The node name is tied to its path and is immutable
+    setNameError('Node renaming is not supported by the backend API yet');
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSaveEdit();
+    } else if (e.key === 'Escape') {
+      handleCancelEdit();
+    }
+  };
+
   return (
     <Box sx={{ p: 2, overflow: 'auto', height: '100%' }}>
-      {/* Header */}
-      <Typography variant="h6" gutterBottom>
-        {node.name}
-      </Typography>
+      {/* Header with editable name */}
+      {isEditing ? (
+        <Box sx={{ mb: 2 }}>
+          <TextField
+            inputRef={inputRef}
+            value={editName}
+            onChange={(e) => setEditName(e.target.value)}
+            onKeyDown={handleKeyDown}
+            error={!!nameError}
+            helperText={nameError}
+            size="small"
+            fullWidth
+            placeholder="Node name"
+            InputProps={{
+              endAdornment: (
+                <>
+                  <IconButton size="small" onClick={handleSaveEdit} color="primary">
+                    <CheckIcon fontSize="small" />
+                  </IconButton>
+                  <IconButton size="small" onClick={handleCancelEdit}>
+                    <CloseIcon fontSize="small" />
+                  </IconButton>
+                </>
+              ),
+            }}
+          />
+        </Box>
+      ) : (
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+          <Typography variant="h6" sx={{ flex: 1 }}>
+            {node.name}
+          </Typography>
+          <IconButton size="small" onClick={handleEditClick} title="Rename node (F2)">
+            <EditIcon fontSize="small" />
+          </IconButton>
+        </Box>
+      )}
       <Typography variant="body2" color="text.secondary" gutterBottom>
         {node.type}
       </Typography>

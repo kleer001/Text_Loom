@@ -62,3 +62,18 @@ export interface ApiError {
   message: string;
   details?: Record<string, string | number | boolean>;
 }
+
+// Request types for node operations
+export interface NodeCreateRequest {
+  type: string;
+  name?: string;
+  parent_path?: string;
+  position?: [number, number];
+}
+
+export interface NodeUpdateRequest {
+  parameters?: Record<string, string | number | boolean | string[]>;
+  position?: [number, number];
+  color?: [number, number, number];
+  selected?: boolean;
+}
