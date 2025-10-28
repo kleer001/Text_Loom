@@ -86,11 +86,11 @@ class MakeListNode(Node):
         self._is_time_dependent = False
 
         # Initialize parameters
-        self._parms: Dict[str, Parm] = {
+        self._parms.update({
             "limit": Parm("limit", ParameterType.TOGGLE, self),
             "max_list": Parm("max_list", ParameterType.INT, self),
             "refresh": Parm("refresh", ParameterType.BUTTON, self)
-        }
+        })
 
         # Set default values
         self._parms["limit"].set(False)

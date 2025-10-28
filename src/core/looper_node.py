@@ -104,7 +104,7 @@ class LooperNode(Node):
         self._internal_nodes_created = False
 
         # Initialize parameters
-        self._parms: Dict[str, Parm] = {
+        self._parms.update({
             "min": Parm("min", ParameterType.INT, self),
             "max": Parm("max", ParameterType.INT, self),
             "step": Parm("step", ParameterType.INT, self),
@@ -118,7 +118,7 @@ class LooperNode(Node):
             "staging_data": Parm("staging_data", ParameterType.STRINGLIST, self),
             "timeout_limit": Parm("timeout_limit", ParameterType.FLOAT, self),
             "data_limit": Parm("data_limit", ParameterType.INT, self),
-        }
+        })
 
         # Set default values
         self._parms["min"].set(1)

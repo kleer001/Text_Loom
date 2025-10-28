@@ -61,11 +61,11 @@ class FileInNode(Node):
         self._file_hash = None
 
         # Initialize parameters
-        self._parms: Dict[str, Parm] = {
+        self._parms.update({
             "file_name": Parm("file_name", ParameterType.STRING, self),
             "file_text": Parm("file_text", ParameterType.STRING, self),
             "refresh": Parm("refresh", ParameterType.BUTTON, self)
-        }
+        })
 
         # Set default values
         self._parms["file_name"].set("./input.txt")  # Default to current directory

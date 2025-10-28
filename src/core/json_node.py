@@ -56,14 +56,13 @@ class JsonNode(Node):
         super().__init__(name, path, [0.0, 0.0], node_type)
         self._is_time_dependent = False
 
-        self._parms: Dict[str, Parm] = {
+        self._parms.update({
             "json_path": Parm("json_path", ParameterType.STRING, self),
             "extraction_mode": Parm("extraction_mode", ParameterType.STRING, self),
             "format_output": Parm("format_output", ParameterType.STRING, self),
             "on_parse_error": Parm("on_parse_error", ParameterType.STRING, self),
             "max_depth": Parm("max_depth", ParameterType.INT, self),
-            "enabled": Parm("enabled", ParameterType.TOGGLE, self),
-        }
+        })
 
         # Set defaults
         self._parms["json_path"].set("")
@@ -71,7 +70,6 @@ class JsonNode(Node):
         self._parms["format_output"].set("raw")
         self._parms["on_parse_error"].set("warn")
         self._parms["max_depth"].set(0)
-        self._parms["enabled"].set(True)
 
     def _internal_cook(self, force: bool = False) -> None:
         """Process JSON input and extract data based on parameters."""

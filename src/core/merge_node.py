@@ -59,11 +59,11 @@ class MergeNode(Node):
         self._output: List[str] = []
 
         # Initialize parameters
-        self._parms: Dict[str, Parm] = {
+        self._parms.update({
             "single_string": Parm("single_string", ParameterType.TOGGLE, self),
             "use_insert": Parm("use_insert", ParameterType.TOGGLE, self),
             "insert_string": Parm("insert_string", ParameterType.STRING, self)
-        }
+        })
         # Set default value
         self._parms["single_string"].set(True)
         self._parms["use_insert"].set(False)

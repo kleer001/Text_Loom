@@ -29,11 +29,11 @@ class InputNullNode(Node):
         self._output = None
         self._parent_looper = True
         # Initialize parameters
-        self._parms: Dict[str, Parm] = {
+        self._parms.update({
             "in_node": Parm("in_node", ParameterType.STRING, self),
             "in_data": Parm("in_data", ParameterType.STRINGLIST, self),
             "feedback_mode": Parm("feedback_mode", ParameterType.TOGGLE, self),
-        }
+        })
 
         # Set default values
         self._parms["in_node"].set("")

@@ -63,12 +63,10 @@ class SplitNode(Node):
         self._param_hash = None
         self._output = [[], [], []]
 
-        self._parms: Dict[str, Parm] = {
-            "enabled": Parm("enabled", ParameterType.TOGGLE, self),
+        self._parms.update({
             "split_expr": Parm("split_expr", ParameterType.STRING, self),
-        }
+        })
 
-        self._parms["enabled"].set(True)
         self._parms["split_expr"].set("")
 
     def _validate_list_expression(self, expr: str) -> bool:

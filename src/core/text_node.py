@@ -45,12 +45,12 @@ class TextNode(Node):
         self._input_hash = None
         self._param_hash = None
 
-        self._parms: Dict[str, Parm] = {
+        self._parms.update({
             "text_string": Parm("text_string", ParameterType.STRING, self),
             "pass_through": Parm("pass_through", ParameterType.TOGGLE, self),
             "per_item": Parm("per_item", ParameterType.TOGGLE, self),
             "prefix": Parm("prefix", ParameterType.TOGGLE, self),
-        }
+        })
 
         self._parms["text_string"].set("")
         self._parms["pass_through"].set(True)

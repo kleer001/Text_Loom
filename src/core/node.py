@@ -10,6 +10,9 @@ from core.mobile_item import MobileItem
 from core.node_connection import NodeConnection
 from core.node_environment import NodeEnvironment
 
+if TYPE_CHECKING:
+    from core.parm import Parm, ParameterType
+
 class Node(MobileItem):
     """
     Node: The foundational building block of a node-based graph processing system.
@@ -139,6 +142,14 @@ class Node(MobileItem):
         self._output_node = None
         self._internal_nodes_created = False
         self._parent_looper = False
+
+        # Universal enabled toggle - initialized in base class before child classes init their _parms
+        # Import at runtime to avoid circular dependency
+        from core.parm import Parm, ParameterType
+        self._parms: Dict[str, 'Parm'] = {
+            "enabled": Parm("enabled", ParameterType.TOGGLE, self)
+        }
+        self._parms["enabled"].set(True)
 
     def node_path(self) ->str:
         """Returns the current location in the hierarchy of the workspace."""
@@ -447,6 +458,32 @@ class Node(MobileItem):
         This method should be called externally and will manage dependency cooking before
         executing the core logic of this node.
         """
+        # Import at runtime to avoid circular dependency
+        from core.parm import Parm, ParameterType
+
+        # Ensure _parms exists and has "enabled" parameter
+        if not hasattr(self, '_parms') or self._parms is None:
+            self._parms = {}
+        if "enabled" not in self._parms:
+            self._parms["enabled"] = Parm("enabled", ParameterType.TOGGLE, self)
+            self._parms["enabled"].set(True)
+
+        # Check if node is disabled
+        if not self._parms["enabled"].eval():
+            # Cook dependencies first
+            dependencies = self.cook_dependencies()
+            for node in dependencies:
+                node._internal_cook()
+
+            # Pass through input unchanged or return empty
+            if self.inputs():
+                input_conn = self.inputs()[0]
+                self._output = input_conn.output_node().get_output(requesting_node=self)
+            else:
+                self._output = []
+            self.set_state(NodeState.UNCHANGED)
+            return
+
         print(f'☀ Starting cook for {self.name()}')
         dependencies = self.cook_dependencies()
         for node in dependencies:
