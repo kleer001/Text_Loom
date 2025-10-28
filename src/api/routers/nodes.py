@@ -195,6 +195,8 @@ def get_node(
             }
         )
 
+    return node_to_response(target_node)
+
 
 @router.post(
     "/nodes",
