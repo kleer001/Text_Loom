@@ -76,6 +76,7 @@ class SectionNode(Node):
         - Delimiter within prefix is treated as part of the prefix
     """
 
+    GLYPH = '§'
     SINGLE_OUTPUT = False
     SINGLE_INPUT = True
 

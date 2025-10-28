@@ -92,6 +92,7 @@ class QueryNode(Node):
         - Consider using 'limit' for large prompt sets
     """
 
+    GLYPH = '⌘'
     SINGLE_INPUT = True
     SINGLE_OUTPUT = True
     

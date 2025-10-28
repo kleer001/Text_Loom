@@ -77,7 +77,7 @@ class MakeListNode(Node):
         - Non-string inputs return an empty string rather than raising an error
     """
 
-
+    GLYPH = '≣'
     SINGLE_INPUT = True
     SINGLE_OUTPUT = True
 
