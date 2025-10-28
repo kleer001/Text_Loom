@@ -57,7 +57,7 @@ class FolderNode(Node):
         self._last_scan_hash = None
 
         # Initialize parameters
-        self._parms: Dict[str, Parm] = {
+        self._parms.update({
             "folder_path": Parm("folder_path", ParameterType.STRING, self),
             "pattern": Parm("pattern", ParameterType.STRING, self),
             "recursive": Parm("recursive", ParameterType.TOGGLE, self),
@@ -68,8 +68,7 @@ class FolderNode(Node):
             "include_hidden": Parm("include_hidden", ParameterType.TOGGLE, self),
             "follow_symlinks": Parm("follow_symlinks", ParameterType.TOGGLE, self),
             "on_error": Parm("on_error", ParameterType.MENU, self),
-            "enabled": Parm("enabled", ParameterType.TOGGLE, self),
-        }
+        })
 
         # Set default values
         self._parms["folder_path"].set("./")
@@ -99,8 +98,6 @@ class FolderNode(Node):
             "skip": "Skip Silently",
             "stop": "Stop on Error"
         })
-
-        self._parms["enabled"].set(True)
 
     def _sanitize_path(self, path_str: str) -> str:
         """Sanitize path to prevent directory traversal attacks."""

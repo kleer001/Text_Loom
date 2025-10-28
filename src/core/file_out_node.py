@@ -48,12 +48,12 @@ class FileOutNode(Node):
         self._file_hash = None
 
         # Initialize parameters
-        self._parms: Dict[str, Parm] = {
+        self._parms.update({
             "file_name": Parm("file_name", ParameterType.STRING, self),
             "file_text": Parm("file_text", ParameterType.STRING, self),
             "refresh": Parm("refresh", ParameterType.BUTTON, self),
             "format_output": Parm("format_output", ParameterType.TOGGLE, self),
-        }
+        })
 
         # Set default values
         self._parms["file_name"].set("./output.txt")

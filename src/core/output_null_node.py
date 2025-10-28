@@ -29,12 +29,12 @@ class OutputNullNode(Node):
         self._last_input_size = 0
         self._parent_looper = True
 
-        self._parms: Dict[str, Parm] = {
+        self._parms.update({
             "out_data": Parm("out_data", ParameterType.STRINGLIST, self),
             "feedback_mode": Parm("feedback_mode", ParameterType.TOGGLE, self),
             "cook_loops": Parm("cook_loops", ParameterType.TOGGLE, self),
             "in_node": Parm("in_node", ParameterType.STRING, self),
-        }
+        })
 
         self._parms["out_data"].set([])
         self._parms["feedback_mode"].set(False)

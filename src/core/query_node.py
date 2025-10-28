@@ -101,13 +101,13 @@ class QueryNode(Node):
         self._is_time_dependent = True #I'm on the fence, but False seems too boring
 
         # Initialize parameters
-        self._parms: Dict[str, Parm] = {
+        self._parms.update({
             "limit": Parm("limit", ParameterType.TOGGLE, self),
             "response": Parm("response", ParameterType.STRINGLIST, self),
             "llm_name": Parm("llm_name", ParameterType.STRING, self),
             "find_llm": Parm("find_llm", ParameterType.BUTTON, self),
             "respond": Parm("respond", ParameterType.BUTTON, self)
-        }
+        })
 
         # Set default values
         self._parms["limit"].set("True")

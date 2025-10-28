@@ -87,15 +87,13 @@ class SectionNode(Node):
         self._param_hash = None
         self._output = [[], [], []]
 
-        self._parms: Dict[str, Parm] = {
-            "enabled": Parm("enabled", ParameterType.TOGGLE, self),
+        self._parms.update({
             "prefix1": Parm("prefix1", ParameterType.STRING, self),
             "prefix2": Parm("prefix2", ParameterType.STRING, self),
             "trim_prefix": Parm("trim_prefix", ParameterType.TOGGLE, self),
             "regex_file": Parm("regex_file", ParameterType.STRING, self),
-        }
+        })
 
-        self._parms["enabled"].set(True)
         self._parms["prefix1"].set("Interviewer")
         self._parms["prefix2"].set("Participant")
         self._parms["trim_prefix"].set(True)
