@@ -38,6 +38,7 @@ class FileOutNode(Node):
             Output file content: ["a", "b", "c"]
     """
 
+    GLYPH = '⤴'
     SINGLE_INPUT = True
     SINGLE_OUTPUT = True
 

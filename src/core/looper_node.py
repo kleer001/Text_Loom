@@ -92,6 +92,7 @@ class LooperNode(Node):
         use_test=True, test_number=5
         Result: Only processes iteration #5
     """
+    GLYPH = '⟲'
     SINGLE_INPUT = True
     SINGLE_OUTPUT = True
 

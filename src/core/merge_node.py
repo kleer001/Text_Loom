@@ -49,7 +49,7 @@ class MergeNode(Node):
     use_insert = boolian, inserts the insert_string at the head of each item in the list as they're merged together
     """
 
-
+    GLYPH = '⋈'
     SINGLE_INPUT = False
     SINGLE_OUTPUT = True
 

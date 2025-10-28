@@ -51,6 +51,7 @@ class FileInNode(Node):
         - Reports detailed errors for file and parsing issues
     """
 
+    GLYPH = '⤵'
     SINGLE_INPUT = True
     SINGLE_OUTPUT = True
 

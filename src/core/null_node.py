@@ -9,6 +9,7 @@ class NullNode(Node):
     It has a single input and can connect its output to multiple other nodes.
     """
 
+    GLYPH = '∅'
     SINGLE_INPUT = True
     SINGLE_OUTPUT = True
 

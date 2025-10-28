@@ -54,6 +54,8 @@ class SplitNode(Node):
         - For random selection, count is capped at the input list length
     """
 
+    GLYPH = '⋔'
+
     def __init__(self, name: str, path: str, node_type: NodeType):
         super().__init__(name, path, [0.0, 0.0], node_type)
         self._is_time_dependent = True

@@ -35,6 +35,7 @@ class TextNode(Node):
     Output: List[str]
     """
 
+    GLYPH = '¶'
     SINGLE_INPUT = True
     SINGLE_OUTPUT = True
 
