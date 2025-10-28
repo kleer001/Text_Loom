@@ -271,17 +271,19 @@ def create_node(request: 'NodeCreateRequest') -> 'NodeResponse':
         logger.debug(f"  Node has _parms: {hasattr(node, '_parms')}")
         logger.debug(f"  Node has _inputs: {hasattr(node, '_inputs')}")
         logger.debug(f"  Node has _outputs: {hasattr(node, '_outputs')}")
-        
+
         # Set initial position if provided
         if request.position:
-            node._position = request.position
+            node._position = tuple(request.position)
             logger.debug(f"  Position set: {request.position}")
-        
+
         # Convert to response
         logger.debug(f"  Converting node to response")
         response = node_to_response(node)
-        
-        logger.info(f"  Successfully created node {node.path()} with session_id {node.session_id()}")
+
+        logger.info(f"  Successfully created node {node.path()} with session_id {node.session_id()} (type: {type(node.session_id())})")
+        logger.info(f"  Response session_id: {response.session_id} (type: {type(response.session_id)})")
+        logger.info(f"  Node is in NodeEnvironment: {node.path() in NodeEnvironment.nodes}")
         return response
         
     except ValueError as e:
@@ -341,16 +343,29 @@ def update_node(
     """
     logger.info(f"Updating node with session_id={session_id}, request={request}")
 
-    # Find the node
+    # Find the node with enhanced logging
     target_node = None
-    for path in NodeEnvironment.list_nodes():
+    all_paths = NodeEnvironment.list_nodes()
+    logger.debug(f"  Searching through {len(all_paths)} nodes for session_id={session_id}")
+    logger.debug(f"  session_id type: {type(session_id)}, value: {session_id}")
+
+    for path in all_paths:
         node = NodeEnvironment.node_from_name(path)
-        if node and node.session_id() == session_id:
-            target_node = node
-            break
+        if node:
+            node_sid = node.session_id()
+            logger.debug(f"  Checking node {path}: session_id={node_sid} (type: {type(node_sid)})")
+            if node_sid == session_id:
+                target_node = node
+                logger.info(f"  Found matching node at {path}")
+                break
 
     if not target_node:
         logger.warning(f"Node with session_id {session_id} not found")
+        logger.warning(f"  Available nodes and their session_ids:")
+        for path in all_paths[:10]:  # Log first 10 nodes to avoid spam
+            node = NodeEnvironment.node_from_name(path)
+            if node:
+                logger.warning(f"    {path}: session_id={node.session_id()}")
         raise HTTPException(
             status_code=404,
             detail={
@@ -371,7 +386,7 @@ def update_node(
         # Update UI state if provided
         if request.position is not None:
             logger.debug(f"  Updating position to {request.position}")
-            target_node._position = request.position
+            target_node._position = tuple(request.position)
 
         if request.color is not None:
             logger.debug(f"  Updating color to {request.color}")
