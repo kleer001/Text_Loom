@@ -1,7 +1,8 @@
 // Workspace Context - Global state management for nodes, connections, and globals
 
-import React,{ createContext, useContext, useState, useCallback, ReactNode } from 'react';
-import type { WorkspaceState, NodeResponse, ConnectionResponse } from './types';
+import React, { createContext, useContext, useState, useCallback } from 'react';
+import type { ReactNode } from 'react';
+import type { NodeResponse, ConnectionResponse } from './types';
 import { apiClient } from './apiClient';
 
 interface WorkspaceContextType {

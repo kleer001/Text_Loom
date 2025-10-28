@@ -45,9 +45,4 @@ async function testApiConnection() {
   }
 }
 
-// Run tests if this file is executed directly
-if (import.meta.url === `file://${process.argv[1]}`) {
-  testApiConnection();
-}
-
 export { testApiConnection };
