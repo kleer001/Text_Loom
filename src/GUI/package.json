@@ -11,10 +11,10 @@
     "test": "test-step1.ts"
   },
   "dependencies": {
-    "@mui/material": "^7.0.0",
     "@emotion/react": "^11.11.0",
     "@emotion/styled": "^11.11.0",
     "@mui/icons-material": "^7.3.4",
+    "@mui/material": "^7.0.0",
     "@xyflow/react": "^12.3.5",
     "axios": "^1.7.2",
     "react": "^19.1.1",
@@ -23,7 +23,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.36.0",
-    "@types/node": "^24.6.0",
+    "@types/node": "^24.9.2",
     "@types/react": "^19.1.16",
     "@types/react-dom": "^19.1.9",
     "@vitejs/plugin-react": "^5.0.4",

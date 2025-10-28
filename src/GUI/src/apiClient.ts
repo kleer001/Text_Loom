@@ -1,6 +1,12 @@
 // API Client Service - Handles all backend communication
 
-import type { WorkspaceState, ApiError } from './types';
+import type {
+  WorkspaceState,
+  ApiError,
+  NodeResponse,
+  NodeCreateRequest,
+  NodeUpdateRequest
+} from './types';
 
 const API_BASE_URL = 'http://localhost:8000/api/v1';
 
@@ -37,6 +43,35 @@ class ApiClient {
 
   async healthCheck(): Promise<{ status: string }> {
     return this.fetchJson<{ status: string }>('/');
+  }
+
+  // Node operations
+  async createNode(request: NodeCreateRequest): Promise<NodeResponse> {
+    return this.fetchJson<NodeResponse>('/nodes', {
+      method: 'POST',
+      body: JSON.stringify(request),
+    });
+  }
+
+  async updateNode(sessionId: number, request: NodeUpdateRequest): Promise<NodeResponse> {
+    return this.fetchJson<NodeResponse>(`/nodes/${sessionId}`, {
+      method: 'PUT',
+      body: JSON.stringify(request),
+    });
+  }
+
+  async deleteNode(sessionId: number): Promise<void> {
+    await this.fetchJson<void>(`/nodes/${sessionId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async getNode(sessionId: number): Promise<NodeResponse> {
+    return this.fetchJson<NodeResponse>(`/nodes/${sessionId}`);
+  }
+
+  async listNodes(): Promise<NodeResponse[]> {
+    return this.fetchJson<NodeResponse[]>('/nodes');
   }
 }
 

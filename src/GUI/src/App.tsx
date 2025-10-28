@@ -15,9 +15,11 @@ import RefreshIcon from '@mui/icons-material/Refresh';
 import { WorkspaceProvider, useWorkspace } from './WorkspaceContext';
 import { GraphCanvas } from './GraphCanvas';
 import { NodeDetailsPanel } from './NodeDetailsPanel';
+import { AddNodeMenu } from './AddNodeMenu';
 
 const AppContent: React.FC = () => {
   const { loadWorkspace, loading, error, getSelectedNode } = useWorkspace();
+  const [triggerRename, setTriggerRename] = React.useState(false);
 
   // Load workspace on mount
   useEffect(() => {
@@ -25,6 +27,14 @@ const AppContent: React.FC = () => {
   }, [loadWorkspace]);
 
   const selectedNode = getSelectedNode();
+
+  const handleRenameRequested = () => {
+    setTriggerRename(true);
+  };
+
+  const handleRenameTriggerHandled = () => {
+    setTriggerRename(false);
+  };
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
@@ -72,7 +82,10 @@ const AppContent: React.FC = () => {
               <CircularProgress />
             </Box>
           ) : (
-            <GraphCanvas />
+            <>
+              <GraphCanvas onRenameRequested={handleRenameRequested} />
+              <AddNodeMenu variant="fab" />
+            </>
           )}
         </Box>
 
@@ -93,7 +106,11 @@ const AppContent: React.FC = () => {
             <Typography variant="h6">Node Details</Typography>
           </Box>
           <Box sx={{ flex: 1, overflow: 'auto' }}>
-            <NodeDetailsPanel node={selectedNode} />
+            <NodeDetailsPanel
+              node={selectedNode}
+              triggerRename={triggerRename}
+              onRenameTriggerHandled={handleRenameTriggerHandled}
+            />
           </Box>
         </Paper>
       </Box>
