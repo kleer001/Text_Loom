@@ -1,78 +1,125 @@
-import React from 'react';
-import { ThemeProvider, createTheme, CssBaseline, AppBar, Toolbar, Typography, Button } from '@mui/material';
-import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
-import { WorkspaceProvider, useWorkspace } from './contexts/WorkspaceContext';
-import { SelectionProvider } from './contexts/SelectionContext';
-import { NodeGraph } from './components/graph/NodeGraph';  // Named import (stays the same)
-import ParameterPanel from './components/parameters/ParameterPanel';  // Default import
-import OutputPanel from './components/output/OutputPanel';  // Default import
-import NodePalette from './components/palette/NodePalette';  // Default import
+import { useEffect, useState } from 'react';
+import { 
+  ReactFlow, 
+  Background, 
+  Controls,
+  type Node as RFNode,
+  type Edge as RFEdge
+} from '@xyflow/react';
+import '@xyflow/react/dist/style.css';
+import type { WorkspaceData, Node } from './types';
 
-const theme = createTheme({
-  palette: {
-    mode: 'light',
-    primary: { main: '#1976d2' },
-    success: { main: '#4caf50' },
-    error: { main: '#f44336' },
-    warning: { main: '#ff9800' },
-  },
-});
+const API_URL = 'http://127.0.0.1:8000/api/v1/workspace';
 
-const AppContent: React.FC = () => {
-  const { state, fetchWorkspace } = useWorkspace();
+function App() {
+  const [nodes, setNodes] = useState<RFNode[]>([]);
+  const [edges, setEdges] = useState<RFEdge[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Fetch workspace data on mount
+    fetch(API_URL)
+      .then(res => {
+        if (!res.ok) throw new Error(`API error: ${res.status}`);
+        return res.json();
+      })
+      .then((data: WorkspaceData) => {
+        // Convert nodes to ReactFlow format
+        const rfNodes: RFNode[] = data.nodes.map((node: Node) => ({
+          id: node.path,
+          type: 'default',
+          position: { x: node.position[0], y: node.position[1] },
+          data: { 
+            label: (
+              <div style={{ padding: '10px' }}>
+                <div style={{ fontWeight: 'bold' }}>{node.name}</div>
+                <div style={{ fontSize: '0.8em', color: '#666' }}>{node.type}</div>
+              </div>
+            )
+          },
+        }));
+
+        // Convert connections to ReactFlow edges
+        const rfEdges: RFEdge[] = data.connections.map(conn => ({
+          id: conn.id,
+          source: conn.source_node_path,
+          target: conn.target_node_path,
+          sourceHandle: `out-${conn.source_output_index}`,
+          targetHandle: `in-${conn.target_input_index}`,
+        }));
+
+        setNodes(rfNodes);
+        setEdges(rfEdges);
+        setLoading(false);
+      })
+      .catch(err => {
+        setError(err.message);
+        setLoading(false);
+      });
+  }, []);
+
+  if (loading) {
+    return (
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '100vh',
+        fontSize: '1.5em'
+      }}>
+        Loading workspace...
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '100vh',
+        flexDirection: 'column',
+        color: 'red'
+      }}>
+        <h2>Error Loading Workspace</h2>
+        <p>{error}</p>
+        <p style={{ fontSize: '0.9em', color: '#666' }}>
+          Make sure the API is running at {API_URL}
+        </p>
+      </div>
+    );
+  }
 
   return (
-    <>
-      <AppBar position="static" elevation={1}>
-        <Toolbar variant="dense">
-          <Typography variant="h6" sx={{ flexGrow: 1 }}>
-            TextLoom
-          </Typography>
-          <Button color="inherit" onClick={fetchWorkspace} disabled={state.loading}>
-            Refresh
-          </Button>
-          {state.error && <Typography color="error" variant="caption">{state.error}</Typography>}
-        </Toolbar>
-      </AppBar>
-
-      <PanelGroup direction="horizontal" style={{ height: 'calc(100vh - 48px)' }}>
-        {/* Node Graph - 60% */}
-        <Panel defaultSize={60} minSize={30}>
-          <div style={{ height: '100%', position: 'relative' }}>
-            <NodePalette />
-            <NodeGraph />
-          </div>
-        </Panel>
-
-        <PanelResizeHandle style={{ width: '4px', background: '#ccc' }} />
-
-        {/* Parameters - 25% */}
-        <Panel defaultSize={25} minSize={15}>
-          <ParameterPanel />
-        </Panel>
-
-        <PanelResizeHandle style={{ width: '4px', background: '#ccc' }} />
-
-        {/* Output - 15% */}
-        <Panel defaultSize={15} minSize={10}>
-          <OutputPanel />
-        </Panel>
-      </PanelGroup>
-    </>
+    <div style={{ width: '100vw', height: '100vh' }}>
+      <div style={{ 
+        position: 'absolute', 
+        top: 10, 
+        left: 10, 
+        zIndex: 10,
+        background: 'white',
+        padding: '10px 20px',
+        borderRadius: '5px',
+        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+      }}>
+        <h3 style={{ margin: 0 }}>TextLoom - Phase 1</h3>
+        <p style={{ margin: '5px 0 0 0', fontSize: '0.9em', color: '#666' }}>
+          {nodes.length} nodes, {edges.length} connections
+        </p>
+      </div>
+      
+      <ReactFlow
+        nodes={nodes}
+        edges={edges}
+        fitView
+      >
+        <Background />
+        <Controls />
+      </ReactFlow>
+    </div>
   );
-};
-
-const App: React.FC = () => {
-  return (
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
-      <WorkspaceProvider>
-        <SelectionProvider>
-          <AppContent />
-        </SelectionProvider>
-      </WorkspaceProvider>
-    </ThemeProvider>
-  );
-};
+}
 
 export default App;

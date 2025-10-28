@@ -14,7 +14,7 @@ import '@xyflow/react/dist/style.css';
 import { useWorkspace } from '../../contexts/WorkspaceContext';
 import { useSelection } from '../../contexts/SelectionContext';
 import CustomNode from './nodes/CustomNode';
-import 'reactflow/dist/style.css';
+import '@xyflow/react/dist/style.css';
 
 const nodeTypes = {
   default: CustomNode,
