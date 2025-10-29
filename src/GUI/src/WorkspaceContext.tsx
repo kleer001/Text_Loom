@@ -14,8 +14,8 @@ interface WorkspaceContextType {
   loading: boolean;
   error: string | null;
   loadWorkspace: () => Promise<void>;
-  selectNode: (sessionId: string | null) => void;
-  selectNodes: (sessionIds: string[]) => void;
+  selectNode: (sessionId: string | null) => Promise<void>;
+  selectNodes: (sessionIds: string[]) => Promise<void>;
   getSelectedNode: () => NodeResponse | null;
   getSelectedNodes: () => NodeResponse[];
   createNode: (request: NodeCreateRequest) => Promise<NodeResponse>;
@@ -53,15 +53,51 @@ export const WorkspaceProvider: React.FC<{ children: ReactNode }> = ({ children 
     }
   }, []);
 
-  const selectNode = useCallback((sessionId: string | null) => {
+  const selectNode = useCallback(async (sessionId: string | null) => {
     setSelectedNodeId(sessionId);
     setSelectedNodeIds(sessionId !== null ? [sessionId] : []);
-  }, []);
 
-  const selectNodes = useCallback((sessionIds: string[]) => {
+    // Sync selection state with backend
+    try {
+      // Deselect all nodes first
+      await Promise.all(
+        nodes.map(node =>
+          apiClient.updateNode(node.session_id, { selected: false })
+        )
+      );
+
+      // Select the target node if provided
+      if (sessionId !== null) {
+        await apiClient.updateNode(sessionId, { selected: true });
+      }
+    } catch (err) {
+      console.error('Failed to sync selection with backend:', err);
+    }
+  }, [nodes]);
+
+  const selectNodes = useCallback(async (sessionIds: string[]) => {
     setSelectedNodeIds(sessionIds);
     setSelectedNodeId(sessionIds.length === 1 ? sessionIds[0] : null);
-  }, []);
+
+    // Sync selection state with backend
+    try {
+      // Deselect all nodes first
+      await Promise.all(
+        nodes.map(node =>
+          apiClient.updateNode(node.session_id, { selected: false })
+        )
+      );
+
+      // Select the target nodes
+      if (sessionIds.length > 0) {
+        await Promise.all(
+          sessionIds.map(id => apiClient.updateNode(id, { selected: true }))
+        );
+      }
+    } catch (err) {
+      console.error('Failed to sync selection with backend:', err);
+    }
+  }, [nodes]);
 
   const getSelectedNode = useCallback(() => {
     if (selectedNodeId === null) return null;
