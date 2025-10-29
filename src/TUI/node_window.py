@@ -611,6 +611,18 @@ class NodeWindow(ScrollableContainer):
             return
         if 0 <= self._selected_line < len(self._node_data):
             node_data = self._node_data[self._selected_line]
+
+            # Deselect all other nodes first (single-selection behavior)
+            for existing_node in NodeEnvironment.nodes.values():
+                if hasattr(existing_node, '_selected'):
+                    existing_node._selected = False
+
+            # Select the target node
+            node = self._env.node_from_name(node_data.path)
+            if node and hasattr(node, '_selected'):
+                node._selected = True
+                logger.debug(f"Set _selected=True for node: {node_data.path}")
+
             self.post_message(NodeSelected(node_data.path))
             logger.debug(f"Selected node: {node_data.path}")
 
