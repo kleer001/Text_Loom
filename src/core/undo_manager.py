@@ -65,7 +65,7 @@ class NodeConnectionState:
 @dataclass
 class FullNodeState:
     """Complete snapshot of a node's state including position, parameters, and connections"""
-    session_id: int
+    session_id: str
     name: str
     path: str
     position: List[float]
@@ -294,7 +294,6 @@ class UndoManager:
             return
         self.logger.debug(f"Restoring node: {state.path}")
         self.logger.info(f"[UNDO_RESTORE] === START RESTORE NODE {state.path} ===")
-        self.logger.info(f"[UNDO_RESTORE] Target session_id from saved state: {state.session_id}")
 
         node = NodeEnvironment.node_from_name(state.path)
         if not node:
@@ -307,24 +306,11 @@ class UndoManager:
             )
             self.logger.info(f"[UNDO_RESTORE] Node created with session_id: {node.session_id()}")
 
-        # Restore session_id from saved state
-        old_session_id = node.session_id()
-        self.logger.warning(f"[UNDO_RESTORE] !!! MODIFYING SESSION_ID !!!")
-        self.logger.warning(f"[UNDO_RESTORE] Changing session_id for {state.path}: {old_session_id} -> {state.session_id}")
-        self.logger.warning(f"[UNDO_RESTORE] Difference: {state.session_id - old_session_id}")
-
-        # Remove old session_id from tracking set if it exists
-        if old_session_id in MobileItem._existing_session_ids:
-            MobileItem._existing_session_ids.discard(old_session_id)
-            self.logger.info(f"[UNDO_RESTORE] Removed old session_id from tracking set")
-
-        # Set the session_id from saved state
-        node._session_id = state.session_id
-        self.logger.info(f"[UNDO_RESTORE] Node._session_id now set to: {node._session_id}")
-
-        # Add restored session_id to tracking set
-        MobileItem._existing_session_ids.add(state.session_id)
-        self.logger.info(f"[UNDO_RESTORE] Added new session_id to tracking set")
+        # NOTE: We intentionally DO NOT restore session_id here.
+        # Session IDs are permanent and should never change once assigned.
+        # Restoring them would break client-side references and violate the
+        # principle that session_ids are stable identifiers.
+        self.logger.info(f"[UNDO_RESTORE] Keeping existing session_id: {node.session_id()}")
         self.logger.info(f"[UNDO_RESTORE] === END RESTORE NODE {state.path} ===")
 
         node._position = state.position

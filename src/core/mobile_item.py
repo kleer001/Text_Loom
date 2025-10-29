@@ -25,11 +25,11 @@ class MobileItem(NetworkEntity):
         _position (Tuple[float, float]): The x, y position of the item.
         _session_id (str): A unique identifier for the session.
 
-    Class Attributes:session 
-        _existing_session_ids (Set[int]): A set of all existing session IDs.
+    Class Attributes:session
+        _existing_session_ids (Set[str]): A set of all existing session IDs.
         all_MobileItems : A global list of nodes for UndoManager
     """
-    _existing_session_ids: Set[int] = set()
+    _existing_session_ids: Set[str] = set()
     all_MobileItems = []
 
     def __init__(self, name: str, path: str, position=[0.0, 0.0]) ->None:
@@ -57,7 +57,7 @@ class MobileItem(NetworkEntity):
         self._position: Tuple[float, float] = position
 
         logger.info(f"[MOBILE_ITEM_INIT] About to generate session_id...")
-        self._session_id: int = self._generate_unique_session_id()
+        self._session_id: str = self._generate_unique_session_id()
         logger.info(f"[MOBILE_ITEM_INIT] Generated session_id: {self._session_id} (type: {type(self._session_id)})")
         logger.info(f"[MOBILE_ITEM_INIT] === END MobileItem.__init__ for path={path} ===")
 
@@ -172,12 +172,12 @@ class MobileItem(NetworkEntity):
         return new_items
 
     @classmethod
-    def _generate_unique_session_id(cls) ->int:
+    def _generate_unique_session_id(cls) ->str:
         """
-        Generate a unique integer session ID.
+        Generate a unique string session ID.
 
         Returns:
-            int: A unique session ID.
+            str: A unique session ID (UUID as string).
 
         Raises:
             RuntimeError: If unable to generate a unique ID after 100 attempts.
@@ -203,9 +203,9 @@ class MobileItem(NetworkEntity):
         raise RuntimeError('Unable to generate a unique session ID')
 
     @staticmethod
-    def _generate_session_id() ->int:
-        """Generate an integer session ID using UUID."""
-        return uuid.uuid4().int & (1 << 63) - 1
+    def _generate_session_id() ->str:
+        """Generate a string session ID using UUID."""
+        return str(uuid.uuid4())
 
     def __repr__(self) ->str:
         """Return a string representation of the MobileItem."""

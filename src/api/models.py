@@ -152,7 +152,7 @@ class NodeResponse(BaseModel):
         }
     """
     # Core identification
-    session_id: int = Field(..., description="Unique session identifier")
+    session_id: str = Field(..., description="Unique session identifier")
     name: str = Field(..., description="Node name (may not be unique)")
     path: str = Field(..., description="Full path (unique identifier)")
     type: str = Field(..., description="Node type (e.g., 'text', 'fileout', 'query')")
@@ -237,13 +237,13 @@ class ConnectionResponse(BaseModel):
         }
     """
     # Source (output) side
-    source_node_session_id: int = Field(..., description="Source node's session ID")
+    source_node_session_id: str = Field(..., description="Source node's session ID")
     source_node_path: str = Field(..., description="Source node's path")
     source_output_index: int = Field(..., description="Output socket index")
     source_output_name: str = Field(..., description="Output socket name")
     
     # Target (input) side
-    target_node_session_id: int = Field(..., description="Target node's session ID")
+    target_node_session_id: str = Field(..., description="Target node's session ID")
     target_node_path: str = Field(..., description="Target node's path")
     target_input_index: int = Field(..., description="Input socket index")
     target_input_name: str = Field(..., description="Input socket name")
