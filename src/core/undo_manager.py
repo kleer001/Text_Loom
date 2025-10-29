@@ -65,6 +65,7 @@ class NodeConnectionState:
 @dataclass
 class FullNodeState:
     """Complete snapshot of a node's state including position, parameters, and connections"""
+    session_id: int
     name: str
     path: str
     position: List[float]
@@ -198,6 +199,7 @@ class UndoManager:
             outputs[str(idx)] = [self._capture_connection_state(c) for c in conns]
 
         return FullNodeState(
+            session_id=node.session_id(),
             name=node.name(),
             path=node.path(),
             position=node._position,
@@ -280,6 +282,8 @@ class UndoManager:
             GlobalStore.set(key, value)
 
     def _restore_node(self, state: FullNodeState) -> None:
+        from core.mobile_item import MobileItem
+
         if state.path in self._node_paths_restored:
             return
         self.logger.debug(f"Restoring node: {state.path}")
@@ -291,6 +295,20 @@ class UndoManager:
                 state.name,
                 str(PurePosixPath(state.path).parent)
             )
+
+        # Restore session_id from saved state
+        old_session_id = node.session_id()
+        self.logger.info(f"Restoring session_id for {state.path}: {old_session_id} -> {state.session_id}")
+
+        # Remove old session_id from tracking set if it exists
+        if old_session_id in MobileItem._existing_session_ids:
+            MobileItem._existing_session_ids.discard(old_session_id)
+
+        # Set the session_id from saved state
+        node._session_id = state.session_id
+
+        # Add restored session_id to tracking set
+        MobileItem._existing_session_ids.add(state.session_id)
 
         node._position = state.position
         node._state = NodeState(state.state)
