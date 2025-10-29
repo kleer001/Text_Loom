@@ -29,7 +29,6 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onRenameRequested }) =
     nodes: workspaceNodes,
     connections,
     selectNode,
-    selectNodes,
     selectedNodeIds,
     updateNode,
     deleteNodes,
@@ -77,15 +76,6 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onRenameRequested }) =
   const onPaneClick = useCallback(() => {
     selectNode(null);
   }, [selectNode]);
-
-  // Handle selection changes
-  const onSelectionChange = useCallback(
-    ({ nodes: selectedNodes }: { nodes: Node[] }) => {
-      const selectedIds = selectedNodes.map(n => n.id);
-      selectNodes(selectedIds);
-    },
-    [selectNodes]
-  );
 
   // Handle node drag end - save position to backend
   const onNodeDragStop = useCallback(
@@ -208,7 +198,6 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onRenameRequested }) =
         onEdgesChange={onEdgesChange}
         onNodeClick={onNodeClick}
         onPaneClick={onPaneClick}
-        onSelectionChange={onSelectionChange}
         onNodeDragStop={onNodeDragStop}
         onSelectionDragStop={onSelectionDragStop}
         nodeTypes={nodeTypes}
