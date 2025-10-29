@@ -91,22 +91,45 @@ export const WorkspaceProvider: React.FC<{ children: ReactNode }> = ({ children 
   }, []);
 
   const updateNode = useCallback(async (sessionId: number, request: NodeUpdateRequest): Promise<NodeResponse> => {
+    console.log('[WorkspaceContext] updateNode called:', {
+      sessionId,
+      sessionIdType: typeof sessionId,
+      request,
+      currentNodeCount: nodes.length
+    });
+
+    // Find current node to compare
+    const currentNode = nodes.find(n => n.session_id === sessionId);
+    console.log('[WorkspaceContext] Current node before update:', {
+      found: !!currentNode,
+      currentSessionId: currentNode?.session_id,
+      currentPosition: currentNode?.position
+    });
+
     setLoading(true);
     setError(null);
 
     try {
       const updatedNode = await apiClient.updateNode(sessionId, request);
+      console.log('[WorkspaceContext] updateNode API response:', {
+        returnedSessionId: updatedNode.session_id,
+        returnedPosition: updatedNode.position,
+        requestedSessionId: sessionId,
+        sessionIdMatch: updatedNode.session_id === sessionId
+      });
+
       setNodes(prev => prev.map(n => n.session_id === sessionId ? updatedNode : n));
+      console.log('[WorkspaceContext] updateNode: state updated successfully');
       return updatedNode;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to update node';
       setError(message);
-      console.error('Node update error:', err);
+      console.error('[WorkspaceContext] Node update error for session_id:', sessionId, err);
       throw err;
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [nodes]);
 
   const deleteNode = useCallback(async (sessionId: number): Promise<void> => {
     setLoading(true);

@@ -54,10 +54,26 @@ class ApiClient {
   }
 
   async updateNode(sessionId: number, request: NodeUpdateRequest): Promise<NodeResponse> {
-    return this.fetchJson<NodeResponse>(`/nodes/${sessionId}`, {
+    console.log('[ApiClient] updateNode called:', {
+      sessionId,
+      sessionIdType: typeof sessionId,
+      url: `/nodes/${sessionId}`,
+      request
+    });
+
+    const response = await this.fetchJson<NodeResponse>(`/nodes/${sessionId}`, {
       method: 'PUT',
       body: JSON.stringify(request),
     });
+
+    console.log('[ApiClient] updateNode response received:', {
+      requestedSessionId: sessionId,
+      responseSessionId: response.session_id,
+      responsePosition: response.position,
+      sessionIdMatch: response.session_id === sessionId
+    });
+
+    return response;
   }
 
   async deleteNode(sessionId: number): Promise<void> {

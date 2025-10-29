@@ -93,10 +93,19 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onRenameRequested }) =
       const sessionId = Number(node.id);
       const newPosition: [number, number] = [node.position.x, node.position.y];
 
+      console.log('[GraphCanvas] onNodeDragStop triggered:', {
+        rawNodeId: node.id,
+        sessionId,
+        sessionIdType: typeof sessionId,
+        newPosition,
+        nodeData: node.data?.node?.session_id
+      });
+
       try {
         await updateNode(sessionId, { position: newPosition });
+        console.log('[GraphCanvas] onNodeDragStop: updateNode completed successfully for session_id:', sessionId);
       } catch (error) {
-        console.error('Failed to save node position:', error);
+        console.error('[GraphCanvas] Failed to save node position for session_id:', sessionId, error);
       }
     },
     [updateNode]
@@ -105,16 +114,28 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onRenameRequested }) =
   // Handle selection drag end - save positions to backend
   const onSelectionDragStop = useCallback(
     async (_event: unknown, selectedNodes: Node[]) => {
+      console.log('[GraphCanvas] onSelectionDragStop triggered for', selectedNodes.length, 'nodes');
+
       try {
         await Promise.all(
           selectedNodes.map(node => {
             const sessionId = Number(node.id);
             const newPosition: [number, number] = [node.position.x, node.position.y];
+
+            console.log('[GraphCanvas] onSelectionDragStop: updating node:', {
+              rawNodeId: node.id,
+              sessionId,
+              sessionIdType: typeof sessionId,
+              newPosition,
+              nodeData: node.data?.node?.session_id
+            });
+
             return updateNode(sessionId, { position: newPosition });
           })
         );
+        console.log('[GraphCanvas] onSelectionDragStop: all updates completed successfully');
       } catch (error) {
-        console.error('Failed to save node positions:', error);
+        console.error('[GraphCanvas] Failed to save node positions:', error);
       }
     },
     [updateNode]

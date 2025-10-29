@@ -341,22 +341,28 @@ def update_node(
     Raises:
         HTTPException: 404 if node not found, 400 if update invalid
     """
-    logger.info(f"Updating node with session_id={session_id}, request={request}")
+    logger.info(f"[UPDATE_NODE] === START UPDATE REQUEST ===")
+    logger.info(f"[UPDATE_NODE] Incoming session_id={session_id}, type={type(session_id)}")
+    logger.info(f"[UPDATE_NODE] Request: {request}")
+    if request.position is not None:
+        logger.info(f"[UPDATE_NODE] Position update requested: {request.position}")
 
     # Find the node with enhanced logging
     target_node = None
     all_paths = NodeEnvironment.list_nodes()
-    logger.debug(f"  Searching through {len(all_paths)} nodes for session_id={session_id}")
-    logger.debug(f"  session_id type: {type(session_id)}, value: {session_id}")
+    logger.info(f"[UPDATE_NODE] Searching through {len(all_paths)} nodes for session_id={session_id}")
+    logger.debug(f"[UPDATE_NODE] session_id type: {type(session_id)}, value: {session_id}")
 
     for path in all_paths:
         node = NodeEnvironment.node_from_name(path)
         if node:
             node_sid = node.session_id()
-            logger.debug(f"  Checking node {path}: session_id={node_sid} (type: {type(node_sid)})")
+            logger.debug(f"[UPDATE_NODE] Checking node {path}: session_id={node_sid} (type: {type(node_sid)})")
             if node_sid == session_id:
                 target_node = node
-                logger.info(f"  Found matching node at {path}")
+                logger.info(f"[UPDATE_NODE] ✓ Found matching node at {path}")
+                logger.info(f"[UPDATE_NODE] ✓ Node session_id={node_sid} matches requested={session_id}")
+                logger.info(f"[UPDATE_NODE] ✓ Current node position: {node._position}")
                 break
 
     if not target_node:
@@ -385,19 +391,30 @@ def update_node(
         
         # Update UI state if provided
         if request.position is not None:
-            logger.debug(f"  Updating position to {request.position}")
+            old_position = target_node._position
+            logger.info(f"[UPDATE_NODE] Updating position: {old_position} -> {request.position}")
             target_node._position = tuple(request.position)
+            logger.info(f"[UPDATE_NODE] Position updated. New position: {target_node._position}")
 
         if request.color is not None:
-            logger.debug(f"  Updating color to {request.color}")
+            logger.debug(f"[UPDATE_NODE] Updating color to {request.color}")
             target_node._color = tuple(request.color)
 
         if request.selected is not None:
-            logger.debug(f"  Updating selected to {request.selected}")
+            logger.debug(f"[UPDATE_NODE] Updating selected to {request.selected}")
             target_node._selected = request.selected
 
-        logger.info(f"Successfully updated node {target_node.path()}")
-        return node_to_response(target_node)
+        logger.info(f"[UPDATE_NODE] Successfully updated node {target_node.path()}")
+        logger.info(f"[UPDATE_NODE] Node session_id before response: {target_node.session_id()}")
+
+        response = node_to_response(target_node)
+
+        logger.info(f"[UPDATE_NODE] Response generated:")
+        logger.info(f"[UPDATE_NODE]   - session_id: {response.session_id}")
+        logger.info(f"[UPDATE_NODE]   - position: {response.position}")
+        logger.info(f"[UPDATE_NODE] === END UPDATE REQUEST ===")
+
+        return response
         
     except ValueError as e:
         logger.error(f"ValueError updating node: {e}")
