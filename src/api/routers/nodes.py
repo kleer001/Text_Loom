@@ -14,16 +14,17 @@ from typing import List
 import time
 from fastapi import APIRouter, HTTPException, Path, Body, status
 from api.models import (
-    NodeResponse, 
-    NodeCreateRequest, 
+    NodeResponse,
+    NodeCreateRequest,
     NodeUpdateRequest,
     ExecutionResponse,
-    ErrorResponse, 
+    ErrorResponse,
     SuccessResponse,
     node_to_response
 )
 from core.base_classes import Node, NodeType, NodeEnvironment, NodeState
 from core.enums import generate_node_types
+from core.undo_manager import UndoManager
 
 import logging
 logger = logging.getLogger("api.routers.nodes")
@@ -379,7 +380,24 @@ def update_node(
                 "message": f"Node with session_id {session_id} does not exist"
             }
         )
-    
+
+    # Build undo operation description
+    undo_parts = []
+    if request.position is not None:
+        undo_parts.append("position")
+    if request.parameters:
+        undo_parts.append("parameters")
+    if request.color is not None:
+        undo_parts.append("color")
+    if request.selected is not None:
+        undo_parts.append("selection")
+
+    undo_description = f"Update {target_node.name()} ({', '.join(undo_parts)})"
+    logger.info(f"[UPDATE_NODE] Pushing undo state: {undo_description}")
+    UndoManager().push_state(undo_description)
+
+    # Disable undo during updates to prevent parm.set() from pushing duplicate states
+    UndoManager().disable()
     try:
         # Update parameters if provided
         if request.parameters:
@@ -388,7 +406,7 @@ def update_node(
                     target_node._parms[param_name].set(param_value)
                 else:
                     raise ValueError(f"Unknown parameter: {param_name}")
-        
+
         # Update UI state if provided
         if request.position is not None:
             old_position = target_node._position
@@ -436,6 +454,9 @@ def update_node(
                 "message": f"Failed to update node: {str(e)}"
             }
         )
+    finally:
+        # Re-enable undo system
+        UndoManager().enable()
 
 
 @router.delete(
