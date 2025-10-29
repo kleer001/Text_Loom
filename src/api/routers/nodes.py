@@ -259,32 +259,49 @@ def create_node(request: 'NodeCreateRequest') -> 'NodeResponse':
         # Get the NodeType enum value
         node_type = getattr(NodeType, node_type_str)
         logger.debug(f"  Resolved NodeType: {node_type}")
-        
+
         # Create the node (backend handles name collisions)
-        logger.debug(f"  Calling Node.create_node()")
+        logger.info(f"[API_CREATE] === BEFORE Node.create_node() ===")
+        logger.info(f"[API_CREATE] Calling Node.create_node()...")
         node = Node.create_node(
             node_type=node_type,
             node_name=request.name,
             parent_path=request.parent_path
         )
-        
-        logger.info(f"  Node created: path={node.path()}, session_id={node.session_id()}")
+        logger.info(f"[API_CREATE] === AFTER Node.create_node() ===")
+
+        logger.info(f"[API_CREATE] Node returned: path={node.path()}, session_id={node.session_id()} (type: {type(node.session_id())})")
         logger.debug(f"  Node has _parms: {hasattr(node, '_parms')}")
         logger.debug(f"  Node has _inputs: {hasattr(node, '_inputs')}")
         logger.debug(f"  Node has _outputs: {hasattr(node, '_outputs')}")
 
         # Set initial position if provided
         if request.position:
+            logger.info(f"[API_CREATE] Setting position to {request.position}")
+            logger.info(f"[API_CREATE] session_id BEFORE position set: {node.session_id()}")
             node._position = tuple(request.position)
-            logger.debug(f"  Position set: {request.position}")
+            logger.info(f"[API_CREATE] session_id AFTER position set: {node.session_id()}")
 
         # Convert to response
-        logger.debug(f"  Converting node to response")
+        logger.info(f"[API_CREATE] === BEFORE node_to_response() ===")
+        logger.info(f"[API_CREATE] Node session_id before conversion: {node.session_id()}")
         response = node_to_response(node)
+        logger.info(f"[API_CREATE] === AFTER node_to_response() ===")
 
-        logger.info(f"  Successfully created node {node.path()} with session_id {node.session_id()} (type: {type(node.session_id())})")
-        logger.info(f"  Response session_id: {response.session_id} (type: {type(response.session_id)})")
-        logger.info(f"  Node is in NodeEnvironment: {node.path() in NodeEnvironment.nodes}")
+        logger.info(f"[API_CREATE] Response created with session_id={response.session_id} (type: {type(response.session_id)})")
+        logger.info(f"[API_CREATE] Verifying node still has session_id={node.session_id()}")
+        logger.info(f"[API_CREATE] Node is in NodeEnvironment: {node.path() in NodeEnvironment.nodes}")
+
+        # CRITICAL: Verify the node in NodeEnvironment has the same session_id
+        node_from_env = NodeEnvironment.node_from_name(node.path())
+        if node_from_env:
+            logger.info(f"[API_CREATE] Node from NodeEnvironment has session_id={node_from_env.session_id()}")
+            if node_from_env.session_id() != response.session_id:
+                logger.error(f"[API_CREATE] !!!!! SESSION_ID MISMATCH DETECTED !!!!!")
+                logger.error(f"[API_CREATE] Response has: {response.session_id}")
+                logger.error(f"[API_CREATE] NodeEnvironment has: {node_from_env.session_id()}")
+
+        logger.info(f"[API_CREATE] === RETURNING RESPONSE TO CLIENT ===")
         return response
         
     except ValueError as e:
