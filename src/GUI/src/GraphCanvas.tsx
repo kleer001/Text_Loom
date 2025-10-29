@@ -29,6 +29,7 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onRenameRequested }) =
     nodes: workspaceNodes,
     connections,
     selectNode,
+    selectNodes,
     selectedNodeIds,
     updateNode,
     deleteNodes,
@@ -67,10 +68,20 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onRenameRequested }) =
 
   // Handle node selection
   const onNodeClick = useCallback(
-    (_event: React.MouseEvent, node: Node) => {
-      selectNode(node.id);
+    (event: React.MouseEvent, node: Node) => {
+      // Check if Shift key is pressed for multi-selection
+      if (event.shiftKey) {
+        // Add to existing selection
+        const newSelection = selectedNodeIds.includes(node.id)
+          ? selectedNodeIds.filter(id => id !== node.id) // Toggle off if already selected
+          : [...selectedNodeIds, node.id]; // Add to selection
+        selectNodes(newSelection);
+      } else {
+        // Replace selection with single node
+        selectNode(node.id);
+      }
     },
-    [selectNode]
+    [selectNode, selectNodes, selectedNodeIds]
   );
 
   // Handle pane click (deselect)
