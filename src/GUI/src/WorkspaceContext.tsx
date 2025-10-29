@@ -38,12 +38,25 @@ export const WorkspaceProvider: React.FC<{ children: ReactNode }> = ({ children 
   const loadWorkspace = useCallback(async () => {
     setLoading(true);
     setError(null);
-    
+
     try {
       const workspace = await apiClient.getWorkspace();
       setNodes(workspace.nodes);
       setConnections(workspace.connections);
       setGlobals(workspace.globals);
+
+      // Restore selection state from backend
+      const selectedNodes = workspace.nodes
+        .filter(node => node.selected)
+        .map(node => String(node.session_id));
+
+      console.log('[SELECTION] Restoring selection from workspace:', {
+        selectedNodes,
+        selectedCount: selectedNodes.length
+      });
+
+      setSelectedNodeIds(selectedNodes);
+      setSelectedNodeId(selectedNodes.length === 1 ? selectedNodes[0] : null);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to load workspace';
       setError(message);
@@ -54,50 +67,107 @@ export const WorkspaceProvider: React.FC<{ children: ReactNode }> = ({ children 
   }, []);
 
   const selectNode = useCallback(async (sessionId: string | null) => {
+    console.log('[SELECTION] selectNode called:', {
+      sessionId,
+      sessionIdType: typeof sessionId,
+      previousSelectedId: selectedNodeId,
+      previousSelectedIds: selectedNodeIds,
+      totalNodes: nodes.length
+    });
+
     setSelectedNodeId(sessionId);
     setSelectedNodeIds(sessionId !== null ? [sessionId] : []);
 
-    // Sync selection state with backend
+    console.log('[SELECTION] State updated:', {
+      newSelectedId: sessionId,
+      newSelectedIds: sessionId !== null ? [sessionId] : []
+    });
+
+    // Sync selection state with backend - only update nodes that changed
     try {
-      // Deselect all nodes first
-      await Promise.all(
-        nodes.map(node =>
-          apiClient.updateNode(node.session_id, { selected: false })
-        )
+      console.log('[SELECTION] Starting backend sync');
+      const updates: Promise<NodeResponse>[] = [];
+
+      // Deselect previously selected nodes that are no longer selected
+      const nodesToDeselect = selectedNodeIds.filter(id =>
+        sessionId === null || String(id) !== String(sessionId)
       );
 
-      // Select the target node if provided
-      if (sessionId !== null) {
-        await apiClient.updateNode(sessionId, { selected: true });
+      if (nodesToDeselect.length > 0) {
+        console.log('[SELECTION] Deselecting nodes:', nodesToDeselect);
+        nodesToDeselect.forEach(id => {
+          updates.push(apiClient.updateNode(String(id), { selected: false }));
+        });
       }
+
+      // Select the target node if provided and not already selected
+      if (sessionId !== null && !selectedNodeIds.includes(String(sessionId))) {
+        console.log('[SELECTION] Selecting target node:', sessionId);
+        updates.push(apiClient.updateNode(String(sessionId), { selected: true }));
+      }
+
+      await Promise.all(updates);
+      console.log('[SELECTION] Backend sync completed successfully');
     } catch (err) {
-      console.error('Failed to sync selection with backend:', err);
+      console.error('[SELECTION] Backend sync failed:', err);
     }
-  }, [nodes]);
+  }, [nodes, selectedNodeId, selectedNodeIds]);
 
   const selectNodes = useCallback(async (sessionIds: string[]) => {
-    setSelectedNodeIds(sessionIds);
-    setSelectedNodeId(sessionIds.length === 1 ? sessionIds[0] : null);
+    console.log('[SELECTION] selectNodes called:', {
+      sessionIds,
+      sessionIdsCount: sessionIds.length,
+      sessionIdsTypes: sessionIds.map(id => typeof id),
+      previousSelectedIds: selectedNodeIds,
+      totalNodes: nodes.length
+    });
 
-    // Sync selection state with backend
+    // Normalize session IDs to strings for consistent comparison
+    const normalizedIds = sessionIds.map(id => String(id));
+
+    setSelectedNodeIds(normalizedIds);
+    setSelectedNodeId(normalizedIds.length === 1 ? normalizedIds[0] : null);
+
+    console.log('[SELECTION] Multi-select state updated:', {
+      newSelectedIds: normalizedIds,
+      newSelectedId: normalizedIds.length === 1 ? normalizedIds[0] : null
+    });
+
+    // Sync selection state with backend - only update nodes that changed
     try {
-      // Deselect all nodes first
-      await Promise.all(
-        nodes.map(node =>
-          apiClient.updateNode(node.session_id, { selected: false })
-        )
+      console.log('[SELECTION] Starting multi-select backend sync');
+      const updates: Promise<NodeResponse>[] = [];
+
+      // Deselect previously selected nodes that are no longer selected
+      const nodesToDeselect = selectedNodeIds.filter(id =>
+        !normalizedIds.includes(String(id))
       );
 
-      // Select the target nodes
-      if (sessionIds.length > 0) {
-        await Promise.all(
-          sessionIds.map(id => apiClient.updateNode(id, { selected: true }))
-        );
+      if (nodesToDeselect.length > 0) {
+        console.log('[SELECTION] Deselecting nodes:', nodesToDeselect);
+        nodesToDeselect.forEach(id => {
+          updates.push(apiClient.updateNode(String(id), { selected: false }));
+        });
       }
+
+      // Select nodes that weren't previously selected
+      const nodesToSelect = normalizedIds.filter(id =>
+        !selectedNodeIds.includes(String(id))
+      );
+
+      if (nodesToSelect.length > 0) {
+        console.log('[SELECTION] Selecting nodes:', nodesToSelect);
+        nodesToSelect.forEach(id => {
+          updates.push(apiClient.updateNode(String(id), { selected: true }));
+        });
+      }
+
+      await Promise.all(updates);
+      console.log('[SELECTION] Multi-select backend sync completed successfully');
     } catch (err) {
-      console.error('Failed to sync selection with backend:', err);
+      console.error('[SELECTION] Multi-select backend sync failed:', err);
     }
-  }, [nodes]);
+  }, [nodes, selectedNodeIds]);
 
   const getSelectedNode = useCallback(() => {
     if (selectedNodeId === null) return null;
@@ -127,40 +197,17 @@ export const WorkspaceProvider: React.FC<{ children: ReactNode }> = ({ children 
   }, []);
 
   const updateNode = useCallback(async (sessionId: string, request: NodeUpdateRequest): Promise<NodeResponse> => {
-    console.log('[WorkspaceContext] updateNode called:', {
-      sessionId,
-      sessionIdType: typeof sessionId,
-      request,
-      currentNodeCount: nodes.length
-    });
-
-    // Find current node to compare
-    const currentNode = nodes.find(n => n.session_id === sessionId);
-    console.log('[WorkspaceContext] Current node before update:', {
-      found: !!currentNode,
-      currentSessionId: currentNode?.session_id,
-      currentPosition: currentNode?.position
-    });
-
     setLoading(true);
     setError(null);
 
     try {
       const updatedNode = await apiClient.updateNode(sessionId, request);
-      console.log('[WorkspaceContext] updateNode API response:', {
-        returnedSessionId: updatedNode.session_id,
-        returnedPosition: updatedNode.position,
-        requestedSessionId: sessionId,
-        sessionIdMatch: updatedNode.session_id === sessionId
-      });
-
       setNodes(prev => prev.map(n => n.session_id === sessionId ? updatedNode : n));
-      console.log('[WorkspaceContext] updateNode: state updated successfully');
       return updatedNode;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to update node';
       setError(message);
-      console.error('[WorkspaceContext] Node update error for session_id:', sessionId, err);
+      console.error('Node update error for session_id:', sessionId, err);
       throw err;
     } finally {
       setLoading(false);

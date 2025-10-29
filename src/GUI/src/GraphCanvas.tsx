@@ -41,13 +41,38 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onRenameRequested }) =
 
   // Convert workspace nodes to React Flow nodes
   useEffect(() => {
-    const flowNodes: Node[] = workspaceNodes.map((node: NodeResponse) => ({
-      id: String(node.session_id),
-      type: 'custom',
-      position: { x: node.position[0], y: node.position[1] },
-      data: { node },
-      selected: selectedNodeIds.includes(String(node.session_id)),
-    }));
+    console.log('[SELECTION] Converting workspace nodes to React Flow nodes:', {
+      workspaceNodesCount: workspaceNodes.length,
+      selectedNodeIds,
+      selectedNodeIdsCount: selectedNodeIds.length
+    });
+
+    const flowNodes: Node[] = workspaceNodes.map((node: NodeResponse) => {
+      const nodeId = String(node.session_id);
+      const isSelected = selectedNodeIds.includes(nodeId);
+
+      console.log('[SELECTION] Processing node:', {
+        sessionId: node.session_id,
+        nodeId,
+        nodeIdType: typeof nodeId,
+        isSelected,
+        selectedNodeIds
+      });
+
+      return {
+        id: nodeId,
+        type: 'custom',
+        position: { x: node.position[0], y: node.position[1] },
+        data: { node },
+        selected: isSelected,
+      };
+    });
+
+    console.log('[SELECTION] React Flow nodes created:', {
+      totalNodes: flowNodes.length,
+      selectedNodes: flowNodes.filter(n => n.selected).map(n => n.id)
+    });
+
     setNodes(flowNodes);
   }, [workspaceNodes, selectedNodeIds, setNodes]);
 
@@ -69,14 +94,34 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onRenameRequested }) =
   // Handle node selection
   const onNodeClick = useCallback(
     (event: React.MouseEvent, node: Node) => {
+      console.log('[SELECTION] onNodeClick triggered:', {
+        nodeId: node.id,
+        nodeIdType: typeof node.id,
+        nodeSelected: node.selected,
+        shiftKey: event.shiftKey,
+        currentSelectedIds: selectedNodeIds,
+        currentSelectedIdsCount: selectedNodeIds.length
+      });
+
       // Check if Shift key is pressed for multi-selection
       if (event.shiftKey) {
+        console.log('[SELECTION] Shift key pressed - multi-select mode');
         // Add to existing selection
-        const newSelection = selectedNodeIds.includes(node.id)
+        const wasSelected = selectedNodeIds.includes(node.id);
+        const newSelection = wasSelected
           ? selectedNodeIds.filter(id => id !== node.id) // Toggle off if already selected
           : [...selectedNodeIds, node.id]; // Add to selection
+
+        console.log('[SELECTION] Multi-select:', {
+          wasSelected,
+          action: wasSelected ? 'removing' : 'adding',
+          newSelection,
+          newSelectionCount: newSelection.length
+        });
+
         selectNodes(newSelection);
       } else {
+        console.log('[SELECTION] No shift key - single select mode');
         // Replace selection with single node
         selectNode(node.id);
       }
@@ -86,6 +131,7 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onRenameRequested }) =
 
   // Handle pane click (deselect)
   const onPaneClick = useCallback(() => {
+    console.log('[SELECTION] onPaneClick - deselecting all nodes');
     selectNode(null);
   }, [selectNode]);
 
@@ -95,19 +141,10 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onRenameRequested }) =
       const sessionId = node.id;
       const newPosition: [number, number] = [node.position.x, node.position.y];
 
-      console.log('[GraphCanvas] onNodeDragStop triggered:', {
-        rawNodeId: node.id,
-        sessionId,
-        sessionIdType: typeof sessionId,
-        newPosition,
-        nodeData: node.data?.node?.session_id
-      });
-
       try {
         await updateNode(sessionId, { position: newPosition });
-        console.log('[GraphCanvas] onNodeDragStop: updateNode completed successfully for session_id:', sessionId);
       } catch (error) {
-        console.error('[GraphCanvas] Failed to save node position for session_id:', sessionId, error);
+        console.error('Failed to save node position for session_id:', sessionId, error);
       }
     },
     [updateNode]
@@ -116,28 +153,16 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onRenameRequested }) =
   // Handle selection drag end - save positions to backend
   const onSelectionDragStop = useCallback(
     async (_event: unknown, selectedNodes: Node[]) => {
-      console.log('[GraphCanvas] onSelectionDragStop triggered for', selectedNodes.length, 'nodes');
-
       try {
         await Promise.all(
           selectedNodes.map(node => {
             const sessionId = node.id;
             const newPosition: [number, number] = [node.position.x, node.position.y];
-
-            console.log('[GraphCanvas] onSelectionDragStop: updating node:', {
-              rawNodeId: node.id,
-              sessionId,
-              sessionIdType: typeof sessionId,
-              newPosition,
-              nodeData: node.data?.node?.session_id
-            });
-
             return updateNode(sessionId, { position: newPosition });
           })
         );
-        console.log('[GraphCanvas] onSelectionDragStop: all updates completed successfully');
       } catch (error) {
-        console.error('[GraphCanvas] Failed to save node positions:', error);
+        console.error('Failed to save node positions:', error);
       }
     },
     [updateNode]
