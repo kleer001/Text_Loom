@@ -178,6 +178,9 @@ class UndoManager:
         Returns a FullNodeState object.
         """
 
+        node_session_id = node.session_id()
+        self.logger.debug(f"[UNDO_CAPTURE] Capturing state for {node.path()}, session_id={node_session_id}")
+
         parms = {}
         if hasattr(node, '_parms'):
             for parm_name, parm in node._parms.items():
@@ -198,8 +201,8 @@ class UndoManager:
         for idx, conns in node._outputs.items():
             outputs[str(idx)] = [self._capture_connection_state(c) for c in conns]
 
-        return FullNodeState(
-            session_id=node.session_id(),
+        state = FullNodeState(
+            session_id=node_session_id,
             name=node.name(),
             path=node.path(),
             position=node._position,
@@ -219,6 +222,9 @@ class UndoManager:
             inputs=inputs,
             outputs=outputs
         )
+
+        self.logger.debug(f"[UNDO_CAPTURE] Captured session_id={state.session_id} for {node.path()}")
+        return state
 
     def _capture_connection_state(self, conn: 'NodeConnection') -> NodeConnectionState:
         self.logger.debug(f"Capturing connection from {conn.output_node().path()} to {conn.input_node().path()}")
@@ -287,28 +293,39 @@ class UndoManager:
         if state.path in self._node_paths_restored:
             return
         self.logger.debug(f"Restoring node: {state.path}")
+        self.logger.info(f"[UNDO_RESTORE] === START RESTORE NODE {state.path} ===")
+        self.logger.info(f"[UNDO_RESTORE] Target session_id from saved state: {state.session_id}")
+
         node = NodeEnvironment.node_from_name(state.path)
         if not node:
+            self.logger.info(f"[UNDO_RESTORE] Node doesn't exist, creating it...")
             node_type_str = state.node_type.split('.')[-1] if '.' in state.node_type else state.node_type
             node = Node.create_node(
                 NodeType[node_type_str],
                 state.name,
                 str(PurePosixPath(state.path).parent)
             )
+            self.logger.info(f"[UNDO_RESTORE] Node created with session_id: {node.session_id()}")
 
         # Restore session_id from saved state
         old_session_id = node.session_id()
-        self.logger.info(f"Restoring session_id for {state.path}: {old_session_id} -> {state.session_id}")
+        self.logger.warning(f"[UNDO_RESTORE] !!! MODIFYING SESSION_ID !!!")
+        self.logger.warning(f"[UNDO_RESTORE] Changing session_id for {state.path}: {old_session_id} -> {state.session_id}")
+        self.logger.warning(f"[UNDO_RESTORE] Difference: {state.session_id - old_session_id}")
 
         # Remove old session_id from tracking set if it exists
         if old_session_id in MobileItem._existing_session_ids:
             MobileItem._existing_session_ids.discard(old_session_id)
+            self.logger.info(f"[UNDO_RESTORE] Removed old session_id from tracking set")
 
         # Set the session_id from saved state
         node._session_id = state.session_id
+        self.logger.info(f"[UNDO_RESTORE] Node._session_id now set to: {node._session_id}")
 
         # Add restored session_id to tracking set
         MobileItem._existing_session_ids.add(state.session_id)
+        self.logger.info(f"[UNDO_RESTORE] Added new session_id to tracking set")
+        self.logger.info(f"[UNDO_RESTORE] === END RESTORE NODE {state.path} ===")
 
         node._position = state.position
         node._state = NodeState(state.state)
@@ -400,10 +417,14 @@ class UndoManager:
 
     def push_state(self, operation_name: str = "") -> None:
         if not self._restoring and self.undo_active:
-            self.logger.info(f"Pushing new state: {operation_name}")
+            self.logger.info(f"[UNDO_PUSH] === PUSH STATE: {operation_name} ===")
+            self.logger.info(f"[UNDO_PUSH] Current thread: {__import__('threading').current_thread().name}")
+            self.logger.info(f"[UNDO_PUSH] Capturing current network state...")
             current_state = self.capture_network_state()
+            self.logger.info(f"[UNDO_PUSH] State captured, adding to undo stack")
             self.undo_stack.append((operation_name, current_state))
             self.redo_stack.clear()
+            self.logger.info(f"[UNDO_PUSH] === PUSH STATE COMPLETE ===")
     
     def disable(self) -> None:
         self.logger.debug("Disabling undo system")

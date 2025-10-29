@@ -41,6 +41,13 @@ class MobileItem(NetworkEntity):
             path (str): The full path of the item in the internal network.
             position (Tuple[float, float]): The initial x, y position of the item.
         """
+        import logging
+        logger = logging.getLogger("core.mobile_item")
+
+        logger.info(f"[MOBILE_ITEM_INIT] === START MobileItem.__init__ for path={path} ===")
+        logger.info(f"[MOBILE_ITEM_INIT] Current thread: {__import__('threading').current_thread().name}")
+        logger.info(f"[MOBILE_ITEM_INIT] Existing session_ids count: {len(MobileItem._existing_session_ids)}")
+
         MobileItem.all_MobileItems.append(self)
         super().__init__()
         self._name: str = name
@@ -48,7 +55,11 @@ class MobileItem(NetworkEntity):
         self._selected: bool = False
         self._color: Tuple[float, float, float] = (1.0, 1.0, 1.0)
         self._position: Tuple[float, float] = position
+
+        logger.info(f"[MOBILE_ITEM_INIT] About to generate session_id...")
         self._session_id: int = self._generate_unique_session_id()
+        logger.info(f"[MOBILE_ITEM_INIT] Generated session_id: {self._session_id} (type: {type(self._session_id)})")
+        logger.info(f"[MOBILE_ITEM_INIT] === END MobileItem.__init__ for path={path} ===")
 
     def delete(self):
         if self in MobileItem.all_MobileItems:
@@ -118,6 +129,9 @@ class MobileItem(NetworkEntity):
 
     def session_id(self) ->str:
         """Get the unique session ID of the item."""
+        import logging
+        logger = logging.getLogger("core.mobile_item")
+        logger.debug(f"[SESSION_ID_GET] path={self.path()}, returning session_id={self._session_id}")
         return self._session_id
 
     @classmethod
@@ -168,11 +182,24 @@ class MobileItem(NetworkEntity):
         Raises:
             RuntimeError: If unable to generate a unique ID after 100 attempts.
         """
-        for _ in range(100):
+        import logging
+        logger = logging.getLogger("core.mobile_item")
+
+        logger.debug(f"[GEN_SESSION_ID] Attempting to generate unique session_id...")
+        logger.debug(f"[GEN_SESSION_ID] Current _existing_session_ids: {cls._existing_session_ids}")
+
+        for attempt in range(100):
             new_id = cls._generate_session_id()
+            logger.debug(f"[GEN_SESSION_ID] Attempt {attempt+1}: generated id={new_id}")
+
             if new_id not in cls._existing_session_ids:
                 cls._existing_session_ids.add(new_id)
+                logger.info(f"[GEN_SESSION_ID] SUCCESS! Unique session_id generated: {new_id}")
+                logger.info(f"[GEN_SESSION_ID] Added to _existing_session_ids, new count: {len(cls._existing_session_ids)}")
                 return new_id
+            else:
+                logger.warning(f"[GEN_SESSION_ID] Collision detected! id={new_id} already exists")
+
         raise RuntimeError('Unable to generate a unique session ID')
 
     @staticmethod
