@@ -234,7 +234,8 @@ def create_node(request: 'NodeCreateRequest') -> 'NodeResponse':
     from core.base_classes import Node, NodeType
     from core.node_environment import generate_node_types
     
-    logger.info(f"Creating node: type={request.type}, name={request.name}, parent={request.parent_path}")
+    logger.info(f"[CREATE_NODE] === START CREATE REQUEST ===")
+    logger.info(f"[CREATE_NODE] Creating node: type={request.type}, name={request.name}, parent={request.parent_path}")
     
     # Get available node types dynamically
     available_types = generate_node_types()
@@ -261,30 +262,36 @@ def create_node(request: 'NodeCreateRequest') -> 'NodeResponse':
         logger.debug(f"  Resolved NodeType: {node_type}")
         
         # Create the node (backend handles name collisions)
-        logger.debug(f"  Calling Node.create_node()")
+        logger.info(f"[CREATE_NODE] Calling Node.create_node()")
         node = Node.create_node(
             node_type=node_type,
             node_name=request.name,
             parent_path=request.parent_path
         )
-        
-        logger.info(f"  Node created: path={node.path()}, session_id={node.session_id()}")
-        logger.debug(f"  Node has _parms: {hasattr(node, '_parms')}")
-        logger.debug(f"  Node has _inputs: {hasattr(node, '_inputs')}")
-        logger.debug(f"  Node has _outputs: {hasattr(node, '_outputs')}")
+
+        logger.info(f"[CREATE_NODE] Node created: path={node.path()}")
+        logger.info(f"[CREATE_NODE] Node session_id immediately after creation: {node.session_id()} (type: {type(node.session_id())})")
+        logger.debug(f"[CREATE_NODE] Node has _parms: {hasattr(node, '_parms')}")
+        logger.debug(f"[CREATE_NODE] Node has _inputs: {hasattr(node, '_inputs')}")
+        logger.debug(f"[CREATE_NODE] Node has _outputs: {hasattr(node, '_outputs')}")
 
         # Set initial position if provided
         if request.position:
             node._position = tuple(request.position)
-            logger.debug(f"  Position set: {request.position}")
+            logger.info(f"[CREATE_NODE] Position set: {request.position}")
+            logger.info(f"[CREATE_NODE] Node session_id after position set: {node.session_id()}")
 
         # Convert to response
-        logger.debug(f"  Converting node to response")
+        logger.info(f"[CREATE_NODE] Converting node to response (session_id before conversion: {node.session_id()})")
         response = node_to_response(node)
 
-        logger.info(f"  Successfully created node {node.path()} with session_id {node.session_id()} (type: {type(node.session_id())})")
-        logger.info(f"  Response session_id: {response.session_id} (type: {type(response.session_id)})")
-        logger.info(f"  Node is in NodeEnvironment: {node.path() in NodeEnvironment.nodes}")
+        logger.info(f"[CREATE_NODE] Response generated:")
+        logger.info(f"[CREATE_NODE]   - path: {response.path}")
+        logger.info(f"[CREATE_NODE]   - node session_id: {node.session_id()} (type: {type(node.session_id())})")
+        logger.info(f"[CREATE_NODE]   - response session_id: {response.session_id} (type: {type(response.session_id)})")
+        logger.info(f"[CREATE_NODE]   - session_id match: {node.session_id() == response.session_id}")
+        logger.info(f"[CREATE_NODE]   - node in NodeEnvironment: {node.path() in NodeEnvironment.nodes}")
+        logger.info(f"[CREATE_NODE] === END CREATE REQUEST ===")
         return response
         
     except ValueError as e:
