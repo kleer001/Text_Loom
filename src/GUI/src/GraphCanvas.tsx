@@ -8,6 +8,7 @@ import {
   useNodesState,
   useEdgesState,
   BackgroundVariant,
+  type NodeChange,
 } from '@xyflow/react';
 import type { Node, Edge } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
@@ -91,43 +92,44 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onRenameRequested }) =
     setEdges(flowEdges);
   }, [connections, setEdges]);
 
-  // Handle node selection
+  // Handle node selection// Handle node selection (industry-standard pattern)
   const onNodeClick = useCallback(
     (event: React.MouseEvent, node: Node) => {
       console.log('[SELECTION] onNodeClick triggered:', {
         nodeId: node.id,
-        nodeIdType: typeof node.id,
-        nodeSelected: node.selected,
+        wasAlreadySelected: selectedNodeIds.includes(node.id),
         shiftKey: event.shiftKey,
-        currentSelectedIds: selectedNodeIds,
-        currentSelectedIdsCount: selectedNodeIds.length
       });
 
-      // Check if Shift key is pressed for multi-selection
       if (event.shiftKey) {
-        console.log('[SELECTION] Shift key pressed - multi-select mode');
-        // Add to existing selection
+        // Shift+click: toggle node in selection
         const wasSelected = selectedNodeIds.includes(node.id);
         const newSelection = wasSelected
-          ? selectedNodeIds.filter(id => id !== node.id) // Toggle off if already selected
-          : [...selectedNodeIds, node.id]; // Add to selection
-
-        console.log('[SELECTION] Multi-select:', {
-          wasSelected,
-          action: wasSelected ? 'removing' : 'adding',
-          newSelection,
-          newSelectionCount: newSelection.length
-        });
-
+          ? selectedNodeIds.filter(id => id !== node.id)
+          : [...selectedNodeIds, node.id];
         selectNodes(newSelection);
       } else {
-        console.log('[SELECTION] No shift key - single select mode');
-        // Replace selection with single node
-        selectNode(node.id);
+        // Regular click: select only this node (unless already selected)
+        // If already selected, don't deselect (allows drag-to-move)
+        if (!selectedNodeIds.includes(node.id)) {
+          selectNode(node.id);
+        }
       }
     },
     [selectNode, selectNodes, selectedNodeIds]
   );
+
+
+const handleNodesChange = useCallback(
+  (changes: NodeChange[]) => {
+    // Filter out selection changes - we manage those ourselves
+    const filteredChanges = changes.filter(
+      change => change.type !== 'select'
+    );
+    onNodesChange(filteredChanges);
+  },
+  [onNodesChange]
+);
 
   // Handle pane click (deselect)
   const onPaneClick = useCallback(() => {
@@ -228,25 +230,26 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onRenameRequested }) =
         onConfirm={handleDeleteConfirm}
         onCancel={handleDeleteCancel}
       />
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
-        onNodeClick={onNodeClick}
-        onPaneClick={onPaneClick}
-        onNodeDragStop={onNodeDragStop}
-        onSelectionDragStop={onSelectionDragStop}
-        nodeTypes={nodeTypes}
-        fitView
-        fitViewOptions={{ padding: 0.2 }}
-        minZoom={0.1}
-        maxZoom={2}
-        selectNodesOnDrag={false}
-        multiSelectionKeyCode="Shift"
-        deleteKeyCode={null}
-        selectionKeyCode="Shift"
-      >
+    <ReactFlow
+            nodes={nodes}
+            edges={edges}
+            onNodesChange={onNodesChange}
+            onEdgesChange={onEdgesChange}
+            onNodeClick={onNodeClick}
+            onPaneClick={onPaneClick}
+            onNodeDragStop={onNodeDragStop}
+            onSelectionDragStop={onSelectionDragStop}
+            nodeTypes={nodeTypes}
+            fitView
+            fitViewOptions={{ padding: 0.2 }}
+            minZoom={0.1}
+            maxZoom={2}
+            selectNodesOnDrag={false}
+            nodeDragThreshold={10}  // ADD THIS LINE - 10px threshold before drag starts
+            multiSelectionKeyCode="Shift"
+            deleteKeyCode={null}
+            selectionKeyCode="Shift"
+        >
         <Background variant={BackgroundVariant.Dots} gap={12} size={1} />
         <Controls />
       </ReactFlow>
