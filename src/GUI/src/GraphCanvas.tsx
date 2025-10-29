@@ -42,23 +42,9 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onRenameRequested }) =
 
   // Convert workspace nodes to React Flow nodes
   useEffect(() => {
-    console.log('[SELECTION] Converting workspace nodes to React Flow nodes:', {
-      workspaceNodesCount: workspaceNodes.length,
-      selectedNodeIds,
-      selectedNodeIdsCount: selectedNodeIds.length
-    });
-
     const flowNodes: Node[] = workspaceNodes.map((node: NodeResponse) => {
       const nodeId = String(node.session_id);
       const isSelected = selectedNodeIds.includes(nodeId);
-
-      console.log('[SELECTION] Processing node:', {
-        sessionId: node.session_id,
-        nodeId,
-        nodeIdType: typeof nodeId,
-        isSelected,
-        selectedNodeIds
-      });
 
       return {
         id: nodeId,
@@ -67,11 +53,6 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onRenameRequested }) =
         data: { node },
         selected: isSelected,
       };
-    });
-
-    console.log('[SELECTION] React Flow nodes created:', {
-      totalNodes: flowNodes.length,
-      selectedNodes: flowNodes.filter(n => n.selected).map(n => n.id)
     });
 
     setNodes(flowNodes);
@@ -92,27 +73,35 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onRenameRequested }) =
     setEdges(flowEdges);
   }, [connections, setEdges]);
 
-  // Handle node selection// Handle node selection (industry-standard pattern)
+  // Handle node selection (industry-standard pattern)
   const onNodeClick = useCallback(
     (event: React.MouseEvent, node: Node) => {
-      console.log('[SELECTION] onNodeClick triggered:', {
-        nodeId: node.id,
-        wasAlreadySelected: selectedNodeIds.includes(node.id),
-        shiftKey: event.shiftKey,
+      const wasSelected = selectedNodeIds.includes(node.id);
+
+      // DEBUG: Track click events
+      console.log('[CLICK]', {
+        id: node.id,
+        wasSelected,
+        shift: event.shiftKey,
+        currentSelection: selectedNodeIds
       });
 
       if (event.shiftKey) {
         // Shift+click: toggle node in selection
-        const wasSelected = selectedNodeIds.includes(node.id);
         const newSelection = wasSelected
           ? selectedNodeIds.filter(id => id !== node.id)
           : [...selectedNodeIds, node.id];
+
+        console.log('[MULTI-SELECT]', { from: selectedNodeIds, to: newSelection });
         selectNodes(newSelection);
       } else {
         // Regular click: select only this node (unless already selected)
         // If already selected, don't deselect (allows drag-to-move)
-        if (!selectedNodeIds.includes(node.id)) {
+        if (!wasSelected) {
+          console.log('[SELECT]', { node: node.id });
           selectNode(node.id);
+        } else {
+          console.log('[ALREADY-SELECTED]', { node: node.id, action: 'keeping selection for drag' });
         }
       }
     },
@@ -120,33 +109,42 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onRenameRequested }) =
   );
 
 
-const handleNodesChange = useCallback(
-  (changes: NodeChange[]) => {
-    // Filter out selection changes - we manage those ourselves
-    const filteredChanges = changes.filter(
-      change => change.type !== 'select'
-    );
-    onNodesChange(filteredChanges);
-  },
-  [onNodesChange]
-);
+  const handleNodesChange = useCallback(
+    (changes: NodeChange[]) => {
+      // Filter out selection changes - we manage those ourselves
+      const selectionChanges = changes.filter(c => c.type === 'select');
+      const otherChanges = changes.filter(c => c.type !== 'select');
+
+      // DEBUG: Track what React Flow is trying to do
+      if (selectionChanges.length > 0) {
+        console.log('[RF-SELECT-BLOCKED]', selectionChanges);
+      }
+      if (otherChanges.length > 0 && otherChanges.some(c => c.type === 'position')) {
+        console.log('[MOVEMENT]', otherChanges.filter(c => c.type === 'position'));
+      }
+
+      onNodesChange(otherChanges);
+    },
+    [onNodesChange]
+  );
 
   // Handle pane click (deselect)
   const onPaneClick = useCallback(() => {
-    console.log('[SELECTION] onPaneClick - deselecting all nodes');
+    console.log('[DESELECT-ALL]');
     selectNode(null);
   }, [selectNode]);
 
   // Handle node drag end - save position to backend
   const onNodeDragStop = useCallback(
     async (_event: unknown, node: Node) => {
+      console.log('[DRAG-END]', { node: node.id, pos: node.position });
       const sessionId = node.id;
       const newPosition: [number, number] = [node.position.x, node.position.y];
 
       try {
         await updateNode(sessionId, { position: newPosition });
       } catch (error) {
-        console.error('Failed to save node position for session_id:', sessionId, error);
+        console.error('[DRAG-END-ERROR]', sessionId, error);
       }
     },
     [updateNode]
@@ -155,6 +153,11 @@ const handleNodesChange = useCallback(
   // Handle selection drag end - save positions to backend
   const onSelectionDragStop = useCallback(
     async (_event: unknown, selectedNodes: Node[]) => {
+      console.log('[MULTI-DRAG-END]', {
+        count: selectedNodes.length,
+        nodes: selectedNodes.map(n => n.id)
+      });
+
       try {
         await Promise.all(
           selectedNodes.map(node => {
@@ -164,7 +167,7 @@ const handleNodesChange = useCallback(
           })
         );
       } catch (error) {
-        console.error('Failed to save node positions:', error);
+        console.error('[MULTI-DRAG-END-ERROR]', error);
       }
     },
     [updateNode]
@@ -233,7 +236,7 @@ const handleNodesChange = useCallback(
     <ReactFlow
             nodes={nodes}
             edges={edges}
-            onNodesChange={onNodesChange}
+            onNodesChange={handleNodesChange}
             onEdgesChange={onEdgesChange}
             onNodeClick={onNodeClick}
             onPaneClick={onPaneClick}
@@ -245,7 +248,7 @@ const handleNodesChange = useCallback(
             minZoom={0.1}
             maxZoom={2}
             selectNodesOnDrag={false}
-            nodeDragThreshold={10}  // ADD THIS LINE - 10px threshold before drag starts
+            nodeDragThreshold={10}
             multiSelectionKeyCode="Shift"
             deleteKeyCode={null}
             selectionKeyCode="Shift"
