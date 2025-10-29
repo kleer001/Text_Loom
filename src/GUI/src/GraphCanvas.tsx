@@ -45,9 +45,10 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onRenameRequested }) =
       type: 'custom',
       position: { x: node.position[0], y: node.position[1] },
       data: { node },
+      selected: selectedNodeIds.includes(String(node.session_id)),
     }));
     setNodes(flowNodes);
-  }, [workspaceNodes, setNodes]);
+  }, [workspaceNodes, selectedNodeIds, setNodes]);
 
   // Convert connections to React Flow edges
   useEffect(() => {
@@ -205,6 +206,7 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onRenameRequested }) =
         fitViewOptions={{ padding: 0.2 }}
         minZoom={0.1}
         maxZoom={2}
+        selectNodesOnDrag={false}
         multiSelectionKeyCode="Shift"
         deleteKeyCode={null}
         selectionKeyCode="Shift"
