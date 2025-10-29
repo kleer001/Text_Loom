@@ -9,19 +9,19 @@ interface WorkspaceContextType {
   nodes: NodeResponse[];
   connections: ConnectionResponse[];
   globals: Record<string, string | number | boolean>;
-  selectedNodeId: number | null;
-  selectedNodeIds: number[];
+  selectedNodeId: string | null;
+  selectedNodeIds: string[];
   loading: boolean;
   error: string | null;
   loadWorkspace: () => Promise<void>;
-  selectNode: (sessionId: number | null) => void;
-  selectNodes: (sessionIds: number[]) => void;
+  selectNode: (sessionId: string | null) => void;
+  selectNodes: (sessionIds: string[]) => void;
   getSelectedNode: () => NodeResponse | null;
   getSelectedNodes: () => NodeResponse[];
   createNode: (request: NodeCreateRequest) => Promise<NodeResponse>;
-  updateNode: (sessionId: number, request: NodeUpdateRequest) => Promise<NodeResponse>;
-  deleteNode: (sessionId: number) => Promise<void>;
-  deleteNodes: (sessionIds: number[]) => Promise<void>;
+  updateNode: (sessionId: string, request: NodeUpdateRequest) => Promise<NodeResponse>;
+  deleteNode: (sessionId: string) => Promise<void>;
+  deleteNodes: (sessionIds: string[]) => Promise<void>;
 }
 
 const WorkspaceContext = createContext<WorkspaceContextType | undefined>(undefined);
@@ -30,8 +30,8 @@ export const WorkspaceProvider: React.FC<{ children: ReactNode }> = ({ children 
   const [nodes, setNodes] = useState<NodeResponse[]>([]);
   const [connections, setConnections] = useState<ConnectionResponse[]>([]);
   const [globals, setGlobals] = useState<Record<string, string | number | boolean>>({});
-  const [selectedNodeId, setSelectedNodeId] = useState<number | null>(null);
-  const [selectedNodeIds, setSelectedNodeIds] = useState<number[]>([]);
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const [selectedNodeIds, setSelectedNodeIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -53,12 +53,12 @@ export const WorkspaceProvider: React.FC<{ children: ReactNode }> = ({ children 
     }
   }, []);
 
-  const selectNode = useCallback((sessionId: number | null) => {
+  const selectNode = useCallback((sessionId: string | null) => {
     setSelectedNodeId(sessionId);
     setSelectedNodeIds(sessionId !== null ? [sessionId] : []);
   }, []);
 
-  const selectNodes = useCallback((sessionIds: number[]) => {
+  const selectNodes = useCallback((sessionIds: string[]) => {
     setSelectedNodeIds(sessionIds);
     setSelectedNodeId(sessionIds.length === 1 ? sessionIds[0] : null);
   }, []);
@@ -90,7 +90,7 @@ export const WorkspaceProvider: React.FC<{ children: ReactNode }> = ({ children 
     }
   }, []);
 
-  const updateNode = useCallback(async (sessionId: number, request: NodeUpdateRequest): Promise<NodeResponse> => {
+  const updateNode = useCallback(async (sessionId: string, request: NodeUpdateRequest): Promise<NodeResponse> => {
     console.log('[WorkspaceContext] updateNode called:', {
       sessionId,
       sessionIdType: typeof sessionId,
@@ -131,7 +131,7 @@ export const WorkspaceProvider: React.FC<{ children: ReactNode }> = ({ children 
     }
   }, [nodes]);
 
-  const deleteNode = useCallback(async (sessionId: number): Promise<void> => {
+  const deleteNode = useCallback(async (sessionId: string): Promise<void> => {
     setLoading(true);
     setError(null);
 
@@ -157,7 +157,7 @@ export const WorkspaceProvider: React.FC<{ children: ReactNode }> = ({ children 
     }
   }, [selectedNodeId]);
 
-  const deleteNodes = useCallback(async (sessionIds: number[]): Promise<void> => {
+  const deleteNodes = useCallback(async (sessionIds: string[]): Promise<void> => {
     if (sessionIds.length === 0) return;
 
     setLoading(true);

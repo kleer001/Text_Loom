@@ -22,7 +22,7 @@ export interface OutputInfo {
 }
 
 export interface NodeResponse {
-  session_id: number;
+  session_id: string;
   name: string;
   path: string;
   type: string;
@@ -41,11 +41,11 @@ export interface NodeResponse {
 }
 
 export interface ConnectionResponse {
-  source_node_session_id: number;
+  source_node_session_id: string;
   source_node_path: string;
   source_output_index: number;
   source_output_name: string;
-  target_node_session_id: number;
+  target_node_session_id: string;
   target_node_path: string;
   target_input_index: number;
   target_input_name: string;

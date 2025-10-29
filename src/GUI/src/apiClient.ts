@@ -53,7 +53,7 @@ class ApiClient {
     });
   }
 
-  async updateNode(sessionId: number, request: NodeUpdateRequest): Promise<NodeResponse> {
+  async updateNode(sessionId: string, request: NodeUpdateRequest): Promise<NodeResponse> {
     console.log('[ApiClient] updateNode called:', {
       sessionId,
       sessionIdType: typeof sessionId,
@@ -76,13 +76,13 @@ class ApiClient {
     return response;
   }
 
-  async deleteNode(sessionId: number): Promise<void> {
+  async deleteNode(sessionId: string): Promise<void> {
     await this.fetchJson<void>(`/nodes/${sessionId}`, {
       method: 'DELETE',
     });
   }
 
-  async getNode(sessionId: number): Promise<NodeResponse> {
+  async getNode(sessionId: string): Promise<NodeResponse> {
     return this.fetchJson<NodeResponse>(`/nodes/${sessionId}`);
   }
 

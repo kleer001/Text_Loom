@@ -159,7 +159,7 @@ def list_nodes() -> List[NodeResponse]:
     }
 )
 def get_node(
-    session_id: int = Path(..., description="Unique session ID of the node")
+    session_id: str = Path(..., description="Unique session ID of the node")
 ) -> NodeResponse:
     """
     Get detailed information about a specific node.
@@ -340,7 +340,7 @@ def create_node(request: 'NodeCreateRequest') -> 'NodeResponse':
     }
 )
 def update_node(
-    session_id: int,
+    session_id: str,
     request: NodeUpdateRequest = Body(...)
 ) -> NodeResponse:
     """
@@ -487,7 +487,7 @@ def update_node(
     }
 )
 def delete_node(
-    session_id: int = Path(..., description="Node session ID")
+    session_id: str = Path(..., description="Node session ID")
 ) -> SuccessResponse:
     """
     Delete a node.
@@ -554,7 +554,7 @@ def delete_node(
     }
 )
 def execute_node(
-    session_id: int = Path(..., description="Node session ID")
+    session_id: str = Path(..., description="Node session ID")
 ) -> ExecutionResponse:
     """
     Execute a node (cook it).

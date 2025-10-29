@@ -68,7 +68,7 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onRenameRequested }) =
   // Handle node selection
   const onNodeClick = useCallback(
     (_event: React.MouseEvent, node: Node) => {
-      selectNode(Number(node.id));
+      selectNode(node.id);
     },
     [selectNode]
   );
@@ -81,7 +81,7 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onRenameRequested }) =
   // Handle selection changes
   const onSelectionChange = useCallback(
     ({ nodes: selectedNodes }: { nodes: Node[] }) => {
-      const selectedIds = selectedNodes.map(n => Number(n.id));
+      const selectedIds = selectedNodes.map(n => n.id);
       selectNodes(selectedIds);
     },
     [selectNodes]
@@ -90,7 +90,7 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onRenameRequested }) =
   // Handle node drag end - save position to backend
   const onNodeDragStop = useCallback(
     async (_event: unknown, node: Node) => {
-      const sessionId = Number(node.id);
+      const sessionId = node.id;
       const newPosition: [number, number] = [node.position.x, node.position.y];
 
       console.log('[GraphCanvas] onNodeDragStop triggered:', {
@@ -119,7 +119,7 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onRenameRequested }) =
       try {
         await Promise.all(
           selectedNodes.map(node => {
-            const sessionId = Number(node.id);
+            const sessionId = node.id;
             const newPosition: [number, number] = [node.position.x, node.position.y];
 
             console.log('[GraphCanvas] onSelectionDragStop: updating node:', {
