@@ -1,6 +1,6 @@
 // Custom Node Component - Displays node in React Flow graph
 
-import React, { useEffect, useRef } from 'react';
+import React from 'react';
 import { Handle, Position } from '@xyflow/react';
 import type { NodeResponse } from './types';
 
@@ -10,21 +10,7 @@ interface CustomNodeData {
 
 export const CustomNode: React.FC<{ data: CustomNodeData; selected?: boolean }> = ({ data, selected }) => {
   const { node } = data;
-  const prevSelectedRef = useRef(selected);
 
-  // Log selection changes
-  useEffect(() => {
-    if (prevSelectedRef.current !== selected) {
-      console.log('[SELECTION] CustomNode selection changed:', {
-        nodeId: node.session_id,
-        nodeName: node.name,
-        wasSelected: prevSelectedRef.current,
-        nowSelected: selected
-      });
-      prevSelectedRef.current = selected;
-    }
-  }, [selected, node.session_id, node.name]);
-  
   // State color mapping
   const getStateColor = (state: string): string => {
     switch (state) {
