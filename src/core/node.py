@@ -197,7 +197,7 @@ class Node(MobileItem):
                 counter = 1
             while True:
                 new_name = f'{prefix}_{counter}'
-                new_path = f"{parent_path.rstrip('/)}/{new_name}"
+                new_path = f"{parent_path.rstrip('/')}/{new_name}"
                 if new_path not in NodeEnvironment.nodes:
                     break
                 counter += 1
