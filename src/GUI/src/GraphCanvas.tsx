@@ -29,6 +29,7 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onRenameRequested }) =
     nodes: workspaceNodes,
     connections,
     selectNode,
+    selectNodes,
     selectedNodeIds,
     updateNode,
     deleteNodes,
@@ -45,9 +46,10 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onRenameRequested }) =
       type: 'custom',
       position: { x: node.position[0], y: node.position[1] },
       data: { node },
+      selected: selectedNodeIds.includes(String(node.session_id)),
     }));
     setNodes(flowNodes);
-  }, [workspaceNodes, setNodes]);
+  }, [workspaceNodes, selectedNodeIds, setNodes]);
 
   // Convert connections to React Flow edges
   useEffect(() => {
@@ -66,10 +68,20 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onRenameRequested }) =
 
   // Handle node selection
   const onNodeClick = useCallback(
-    (_event: React.MouseEvent, node: Node) => {
-      selectNode(node.id);
+    (event: React.MouseEvent, node: Node) => {
+      // Check if Shift key is pressed for multi-selection
+      if (event.shiftKey) {
+        // Add to existing selection
+        const newSelection = selectedNodeIds.includes(node.id)
+          ? selectedNodeIds.filter(id => id !== node.id) // Toggle off if already selected
+          : [...selectedNodeIds, node.id]; // Add to selection
+        selectNodes(newSelection);
+      } else {
+        // Replace selection with single node
+        selectNode(node.id);
+      }
     },
-    [selectNode]
+    [selectNode, selectNodes, selectedNodeIds]
   );
 
   // Handle pane click (deselect)
@@ -205,6 +217,7 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onRenameRequested }) =
         fitViewOptions={{ padding: 0.2 }}
         minZoom={0.1}
         maxZoom={2}
+        selectNodesOnDrag={false}
         multiSelectionKeyCode="Shift"
         deleteKeyCode={null}
         selectionKeyCode="Shift"
