@@ -54,24 +54,25 @@ class ApiClient {
   }
 
   async updateNode(sessionId: string, request: NodeUpdateRequest): Promise<NodeResponse> {
-    console.log('[ApiClient] updateNode called:', {
-      sessionId,
-      sessionIdType: typeof sessionId,
-      url: `/nodes/${sessionId}`,
-      request
-    });
+    // Log only when updating selection state
+    if ('selected' in request) {
+      console.log('[SELECTION] API updateNode - setting selection:', {
+        sessionId,
+        selected: request.selected
+      });
+    }
 
     const response = await this.fetchJson<NodeResponse>(`/nodes/${sessionId}`, {
       method: 'PUT',
       body: JSON.stringify(request),
     });
 
-    console.log('[ApiClient] updateNode response received:', {
-      requestedSessionId: sessionId,
-      responseSessionId: response.session_id,
-      responsePosition: response.position,
-      sessionIdMatch: response.session_id === sessionId
-    });
+    if ('selected' in request) {
+      console.log('[SELECTION] API response - selection updated:', {
+        sessionId: response.session_id,
+        selected: request.selected
+      });
+    }
 
     return response;
   }
