@@ -455,26 +455,29 @@ def _convert_outputs(node: 'Node') -> List['OutputInfo']:
 def node_to_response(node: 'Node') -> 'NodeResponse':
     """
     Convert an internal Node object to a NodeResponse DTO.
-    
+
     Args:
         node: Internal Node instance
-        
+
     Returns:
         NodeResponse with all node data
-        
+
     Raises:
         ValueError: If node state cannot be captured
     """
     from api.models import NodeResponse, NodeStateEnum
     from core.undo_manager import UndoManager
-    
-    logger.debug(f"Converting node to response: {node.path()}, type={node.type()}")
-    
+
+    logger.info(f"[NODE_TO_RESPONSE] Converting node to response: {node.path()}, type={node.type()}")
+    logger.info(f"[NODE_TO_RESPONSE] Node session_id: {node.session_id()} (type: {type(node.session_id())})")
+    logger.info(f"[NODE_TO_RESPONSE] Node position: {node._position}")
+
     try:
         # Capture node state
         undo_mgr = UndoManager()
         full_state = undo_mgr._capture_node_state(node)
-        logger.debug(f"  State captured successfully")
+        logger.debug(f"[NODE_TO_RESPONSE] State captured successfully")
+        logger.info(f"[NODE_TO_RESPONSE] Captured position from state: {full_state.position}")
         
         # Convert all node components
         parameters = _convert_parameters(node, full_state)
@@ -500,8 +503,12 @@ def node_to_response(node: 'Node') -> 'NodeResponse':
             cook_count=full_state.cook_count,
             last_cook_time=full_state.last_cook_time
         )
-        
-        logger.debug(f"  Response created successfully for {node.path()}")
+
+        logger.info(f"[NODE_TO_RESPONSE] Response created successfully for {node.path()}")
+        logger.info(f"[NODE_TO_RESPONSE] Response session_id: {response.session_id} (type: {type(response.session_id)})")
+        logger.info(f"[NODE_TO_RESPONSE] Response position: {response.position}")
+        logger.info(f"[NODE_TO_RESPONSE] Session ID match: {response.session_id == node.session_id()}")
+
         return response
         
     except AttributeError as e:
