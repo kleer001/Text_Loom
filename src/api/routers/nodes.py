@@ -354,6 +354,8 @@ def update_node(
 
     # Build undo operation description
     undo_parts = []
+    if request.name is not None:
+        undo_parts.append("name")
     if request.position is not None:
         undo_parts.append("position")
     if request.parameters:
@@ -367,6 +369,18 @@ def update_node(
     # Disable undo during updates to prevent parm.set() from pushing duplicate states
     UndoManager().disable()
     try:
+        # Update name if provided
+        if request.name is not None:
+            # Validate and sanitize the name
+            sanitized_name = Node.sanitize_node_name(request.name)
+            if not sanitized_name:
+                raise ValueError(f"Invalid node name: '{request.name}'. Name must contain alphanumeric characters or underscores.")
+
+            # Try to rename the node
+            success = target_node.rename(sanitized_name)
+            if not success:
+                raise ValueError(f"Name '{sanitized_name}' is already in use by another node in the same path")
+
         # Update parameters if provided
         if request.parameters:
             for param_name, param_value in request.parameters.items():

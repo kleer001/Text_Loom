@@ -201,6 +201,7 @@ class NodeUpdateRequest(BaseModel):
 
     Example:
         {
+            "name": "new_node_name",
             "parameters": {
                 "text_string": "Updated text",
                 "pass_through": true
@@ -208,6 +209,7 @@ class NodeUpdateRequest(BaseModel):
             "position": [150.0, 250.0]
         }
     """
+    name: Optional[str] = Field(None, description="New node name (must be unique in parent path)")
     parameters: Optional[Dict[str, Any]] = Field(None, description="Parameter updates (key: value pairs)")
     position: Optional[List[float]] = Field(None, description="New [x, y] position")
     color: Optional[List[float]] = Field(None, description="New [r, g, b] color")
