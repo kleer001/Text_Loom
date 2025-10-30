@@ -51,48 +51,63 @@ export const CustomNode: React.FC<{ data: CustomNodeData; selected?: boolean }> 
       ))}
 
       {/* Node content */}
-      <div style={{ marginBottom: '4px' }}>
-        <div style={{ 
-          fontWeight: 'bold', 
-          fontSize: '14px',
-          marginBottom: '2px',
-        }}>
-          {node.name}
-        </div>
-        <div style={{ 
-          fontSize: '11px', 
-          color: '#666',
-          marginBottom: '4px',
-        }}>
-          {node.type}
-        </div>
-        <div style={{ 
-          fontSize: '10px', 
-          color: '#999',
-        }}>
-          {node.path}
-        </div>
-      </div>
-
-      {/* State indicator */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '6px',
-          fontSize: '11px',
-          marginTop: '6px',
-        }}
-      >
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+        {/* Top Row: Cook Circle | Node Glyph | Node Type */}
         <div
           style={{
-            width: '8px',
-            height: '8px',
-            borderRadius: '50%',
-            background: stateColor,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '8px',
           }}
-        />
-        <span style={{ color: '#666' }}>{node.state}</span>
+        >
+          {/* Cooking color circle (left) */}
+          <div
+            style={{
+              width: '12px',
+              height: '12px',
+              borderRadius: '50%',
+              background: stateColor,
+              flexShrink: 0,
+            }}
+          />
+
+          {/* Node glyph (middle) */}
+          <div
+            style={{
+              fontSize: '18px',
+              fontWeight: 'bold',
+              flex: 1,
+              textAlign: 'center',
+            }}
+          >
+            {node.glyph || '?'}
+          </div>
+
+          {/* Node type (right) */}
+          <div
+            style={{
+              fontSize: '11px',
+              color: '#666',
+              fontWeight: '500',
+              flexShrink: 0,
+            }}
+          >
+            {node.type}
+          </div>
+        </div>
+
+        {/* Bottom Row: Node Name (centered) */}
+        <div
+          style={{
+            fontSize: '12px',
+            fontWeight: 'bold',
+            textAlign: 'center',
+            color: '#333',
+          }}
+        >
+          {node.name}
+        </div>
       </div>
 
       {/* Output handles */}
