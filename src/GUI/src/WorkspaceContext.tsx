@@ -50,10 +50,7 @@ export const WorkspaceProvider: React.FC<{ children: ReactNode }> = ({ children 
     setError(null);
 
     try {
-      console.log('[CREATE_NODE] Creating new node:', request);
       const newNode = await apiClient.createNode(request);
-      console.log('[CREATE_NODE] Node created with session_id:', newNode.session_id);
-
       setNodes(prev => [...prev, newNode]);
       return newNode;
     } catch (err) {

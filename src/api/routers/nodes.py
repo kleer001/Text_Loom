@@ -232,18 +232,15 @@ def create_node(request: 'NodeCreateRequest') -> 'NodeResponse':
     from core.base_classes import Node, NodeType
     from core.node_environment import generate_node_types
     
-    logger.info(f"Creating node: type={request.type}, name={request.name}, parent={request.parent_path}")
-    
     # Get available node types dynamically
     available_types = generate_node_types()
     valid_type_names = list(available_types.keys())
-    
+
     # Convert to uppercase for enum lookup
     node_type_str = request.type.upper()
-    
+
     # Check if type exists
     if node_type_str not in valid_type_names:
-        logger.warning(f"Invalid node type: {request.type}")
         raise HTTPException(
             status_code=400,
             detail={
@@ -256,50 +253,27 @@ def create_node(request: 'NodeCreateRequest') -> 'NodeResponse':
     try:
         # Get the NodeType enum value
         node_type = getattr(NodeType, node_type_str)
-        logger.debug(f"  Resolved NodeType: {node_type}")
 
         # Create the node (backend handles name collisions)
-        logger.info(f"[API_CREATE] === BEFORE Node.create_node() ===")
-        logger.info(f"[API_CREATE] Calling Node.create_node()...")
         node = Node.create_node(
             node_type=node_type,
             node_name=request.name,
             parent_path=request.parent_path
         )
-        logger.info(f"[API_CREATE] === AFTER Node.create_node() ===")
-
-        logger.info(f"[API_CREATE] Node returned: path={node.path()}, session_id={node.session_id()} (type: {type(node.session_id())})")
-        logger.debug(f"  Node has _parms: {hasattr(node, '_parms')}")
-        logger.debug(f"  Node has _inputs: {hasattr(node, '_inputs')}")
-        logger.debug(f"  Node has _outputs: {hasattr(node, '_outputs')}")
 
         # Set initial position if provided
         if request.position:
-            logger.info(f"[API_CREATE] Setting position to {request.position}")
-            logger.info(f"[API_CREATE] session_id BEFORE position set: {node.session_id()}")
             node._position = tuple(request.position)
-            logger.info(f"[API_CREATE] session_id AFTER position set: {node.session_id()}")
 
         # Convert to response
-        logger.info(f"[API_CREATE] === BEFORE node_to_response() ===")
-        logger.info(f"[API_CREATE] Node session_id before conversion: {node.session_id()}")
         response = node_to_response(node)
-        logger.info(f"[API_CREATE] === AFTER node_to_response() ===")
 
-        logger.info(f"[API_CREATE] Response created with session_id={response.session_id} (type: {type(response.session_id)})")
-        logger.info(f"[API_CREATE] Verifying node still has session_id={node.session_id()}")
-        logger.info(f"[API_CREATE] Node is in NodeEnvironment: {node.path() in NodeEnvironment.nodes}")
-
-        # CRITICAL: Verify the node in NodeEnvironment has the same session_id
+        # Verify the node in NodeEnvironment has the same session_id
         node_from_env = NodeEnvironment.node_from_name(node.path())
         if node_from_env:
-            logger.info(f"[API_CREATE] Node from NodeEnvironment has session_id={node_from_env.session_id()}")
             if node_from_env.session_id() != response.session_id:
-                logger.error(f"[API_CREATE] !!!!! SESSION_ID MISMATCH DETECTED !!!!!")
-                logger.error(f"[API_CREATE] Response has: {response.session_id}")
-                logger.error(f"[API_CREATE] NodeEnvironment has: {node_from_env.session_id()}")
+                logger.error(f"[API_CREATE] SESSION_ID MISMATCH: Response has {response.session_id}, NodeEnvironment has {node_from_env.session_id()}")
 
-        logger.info(f"[API_CREATE] === RETURNING RESPONSE TO CLIENT ===")
         return response
         
     except ValueError as e:
@@ -357,37 +331,19 @@ def update_node(
     Raises:
         HTTPException: 404 if node not found, 400 if update invalid
     """
-    logger.info(f"[UPDATE_NODE] === START UPDATE REQUEST ===")
-    logger.info(f"[UPDATE_NODE] Incoming session_id={session_id}, type={type(session_id)}")
-    logger.info(f"[UPDATE_NODE] Request: {request}")
-    if request.position is not None:
-        logger.info(f"[UPDATE_NODE] Position update requested: {request.position}")
-
-    # Find the node with enhanced logging
+    # Find the node
     target_node = None
     all_paths = NodeEnvironment.list_nodes()
-    logger.info(f"[UPDATE_NODE] Searching through {len(all_paths)} nodes for session_id={session_id}")
-    logger.debug(f"[UPDATE_NODE] session_id type: {type(session_id)}, value: {session_id}")
 
     for path in all_paths:
         node = NodeEnvironment.node_from_name(path)
         if node:
             node_sid = node.session_id()
-            logger.debug(f"[UPDATE_NODE] Checking node {path}: session_id={node_sid} (type: {type(node_sid)})")
             if node_sid == session_id:
                 target_node = node
-                logger.info(f"[UPDATE_NODE] ✓ Found matching node at {path}")
-                logger.info(f"[UPDATE_NODE] ✓ Node session_id={node_sid} matches requested={session_id}")
-                logger.info(f"[UPDATE_NODE] ✓ Current node position: {node._position}")
                 break
 
     if not target_node:
-        logger.warning(f"Node with session_id {session_id} not found")
-        logger.warning(f"  Available nodes and their session_ids:")
-        for path in all_paths[:10]:  # Log first 10 nodes to avoid spam
-            node = NodeEnvironment.node_from_name(path)
-            if node:
-                logger.warning(f"    {path}: session_id={node.session_id()}")
         raise HTTPException(
             status_code=404,
             detail={
@@ -406,7 +362,6 @@ def update_node(
         undo_parts.append("color")
 
     undo_description = f"Update {target_node.name()} ({', '.join(undo_parts)})"
-    logger.info(f"[UPDATE_NODE] Pushing undo state: {undo_description}")
     UndoManager().push_state(undo_description)
 
     # Disable undo during updates to prevent parm.set() from pushing duplicate states
@@ -422,25 +377,12 @@ def update_node(
 
         # Update UI state if provided
         if request.position is not None:
-            old_position = target_node._position
-            logger.info(f"[UPDATE_NODE] Updating position: {old_position} -> {request.position}")
             target_node._position = tuple(request.position)
-            logger.info(f"[UPDATE_NODE] Position updated. New position: {target_node._position}")
 
         if request.color is not None:
-            logger.debug(f"[UPDATE_NODE] Updating color to {request.color}")
             target_node._color = tuple(request.color)
 
-        logger.info(f"[UPDATE_NODE] Successfully updated node {target_node.path()}")
-        logger.info(f"[UPDATE_NODE] Node session_id before response: {target_node.session_id()}")
-
         response = node_to_response(target_node)
-
-        logger.info(f"[UPDATE_NODE] Response generated:")
-        logger.info(f"[UPDATE_NODE]   - session_id: {response.session_id}")
-        logger.info(f"[UPDATE_NODE]   - position: {response.position}")
-        logger.info(f"[UPDATE_NODE] === END UPDATE REQUEST ===")
-
         return response
         
     except ValueError as e:

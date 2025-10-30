@@ -402,8 +402,7 @@ def _convert_parameters(node: 'Node', full_state) -> Dict[str, 'ParameterInfo']:
             default=default_value,
             read_only=is_read_only
         )
-    
-    logger.debug(f"  Converted {len(parameters)} parameters")
+
     return parameters
 
 
@@ -422,8 +421,7 @@ def _convert_inputs(node: 'Node') -> List['InputInfo']:
             data_type=input_data_types_dict.get(socket_key, "Any"),
             connected=socket_key in node._inputs
         ))
-    
-    logger.debug(f"  Converted {len(inputs)} inputs")
+
     return inputs
 
 
@@ -443,8 +441,7 @@ def _convert_outputs(node: 'Node') -> List['OutputInfo']:
             data_type=output_data_types_dict.get(socket_key, "Any"),
             connection_count=connection_count
         ))
-    
-    logger.debug(f"  Converted {len(outputs)} outputs")
+
     return outputs
 
 
@@ -464,22 +461,16 @@ def node_to_response(node: 'Node') -> 'NodeResponse':
     from api.models import NodeResponse, NodeStateEnum
     from core.undo_manager import UndoManager
 
-    logger.info(f"[NODE_TO_RESPONSE] Converting node to response: {node.path()}, type={node.type()}")
-    logger.info(f"[NODE_TO_RESPONSE] Node session_id: {node.session_id()} (type: {type(node.session_id())})")
-    logger.info(f"[NODE_TO_RESPONSE] Node position: {node._position}")
-
     try:
         # Capture node state
         undo_mgr = UndoManager()
         full_state = undo_mgr._capture_node_state(node)
-        logger.debug(f"[NODE_TO_RESPONSE] State captured successfully")
-        logger.info(f"[NODE_TO_RESPONSE] Captured position from state: {full_state.position}")
-        
+
         # Convert all node components
         parameters = _convert_parameters(node, full_state)
         inputs = _convert_inputs(node)
         outputs = _convert_outputs(node)
-        
+
         # Build response
         response = NodeResponse(
             session_id=node.session_id(),
@@ -498,11 +489,6 @@ def node_to_response(node: 'Node') -> 'NodeResponse':
             cook_count=full_state.cook_count,
             last_cook_time=full_state.last_cook_time
         )
-
-        logger.info(f"[NODE_TO_RESPONSE] Response created successfully for {node.path()}")
-        logger.info(f"[NODE_TO_RESPONSE] Response session_id: {response.session_id} (type: {type(response.session_id)})")
-        logger.info(f"[NODE_TO_RESPONSE] Response position: {response.position}")
-        logger.info(f"[NODE_TO_RESPONSE] Session ID match: {response.session_id == node.session_id()}")
 
         return response
         
