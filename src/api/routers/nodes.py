@@ -282,6 +282,10 @@ def create_node(request: 'NodeCreateRequest') -> 'NodeResponse':
             node._position = tuple(request.position)
             logger.info(f"[API_CREATE] session_id AFTER position set: {node.session_id()}")
 
+        # Auto-select newly created nodes (expected UX)
+        logger.info(f"[API_CREATE] Auto-selecting newly created node")
+        node._selected = True
+
         # Convert to response
         logger.info(f"[API_CREATE] === BEFORE node_to_response() ===")
         logger.info(f"[API_CREATE] Node session_id before conversion: {node.session_id()}")

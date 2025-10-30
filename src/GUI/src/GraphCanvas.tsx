@@ -44,7 +44,8 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onRenameRequested }) =
   useEffect(() => {
     const flowNodes: Node[] = workspaceNodes.map((node: NodeResponse) => {
       const nodeId = String(node.session_id);
-      const isSelected = selectedNodeIds.includes(nodeId);
+      // Use node.selected directly (updated optimistically in WorkspaceContext)
+      const isSelected = node.selected;
 
       return {
         id: nodeId,
@@ -56,7 +57,7 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onRenameRequested }) =
     });
 
     setNodes(flowNodes);
-  }, [workspaceNodes, selectedNodeIds, setNodes]);
+  }, [workspaceNodes, setNodes]);
 
   // Convert connections to React Flow edges
   useEffect(() => {
