@@ -145,7 +145,6 @@ class NodeResponse(BaseModel):
             "warnings": [],
             "position": [100.0, 200.0],
             "color": [1.0, 1.0, 1.0],
-            "selected": false,
             "is_time_dependent": false,
             "cook_count": 5,
             "last_cook_time": 0.023
@@ -170,8 +169,7 @@ class NodeResponse(BaseModel):
     # UI state
     position: List[float] = Field(default=[0.0, 0.0], description="[x, y] position in editor")
     color: List[float] = Field(default=[1.0, 1.0, 1.0], description="[r, g, b] color (0-1 range)")
-    selected: bool = Field(default=False, description="Whether node is selected in UI")
-    
+
     # Performance metrics
     is_time_dependent: bool = Field(default=False, description="Whether node recooks on every eval")
     cook_count: int = Field(default=0, description="Number of times node has cooked")
@@ -199,21 +197,19 @@ class NodeCreateRequest(BaseModel):
 class NodeUpdateRequest(BaseModel):
     """
     Request to update node parameters and/or UI state.
-    
+
     Example:
         {
             "parameters": {
                 "text_string": "Updated text",
                 "pass_through": true
             },
-            "position": [150.0, 250.0],
-            "selected": true
+            "position": [150.0, 250.0]
         }
     """
     parameters: Optional[Dict[str, Any]] = Field(None, description="Parameter updates (key: value pairs)")
     position: Optional[List[float]] = Field(None, description="New [x, y] position")
     color: Optional[List[float]] = Field(None, description="New [r, g, b] color")
-    selected: Optional[bool] = Field(None, description="Selection state")
 
 
 # ============================================================================
@@ -498,7 +494,6 @@ def node_to_response(node: 'Node') -> 'NodeResponse':
             outputs=outputs,
             position=full_state.position,
             color=list(node._color) if hasattr(node, '_color') else [1.0, 1.0, 1.0],
-            selected=node._selected if hasattr(node, '_selected') else False,
             is_time_dependent=full_state.is_time_dependent,
             cook_count=full_state.cook_count,
             last_cook_time=full_state.last_cook_time

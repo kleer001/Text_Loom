@@ -56,7 +56,6 @@ router = APIRouter()
                             "warnings": [],
                             "position": [100.0, 200.0],
                             "color": [1.0, 1.0, 1.0],
-                            "selected": False,
                             "is_time_dependent": False,
                             "cook_count": 0,
                             "last_cook_time": 0.0
@@ -144,7 +143,6 @@ def list_nodes() -> List[NodeResponse]:
                         "warnings": [],
                         "position": [100.0, 200.0],
                         "color": [1.0, 1.0, 1.0],
-                        "selected": False,
                         "is_time_dependent": False,
                         "cook_count": 5,
                         "last_cook_time": 0.023
@@ -282,10 +280,6 @@ def create_node(request: 'NodeCreateRequest') -> 'NodeResponse':
             node._position = tuple(request.position)
             logger.info(f"[API_CREATE] session_id AFTER position set: {node.session_id()}")
 
-        # Auto-select newly created nodes (expected UX)
-        logger.info(f"[API_CREATE] Auto-selecting newly created node")
-        node._selected = True
-
         # Convert to response
         logger.info(f"[API_CREATE] === BEFORE node_to_response() ===")
         logger.info(f"[API_CREATE] Node session_id before conversion: {node.session_id()}")
@@ -410,8 +404,6 @@ def update_node(
         undo_parts.append("parameters")
     if request.color is not None:
         undo_parts.append("color")
-    if request.selected is not None:
-        undo_parts.append("selection")
 
     undo_description = f"Update {target_node.name()} ({', '.join(undo_parts)})"
     logger.info(f"[UPDATE_NODE] Pushing undo state: {undo_description}")
@@ -438,10 +430,6 @@ def update_node(
         if request.color is not None:
             logger.debug(f"[UPDATE_NODE] Updating color to {request.color}")
             target_node._color = tuple(request.color)
-
-        if request.selected is not None:
-            logger.debug(f"[UPDATE_NODE] Updating selected to {request.selected}")
-            target_node._selected = request.selected
 
         logger.info(f"[UPDATE_NODE] Successfully updated node {target_node.path()}")
         logger.info(f"[UPDATE_NODE] Node session_id before response: {target_node.session_id()}")

@@ -18,23 +18,18 @@ import { NodeDetailsPanel } from './NodeDetailsPanel';
 import { AddNodeMenu } from './AddNodeMenu';
 
 const AppContent: React.FC = () => {
-  const { loadWorkspace, loading, error, getSelectedNode } = useWorkspace();
-  const [triggerRename, setTriggerRename] = React.useState(false);
+  const { loadWorkspace, loading, error, nodes } = useWorkspace();
+  const [selectedNodes, setSelectedNodes] = React.useState<any[]>([]);
 
   // Load workspace on mount
   useEffect(() => {
     loadWorkspace();
   }, [loadWorkspace]);
 
-  const selectedNode = getSelectedNode();
-
-  const handleRenameRequested = () => {
-    setTriggerRename(true);
-  };
-
-  const handleRenameTriggerHandled = () => {
-    setTriggerRename(false);
-  };
+  // Get the selected node's full data from workspace
+  const selectedNode = selectedNodes.length === 1
+    ? nodes.find(n => n.session_id === selectedNodes[0].id) || null
+    : null;
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
@@ -83,7 +78,7 @@ const AppContent: React.FC = () => {
             </Box>
           ) : (
             <>
-              <GraphCanvas onRenameRequested={handleRenameRequested} />
+              <GraphCanvas onSelectionChange={setSelectedNodes} />
               <AddNodeMenu variant="fab" />
             </>
           )}
@@ -106,11 +101,7 @@ const AppContent: React.FC = () => {
             <Typography variant="h6">Node Details</Typography>
           </Box>
           <Box sx={{ flex: 1, overflow: 'auto' }}>
-            <NodeDetailsPanel
-              node={selectedNode}
-              triggerRename={triggerRename}
-              onRenameTriggerHandled={handleRenameTriggerHandled}
-            />
+            <NodeDetailsPanel node={selectedNode} />
           </Box>
         </Paper>
       </Box>

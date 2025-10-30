@@ -34,7 +34,6 @@ export interface NodeResponse {
   warnings: string[];
   position: [number, number];
   color: [number, number, number];
-  selected: boolean;
   is_time_dependent: boolean;
   cook_count: number;
   last_cook_time: number;
@@ -75,5 +74,4 @@ export interface NodeUpdateRequest {
   parameters?: Record<string, string | number | boolean | string[]>;
   position?: [number, number];
   color?: [number, number, number];
-  selected?: boolean;
 }

@@ -9,15 +9,9 @@ import type { NodeResponse } from './types';
 
 interface NodeDetailsPanelProps {
   node: NodeResponse | null;
-  triggerRename?: boolean;
-  onRenameTriggerHandled?: () => void;
 }
 
-export const NodeDetailsPanel: React.FC<NodeDetailsPanelProps> = ({
-  node,
-  triggerRename,
-  onRenameTriggerHandled,
-}) => {
+export const NodeDetailsPanel: React.FC<NodeDetailsPanelProps> = ({ node }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState('');
   const [nameError, setNameError] = useState('');
@@ -29,14 +23,6 @@ export const NodeDetailsPanel: React.FC<NodeDetailsPanelProps> = ({
     setEditName('');
     setNameError('');
   }, [node?.session_id]);
-
-  // Handle external rename trigger (e.g., F2 key)
-  useEffect(() => {
-    if (triggerRename && node) {
-      handleEditClick();
-      onRenameTriggerHandled?.();
-    }
-  }, [triggerRename]);
 
   if (!node) {
     return (
