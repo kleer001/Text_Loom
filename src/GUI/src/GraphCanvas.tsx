@@ -38,18 +38,20 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onSelectionChange }) =
 
   // Convert workspace nodes to React Flow nodes
   useEffect(() => {
-    const flowNodes: Node[] = workspaceNodes.map((node: NodeResponse) => {
-      const nodeId = String(node.session_id);
+    setNodes(prevNodes =>
+      workspaceNodes.map((node: NodeResponse) => {
+        const nodeId = String(node.session_id);
+        const existingNode = prevNodes.find(n => n.id === nodeId);
 
-      return {
-        id: nodeId,
-        type: 'custom',
-        position: { x: node.position[0], y: node.position[1] },
-        data: { node },
-      };
-    });
-
-    setNodes(flowNodes);
+        return {
+          id: nodeId,
+          type: 'custom',
+          position: { x: node.position[0], y: node.position[1] },
+          data: { node },
+          selected: existingNode?.selected ?? false,
+        };
+      })
+    );
   }, [workspaceNodes, setNodes]);
 
   // Convert connections to React Flow edges
