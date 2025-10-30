@@ -529,21 +529,10 @@ class NodeWindow(ScrollableContainer):
                 node = line_info['node']
                 row1_text, row2_text, row1_style, row2_style = format_node(node, line_info['indent'])
 
-                # First row: indent + state + glyph + type + connections
+                # First row: indent + state + glyph + type
                 segments_row1 = []
                 segments_row1.append((line_info['indent'], ""))
                 segments_row1.append((row1_text, row1_style))
-
-                if line_info['output_nodes']:
-                    segments_row1.append((" > (", ARROW_STYLE))
-                    output_names = [n.name() for n in line_info['output_nodes']]
-                    segments_row1.append((", ".join(output_names), OUTPUT_STYLE))
-                    segments_row1.append((")", ARROW_STYLE))
-
-                if line_info['input_nodes']:
-                    segments_row1.append((" < ", ARROW_STYLE))
-                    input_names = [n.name() for n in line_info['input_nodes']]
-                    segments_row1.append((", ".join(input_names), INPUT_STYLE))
 
                 # Add first row segments
                 for text, segment_style in segments_row1:
