@@ -49,6 +49,7 @@ class JsonNode(Node):
     Output: List[str] (extracted values as strings)
     """
 
+    GLYPH = '{'
     SINGLE_INPUT = True
     SINGLE_OUTPUT = True
 
