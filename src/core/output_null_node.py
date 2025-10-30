@@ -15,10 +15,11 @@ class OutputNullNode(Node):
         _input_hash (str): Hash of the last processed input.
         _last_input_size (int): Size of the last processed input.
 
-    Parameter: 
+    Parameter:
         out_date (STRINGLIST) : duplication of this node's input
     """
 
+    GLYPH = '◁'
     SINGLE_INPUT = True
     SINGLE_OUTPUT = True
 

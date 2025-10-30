@@ -48,6 +48,7 @@ class FolderNode(Node):
             Output[2]: ["", "Permission denied: /path/file2.txt"]
     """
 
+    GLYPH = '📁'
     SINGLE_INPUT = False
     SINGLE_OUTPUT = False
 
