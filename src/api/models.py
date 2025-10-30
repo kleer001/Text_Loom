@@ -155,7 +155,8 @@ class NodeResponse(BaseModel):
     name: str = Field(..., description="Node name (may not be unique)")
     path: str = Field(..., description="Full path (unique identifier)")
     type: str = Field(..., description="Node type (e.g., 'text', 'fileout', 'query')")
-    
+    glyph: str = Field(default="", description="Node type glyph character")
+
     # Processing state
     state: NodeStateEnum = Field(..., description="Current processing state")
     errors: List[str] = Field(default_factory=list, description="Critical error messages")
@@ -477,6 +478,7 @@ def node_to_response(node: 'Node') -> 'NodeResponse':
             name=node.name(),
             path=node.path(),
             type=node.type().value,  # Use enum's value directly
+            glyph=getattr(node.__class__, 'GLYPH', ''),  # Get GLYPH class attribute
             state=full_state.state.value,
             errors=full_state.errors,
             warnings=full_state.warnings,
