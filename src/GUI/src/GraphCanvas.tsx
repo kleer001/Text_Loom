@@ -70,10 +70,6 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onSelectionChange }) =
   // Handle selection changes from React Flow
   const handleSelectionChange = useCallback(
     (params: { nodes: Node[]; edges: Edge[] }) => {
-      console.log('[SELECTION]', {
-        nodeCount: params.nodes.length,
-        nodeIds: params.nodes.map(n => n.id)
-      });
       setSelectedNodes(params.nodes);
       onSelectionChange?.(params.nodes);
     },
@@ -83,14 +79,13 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onSelectionChange }) =
   // Handle node drag end - save position to backend
   const onNodeDragStop = useCallback(
     async (_event: unknown, node: Node) => {
-      console.log('[DRAG-END]', { node: node.id, pos: node.position });
       const sessionId = node.id;
       const newPosition: [number, number] = [node.position.x, node.position.y];
 
       try {
         await updateNode(sessionId, { position: newPosition });
       } catch (error) {
-        console.error('[DRAG-END-ERROR]', sessionId, error);
+        console.error('Failed to update node position:', sessionId, error);
       }
     },
     [updateNode]
@@ -99,11 +94,6 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onSelectionChange }) =
   // Handle selection drag end - save positions to backend
   const onSelectionDragStop = useCallback(
     async (_event: unknown, draggedNodes: Node[]) => {
-      console.log('[MULTI-DRAG-END]', {
-        count: draggedNodes.length,
-        nodes: draggedNodes.map(n => n.id)
-      });
-
       try {
         await Promise.all(
           draggedNodes.map(node => {
@@ -113,7 +103,7 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onSelectionChange }) =
           })
         );
       } catch (error) {
-        console.error('[MULTI-DRAG-END-ERROR]', error);
+        console.error('Failed to update nodes positions:', error);
       }
     },
     [updateNode]

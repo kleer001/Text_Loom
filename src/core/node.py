@@ -173,13 +173,7 @@ class Node(MobileItem):
     @classmethod
     def create_node(cls, node_type: NodeType, node_name: Optional[str]=None,
         parent_path: str='/') ->'Node':
-        import logging
-        logger = logging.getLogger("core.node")
         from core.undo_manager import UndoManager
-
-        logger.info(f"[CREATE_NODE] === START Node.create_node ===")
-        logger.info(f"[CREATE_NODE] node_type={node_type}, node_name={node_name}, parent_path={parent_path}")
-        logger.info(f"[CREATE_NODE] Current thread: {__import__('threading').current_thread().name}")
 
         sanitized_name = cls.sanitize_node_name(node_name)
         base_name = (f'{node_type.value}_1' if sanitized_name is None else
@@ -203,41 +197,29 @@ class Node(MobileItem):
                 counter += 1
         new_path = f"{parent_path.rstrip('/')}/{new_name}"
 
-        logger.info(f"[CREATE_NODE] Final path will be: {new_path}")
-        logger.info(f"[CREATE_NODE] Pushing undo state BEFORE node creation...")
         UndoManager().push_state(f'Create node: {new_path}')
-        logger.info(f"[CREATE_NODE] Undo state pushed")
 
         if parent_path != '/' and not NodeEnvironment.node_exists(parent_path):
             raise ValueError(f"Parent path '{parent_path}' does not exist.")
         try:
-            logger.info(f"[CREATE_NODE] Loading node class...")
             module_name = f'core.{node_type.value}_node'
             module = importlib.import_module(module_name)
             class_name = ''.join(word.capitalize() for word in node_type.
                 value.split('_'))
             node_class = getattr(module, f'{class_name}Node')
 
-            logger.info(f"[CREATE_NODE] About to instantiate {class_name}Node...")
             new_node = node_class(new_name, new_path, node_type)
-            logger.info(f"[CREATE_NODE] Node instantiated! session_id={new_node.session_id()} (type: {type(new_node.session_id())})")
 
             # Note: session_id is already generated in MobileItem.__init__()
-            logger.info(f"[CREATE_NODE] Adding node to NodeEnvironment...")
             NodeEnvironment.add_node(new_node)
-            logger.info(f"[CREATE_NODE] Node added. Verifying session_id={new_node.session_id()}")
 
             if hasattr(new_node.__class__, 'post_registration_init'):
-                logger.info(f"[CREATE_NODE] Running post_registration_init (undo disabled)...")
                 UndoManager().disable()
                 try:
                     new_node.__class__.post_registration_init(new_node)
-                    logger.info(f"[CREATE_NODE] post_registration_init completed. session_id={new_node.session_id()}")
                 finally:
                     UndoManager().enable()
-                    logger.info(f"[CREATE_NODE] Undo re-enabled")
 
-            logger.info(f"[CREATE_NODE] === END Node.create_node, final session_id={new_node.session_id()} ===")
             return new_node
         except ImportError:
             raise ImportError(
