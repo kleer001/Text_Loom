@@ -60,9 +60,21 @@ export const NodeDetailsPanel: React.FC<NodeDetailsPanelProps> = ({ node }) => {
       return;
     }
 
-    // TODO: Backend API limitation - node names cannot be changed after creation
-    // The node name is tied to its path and is immutable
-    setNameError('Node renaming is not supported by the backend API yet');
+    try {
+      // Import apiClient dynamically to avoid circular dependencies
+      const { apiClient } = await import('./apiClient');
+
+      // Call the API to rename the node
+      await apiClient.updateNode(node.session_id, { name: trimmedName });
+
+      // Success - exit edit mode
+      setIsEditing(false);
+      setEditName('');
+      setNameError('');
+    } catch (error) {
+      // Show error message
+      setNameError(error instanceof Error ? error.message : 'Failed to rename node');
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {

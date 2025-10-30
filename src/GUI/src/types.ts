@@ -72,6 +72,7 @@ export interface NodeCreateRequest {
 }
 
 export interface NodeUpdateRequest {
+  name?: string;
   parameters?: Record<string, string | number | boolean | string[]>;
   position?: [number, number];
   color?: [number, number, number];
