@@ -9,7 +9,7 @@ import {
   useEdgesState,
   BackgroundVariant,
 } from '@xyflow/react';
-import type { Node, Edge } from '@xyflow/react';
+import type { Node, Edge, NodeChange } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { CustomNode } from './CustomNode';
 import { useWorkspace } from './WorkspaceContext';
@@ -31,10 +31,33 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onSelectionChange }) =
     updateNode,
     deleteNodes,
   } = useWorkspace();
-  const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
+  const [nodes, setNodes, onNodesChangeInternal] = useNodesState<Node>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedNodes, setSelectedNodes] = useState<Node[]>([]);
+  const [isDragging, setIsDragging] = useState(false);
+  const [draggedNodeIds, setDraggedNodeIds] = useState<Set<string>>(new Set());
+
+  // Wrapped onNodesChange to intercept and log changes
+  const onNodesChange = useCallback((changes: NodeChange<Node>[]) => {
+    console.log('Node changes:', changes);
+
+    // Filter out deselection changes for nodes that were just dragged
+    const filteredChanges = changes.filter(change => {
+      if (change.type === 'select' && !change.selected && draggedNodeIds.has(change.id)) {
+        console.log('Preventing deselection of dragged node:', change.id);
+        return false; // Filter out this deselection
+      }
+      return true;
+    });
+
+    // Clear dragged nodes tracking after processing changes
+    if (filteredChanges.length < changes.length) {
+      setTimeout(() => setDraggedNodeIds(new Set()), 100);
+    }
+
+    onNodesChangeInternal(filteredChanges);
+  }, [onNodesChangeInternal, draggedNodeIds]);
 
   // Convert workspace nodes to React Flow nodes
   useEffect(() => {
@@ -78,9 +101,20 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onSelectionChange }) =
     [onSelectionChange]
   );
 
+  // Handle node drag start - track dragged node
+  const onNodeDragStart = useCallback(
+    (_event: unknown, node: Node) => {
+      console.log('Node drag start:', node.id);
+      setIsDragging(true);
+      setDraggedNodeIds(new Set([node.id]));
+    },
+    []
+  );
+
   // Handle node drag end - save position to backend
   const onNodeDragStop = useCallback(
     async (_event: unknown, node: Node) => {
+      console.log('Node drag stop:', node.id);
       const sessionId = node.id;
       const newPosition: [number, number] = [node.position.x, node.position.y];
 
@@ -89,13 +123,27 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onSelectionChange }) =
       } catch (error) {
         console.error('Failed to update node position:', sessionId, error);
       }
+
+      setIsDragging(false);
+      // Keep draggedNodeIds set for a moment to intercept deselection
     },
     [updateNode]
+  );
+
+  // Handle selection drag start - track dragged nodes
+  const onSelectionDragStart = useCallback(
+    (_event: unknown, draggedNodes: Node[]) => {
+      console.log('Selection drag start:', draggedNodes.map(n => n.id));
+      setIsDragging(true);
+      setDraggedNodeIds(new Set(draggedNodes.map(n => n.id)));
+    },
+    []
   );
 
   // Handle selection drag end - save positions to backend
   const onSelectionDragStop = useCallback(
     async (_event: unknown, draggedNodes: Node[]) => {
+      console.log('Selection drag stop:', draggedNodes.map(n => n.id));
       try {
         await Promise.all(
           draggedNodes.map(node => {
@@ -107,6 +155,9 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onSelectionChange }) =
       } catch (error) {
         console.error('Failed to update nodes positions:', error);
       }
+
+      setIsDragging(false);
+      // Keep draggedNodeIds set for a moment to intercept deselection
     },
     [updateNode]
   );
@@ -167,7 +218,9 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onSelectionChange }) =
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onSelectionChange={handleSelectionChange}
+        onNodeDragStart={onNodeDragStart}
         onNodeDragStop={onNodeDragStop}
+        onSelectionDragStart={onSelectionDragStart}
         onSelectionDragStop={onSelectionDragStop}
         nodeTypes={nodeTypes}
         fitView
