@@ -8,7 +8,6 @@ import {
   useNodesState,
   useEdgesState,
   BackgroundVariant,
-  type NodeChange,
 } from '@xyflow/react';
 import type { Node, Edge } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
@@ -22,41 +21,36 @@ const nodeTypes = {
 };
 
 interface GraphCanvasProps {
-  onRenameRequested?: () => void;
+  onSelectionChange?: (nodes: Node[]) => void;
 }
 
-export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onRenameRequested }) => {
+export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onSelectionChange }) => {
   const {
     nodes: workspaceNodes,
     connections,
-    selectNode,
-    selectNodes,
-    selectedNodeIds,
     updateNode,
     deleteNodes,
   } = useWorkspace();
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [nodesToDelete, setNodesToDelete] = useState<number[]>([]);
+  const [selectedNodes, setSelectedNodes] = useState<Node[]>([]);
 
   // Convert workspace nodes to React Flow nodes
   useEffect(() => {
     const flowNodes: Node[] = workspaceNodes.map((node: NodeResponse) => {
       const nodeId = String(node.session_id);
-      const isSelected = selectedNodeIds.includes(nodeId);
 
       return {
         id: nodeId,
         type: 'custom',
         position: { x: node.position[0], y: node.position[1] },
         data: { node },
-        selected: isSelected,
       };
     });
 
     setNodes(flowNodes);
-  }, [workspaceNodes, selectedNodeIds, setNodes]);
+  }, [workspaceNodes, setNodes]);
 
   // Convert connections to React Flow edges
   useEffect(() => {
@@ -73,66 +67,18 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onRenameRequested }) =
     setEdges(flowEdges);
   }, [connections, setEdges]);
 
-  // Handle node selection (industry-standard pattern)
-  const onNodeClick = useCallback(
-    (event: React.MouseEvent, node: Node) => {
-      const wasSelected = selectedNodeIds.includes(node.id);
-
-      // DEBUG: Track click events
-      console.log('[CLICK]', {
-        id: node.id,
-        wasSelected,
-        shift: event.shiftKey,
-        currentSelection: selectedNodeIds
+  // Handle selection changes from React Flow
+  const handleSelectionChange = useCallback(
+    (params: { nodes: Node[]; edges: Edge[] }) => {
+      console.log('[SELECTION]', {
+        nodeCount: params.nodes.length,
+        nodeIds: params.nodes.map(n => n.id)
       });
-
-      if (event.shiftKey) {
-        // Shift+click: toggle node in selection
-        const newSelection = wasSelected
-          ? selectedNodeIds.filter(id => id !== node.id)
-          : [...selectedNodeIds, node.id];
-
-        console.log('[MULTI-SELECT]', { from: selectedNodeIds, to: newSelection });
-        selectNodes(newSelection);
-      } else {
-        // Regular click: select only this node (unless already selected)
-        // If already selected, don't deselect (allows drag-to-move)
-        if (!wasSelected) {
-          console.log('[SELECT]', { node: node.id });
-          selectNode(node.id);
-        } else {
-          console.log('[ALREADY-SELECTED]', { node: node.id, action: 'keeping selection for drag' });
-        }
-      }
+      setSelectedNodes(params.nodes);
+      onSelectionChange?.(params.nodes);
     },
-    [selectNode, selectNodes, selectedNodeIds]
+    [onSelectionChange]
   );
-
-
-  const handleNodesChange = useCallback(
-    (changes: NodeChange[]) => {
-      // Filter out selection changes - we manage those ourselves
-      const selectionChanges = changes.filter(c => c.type === 'select');
-      const otherChanges = changes.filter(c => c.type !== 'select');
-
-      // DEBUG: Track what React Flow is trying to do
-      if (selectionChanges.length > 0) {
-        console.log('[RF-SELECT-BLOCKED]', selectionChanges);
-      }
-      if (otherChanges.length > 0 && otherChanges.some(c => c.type === 'position')) {
-        console.log('[MOVEMENT]', otherChanges.filter(c => c.type === 'position'));
-      }
-
-      onNodesChange(otherChanges);
-    },
-    [onNodesChange]
-  );
-
-  // Handle pane click (deselect)
-  const onPaneClick = useCallback(() => {
-    console.log('[DESELECT-ALL]');
-    selectNode(null);
-  }, [selectNode]);
 
   // Handle node drag end - save position to backend
   const onNodeDragStop = useCallback(
@@ -152,15 +98,15 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onRenameRequested }) =
 
   // Handle selection drag end - save positions to backend
   const onSelectionDragStop = useCallback(
-    async (_event: unknown, selectedNodes: Node[]) => {
+    async (_event: unknown, draggedNodes: Node[]) => {
       console.log('[MULTI-DRAG-END]', {
-        count: selectedNodes.length,
-        nodes: selectedNodes.map(n => n.id)
+        count: draggedNodes.length,
+        nodes: draggedNodes.map(n => n.id)
       });
 
       try {
         await Promise.all(
-          selectedNodes.map(node => {
+          draggedNodes.map(node => {
             const sessionId = node.id;
             const newPosition: [number, number] = [node.position.x, node.position.y];
             return updateNode(sessionId, { position: newPosition });
@@ -180,15 +126,6 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onRenameRequested }) =
       const target = event.target as HTMLElement;
       const isInputField = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA';
 
-      // F2 key - trigger rename
-      if (event.key === 'F2') {
-        event.preventDefault();
-        if (selectedNodeIds.length === 1 && onRenameRequested) {
-          onRenameRequested();
-        }
-        return;
-      }
-
       // Delete key
       if (event.key === 'Delete' || event.key === 'Backspace') {
         // Prevent default browser behavior (e.g., going back)
@@ -197,9 +134,8 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onRenameRequested }) =
         }
 
         // Only delete if nodes are selected and not typing
-        if (selectedNodeIds.length > 0 && !isInputField) {
+        if (selectedNodes.length > 0 && !isInputField) {
           event.preventDefault();
-          setNodesToDelete(selectedNodeIds);
           setDeleteDialogOpen(true);
         }
       }
@@ -207,52 +143,51 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onRenameRequested }) =
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedNodeIds, onRenameRequested]);
+  }, [selectedNodes]);
 
   // Handle delete confirmation
   const handleDeleteConfirm = useCallback(async () => {
     setDeleteDialogOpen(false);
     try {
-      await deleteNodes(nodesToDelete);
-      setNodesToDelete([]);
+      const nodeIds = selectedNodes.map(n => n.id);
+      await deleteNodes(nodeIds);
+      setSelectedNodes([]);
     } catch (error) {
       console.error('Failed to delete nodes:', error);
     }
-  }, [deleteNodes, nodesToDelete]);
+  }, [deleteNodes, selectedNodes]);
 
   const handleDeleteCancel = useCallback(() => {
     setDeleteDialogOpen(false);
-    setNodesToDelete([]);
   }, []);
 
   return (
     <>
       <DeleteConfirmDialog
         open={deleteDialogOpen}
-        nodeCount={nodesToDelete.length}
+        nodeCount={selectedNodes.length}
         onConfirm={handleDeleteConfirm}
         onCancel={handleDeleteCancel}
       />
-    <ReactFlow
-            nodes={nodes}
-            edges={edges}
-            onNodesChange={handleNodesChange}
-            onEdgesChange={onEdgesChange}
-            onNodeClick={onNodeClick}
-            onPaneClick={onPaneClick}
-            onNodeDragStop={onNodeDragStop}
-            onSelectionDragStop={onSelectionDragStop}
-            nodeTypes={nodeTypes}
-            fitView
-            fitViewOptions={{ padding: 0.2 }}
-            minZoom={0.1}
-            maxZoom={2}
-            selectNodesOnDrag={false}
-            nodeDragThreshold={10}
-            multiSelectionKeyCode="Shift"
-            deleteKeyCode={null}
-            selectionKeyCode="Shift"
-        >
+      <ReactFlow
+        nodes={nodes}
+        edges={edges}
+        onNodesChange={onNodesChange}
+        onEdgesChange={onEdgesChange}
+        onSelectionChange={handleSelectionChange}
+        onNodeDragStop={onNodeDragStop}
+        onSelectionDragStop={onSelectionDragStop}
+        nodeTypes={nodeTypes}
+        fitView
+        fitViewOptions={{ padding: 0.2 }}
+        minZoom={0.1}
+        maxZoom={2}
+        selectNodesOnDrag={false}
+        nodeDragThreshold={10}
+        multiSelectionKeyCode="Shift"
+        deleteKeyCode={null}
+        selectionKeyCode="Shift"
+      >
         <Background variant={BackgroundVariant.Dots} gap={12} size={1} />
         <Controls />
       </ReactFlow>
