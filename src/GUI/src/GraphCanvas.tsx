@@ -38,14 +38,23 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onSelectionChange }) =
   const [isDragging, setIsDragging] = useState(false);
   const [draggedNodeIds, setDraggedNodeIds] = useState<Set<string>>(new Set());
 
-  // Wrapped onNodesChange to intercept and log changes
+  // Wrapped onNodesChange to prevent deselection after drag
+  //
+  // Why this is needed:
+  // - When a node is dragged, onNodeDragStop calls updateNode()
+  // - This updates workspaceNodes, triggering the workspace sync useEffect
+  // - The useEffect calls setNodes(), which triggers React Flow's internal state
+  // - React Flow then sends a deselection change (select: false) through onNodesChange
+  // - This is a known quirk of using setNodes with useNodesState
+  //
+  // We intercept and filter out these deselection changes for recently dragged nodes.
   const onNodesChange = useCallback((changes: NodeChange<Node>[]) => {
-    console.log('Node changes:', changes);
+    console.log('[onNodesChange]', changes);
 
     // Filter out deselection changes for nodes that were just dragged
     const filteredChanges = changes.filter(change => {
       if (change.type === 'select' && !change.selected && draggedNodeIds.has(change.id)) {
-        console.log('Preventing deselection of dragged node:', change.id);
+        console.log('[INTERCEPTED] Preventing deselection of dragged node:', change.id);
         return false; // Filter out this deselection
       }
       return true;
