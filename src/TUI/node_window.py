@@ -491,10 +491,12 @@ class NodeWindow(ScrollableContainer):
             self._node_data = []
             rendered_text = Text()
 
-            def format_node(node: Node, indent: int) -> tuple[str, str]:
+            def format_node(node: Node, indent: int) -> tuple[str, str, str, str]:
+                """Returns (row1_text, row2_text, row1_style, row2_style)"""
                 state_indicator = self._get_state_indicator(node.state(), node.path())
-                type_indicator = get_node_emoji(node.type().name)
-                
+                type_glyph = get_node_emoji(node.type().name)
+                node_type_name = node.type().name
+
                 i = len(self._node_data)
                 self._node_data.append(NodeData(
                     name=node.name(),
@@ -502,42 +504,59 @@ class NodeWindow(ScrollableContainer):
                     line_number=i,
                     indent_level=indent
                 ))
-                
+
                 self._current_line = i
-                
+
                 style = []
                 if i == self._selected_line:
                     style.append("reverse")
                 if node.path() == self._cooking_node:
                     style.append("underline")
-                
-                return f"{state_indicator}{type_indicator} {node.name()}", " ".join(style) if style else ""
+
+                style_str = " ".join(style) if style else ""
+
+                # Top row: COOK CIRCLE | NODE GLYPH | NODE TYPE
+                row1 = f"{state_indicator} {type_glyph} {node_type_name}"
+
+                # Bottom row: NODE NAME (centered)
+                row2 = f"    {node.name()}"
+
+                return row1, row2, style_str, style_str
 
             rendered_lines = render_layout(layout_entries, format_node)
-            
+
             for line_info in rendered_lines:
-                segments = []
                 node = line_info['node']
-                node_text, style = format_node(node, line_info['indent'])
-                
-                # Add segments with appropriate styling
-                segments.append((line_info['indent'], ""))
-                segments.append((node_text, style))  # Node name with potential reverse highlight
+                row1_text, row2_text, row1_style, row2_style = format_node(node, line_info['indent'])
+
+                # First row: indent + state + glyph + type + connections
+                segments_row1 = []
+                segments_row1.append((line_info['indent'], ""))
+                segments_row1.append((row1_text, row1_style))
 
                 if line_info['output_nodes']:
-                    segments.append((" > (", ARROW_STYLE))  # Arrow
+                    segments_row1.append((" > (", ARROW_STYLE))
                     output_names = [n.name() for n in line_info['output_nodes']]
-                    segments.append((", ".join(output_names), OUTPUT_STYLE))  # Output nodes
-                    segments.append((")", ARROW_STYLE))
+                    segments_row1.append((", ".join(output_names), OUTPUT_STYLE))
+                    segments_row1.append((")", ARROW_STYLE))
 
                 if line_info['input_nodes']:
-                    segments.append((" < ", ARROW_STYLE))  # Arrow
+                    segments_row1.append((" < ", ARROW_STYLE))
                     input_names = [n.name() for n in line_info['input_nodes']]
-                    segments.append((", ".join(input_names), INPUT_STYLE))  # Input nodes
-                
+                    segments_row1.append((", ".join(input_names), INPUT_STYLE))
 
-                # Add all segments to rendered text
-                for text, segment_style in segments:
+                # Add first row segments
+                for text, segment_style in segments_row1:
+                    rendered_text.append(text, style=segment_style)
+                rendered_text.append("\n")
+
+                # Second row: indent + centered node name
+                segments_row2 = []
+                segments_row2.append((line_info['indent'], ""))
+                segments_row2.append((row2_text, row2_style))
+
+                # Add second row segments
+                for text, segment_style in segments_row2:
                     rendered_text.append(text, style=segment_style)
                 rendered_text.append("\n")
 
@@ -559,7 +578,11 @@ class NodeWindow(ScrollableContainer):
             self._refresh_timer = None
 
     def _ensure_line_visible(self, line_number: int) -> None:
-        region = Region(0, line_number, self.size.width, 1)
+        # Each node takes 2 visual lines (top row + bottom row)
+        # So node N starts at visual line N*2
+        visual_line = line_number * 2
+        # Make the region 2 lines tall to show the full node
+        region = Region(0, visual_line, self.size.width, 2)
         self.scroll_to_region(region)
 
     def _get_valid_lines_for_delete_mode(self) -> list:
