@@ -221,9 +221,9 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onSelectionChange }) =
             e.targetHandle === connection.targetHandle)
         );
 
-        // Add new edge
+        // Add new edge using connection_id from backend
         const newEdge: Edge = {
-          id: `${newConnection.source_node_session_id}-${newConnection.source_output_index}-${newConnection.target_node_session_id}-${newConnection.target_input_index}`,
+          id: newConnection.connection_id,
           source: connection.source,
           target: connection.target,
           sourceHandle: connection.sourceHandle!,
@@ -247,49 +247,25 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onSelectionChange }) =
 
   // Handle deleting connections (Phase 3.4)
   const onEdgesDelete = useCallback(async (edgesToDelete: Edge[]) => {
-    // Delete connections sequentially (backend processes one at a time)
+    // Delete connections by their IDs (much simpler now!)
     for (const edge of edgesToDelete) {
-      // 1. Parse handle IDs to get socket indices
-      const sourceOutputIndex = parseInt(edge.sourceHandle?.replace('output-', '') || '0');
-      const targetInputIndex = parseInt(edge.targetHandle?.replace('input-', '') || '0');
-
-      // 2. Find node data to get paths
-      const sourceNode = nodes.find(n => n.id === edge.source);
-      const targetNode = nodes.find(n => n.id === edge.target);
-
-      if (!sourceNode || !targetNode) {
-        console.warn('Source or target node not found for edge:', edge.id);
-        continue; // Skip this edge
-      }
-
-      // 3. Build API request
-      const request: ConnectionDeleteRequest = {
-        source_node_path: (sourceNode.data as { node: NodeResponse }).node.path,
-        source_output_index: sourceOutputIndex,
-        target_node_path: (targetNode.data as { node: NodeResponse }).node.path,
-        target_input_index: targetInputIndex,
-      };
-
       try {
-        // 4. Call backend API
-        await apiClient.deleteConnection(request);
-
+        await apiClient.deleteConnectionById(edge.id);
       } catch (error) {
         console.error('Failed to delete connection:', error);
-        // TODO: Show error notification
         // Continue to next edge even if this one fails
       }
     }
 
-    // 5. Remove edges from state
+    // Remove edges from state
     setEdges(prevEdges =>
       prevEdges.filter(e => !edgesToDelete.includes(e))
     );
 
-    // 6. Refresh workspace to sync node states
+    // Refresh workspace to sync node states
     await loadWorkspace();
 
-  }, [nodes, setEdges, loadWorkspace]);
+  }, [setEdges, loadWorkspace]);
 
   // Validate connections before allowing them (Phase 3.4)
   const isValidConnection = useCallback((connection: Edge | Connection) => {

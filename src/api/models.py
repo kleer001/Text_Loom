@@ -222,9 +222,10 @@ class NodeUpdateRequest(BaseModel):
 class ConnectionResponse(BaseModel):
     """
     A connection between two nodes.
-    
+
     Example:
         {
+            "connection_id": "123e4567-e89b-12d3-a456-426614174000",
             "source_node_session_id": 123456,
             "source_node_path": "/text1",
             "source_output_index": 0,
@@ -235,12 +236,15 @@ class ConnectionResponse(BaseModel):
             "target_input_name": "input"
         }
     """
+    # Unique connection identifier
+    connection_id: str = Field(..., description="Unique connection session ID")
+
     # Source (output) side
     source_node_session_id: str = Field(..., description="Source node's session ID")
     source_node_path: str = Field(..., description="Source node's path")
     source_output_index: int = Field(..., description="Output socket index")
     source_output_name: str = Field(..., description="Output socket name")
-    
+
     # Target (input) side
     target_node_session_id: str = Field(..., description="Target node's session ID")
     target_node_path: str = Field(..., description="Target node's path")
@@ -513,14 +517,15 @@ def node_to_response(node: 'Node') -> 'NodeResponse':
 def connection_to_response(connection: 'NodeConnection') -> ConnectionResponse:
     """
     Convert an internal NodeConnection to a ConnectionResponse DTO.
-    
+
     Args:
         connection: Internal NodeConnection instance
-        
+
     Returns:
         ConnectionResponse with connection details
     """
     return ConnectionResponse(
+        connection_id=connection.session_id(),
         source_node_session_id=connection.output_node().session_id(),
         source_node_path=connection.output_node().path(),
         source_output_index=connection.output_index(),
