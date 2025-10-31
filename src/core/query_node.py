@@ -158,14 +158,14 @@ class QueryNode(Node):
     def _respond_callback(self) -> None:
         self.cook(force=True)
 
-    def input_names(self) -> Dict[str, str]:
-        return {"input": "Input Prompts"}
+    def input_names(self) -> Dict[int, str]:
+        return {0: "Input Prompts"}
 
-    def output_names(self) -> Dict[str, str]:
-        return {"output": "LLM Responses"}
+    def output_names(self) -> Dict[int, str]:
+        return {0: "LLM Responses"}
 
-    def input_data_types(self) -> Dict[str, str]:
-        return {"input": "List[str]"}
+    def input_data_types(self) -> Dict[int, str]:
+        return {0: "List[str]"}
 
-    def output_data_types(self) -> Dict[str, str]:
-        return {"output": "List[str]"}
+    def output_data_types(self) -> Dict[int, str]:
+        return {0: "List[str]"}

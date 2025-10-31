@@ -100,14 +100,14 @@ class OutputNullNode(Node):
     def _calculate_hash(self, content: str) -> str:
         return hashlib.md5(content.encode()).hexdigest()
 
-    def input_names(self) -> Dict[str, str]:
-        return {"input": "Input Data"}
+    def input_names(self) -> Dict[int, str]:
+        return {0: "Input Data"}
 
-    def output_names(self) -> Dict[str, str]:
-        return {"output": "Output Data"}
+    def output_names(self) -> Dict[int, str]:
+        return {0: "Output Data"}
 
-    def input_data_types(self) -> Dict[str, str]:
-        return {"input": "List[str]"}
+    def input_data_types(self) -> Dict[int, str]:
+        return {0: "List[str]"}
 
-    def output_data_types(self) -> Dict[str, str]:
-        return {"output": "List[str]"}
+    def output_data_types(self) -> Dict[int, str]:
+        return {0: "List[str]"}

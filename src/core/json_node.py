@@ -393,14 +393,14 @@ class JsonNode(Node):
             # Complex types, use JSON representation
             return json.dumps(value, ensure_ascii=False)
 
-    def input_names(self) -> Dict[str, str]:
-        return {"input": "Input"}
+    def input_names(self) -> Dict[int, str]:
+        return {0: "Input"}
 
-    def output_names(self) -> Dict[str, str]:
-        return {"output": "Output"}
+    def output_names(self) -> Dict[int, str]:
+        return {0: "Output"}
 
-    def input_data_types(self) -> Dict[str, str]:
-        return {"input": "List[str]"}
+    def input_data_types(self) -> Dict[int, str]:
+        return {0: "List[str]"}
 
-    def output_data_types(self) -> Dict[str, str]:
-        return {"output": "List[str]"}
+    def output_data_types(self) -> Dict[int, str]:
+        return {0: "List[str]"}

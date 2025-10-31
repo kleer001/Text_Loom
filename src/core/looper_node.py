@@ -265,17 +265,17 @@ class LooperNode(Node):
         loop_manager.set_loop(self.path(), value=None)
         print("∞ loop: end of loop reached, cleaning up\n")
 
-    def input_names(self) -> Dict[str, str]:
-        return {"input": "Input Data"}
+    def input_names(self) -> Dict[int, str]:
+        return {0: "Input Data"}
 
-    def output_names(self) -> Dict[str, str]:
-        return {"output": "Output Data"}
+    def output_names(self) -> Dict[int, str]:
+        return {0: "Output Data"}
 
-    def input_data_types(self) -> Dict[str, str]:
-        return {"input": "List[str]"}
+    def input_data_types(self) -> Dict[int, str]:
+        return {0: "List[str]"}
 
-    def output_data_types(self) -> Dict[str, str]:
-        return {"output": "List[str]"}
+    def output_data_types(self) -> Dict[int, str]:
+        return {0: "List[str]"}
 
     def _create_internal_nodes(self):
         if self._internal_nodes_created:

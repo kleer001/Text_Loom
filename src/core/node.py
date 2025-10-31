@@ -42,8 +42,8 @@ class Node(MobileItem):
 
     Key Components:
         Connections:
-            - Input connections: Dict[str, NodeConnection]
-            - Output connections: Dict[str, List[NodeConnection]]
+            - Input connections: Dict[int, NodeConnection]
+            - Output connections: Dict[int, List[NodeConnection]]
             - Supports multiple connection types and data validation
             - Manages connection creation, removal, and updates
 
@@ -126,8 +126,8 @@ class Node(MobileItem):
         self._node_type: NodeType = node_type
         self._children: List['Node'] = []
         self._depth = self._calculate_depth()
-        self._inputs: Dict[str, NodeConnection] = {}
-        self._outputs: Dict[str, List[NodeConnection]] = {}
+        self._inputs: Dict[int, NodeConnection] = {}
+        self._outputs: Dict[int, List[NodeConnection]] = {}
         self._output = None
         self._state: NodeState = NodeState.UNCOOKED
         self._errors: List[str] = []
@@ -320,7 +320,7 @@ class Node(MobileItem):
         finally:
             UndoManager().enable()
 
-    def remove_input(self, input_index: str) ->None:
+    def remove_input(self, input_index: int) ->None:
         from core.undo_manager import UndoManager
         UndoManager().push_state(
             f'Remove input {input_index} from {self.name()}')
@@ -414,21 +414,21 @@ class Node(MobileItem):
         """Clears all warning messages from this node."""
         self._warnings.clear()
 
-    def input_names(self) ->Dict[str, str]:
+    def input_names(self) ->Dict[int, str]:
         input_count = max(self._inputs.keys()) + 1 if self._inputs else 0
-        return {str(i): str(i) for i in range(input_count)}
+        return {i: str(i) for i in range(input_count)}
 
-    def output_names(self) ->Dict[str, str]:
+    def output_names(self) ->Dict[int, str]:
         output_count = max(self._outputs.keys()) + 1 if self._outputs else 0
-        return {str(i): str(i) for i in range(output_count)}
+        return {i: str(i) for i in range(output_count)}
 
-    def input_data_types(self) ->Dict[str, str]:
+    def input_data_types(self) ->Dict[int, str]:
         input_count = max(self._inputs.keys()) + 1 if self._inputs else 0
-        return {str(i): 'any' for i in range(input_count)}
+        return {i: 'any' for i in range(input_count)}
 
-    def output_data_types(self) ->Dict[str, str]:
+    def output_data_types(self) ->Dict[int, str]:
         output_count = max(self._outputs.keys()) + 1 if self._outputs else 0
-        return {str(i): 'any' for i in range(output_count)}
+        return {i: 'any' for i in range(output_count)}
 
     def network_item_type(self) ->NetworkItemType:
         """Implement the abstract method from NetworkEntity."""
