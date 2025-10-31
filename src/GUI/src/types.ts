@@ -77,3 +77,18 @@ export interface NodeUpdateRequest {
   position?: [number, number];
   color?: [number, number, number];
 }
+
+// Request types for connection operations
+export interface ConnectionRequest {
+  source_node_path: string;
+  source_output_index: number;
+  target_node_path: string;
+  target_input_index: number;
+}
+
+export interface ConnectionDeleteRequest {
+  source_node_path: string;
+  source_output_index: number;
+  target_node_path: string;
+  target_input_index: number;
+}
