@@ -228,11 +228,11 @@ class ConnectionResponse(BaseModel):
             "connection_id": "123e4567-e89b-12d3-a456-426614174000",
             "source_node_session_id": 123456,
             "source_node_path": "/text1",
-            "source_output_index": 0,
+            "source_output_index": "output",
             "source_output_name": "output",
             "target_node_session_id": 789012,
             "target_node_path": "/fileout1",
-            "target_input_index": 0,
+            "target_input_index": "input",
             "target_input_name": "input"
         }
     """
@@ -242,50 +242,50 @@ class ConnectionResponse(BaseModel):
     # Source (output) side
     source_node_session_id: str = Field(..., description="Source node's session ID")
     source_node_path: str = Field(..., description="Source node's path")
-    source_output_index: int = Field(..., description="Output socket index")
+    source_output_index: Union[int, str] = Field(..., description="Output socket index (can be int or string)")
     source_output_name: str = Field(..., description="Output socket name")
 
     # Target (input) side
     target_node_session_id: str = Field(..., description="Target node's session ID")
     target_node_path: str = Field(..., description="Target node's path")
-    target_input_index: int = Field(..., description="Input socket index")
+    target_input_index: Union[int, str] = Field(..., description="Input socket index (can be int or string)")
     target_input_name: str = Field(..., description="Input socket name")
 
 
 class ConnectionRequest(BaseModel):
     """
     Request to create a connection between two nodes.
-    
+
     Example:
         {
             "source_node_path": "/text1",
-            "source_output_index": 0,
+            "source_output_index": "output",
             "target_node_path": "/fileout1",
-            "target_input_index": 0
+            "target_input_index": "input"
         }
     """
     source_node_path: str = Field(..., description="Source node path")
-    source_output_index: int = Field(default=0, description="Output socket index")
+    source_output_index: Union[int, str] = Field(default=0, description="Output socket index (can be int or string)")
     target_node_path: str = Field(..., description="Target node path")
-    target_input_index: int = Field(default=0, description="Input socket index")
+    target_input_index: Union[int, str] = Field(default=0, description="Input socket index (can be int or string)")
 
 
 class ConnectionDeleteRequest(BaseModel):
     """
     Request to delete a specific connection.
-    
+
     Example:
         {
             "source_node_path": "/text1",
-            "source_output_index": 0,
+            "source_output_index": "output",
             "target_node_path": "/fileout1",
-            "target_input_index": 0
+            "target_input_index": "input"
         }
     """
     source_node_path: str = Field(..., description="Source node path")
-    source_output_index: int = Field(..., description="Output socket index")
+    source_output_index: Union[int, str] = Field(..., description="Output socket index (can be int or string)")
     target_node_path: str = Field(..., description="Target node path")
-    target_input_index: int = Field(..., description="Input socket index")
+    target_input_index: Union[int, str] = Field(..., description="Input socket index (can be int or string)")
 
 
 # ============================================================================
