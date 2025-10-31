@@ -9,13 +9,14 @@ import {
   useEdgesState,
   BackgroundVariant,
 } from '@xyflow/react';
-import type { Node, Edge, NodeChange } from '@xyflow/react';
+import type { Node, Edge, NodeChange, Connection } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { CustomNode } from './CustomNode';
 import { useWorkspace } from './WorkspaceContext';
 import { DeleteConfirmDialog } from './DeleteConfirmDialog';
 import { connectionsToEdges } from './utils/edgeMapping';
-import type { NodeResponse } from './types';
+import { apiClient } from './apiClient';
+import type { NodeResponse, ConnectionRequest, ConnectionDeleteRequest } from './types';
 
 const nodeTypes = {
   custom: CustomNode,
@@ -31,6 +32,7 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onSelectionChange }) =
     connections,
     updateNode,
     deleteNodes,
+    loadWorkspace,
   } = useWorkspace();
   const [nodes, setNodes, onNodesChangeInternal] = useNodesState<Node>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
@@ -167,7 +169,140 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onSelectionChange }) =
     [updateNode]
   );
 
-  // Handle keyboard shortcuts
+  // Handle delete confirmation
+  const handleDeleteConfirm = useCallback(async () => {
+    setDeleteDialogOpen(false);
+    try {
+      const nodeIds = selectedNodes.map(n => n.id);
+      await deleteNodes(nodeIds);
+      setSelectedNodes([]);
+    } catch (error) {
+      console.error('Failed to delete nodes:', error);
+    }
+  }, [deleteNodes, selectedNodes]);
+
+  const handleDeleteCancel = useCallback(() => {
+    setDeleteDialogOpen(false);
+  }, []);
+
+  // Handle creating connections (Phase 3.4)
+  const onConnect = useCallback(async (connection: Connection) => {
+    // 1. Parse handle IDs to get socket indices
+    const sourceOutputIndex = parseInt(connection.sourceHandle?.replace('output-', '') || '0');
+    const targetInputIndex = parseInt(connection.targetHandle?.replace('input-', '') || '0');
+
+    // 2. Find node data to get paths
+    const sourceNode = nodes.find(n => n.id === connection.source);
+    const targetNode = nodes.find(n => n.id === connection.target);
+
+    if (!sourceNode || !targetNode) {
+      console.error('Source or target node not found');
+      return;
+    }
+
+    // 3. Build API request
+    const request: ConnectionRequest = {
+      source_node_path: (sourceNode.data as { node: NodeResponse }).node.path,
+      source_output_index: sourceOutputIndex,
+      target_node_path: (targetNode.data as { node: NodeResponse }).node.path,
+      target_input_index: targetInputIndex,
+    };
+
+    try {
+      // 4. Call backend API
+      const newConnection = await apiClient.createConnection(request);
+
+      // 5. Update edges state
+      setEdges(prevEdges => {
+        // Remove any existing edge to same target input
+        // (backend auto-replaces, so we mirror that behavior)
+        const filtered = prevEdges.filter(e =>
+          !(e.target === connection.target &&
+            e.targetHandle === connection.targetHandle)
+        );
+
+        // Add new edge
+        const newEdge: Edge = {
+          id: `${newConnection.source_node_session_id}-${newConnection.source_output_index}-${newConnection.target_node_session_id}-${newConnection.target_input_index}`,
+          source: connection.source,
+          target: connection.target,
+          sourceHandle: connection.sourceHandle!,
+          targetHandle: connection.targetHandle!,
+          type: 'smoothstep',
+          animated: false,
+          style: { stroke: '#888', strokeWidth: 2 },
+        };
+
+        return [...filtered, newEdge];
+      });
+
+      // 6. Refresh workspace to sync node states
+      await loadWorkspace();
+
+    } catch (error) {
+      console.error('Failed to create connection:', error);
+      // TODO: Show error notification to user
+    }
+  }, [nodes, setEdges, loadWorkspace]);
+
+  // Handle deleting connections (Phase 3.4)
+  const onEdgesDelete = useCallback(async (edgesToDelete: Edge[]) => {
+    // Delete connections sequentially (backend processes one at a time)
+    for (const edge of edgesToDelete) {
+      // 1. Parse handle IDs to get socket indices
+      const sourceOutputIndex = parseInt(edge.sourceHandle?.replace('output-', '') || '0');
+      const targetInputIndex = parseInt(edge.targetHandle?.replace('input-', '') || '0');
+
+      // 2. Find node data to get paths
+      const sourceNode = nodes.find(n => n.id === edge.source);
+      const targetNode = nodes.find(n => n.id === edge.target);
+
+      if (!sourceNode || !targetNode) {
+        console.warn('Source or target node not found for edge:', edge.id);
+        continue; // Skip this edge
+      }
+
+      // 3. Build API request
+      const request: ConnectionDeleteRequest = {
+        source_node_path: (sourceNode.data as { node: NodeResponse }).node.path,
+        source_output_index: sourceOutputIndex,
+        target_node_path: (targetNode.data as { node: NodeResponse }).node.path,
+        target_input_index: targetInputIndex,
+      };
+
+      try {
+        // 4. Call backend API
+        await apiClient.deleteConnection(request);
+
+      } catch (error) {
+        console.error('Failed to delete connection:', error);
+        // TODO: Show error notification
+        // Continue to next edge even if this one fails
+      }
+    }
+
+    // 5. Remove edges from state
+    setEdges(prevEdges =>
+      prevEdges.filter(e => !edgesToDelete.includes(e))
+    );
+
+    // 6. Refresh workspace to sync node states
+    await loadWorkspace();
+
+  }, [nodes, setEdges, loadWorkspace]);
+
+  // Validate connections before allowing them (Phase 3.4)
+  const isValidConnection = useCallback((connection: Edge | Connection) => {
+    // Prevent self-connections
+    if (connection.source === connection.target) {
+      console.warn('Cannot connect node to itself');
+      return false;
+    }
+
+    return true; // Allow connection
+  }, []);
+
+  // Handle keyboard shortcuts (moved here to use onEdgesDelete)
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       // Ignore if user is typing in an input field
@@ -186,28 +321,21 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onSelectionChange }) =
           event.preventDefault();
           setDeleteDialogOpen(true);
         }
+        // Handle edge deletion (Phase 3.4)
+        else if (!isInputField) {
+          // Get selected edges from React Flow
+          const selectedEdges = edges.filter(e => e.selected);
+          if (selectedEdges.length > 0) {
+            event.preventDefault();
+            onEdgesDelete(selectedEdges);
+          }
+        }
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedNodes]);
-
-  // Handle delete confirmation
-  const handleDeleteConfirm = useCallback(async () => {
-    setDeleteDialogOpen(false);
-    try {
-      const nodeIds = selectedNodes.map(n => n.id);
-      await deleteNodes(nodeIds);
-      setSelectedNodes([]);
-    } catch (error) {
-      console.error('Failed to delete nodes:', error);
-    }
-  }, [deleteNodes, selectedNodes]);
-
-  const handleDeleteCancel = useCallback(() => {
-    setDeleteDialogOpen(false);
-  }, []);
+  }, [selectedNodes, edges, onEdgesDelete]);
 
   return (
     <>
@@ -227,6 +355,9 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onSelectionChange }) =
         onNodeDragStop={onNodeDragStop}
         onSelectionDragStart={onSelectionDragStart}
         onSelectionDragStop={onSelectionDragStop}
+        onConnect={onConnect}
+        onEdgesDelete={onEdgesDelete}
+        isValidConnection={isValidConnection}
         nodeTypes={nodeTypes}
         fitView
         fitViewOptions={{ padding: 0.2 }}
