@@ -36,13 +36,15 @@ export const CustomNode: React.FC<{ data: CustomNodeData; selected?: boolean }> 
       }}
     >
       {/* Input handles */}
-      {node.inputs.map((input) => (
+      {node.inputs.map((input, idx) => (
         <Handle
           key={`input-${input.index}`}
           type="target"
           position={Position.Left}
           id={`input-${input.index}`}
+          title={`${input.name} (${input.data_type})`}
           style={{
+            top: `${((idx + 1) / (node.inputs.length + 1)) * 100}%`,
             background: input.connected ? '#4caf50' : '#757575',
             width: '10px',
             height: '10px',
@@ -111,13 +113,15 @@ export const CustomNode: React.FC<{ data: CustomNodeData; selected?: boolean }> 
       </div>
 
       {/* Output handles */}
-      {node.outputs.map((output) => (
+      {node.outputs.map((output, idx) => (
         <Handle
           key={`output-${output.index}`}
           type="source"
           position={Position.Right}
           id={`output-${output.index}`}
+          title={`${output.name} (${output.data_type})`}
           style={{
+            top: `${((idx + 1) / (node.outputs.length + 1)) * 100}%`,
             background: output.connection_count > 0 ? '#4caf50' : '#757575',
             width: '10px',
             height: '10px',
