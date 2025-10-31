@@ -41,7 +41,7 @@ export const CustomNode: React.FC<{ data: CustomNodeData; selected?: boolean }> 
           key={`input-${input.index}`}
           type="target"
           position={Position.Left}
-          id={`input-${input.index}`}
+          id={`input-${idx}`}
           title={`${input.name} (${input.data_type})`}
           style={{
             top: `${((idx + 1) / (node.inputs.length + 1)) * 100}%`,
@@ -118,7 +118,7 @@ export const CustomNode: React.FC<{ data: CustomNodeData; selected?: boolean }> 
           key={`output-${output.index}`}
           type="source"
           position={Position.Right}
-          id={`output-${output.index}`}
+          id={`output-${idx}`}
           title={`${output.name} (${output.data_type})`}
           style={{
             top: `${((idx + 1) / (node.outputs.length + 1)) * 100}%`,
