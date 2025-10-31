@@ -6,12 +6,14 @@ import EditIcon from '@mui/icons-material/Edit';
 import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
 import type { NodeResponse } from './types';
+import { useWorkspace } from './WorkspaceContext';
 
 interface NodeDetailsPanelProps {
   node: NodeResponse | null;
 }
 
 export const NodeDetailsPanel: React.FC<NodeDetailsPanelProps> = ({ node }) => {
+  const { updateNode } = useWorkspace();
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState('');
   const [nameError, setNameError] = useState('');
@@ -61,11 +63,8 @@ export const NodeDetailsPanel: React.FC<NodeDetailsPanelProps> = ({ node }) => {
     }
 
     try {
-      // Import apiClient dynamically to avoid circular dependencies
-      const { apiClient } = await import('./apiClient');
-
-      // Call the API to rename the node
-      await apiClient.updateNode(node.session_id, { name: trimmedName });
+      // Call the workspace context to update the node (updates both API and local state)
+      await updateNode(node.session_id, { name: trimmedName });
 
       // Success - exit edit mode
       setIsEditing(false);
