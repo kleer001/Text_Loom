@@ -16,7 +16,7 @@ const API_BASE_URL = 'http://localhost:8000/api/v1';
 class ApiClient {
   private async fetchJson<T>(endpoint: string, options?: RequestInit): Promise<T> {
     const url = `${API_BASE_URL}${endpoint}`;
-    
+
     try {
       const response = await fetch(url, {
         ...options,
@@ -28,6 +28,13 @@ class ApiClient {
 
       if (!response.ok) {
         const error: ApiError = await response.json();
+        console.error('[API Error]', {
+          status: response.status,
+          url,
+          method: options?.method,
+          requestBody: options?.body,
+          error,
+        });
         throw new Error(error.message || `API Error: ${response.status}`);
       }
 

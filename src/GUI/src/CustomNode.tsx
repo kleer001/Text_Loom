@@ -38,10 +38,10 @@ export const CustomNode: React.FC<{ data: CustomNodeData; selected?: boolean }> 
       {/* Input handles */}
       {node.inputs.map((input, idx) => (
         <Handle
-          key={`input-${input.index}`}
+          key={`input-${idx}`}
           type="target"
           position={Position.Left}
-          id={`input-${input.index}`}
+          id={`input-${idx}`}
           title={`${input.name} (${input.data_type})`}
           style={{
             top: `${((idx + 1) / (node.inputs.length + 1)) * 100}%`,
@@ -115,10 +115,10 @@ export const CustomNode: React.FC<{ data: CustomNodeData; selected?: boolean }> 
       {/* Output handles */}
       {node.outputs.map((output, idx) => (
         <Handle
-          key={`output-${output.index}`}
+          key={`output-${idx}`}
           type="source"
           position={Position.Right}
-          id={`output-${output.index}`}
+          id={`output-${idx}`}
           title={`${output.name} (${output.data_type})`}
           style={{
             top: `${((idx + 1) / (node.outputs.length + 1)) * 100}%`,
