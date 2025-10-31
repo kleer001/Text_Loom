@@ -14,7 +14,8 @@ import '@xyflow/react/dist/style.css';
 import { CustomNode } from './CustomNode';
 import { useWorkspace } from './WorkspaceContext';
 import { DeleteConfirmDialog } from './DeleteConfirmDialog';
-import type { NodeResponse, ConnectionResponse } from './types';
+import { connectionsToEdges } from './utils/edgeMapping';
+import type { NodeResponse } from './types';
 
 const nodeTypes = {
   custom: CustomNode,
@@ -88,16 +89,11 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onSelectionChange }) =
 
   // Convert connections to React Flow edges
   useEffect(() => {
-    const flowEdges: Edge[] = connections.map((conn: ConnectionResponse, idx: number) => ({
-      id: `edge-${idx}`,
-      source: String(conn.source_node_session_id),
-      target: String(conn.target_node_session_id),
-      sourceHandle: `output-${conn.source_output_index}`,
-      targetHandle: `input-${conn.target_input_index}`,
+    const flowEdges = connectionsToEdges(connections, {
       type: 'smoothstep',
       animated: false,
       style: { stroke: '#888', strokeWidth: 2 },
-    }));
+    });
     setEdges(flowEdges);
   }, [connections, setEdges]);
 
