@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from enum import Enum, auto
+import re
 import uuid
 from typing import Any, ClassVar, Dict, List, Optional, Set, Tuple, TYPE_CHECKING
 from core.enums import NetworkItemType
