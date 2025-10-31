@@ -9,31 +9,17 @@ Implement connection creation, deletion, and visual feedback for node networking
 Design socket rendering on nodes:
 - Display input sockets on left side of node
 - Display output sockets on right side of node
-- Label each handle with socket name from backend
 - Use different colors for connected vs unconnected
 - Show socket index for multi-socket nodes
 
 ### Handle Metadata
 Fetch and display socket information:
 - Parse input_names and output_names from NodeResponse
-- Parse input_data_types and output_data_types
 - Display data type on hover
 - Show connection compatibility hints
 
 ## Connection Creation Workflow
 
-### Two-Step Connection Mode
-Implement "start output, end input" pattern:
-- User clicks output socket on source node (highlights)
-- Mouse cursor shows connection wire following pointer
-- User clicks input socket on target node (completes)
-- Invalid targets show visual rejection feedback
-
-### Alternative Connection Method
-Use React Flow's built-in connection:
-- Drag from output handle to input handle
-- React Flow handles visual wire rendering
-- Use onConnect callback to finalize
 
 ### Connection API Call
 Implement POST /connections:
@@ -48,8 +34,8 @@ Implement POST /connections:
 ### Selection of Connections
 Enable edge selection:
 - Click edge to select (highlight with different color)
-- Show delete button on selected edge
-- Edge context menu with delete option
+- Shift-Click on additional edges to select more edges
+
 
 ### Delete Workflow
 Implement DELETE /connections:
@@ -58,27 +44,6 @@ Implement DELETE /connections:
 - Remove connection from workspace context
 - Update React Flow edges array
 
-### Bulk Disconnection
-Add disconnect operations:
-- "Remove all inputs" button on node detail panel
-- "Remove all outputs" button on node detail panel
-- Iterate through connections and delete individually
-
-## Connection State Visualization
-
-### Visual Feedback
-Enhance edge rendering:
-- Style edges based on source node state (cooked/uncooked)
-- Animate edges when data flows (during cook)
-- Use different edge types for different data types
-- Thickness or dashing for connection strength/validity
-
-### Connection Information Display
-Show connection details on selection:
-- Source node path and output name
-- Target node path and input name
-- Data type being transferred
-- Last cook timestamp if available
 
 ## Handle Discovery from Backend
 
@@ -96,22 +61,6 @@ Implement frontend validation before API call:
 - Prevent self-connections
 - Prevent duplicate connections
 
-## React Flow Configuration
-
-### Edge Types
-Configure edge rendering options:
-- Default straight edge for simple connections
-- Bezier curves for long-distance connections
-- Step edges for hierarchical layouts
-- Animated edges during execution
-
-### Connection Modes
-Set React Flow connection behavior:
-- Strict mode: only output to input allowed
-- Validate connections before API call
-- Show temporary edge during drag
-- Cancel on invalid drop
-
 ## Backend Mapping
 
 This phase implements:
@@ -122,11 +71,9 @@ This phase implements:
 ## Deliverables
 
 At the end of Phase 3:
-- Users can create connections by clicking sockets
+- Users can create connections by clicking between sockets
 - Alternative drag-to-connect also works
-- Connections display with source/target information
-- Invalid connections are prevented or warned
+- Invalid connections are prevented
 - Connections can be selected and deleted
-- Visual feedback shows connection state
 - Backend automatically handles connection replacement
 - All connection operations persist immediately
