@@ -91,6 +91,12 @@ class ApiClient {
       body: JSON.stringify(request),
     });
   }
+
+  async deleteConnectionById(connectionId: string): Promise<void> {
+    await this.fetchJson<void>(`/connections/${connectionId}`, {
+      method: 'DELETE',
+    });
+  }
 }
 
 export const apiClient = new ApiClient();

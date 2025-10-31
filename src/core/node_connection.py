@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from enum import Enum, auto
 from typing import Any, ClassVar, Dict, List, Optional, Set, Tuple, TYPE_CHECKING
+import uuid
 from .enums import NetworkItemType
 from .network_entity import NetworkEntity
 
@@ -12,6 +13,9 @@ class NodeConnection(NetworkEntity):
     the connection between an output of one node and an input of another node.
     """
 
+    # Class variable to track all connection session IDs
+    _existing_session_ids: Set[str] = set()
+
     def __init__(self, output_node: 'Node', input_node: 'Node',
         output_index: int, input_index: int):
         super().__init__()
@@ -20,6 +24,9 @@ class NodeConnection(NetworkEntity):
         self._output_index: int = output_index
         self._input_index: int = input_index
         self._selected: bool = False
+
+        # Generate unique session ID for this connection
+        self._session_id: str = self._generate_unique_session_id()
 
     def output_node(self) ->'Node':
         """Returns the node on the output side of this connection."""
@@ -61,6 +68,34 @@ class NodeConnection(NetworkEntity):
         """Selects or deselects this connection."""
         self._selected = selected
 
+    def session_id(self) -> str:
+        """Returns the unique session ID for this connection."""
+        return self._session_id
+
+    @classmethod
+    def _generate_unique_session_id(cls) -> str:
+        """
+        Generate a unique string session ID.
+
+        Returns:
+            str: A unique session ID (UUID as string).
+
+        Raises:
+            RuntimeError: If unable to generate a unique ID after 100 attempts.
+        """
+        for attempt in range(100):
+            new_id = cls._generate_session_id()
+            if new_id not in cls._existing_session_ids:
+                cls._existing_session_ids.add(new_id)
+                return new_id
+
+        raise RuntimeError('Unable to generate a unique session ID for connection')
+
+    @staticmethod
+    def _generate_session_id() -> str:
+        """Generate a string session ID using UUID."""
+        return str(uuid.uuid4())
+
     def network_item_type(self) ->NetworkItemType:
         """Implement the abstract method from NetworkEntity."""
         return NetworkItemType.CONNECTION
@@ -86,8 +121,16 @@ class NodeConnection(NetworkEntity):
             if input_name in input_node.inputs():
                 input_node.inputs()[input_name] = self
 
+    def __del__(self) -> None:
+        """Clean up when the connection is deleted."""
+        NodeConnection._existing_session_ids.discard(self._session_id)
+
     def __repr__(self) ->str:
         """Returns a string representation of the NodeConnection."""
         return (
-            f'NodeConnection(output_node={self._output_node.name()}, input_node={self._input_node.name()}, output_index={self._output_index}, input_index={self._input_index})'
+            f'NodeConnection(session_id={self._session_id}, '
+            f'output_node={self._output_node.name()}, '
+            f'input_node={self._input_node.name()}, '
+            f'output_index={self._output_index}, '
+            f'input_index={self._input_index})'
             )

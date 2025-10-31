@@ -192,7 +192,76 @@ def delete_connection(request: ConnectionDeleteRequest) -> SuccessResponse:
             success=True,
             message=f"Connection from {request.source_node_path}[{request.source_output_index}] to {request.target_node_path}[{request.target_input_index}] deleted"
         )
-        
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "error": "internal_error",
+                "message": f"Failed to delete connection: {str(e)}"
+            }
+        )
+
+
+@router.delete(
+    "/connections/{connection_id}",
+    response_model=SuccessResponse,
+    summary="Delete a connection by ID",
+    description="Deletes a connection using its session ID.",
+    responses={
+        200: {"description": "Connection deleted successfully"},
+        404: {"description": "Connection not found", "model": ErrorResponse}
+    }
+)
+def delete_connection_by_id(connection_id: str) -> SuccessResponse:
+    """
+    Delete a connection by its session ID.
+
+    This is the preferred way to delete connections in the GUI.
+
+    Args:
+        connection_id: The connection's session ID
+
+    Returns:
+        SuccessResponse: Confirmation of deletion
+
+    Raises:
+        HTTPException: 404 if connection not found
+    """
+    try:
+        # Search all nodes for a connection with this ID
+        connection_found = None
+
+        for node in NodeEnvironment.nodes.values():
+            # Check all input connections
+            for input_idx, connection in node._inputs.items():
+                if connection and connection.session_id() == connection_id:
+                    connection_found = connection
+                    break
+
+            if connection_found:
+                break
+
+        if not connection_found:
+            raise HTTPException(
+                status_code=404,
+                detail={
+                    "error": "connection_not_found",
+                    "message": f"Connection with ID '{connection_id}' does not exist"
+                }
+            )
+
+        # Remove the connection
+        target_node = connection_found.input_node()
+        target_node.remove_connection(connection_found)
+
+        return SuccessResponse(
+            success=True,
+            message=f"Connection {connection_id} deleted"
+        )
+
     except HTTPException:
         raise
     except Exception as e:

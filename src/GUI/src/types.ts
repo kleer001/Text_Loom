@@ -41,6 +41,7 @@ export interface NodeResponse {
 }
 
 export interface ConnectionResponse {
+  connection_id: string;
   source_node_session_id: string;
   source_node_path: string;
   source_output_index: number;
