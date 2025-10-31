@@ -35,7 +35,7 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onSelectionChange }) =
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedNodes, setSelectedNodes] = useState<Node[]>([]);
-  const [isDragging, setIsDragging] = useState(false);
+  const [_isDragging, setIsDragging] = useState(false);
   const [draggedNodeIds, setDraggedNodeIds] = useState<Set<string>>(new Set());
 
   // Wrapped onNodesChange to prevent deselection after drag

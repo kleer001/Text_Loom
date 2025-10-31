@@ -5,7 +5,10 @@ import type {
   ApiError,
   NodeResponse,
   NodeCreateRequest,
-  NodeUpdateRequest
+  NodeUpdateRequest,
+  ConnectionRequest,
+  ConnectionResponse,
+  ConnectionDeleteRequest
 } from './types';
 
 const API_BASE_URL = 'http://localhost:8000/api/v1';
@@ -72,6 +75,21 @@ class ApiClient {
 
   async listNodes(): Promise<NodeResponse[]> {
     return this.fetchJson<NodeResponse[]>('/nodes');
+  }
+
+  // Connection operations
+  async createConnection(request: ConnectionRequest): Promise<ConnectionResponse> {
+    return this.fetchJson<ConnectionResponse>('/connections', {
+      method: 'POST',
+      body: JSON.stringify(request),
+    });
+  }
+
+  async deleteConnection(request: ConnectionDeleteRequest): Promise<void> {
+    await this.fetchJson<void>('/connections', {
+      method: 'DELETE',
+      body: JSON.stringify(request),
+    });
   }
 }
 
