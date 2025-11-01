@@ -191,6 +191,23 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onSelectionChange }) =
     const sourceOutputIndex = parseInt(connection.sourceHandle?.replace('output-', '') || '0');
     const targetInputIndex = parseInt(connection.targetHandle?.replace('input-', '') || '0');
 
+    // Defensive validation - ensure we got valid numbers
+    if (isNaN(sourceOutputIndex)) {
+      console.error('⚠️ CRITICAL: Failed to parse sourceOutputIndex from handle:', connection.sourceHandle);
+      return;
+    }
+    if (isNaN(targetInputIndex)) {
+      console.error('⚠️ CRITICAL: Failed to parse targetInputIndex from handle:', connection.targetHandle);
+      return;
+    }
+
+    console.log('✓ Parsed connection indices:', {
+      sourceHandle: connection.sourceHandle,
+      sourceOutputIndex,
+      targetHandle: connection.targetHandle,
+      targetInputIndex
+    });
+
     // 2. Find node data to get paths
     const sourceNode = nodes.find(n => n.id === connection.source);
     const targetNode = nodes.find(n => n.id === connection.target);

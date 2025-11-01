@@ -195,7 +195,8 @@ class LooperNode(Node):
         try:
             self._perform_iterations()
         except Exception as e:
-            self.add_error(f"Error during iteration: {traceback.format_exc().replace('\\n', '\n')}")
+            error_trace = traceback.format_exc()
+            self.add_error(f"Error during iteration: {error_trace}")
             self.set_state(NodeState.UNCOOKED)
 
 
