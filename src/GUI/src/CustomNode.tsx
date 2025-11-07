@@ -35,22 +35,23 @@ export const CustomNode: React.FC<{ data: CustomNodeData; selected?: boolean }> 
         boxShadow: selected ? '0 4px 8px rgba(0,0,0,0.2)' : '0 2px 4px rgba(0,0,0,0.1)',
       }}
     >
-      {/* Input handles */}
-      {node.inputs.map((input, idx) => (
-        <Handle
-          key={`input-${input.index}`}
-          type="target"
-          position={Position.Left}
-          id={`input-${input.index}`}
-          title={`${input.name} (${input.data_type})`}
-          style={{
-            top: `${((idx + 1) / (node.inputs.length + 1)) * 100}%`,
-            background: input.connected ? '#4caf50' : '#757575',
-            width: '10px',
-            height: '10px',
-          }}
-        />
-      ))}
+{/* Input handles */}
+{node.inputs.map((input, idx) => (
+  console.log('[CustomNode] Input handle:', input.index, input.name),
+  <Handle
+    key={`input-${input.index}`}
+    type="target"
+    position={Position.Left}
+    id={`input-${idx}`}
+    title={`${input.name} (${input.data_type})`}
+    style={{
+      top: `${((idx + 1) / (node.inputs.length + 1)) * 100}%`,
+      background: input.connected ? '#4caf50' : '#757575',
+      width: '10px',
+      height: '10px',
+    }}
+  />
+))}
 
       {/* Node content */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
@@ -118,7 +119,7 @@ export const CustomNode: React.FC<{ data: CustomNodeData; selected?: boolean }> 
           key={`output-${output.index}`}
           type="source"
           position={Position.Right}
-          id={`output-${output.index}`}
+          id={`output-${idx}`}
           title={`${output.name} (${output.data_type})`}
           style={{
             top: `${((idx + 1) / (node.outputs.length + 1)) * 100}%`,

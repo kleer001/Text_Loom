@@ -187,6 +187,8 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onSelectionChange }) =
 
   // Handle creating connections (Phase 3.4)
   const onConnect = useCallback(async (connection: Connection) => {
+    // LOG FOR CONNECTION DEBUG
+    console.log('[FRONTEND] Raw connection object:', connection);
     // 1. Parse handle IDs to get socket indices
     const sourceOutputIndex = parseInt(connection.sourceHandle?.replace('output-', '') || '0');
     const targetInputIndex = parseInt(connection.targetHandle?.replace('input-', '') || '0');
@@ -207,6 +209,11 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onSelectionChange }) =
       target_node_path: (targetNode.data as { node: NodeResponse }).node.path,
       target_input_index: targetInputIndex,
     };
+
+
+    console.log('[FRONTEND] Connection request:', JSON.stringify(request, null, 2));
+    console.log('[FRONTEND] Source node data:', sourceNode.data);
+    console.log('[FRONTEND] Target node data:', targetNode.data);
 
     try {
       // 4. Call backend API
