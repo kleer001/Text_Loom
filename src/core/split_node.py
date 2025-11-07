@@ -207,22 +207,22 @@ class SplitNode(Node):
     def _calculate_hash(self, content: str) -> str:
         return hashlib.md5(content.encode()).hexdigest()
 
-    def input_names(self) -> Dict[str, str]:
-        return {"0": "Input List"}
+    def input_names(self) -> Dict[int, str]:
+        return {0: "Input List"}
 
-    def output_names(self) -> Dict[str, str]:
+    def output_names(self) -> Dict[int, str]:
         return {
-            "0": "Selected Items",
-            "1": "Remaining Items",
-            "2": "Empty"
+            0: "Selected Items",
+            1: "Remaining Items",
+            2: "Empty"
         }
 
-    def input_data_types(self) -> Dict[str, str]:
-        return {"0": "List[str]"}
+    def input_data_types(self) -> Dict[int, str]:
+        return {0: "List[str]"}
 
-    def output_data_types(self) -> Dict[str, str]:
+    def output_data_types(self) -> Dict[int, str]:
         return {
-            "0": "List[str]",
-            "1": "List[str]",
-            "2": "List[str]"
+            0: "List[str]",
+            1: "List[str]",
+            2: "List[str]"
         }

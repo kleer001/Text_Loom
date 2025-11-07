@@ -79,6 +79,25 @@ class ApiClient {
 
   // Connection operations
   async createConnection(request: ConnectionRequest): Promise<ConnectionResponse> {
+    // Defensive validation - ensure indices are numbers
+    if (typeof request.source_output_index !== 'number') {
+      console.error('⚠️ CRITICAL: source_output_index is not a number:', request.source_output_index, typeof request.source_output_index);
+      throw new Error(`source_output_index must be a number, got ${typeof request.source_output_index}`);
+    }
+    if (typeof request.target_input_index !== 'number') {
+      console.error('⚠️ CRITICAL: target_input_index is not a number:', request.target_input_index, typeof request.target_input_index);
+      throw new Error(`target_input_index must be a number, got ${typeof request.target_input_index}`);
+    }
+
+    console.log('✓ Creating connection:', {
+      from: `${request.source_node_path}[${request.source_output_index}]`,
+      to: `${request.target_node_path}[${request.target_input_index}]`,
+      types: {
+        sourceIndex: typeof request.source_output_index,
+        targetIndex: typeof request.target_input_index
+      }
+    });
+
     return this.fetchJson<ConnectionResponse>('/connections', {
       method: 'POST',
       body: JSON.stringify(request),

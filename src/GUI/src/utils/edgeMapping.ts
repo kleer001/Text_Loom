@@ -13,6 +13,16 @@ import type { ConnectionResponse } from '../types';
  * - target_input_index: 0 → targetHandle: "input-0"
  */
 export function connectionToEdge(connection: ConnectionResponse): Edge {
+  // Defensive validation - indices should be numbers
+  if (typeof connection.source_output_index !== 'number') {
+    console.warn('⚠️ connectionToEdge: source_output_index is not a number:',
+      connection.source_output_index, typeof connection.source_output_index);
+  }
+  if (typeof connection.target_input_index !== 'number') {
+    console.warn('⚠️ connectionToEdge: target_input_index is not a number:',
+      connection.target_input_index, typeof connection.target_input_index);
+  }
+
   return {
     id: connection.connection_id,
     source: connection.source_node_session_id,

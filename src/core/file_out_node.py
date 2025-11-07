@@ -133,17 +133,17 @@ class FileOutNode(Node):
 
 
 
-    def input_names(self) -> Dict[str, str]:
-        return {"input": "Input Text"}
+    def input_names(self) -> Dict[int, str]:
+        return {0: "Input Text"}
 
-    def output_names(self) -> Dict[str, str]:
-        return {"output": "File Content"}
+    def output_names(self) -> Dict[int, str]:
+        return {0: "File Content"}
 
-    def input_data_types(self) -> Dict[str, str]:
-        return {"input": "List[str]"}
+    def input_data_types(self) -> Dict[int, str]:
+        return {0: "List[str]"}
 
-    def output_data_types(self) -> Dict[str, str]:
-        return {"output": "List[str]"}
+    def output_data_types(self) -> Dict[int, str]:
+        return {0: "List[str]"}
 
     def save(self) -> None:
         self.cook(force=True)

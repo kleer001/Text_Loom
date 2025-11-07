@@ -78,49 +78,25 @@ def create_connection(request: ConnectionRequest) -> ConnectionResponse:
         
         # Validate output index (handle both int and string indices)
         output_names = source_node.output_names()
-        if isinstance(request.source_output_index, int):
-            # Integer index validation
-            if request.source_output_index < 0 or request.source_output_index >= len(output_names):
-                raise HTTPException(
-                    status_code=400,
-                    detail={
-                        "error": "invalid_output_index",
-                        "message": f"Source output index {request.source_output_index} is invalid for node {source_node.name()}"
-                    }
-                )
-        else:
-            # String index validation
-            if request.source_output_index not in output_names:
-                raise HTTPException(
-                    status_code=400,
-                    detail={
-                        "error": "invalid_output_index",
-                        "message": f"Source output index '{request.source_output_index}' is invalid for node {source_node.name()}"
-                    }
-                )
+        if request.source_output_index < 0 or request.source_output_index >= len(output_names):
+            raise HTTPException(
+                status_code=400,
+                detail={
+                    "error": "invalid_output_index",
+                    "message": f"Source output index {request.source_output_index} is invalid for node {source_node.name()}"
+                }
+            )
 
-        # Validate input index (handle both int and string indices)
+        # Validate input index (integer only)
         input_names = target_node.input_names()
-        if isinstance(request.target_input_index, int):
-            # Integer index validation
-            if request.target_input_index < 0 or request.target_input_index >= len(input_names):
-                raise HTTPException(
-                    status_code=400,
-                    detail={
-                        "error": "invalid_input_index",
-                        "message": f"Target input index {request.target_input_index} is invalid for node {target_node.name()}"
-                    }
-                )
-        else:
-            # String index validation
-            if request.target_input_index not in input_names:
-                raise HTTPException(
-                    status_code=400,
-                    detail={
-                        "error": "invalid_input_index",
-                        "message": f"Target input index '{request.target_input_index}' is invalid for node {target_node.name()}"
-                    }
-                )
+        if request.target_input_index < 0 or request.target_input_index >= len(input_names):
+            raise HTTPException(
+                status_code=400,
+                detail={
+                    "error": "invalid_input_index",
+                    "message": f"Target input index {request.target_input_index} is invalid for node {target_node.name()}"
+                }
+            )
         
         # Create the connection (backend handles replacement of existing)
         print(f"[CONNECTION] About to call: target_node.set_input({request.target_input_index}, source_node={source_node.name()}, source_output_index={request.source_output_index})")

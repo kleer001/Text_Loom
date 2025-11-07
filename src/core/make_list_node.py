@@ -126,17 +126,17 @@ class MakeListNode(Node):
     def _refresh_callback(self) -> None:
         self.cook(force=True)
 
-    def input_names(self) -> Dict[str, str]:
-        return {"input": "Input String List"}
+    def input_names(self) -> Dict[int, str]:
+        return {0: "Input String List"}
 
-    def output_names(self) -> Dict[str, str]:
-        return {"output": "Parsed String List"}
+    def output_names(self) -> Dict[int, str]:
+        return {0: "Parsed String List"}
 
-    def input_data_types(self) -> Dict[str, str]:
-        return {"input": "List[str]"}
+    def input_data_types(self) -> Dict[int, str]:
+        return {0: "List[str]"}
 
-    def output_data_types(self) -> Dict[str, str]:
-        return {"output": "List[str]"}
+    def output_data_types(self) -> Dict[int, str]:
+        return {0: "List[str]"}
 
     def needs_to_cook(self) -> bool:
         if super().needs_to_cook():

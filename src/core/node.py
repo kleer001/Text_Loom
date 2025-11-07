@@ -42,8 +42,8 @@ class Node(MobileItem):
 
     Key Components:
         Connections:
-            - Input connections: Dict[str, NodeConnection]
-            - Output connections: Dict[str, List[NodeConnection]]
+            - Input connections: Dict[int, NodeConnection]
+            - Output connections: Dict[int, List[NodeConnection]]
             - Supports multiple connection types and data validation
             - Manages connection creation, removal, and updates
 
@@ -126,8 +126,8 @@ class Node(MobileItem):
         self._node_type: NodeType = node_type
         self._children: List['Node'] = []
         self._depth = self._calculate_depth()
-        self._inputs: Dict[str, NodeConnection] = {}
-        self._outputs: Dict[str, List[NodeConnection]] = {}
+        self._inputs: Dict[int, NodeConnection] = {}
+        self._outputs: Dict[int, List[NodeConnection]] = {}
         self._output = None
         self._state: NodeState = NodeState.UNCOOKED
         self._errors: List[str] = []
@@ -271,6 +271,24 @@ class Node(MobileItem):
     def set_input(self, input_index: int, input_node: 'Node', output_index:
         int=0) ->None:
         from core.undo_manager import UndoManager
+
+        # Defensive type checking - ensure indices are integers
+        if not isinstance(input_index, int):
+            raise TypeError(f"input_index must be int, got {type(input_index).__name__}: {input_index}")
+        if not isinstance(output_index, int):
+            raise TypeError(f"output_index must be int, got {type(output_index).__name__}: {output_index}")
+
+        # Validate indices are non-negative
+        if input_index < 0:
+            raise ValueError(f"input_index must be non-negative, got {input_index}")
+        if output_index < 0:
+            raise ValueError(f"output_index must be non-negative, got {output_index}")
+
+        # Validate output index is in valid range (inputs can be dynamic for MergeNode)
+        output_names = input_node.output_names()
+        if output_index >= len(output_names):
+            raise ValueError(f"output_index {output_index} out of range for {input_node.name()} (0-{len(output_names)-1})")
+
         UndoManager().push_state(
             f'Connect {input_node.name()}[{output_index}] to {self.name()}[{input_index}]'
             )
@@ -320,7 +338,7 @@ class Node(MobileItem):
         finally:
             UndoManager().enable()
 
-    def remove_input(self, input_index: str) ->None:
+    def remove_input(self, input_index: int) ->None:
         from core.undo_manager import UndoManager
         UndoManager().push_state(
             f'Remove input {input_index} from {self.name()}')
@@ -414,21 +432,21 @@ class Node(MobileItem):
         """Clears all warning messages from this node."""
         self._warnings.clear()
 
-    def input_names(self) ->Dict[str, str]:
+    def input_names(self) ->Dict[int, str]:
         input_count = max(self._inputs.keys()) + 1 if self._inputs else 0
-        return {str(i): str(i) for i in range(input_count)}
+        return {i: str(i) for i in range(input_count)}
 
-    def output_names(self) ->Dict[str, str]:
+    def output_names(self) ->Dict[int, str]:
         output_count = max(self._outputs.keys()) + 1 if self._outputs else 0
-        return {str(i): str(i) for i in range(output_count)}
+        return {i: str(i) for i in range(output_count)}
 
-    def input_data_types(self) ->Dict[str, str]:
+    def input_data_types(self) ->Dict[int, str]:
         input_count = max(self._inputs.keys()) + 1 if self._inputs else 0
-        return {str(i): 'any' for i in range(input_count)}
+        return {i: 'any' for i in range(input_count)}
 
-    def output_data_types(self) ->Dict[str, str]:
+    def output_data_types(self) ->Dict[int, str]:
         output_count = max(self._outputs.keys()) + 1 if self._outputs else 0
-        return {str(i): 'any' for i in range(output_count)}
+        return {i: 'any' for i in range(output_count)}
 
     def network_item_type(self) ->NetworkItemType:
         """Implement the abstract method from NetworkEntity."""
@@ -593,15 +611,19 @@ class Node(MobileItem):
 
     def inputs_with_indices(self, use_names: bool=False) ->Sequence[Tuple[
         'Node', Union[int, str], Union[int, str]]]:
-        """Returns a sequence of tuples representing each connected input of this node."""
+        """Returns a sequence of tuples representing each connected input of this node.
+
+        When use_names=False: returns (Node, int, int) - actual indices
+        When use_names=True: returns (Node, str, str) - socket names
+        """
         result = []
         for input_index, connection in self._inputs.items():
             output_node = connection.output_node()
             output_index = connection.output_index()
             if use_names:
-                input_name = self.input_names().get(input_index, input_index)
+                input_name = self.input_names().get(input_index, str(input_index))
                 output_name = output_node.output_names().get(output_index,
-                    output_index)
+                    str(output_index))
                 result.append((output_node, output_name, input_name))
             else:
                 result.append((output_node, output_index, input_index))
@@ -609,7 +631,11 @@ class Node(MobileItem):
 
     def outputs_with_indices(self, use_names: bool=False) ->Sequence[Tuple[
         'Node', Union[int, str], Union[int, str]]]:
-        """Returns a sequence of tuples representing each connected output of this node."""
+        """Returns a sequence of tuples representing each connected output of this node.
+
+        When use_names=False: returns (Node, int, int) - actual indices
+        When use_names=True: returns (Node, str, str) - socket names
+        """
         result = []
         for output_index, connections in self._outputs.items():
             for connection in connections:
@@ -617,9 +643,9 @@ class Node(MobileItem):
                 input_index = connection.input_index()
                 if use_names:
                     output_name = self.output_names().get(output_index,
-                        output_index)
+                        str(output_index))
                     input_name = input_node.input_names().get(input_index,
-                        input_index)
+                        str(input_index))
                     result.append((input_node, output_name, input_name))
                 else:
                     result.append((input_node, output_index, input_index))

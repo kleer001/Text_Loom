@@ -95,17 +95,17 @@ class TextNode(Node):
 
         self._last_cook_time = (time.time() - start_time) * 1000
 
-    def input_names(self) -> Dict[str, str]:
-        return {"input": "Input Text"}
+    def input_names(self) -> Dict[int, str]:
+        return {0: "Input Text"}
 
-    def output_names(self) -> Dict[str, str]:
-        return {"output": "Output Text"}
+    def output_names(self) -> Dict[int, str]:
+        return {0: "Output Text"}
 
-    def input_data_types(self) -> Dict[str, str]:
-        return {"input": "List[str]"}
+    def input_data_types(self) -> Dict[int, str]:
+        return {0: "List[str]"}
 
-    def output_data_types(self) -> Dict[str, str]:
-        return {"output": "List[str]"}
+    def output_data_types(self) -> Dict[int, str]:
+        return {0: "List[str]"}
 
     def needs_to_cook(self) -> bool:
         if super().needs_to_cook():

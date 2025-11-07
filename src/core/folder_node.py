@@ -351,26 +351,26 @@ class FolderNode(Node):
 
         self._last_cook_time = (time.time() - start_time) * 1000
 
-    def input_names(self) -> Dict[str, str]:
+    def input_names(self) -> Dict[int, str]:
         """FolderNode has no inputs."""
         return {}
 
-    def output_names(self) -> Dict[str, str]:
+    def output_names(self) -> Dict[int, str]:
         """Define the three output connections."""
         return {
-            "contents": "File Contents",
-            "names": "File Names",
-            "errors": "Errors"
+            0: "File Contents",
+            1: "File Names",
+            2: "Errors"
         }
 
-    def input_data_types(self) -> Dict[str, str]:
+    def input_data_types(self) -> Dict[int, str]:
         """FolderNode has no inputs."""
         return {}
 
-    def output_data_types(self) -> Dict[str, str]:
+    def output_data_types(self) -> Dict[int, str]:
         """All outputs are List[str]."""
         return {
-            "contents": "List[str]",
-            "names": "List[str]",
-            "errors": "List[str]"
+            0: "List[str]",
+            1: "List[str]",
+            2: "List[str]"
         }

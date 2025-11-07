@@ -358,22 +358,22 @@ class SectionNode(Node):
     def _calculate_hash(self, content: str) -> str:
         return hashlib.md5(content.encode()).hexdigest()
 
-    def input_names(self) -> Dict[str, str]:
-        return {"0": "Input Text"}
+    def input_names(self) -> Dict[int, str]:
+        return {0: "Input Text"}
 
-    def output_names(self) -> Dict[str, str]:
+    def output_names(self) -> Dict[int, str]:
         return {
-            "0": "First Section",
-            "1": "Second Section",
-            "2": "Unmatched"
+            0: "First Section",
+            1: "Second Section",
+            2: "Unmatched"
         }
 
-    def input_data_types(self) -> Dict[str, str]:
-        return {"0": "List[str]"}
+    def input_data_types(self) -> Dict[int, str]:
+        return {0: "List[str]"}
 
-    def output_data_types(self) -> Dict[str, str]:
+    def output_data_types(self) -> Dict[int, str]:
         return {
-            "0": "List[str]",
-            "1": "List[str]",
-            "2": "List[str]"
+            0: "List[str]",
+            1: "List[str]",
+            2: "List[str]"
         }

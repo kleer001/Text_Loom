@@ -17,13 +17,13 @@ class NodeConnection(NetworkEntity):
     _existing_session_ids: Set[str] = set()
 
     def __init__(self, output_node: 'Node', input_node: 'Node',
-        output_index: Union[int, str], input_index: Union[int, str]):
+        output_index: int, input_index: int):
         super().__init__()
         self._output_node: 'Node' = output_node
         self._input_node: 'Node' = input_node
-        # Store indices as-is (can be int or str depending on node type)
-        self._output_index: Union[int, str] = output_index
-        self._input_index: Union[int, str] = input_index
+        # Store indices as integers
+        self._output_index: int = output_index
+        self._input_index: int = input_index
         self._selected: bool = False
 
         # Generate unique session ID for this connection
@@ -37,11 +37,11 @@ class NodeConnection(NetworkEntity):
         """Returns the node on the input side of this connection."""
         return self._input_node
 
-    def output_index(self) -> Union[int, str]:
+    def output_index(self) -> int:
         """Returns the index of the output connection on the output node."""
         return self._output_index
 
-    def input_index(self) -> Union[int, str]:
+    def input_index(self) -> int:
         """Returns the index of the input connection on the input node."""
         return self._input_index
 

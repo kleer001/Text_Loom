@@ -103,17 +103,17 @@ class MergeNode(Node):
         self.set_state(NodeState.UNCHANGED)
         self._last_cook_time = (time.time() - start_time) * 1000  # Convert to milliseconds
         
-    def input_names(self) -> Dict[str, str]:
-        return {f"input{i}": f"Input {i}" for i in range(len(self.inputs()))}
+    def input_names(self) -> Dict[int, str]:
+        return {i: f"Input {i}" for i in range(len(self.inputs()))}
 
-    def output_names(self) -> Dict[str, str]:
-        return {"output": "Merged Output"}
+    def output_names(self) -> Dict[int, str]:
+        return {0: "Merged Output"}
 
-    def input_data_types(self) -> Dict[str, str]:
-        return {f"input{i}": "List[str]" for i in range(len(self.inputs()))}
+    def input_data_types(self) -> Dict[int, str]:
+        return {i: "List[str]" for i in range(len(self.inputs()))}
 
-    def output_data_types(self) -> Dict[str, str]:
-        return {"output": "List[str]"}
+    def output_data_types(self) -> Dict[int, str]:
+        return {0: "List[str]"}
 
     def needs_to_cook(self) -> bool:
         if super().needs_to_cook():

@@ -137,17 +137,17 @@ class FileInNode(Node):
         self._last_cook_time = (time.time() - start_time) * 1000
 
 
-    def input_names(self) -> Dict[str, str]:
+    def input_names(self) -> Dict[int, str]:
         return {}  # No inputs for this node
 
-    def output_names(self) -> Dict[str, str]:
-        return {"output": "File Content"}
+    def output_names(self) -> Dict[int, str]:
+        return {0: "File Content"}
 
-    def input_data_types(self) -> Dict[str, str]:
+    def input_data_types(self) -> Dict[int, str]:
         return {}  # No inputs for this node
 
-    def output_data_types(self) -> Dict[str, str]:
-        return {"output": "List[str]"}
+    def output_data_types(self) -> Dict[int, str]:
+        return {0: "List[str]"}
 
     def validate_file_system_path(self):
         path = self._parms["file_system_path"].eval()
