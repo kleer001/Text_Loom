@@ -48,6 +48,9 @@ def create_connection(request: ConnectionRequest) -> ConnectionResponse:
     Raises:
         HTTPException: 404 if nodes not found, 400 if connection invalid
     """
+
+    print(f"[CONNECTION] Received request: {request.model_dump()}")
+
     try:
         # Find source node
         source_node = NodeEnvironment.node_from_name(request.source_node_path)
@@ -71,7 +74,9 @@ def create_connection(request: ConnectionRequest) -> ConnectionResponse:
                 }
             )
         
-        # Validate output index (integer only)
+
+        
+        # Validate output index (handle both int and string indices)
         output_names = source_node.output_names()
         if request.source_output_index < 0 or request.source_output_index >= len(output_names):
             raise HTTPException(
@@ -94,6 +99,7 @@ def create_connection(request: ConnectionRequest) -> ConnectionResponse:
             )
         
         # Create the connection (backend handles replacement of existing)
+        print(f"[CONNECTION] About to call: target_node.set_input({request.target_input_index}, source_node={source_node.name()}, source_output_index={request.source_output_index})")
         target_node.set_input(
             request.target_input_index,
             source_node,
@@ -117,6 +123,8 @@ def create_connection(request: ConnectionRequest) -> ConnectionResponse:
     except HTTPException:
         raise
     except Exception as e:
+        print(f"[CONNECTION] Exception type: {type(e).__name__}")
+        print(f"[CONNECTION] Exception details: {str(e)}")
         raise HTTPException(
             status_code=500,
             detail={
