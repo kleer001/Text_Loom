@@ -104,3 +104,17 @@ export interface ExecutionResponse {
   errors: string[];
   warnings: string[];
 }
+
+// Global variables types
+export interface GlobalResponse {
+  key: string;
+  value: string | number | boolean;
+}
+
+export interface GlobalsListResponse {
+  globals: Record<string, string | number | boolean>;
+}
+
+export interface GlobalSetRequest {
+  value: string | number | boolean;
+}

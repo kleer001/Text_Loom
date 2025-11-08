@@ -17,6 +17,8 @@ interface WorkspaceContextType {
   deleteNode: (sessionId: string) => Promise<void>;
   deleteNodes: (sessionIds: string[]) => Promise<void>;
   executeNode: (sessionId: string) => Promise<ExecutionResponse>;
+  setGlobal: (key: string, value: string | number | boolean) => Promise<void>;
+  deleteGlobal: (key: string) => Promise<void>;
 }
 
 const WorkspaceContext = createContext<WorkspaceContextType | undefined>(undefined);
@@ -152,6 +154,46 @@ export const WorkspaceProvider: React.FC<{ children: ReactNode }> = ({ children 
     }
   }, [loadWorkspace]);
 
+  const setGlobal = useCallback(async (key: string, value: string | number | boolean): Promise<void> => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      await apiClient.setGlobal(key, value);
+      // Update local state
+      setGlobals(prev => ({ ...prev, [key]: value }));
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to set global variable';
+      setError(message);
+      console.error('Global set error:', err);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const deleteGlobal = useCallback(async (key: string): Promise<void> => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      await apiClient.deleteGlobal(key);
+      // Update local state
+      setGlobals(prev => {
+        const newGlobals = { ...prev };
+        delete newGlobals[key];
+        return newGlobals;
+      });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to delete global variable';
+      setError(message);
+      console.error('Global delete error:', err);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   const value: WorkspaceContextType = {
     nodes,
     connections,
@@ -164,6 +206,8 @@ export const WorkspaceProvider: React.FC<{ children: ReactNode }> = ({ children 
     deleteNode,
     deleteNodes,
     executeNode,
+    setGlobal,
+    deleteGlobal,
   };
 
   return (

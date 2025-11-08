@@ -9,7 +9,10 @@ import type {
   ConnectionRequest,
   ConnectionResponse,
   ConnectionDeleteRequest,
-  ExecutionResponse
+  ExecutionResponse,
+  GlobalsListResponse,
+  GlobalResponse,
+  GlobalSetRequest
 } from './types';
 
 const API_BASE_URL = 'http://localhost:8000/api/v1';
@@ -120,6 +123,29 @@ class ApiClient {
 
   async deleteConnectionById(connectionId: string): Promise<void> {
     await this.fetchJson<void>(`/connections/${connectionId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // Global variables operations
+  async listGlobals(): Promise<GlobalsListResponse> {
+    return this.fetchJson<GlobalsListResponse>('/globals');
+  }
+
+  async getGlobal(key: string): Promise<GlobalResponse> {
+    return this.fetchJson<GlobalResponse>(`/globals/${key}`);
+  }
+
+  async setGlobal(key: string, value: string | number | boolean): Promise<GlobalResponse> {
+    const request: GlobalSetRequest = { value };
+    return this.fetchJson<GlobalResponse>(`/globals/${key}`, {
+      method: 'PUT',
+      body: JSON.stringify(request),
+    });
+  }
+
+  async deleteGlobal(key: string): Promise<void> {
+    await this.fetchJson<void>(`/globals/${key}`, {
       method: 'DELETE',
     });
   }
