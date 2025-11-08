@@ -16,7 +16,7 @@ import { useWorkspace } from './WorkspaceContext';
 import { DeleteConfirmDialog } from './DeleteConfirmDialog';
 import { connectionsToEdges } from './utils/edgeMapping';
 import { apiClient } from './apiClient';
-import type { NodeResponse, ConnectionRequest, ConnectionDeleteRequest } from './types';
+import type { NodeResponse, ConnectionRequest } from './types';
 
 const nodeTypes = {
   custom: CustomNode,
