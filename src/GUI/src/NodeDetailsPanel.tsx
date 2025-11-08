@@ -1,15 +1,15 @@
 // Node Details Panel - Shows information about selected node
 
-import React, { useState, useEffect, useRef } from 'react';
-import { Box, Typography, Divider, Chip, TextField, IconButton, Button, CircularProgress, Alert, Paper } from '@mui/material';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { Box, Typography, Divider, Chip, TextField, IconButton, Button, CircularProgress } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
-import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import type { NodeResponse, ExecutionResponse } from './types';
 import { useWorkspace } from './WorkspaceContext';
 import { ParameterEditor } from './ParameterEditor';
+import { ExecutionOutput } from './ExecutionOutput';
 
 interface NodeDetailsPanelProps {
   node: NodeResponse | null;
@@ -32,7 +32,8 @@ export const NodeDetailsPanel: React.FC<NodeDetailsPanelProps> = ({ node }) => {
     setExecutionResult(null);
   }, [node?.session_id]);
 
-  const handleCook = async () => {
+  // Wrap handleCook in useCallback to prevent unnecessary re-renders
+  const handleCook = useCallback(async () => {
     if (!node || isExecuting) return;
 
     setIsExecuting(true);
@@ -41,11 +42,10 @@ export const NodeDetailsPanel: React.FC<NodeDetailsPanelProps> = ({ node }) => {
       setExecutionResult(result);
     } catch (error) {
       console.error('Failed to execute node:', error);
-      // Error is already stored in executionResult if it came from API
     } finally {
       setIsExecuting(false);
     }
-  };
+  }, [node, isExecuting, executeNode]);
 
   // Keyboard shortcut for Cook (Shift+C)
   useEffect(() => {
@@ -118,24 +118,21 @@ export const NodeDetailsPanel: React.FC<NodeDetailsPanelProps> = ({ node }) => {
     }
   };
 
-  const handleParameterChange = async (paramName: string, value: string | number | boolean | string[]) => {
+  const handleParameterChange = useCallback(async (paramName: string, value: string | number | boolean | string[]) => {
     if (!node) return;
 
     try {
-      // Update parameter via workspace context
       await updateNode(node.session_id, {
         parameters: {
           [paramName]: value,
         },
       });
-      // Success - the workspace context will update the node state
     } catch (error) {
-      // Error handling - could add toast notification here
       console.error('Failed to update parameter:', paramName, error);
     }
-  };
+  }, [node, updateNode]);
 
-  const handleCopyOutput = () => {
+  const handleCopyOutput = useCallback(() => {
     if (!executionResult?.output_data) return;
 
     const text = executionResult.output_data
@@ -143,7 +140,7 @@ export const NodeDetailsPanel: React.FC<NodeDetailsPanelProps> = ({ node }) => {
       .join('\n---\n');
 
     navigator.clipboard.writeText(text);
-  };
+  }, [executionResult]);
 
   return (
     <Box sx={{ p: 2, overflow: 'auto', height: '100%' }}>
@@ -223,87 +220,7 @@ export const NodeDetailsPanel: React.FC<NodeDetailsPanelProps> = ({ node }) => {
 
       {/* Execution Results */}
       {executionResult && (
-        <Box sx={{ mb: 2 }}>
-          <Alert
-            severity={executionResult.success ? 'success' : 'error'}
-            sx={{ mb: 1 }}
-          >
-            {executionResult.message}
-            <Typography variant="caption" sx={{ display: 'block', mt: 0.5 }}>
-              Execution time: {executionResult.execution_time.toFixed(2)}ms
-            </Typography>
-          </Alert>
-
-          {/* Output Display */}
-          {executionResult.output_data && executionResult.output_data.length > 0 && (
-            <Paper variant="outlined" sx={{ p: 1, mb: 1 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
-                <Typography variant="subtitle2">Output</Typography>
-                <IconButton size="small" onClick={handleCopyOutput} title="Copy to clipboard">
-                  <ContentCopyIcon fontSize="small" />
-                </IconButton>
-              </Box>
-              <Box
-                sx={{
-                  fontFamily: 'monospace',
-                  fontSize: '12px',
-                  bgcolor: 'grey.50',
-                  p: 1,
-                  borderRadius: 1,
-                  maxHeight: '300px',
-                  overflow: 'auto',
-                  whiteSpace: 'pre-wrap',
-                  wordBreak: 'break-word',
-                }}
-              >
-                {executionResult.output_data.map((output, idx) => (
-                  <Box key={idx} sx={{ mb: idx < executionResult.output_data!.length - 1 ? 2 : 0 }}>
-                    {output.map((line, lineIdx) => (
-                      <Box key={lineIdx} sx={{ display: 'flex', gap: 1 }}>
-                        <Typography
-                          component="span"
-                          sx={{
-                            color: 'text.secondary',
-                            minWidth: '30px',
-                            textAlign: 'right',
-                            userSelect: 'none',
-                          }}
-                        >
-                          {lineIdx + 1}
-                        </Typography>
-                        <Typography component="span">{line}</Typography>
-                      </Box>
-                    ))}
-                  </Box>
-                ))}
-              </Box>
-            </Paper>
-          )}
-
-          {/* Execution Errors (separate from node errors) */}
-          {executionResult.errors.length > 0 && (
-            <Alert severity="error" sx={{ mb: 1 }}>
-              <Typography variant="subtitle2" gutterBottom>Execution Errors</Typography>
-              {executionResult.errors.map((error, idx) => (
-                <Typography key={idx} variant="body2" sx={{ fontFamily: 'monospace', fontSize: '12px' }}>
-                  • {error}
-                </Typography>
-              ))}
-            </Alert>
-          )}
-
-          {/* Execution Warnings */}
-          {executionResult.warnings.length > 0 && (
-            <Alert severity="warning" sx={{ mb: 1 }}>
-              <Typography variant="subtitle2" gutterBottom>Warnings</Typography>
-              {executionResult.warnings.map((warning, idx) => (
-                <Typography key={idx} variant="body2" sx={{ fontFamily: 'monospace', fontSize: '12px' }}>
-                  • {warning}
-                </Typography>
-              ))}
-            </Alert>
-          )}
-        </Box>
+        <ExecutionOutput executionResult={executionResult} onCopyOutput={handleCopyOutput} />
       )}
 
       <Divider sx={{ my: 2 }} />
