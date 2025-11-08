@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import type { ReactNode } from 'react';
-import type { NodeResponse, ConnectionResponse, NodeCreateRequest, NodeUpdateRequest } from './types';
+import type { NodeResponse, ConnectionResponse, NodeCreateRequest, NodeUpdateRequest, ExecutionResponse } from './types';
 import { apiClient } from './apiClient';
 
 interface WorkspaceContextType {
@@ -16,6 +16,7 @@ interface WorkspaceContextType {
   updateNode: (sessionId: string, request: NodeUpdateRequest) => Promise<NodeResponse>;
   deleteNode: (sessionId: string) => Promise<void>;
   deleteNodes: (sessionIds: string[]) => Promise<void>;
+  executeNode: (sessionId: string) => Promise<ExecutionResponse>;
 }
 
 const WorkspaceContext = createContext<WorkspaceContextType | undefined>(undefined);
@@ -128,6 +129,29 @@ export const WorkspaceProvider: React.FC<{ children: ReactNode }> = ({ children 
     }
   }, []);
 
+  const executeNode = useCallback(async (sessionId: string): Promise<ExecutionResponse> => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      // Execute the node
+      const executionResult = await apiClient.executeNode(sessionId);
+
+      // Refresh workspace to get updated node states and cook counts
+      // This ensures all affected nodes (including dependencies) are updated
+      await loadWorkspace();
+
+      return executionResult;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to execute node';
+      setError(message);
+      console.error('Node execution error:', err);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, [loadWorkspace]);
+
   const value: WorkspaceContextType = {
     nodes,
     connections,
@@ -139,6 +163,7 @@ export const WorkspaceProvider: React.FC<{ children: ReactNode }> = ({ children 
     updateNode,
     deleteNode,
     deleteNodes,
+    executeNode,
   };
 
   return (

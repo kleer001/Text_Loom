@@ -1,11 +1,13 @@
 // Node Details Panel - Shows information about selected node
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Box, Typography, Divider, Chip, TextField, IconButton } from '@mui/material';
+import { Box, Typography, Divider, Chip, TextField, IconButton, Button, CircularProgress, Alert, Paper } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
-import type { NodeResponse } from './types';
+import PlayArrowIcon from '@mui/icons-material/PlayArrow';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import type { NodeResponse, ExecutionResponse } from './types';
 import { useWorkspace } from './WorkspaceContext';
 import { ParameterEditor } from './ParameterEditor';
 
@@ -14,10 +16,12 @@ interface NodeDetailsPanelProps {
 }
 
 export const NodeDetailsPanel: React.FC<NodeDetailsPanelProps> = ({ node }) => {
-  const { updateNode } = useWorkspace();
+  const { updateNode, executeNode } = useWorkspace();
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState('');
   const [nameError, setNameError] = useState('');
+  const [isExecuting, setIsExecuting] = useState(false);
+  const [executionResult, setExecutionResult] = useState<ExecutionResponse | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Reset editing state when node changes
@@ -25,7 +29,36 @@ export const NodeDetailsPanel: React.FC<NodeDetailsPanelProps> = ({ node }) => {
     setIsEditing(false);
     setEditName('');
     setNameError('');
+    setExecutionResult(null);
   }, [node?.session_id]);
+
+  const handleCook = async () => {
+    if (!node || isExecuting) return;
+
+    setIsExecuting(true);
+    try {
+      const result = await executeNode(node.session_id);
+      setExecutionResult(result);
+    } catch (error) {
+      console.error('Failed to execute node:', error);
+      // Error is already stored in executionResult if it came from API
+    } finally {
+      setIsExecuting(false);
+    }
+  };
+
+  // Keyboard shortcut for Cook (Shift+C)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.shiftKey && e.key === 'C' && node && !isExecuting) {
+        e.preventDefault();
+        handleCook();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [node, isExecuting, handleCook]);
 
   if (!node) {
     return (
@@ -102,6 +135,16 @@ export const NodeDetailsPanel: React.FC<NodeDetailsPanelProps> = ({ node }) => {
     }
   };
 
+  const handleCopyOutput = () => {
+    if (!executionResult?.output_data) return;
+
+    const text = executionResult.output_data
+      .map(output => output.join('\n'))
+      .join('\n---\n');
+
+    navigator.clipboard.writeText(text);
+  };
+
   return (
     <Box sx={{ p: 2, overflow: 'auto', height: '100%' }}>
       {/* Header with editable name */}
@@ -155,15 +198,113 @@ export const NodeDetailsPanel: React.FC<NodeDetailsPanelProps> = ({ node }) => {
         <Typography variant="subtitle2" gutterBottom>
           State
         </Typography>
-        <Chip 
-          label={node.state} 
-          size="small" 
+        <Chip
+          label={node.state}
+          size="small"
           color={node.state === 'unchanged' ? 'success' : 'warning'}
         />
         <Typography variant="caption" sx={{ display: 'block', mt: 1 }}>
           Cook count: {node.cook_count}
         </Typography>
       </Box>
+
+      {/* Cook Button */}
+      <Button
+        variant="contained"
+        color="primary"
+        fullWidth
+        startIcon={isExecuting ? <CircularProgress size={20} color="inherit" /> : <PlayArrowIcon />}
+        onClick={handleCook}
+        disabled={isExecuting}
+        sx={{ mb: 2 }}
+      >
+        {isExecuting ? 'Cooking...' : 'Cook Node (Shift+C)'}
+      </Button>
+
+      {/* Execution Results */}
+      {executionResult && (
+        <Box sx={{ mb: 2 }}>
+          <Alert
+            severity={executionResult.success ? 'success' : 'error'}
+            sx={{ mb: 1 }}
+          >
+            {executionResult.message}
+            <Typography variant="caption" sx={{ display: 'block', mt: 0.5 }}>
+              Execution time: {executionResult.execution_time.toFixed(2)}ms
+            </Typography>
+          </Alert>
+
+          {/* Output Display */}
+          {executionResult.output_data && executionResult.output_data.length > 0 && (
+            <Paper variant="outlined" sx={{ p: 1, mb: 1 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+                <Typography variant="subtitle2">Output</Typography>
+                <IconButton size="small" onClick={handleCopyOutput} title="Copy to clipboard">
+                  <ContentCopyIcon fontSize="small" />
+                </IconButton>
+              </Box>
+              <Box
+                sx={{
+                  fontFamily: 'monospace',
+                  fontSize: '12px',
+                  bgcolor: 'grey.50',
+                  p: 1,
+                  borderRadius: 1,
+                  maxHeight: '300px',
+                  overflow: 'auto',
+                  whiteSpace: 'pre-wrap',
+                  wordBreak: 'break-word',
+                }}
+              >
+                {executionResult.output_data.map((output, idx) => (
+                  <Box key={idx} sx={{ mb: idx < executionResult.output_data!.length - 1 ? 2 : 0 }}>
+                    {output.map((line, lineIdx) => (
+                      <Box key={lineIdx} sx={{ display: 'flex', gap: 1 }}>
+                        <Typography
+                          component="span"
+                          sx={{
+                            color: 'text.secondary',
+                            minWidth: '30px',
+                            textAlign: 'right',
+                            userSelect: 'none',
+                          }}
+                        >
+                          {lineIdx + 1}
+                        </Typography>
+                        <Typography component="span">{line}</Typography>
+                      </Box>
+                    ))}
+                  </Box>
+                ))}
+              </Box>
+            </Paper>
+          )}
+
+          {/* Execution Errors (separate from node errors) */}
+          {executionResult.errors.length > 0 && (
+            <Alert severity="error" sx={{ mb: 1 }}>
+              <Typography variant="subtitle2" gutterBottom>Execution Errors</Typography>
+              {executionResult.errors.map((error, idx) => (
+                <Typography key={idx} variant="body2" sx={{ fontFamily: 'monospace', fontSize: '12px' }}>
+                  • {error}
+                </Typography>
+              ))}
+            </Alert>
+          )}
+
+          {/* Execution Warnings */}
+          {executionResult.warnings.length > 0 && (
+            <Alert severity="warning" sx={{ mb: 1 }}>
+              <Typography variant="subtitle2" gutterBottom>Warnings</Typography>
+              {executionResult.warnings.map((warning, idx) => (
+                <Typography key={idx} variant="body2" sx={{ fontFamily: 'monospace', fontSize: '12px' }}>
+                  • {warning}
+                </Typography>
+              ))}
+            </Alert>
+          )}
+        </Box>
+      )}
 
       <Divider sx={{ my: 2 }} />
 

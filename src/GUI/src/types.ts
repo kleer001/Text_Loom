@@ -93,3 +93,14 @@ export interface ConnectionDeleteRequest {
   target_node_path: string;
   target_input_index: number;
 }
+
+// Execution types
+export interface ExecutionResponse {
+  success: boolean;
+  message: string;
+  output_data: string[][] | null;
+  execution_time: number;
+  node_state: string;
+  errors: string[];
+  warnings: string[];
+}

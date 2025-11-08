@@ -8,7 +8,8 @@ import type {
   NodeUpdateRequest,
   ConnectionRequest,
   ConnectionResponse,
-  ConnectionDeleteRequest
+  ConnectionDeleteRequest,
+  ExecutionResponse
 } from './types';
 
 const API_BASE_URL = 'http://localhost:8000/api/v1';
@@ -75,6 +76,12 @@ class ApiClient {
 
   async listNodes(): Promise<NodeResponse[]> {
     return this.fetchJson<NodeResponse[]>('/nodes');
+  }
+
+  async executeNode(sessionId: string): Promise<ExecutionResponse> {
+    return this.fetchJson<ExecutionResponse>(`/nodes/${sessionId}/execute`, {
+      method: 'POST',
+    });
   }
 
   // Connection operations
