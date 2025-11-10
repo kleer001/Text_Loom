@@ -16,6 +16,17 @@ interface NodeDetailsPanelProps {
 }
 
 export const NodeDetailsPanel: React.FC<NodeDetailsPanelProps> = ({ node }) => {
+  // Early return BEFORE any hooks to comply with Rules of Hooks
+  if (!node) {
+    return (
+      <Box sx={{ p: 2, color: 'text.secondary' }}>
+        <Typography variant="body2">
+          Select a node to view details
+        </Typography>
+      </Box>
+    );
+  }
+
   const { updateNode, executeNode } = useWorkspace();
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState('');
@@ -30,11 +41,11 @@ export const NodeDetailsPanel: React.FC<NodeDetailsPanelProps> = ({ node }) => {
     setEditName('');
     setNameError('');
     setExecutionResult(null);
-  }, [node?.session_id]);
+  }, [node.session_id]);
 
   // Wrap handleCook in useCallback to prevent unnecessary re-renders
   const handleCook = useCallback(async () => {
-    if (!node || isExecuting) return;
+    if (isExecuting) return;
 
     setIsExecuting(true);
     try {
@@ -45,12 +56,12 @@ export const NodeDetailsPanel: React.FC<NodeDetailsPanelProps> = ({ node }) => {
     } finally {
       setIsExecuting(false);
     }
-  }, [node, isExecuting, executeNode]);
+  }, [node.session_id, isExecuting, executeNode]);
 
   // Keyboard shortcut for Cook (Shift+C)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.shiftKey && e.key === 'C' && node && !isExecuting) {
+      if (e.shiftKey && e.key === 'C' && !isExecuting) {
         e.preventDefault();
         handleCook();
       }
@@ -58,17 +69,7 @@ export const NodeDetailsPanel: React.FC<NodeDetailsPanelProps> = ({ node }) => {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [node, isExecuting, handleCook]);
-
-  if (!node) {
-    return (
-      <Box sx={{ p: 2, color: 'text.secondary' }}>
-        <Typography variant="body2">
-          Select a node to view details
-        </Typography>
-      </Box>
-    );
-  }
+  }, [isExecuting, handleCook]);
 
   const handleEditClick = () => {
     setEditName(node.name);
@@ -119,8 +120,6 @@ export const NodeDetailsPanel: React.FC<NodeDetailsPanelProps> = ({ node }) => {
   };
 
   const handleParameterChange = useCallback(async (paramName: string, value: string | number | boolean | string[]) => {
-    if (!node) return;
-
     try {
       await updateNode(node.session_id, {
         parameters: {
@@ -130,7 +129,7 @@ export const NodeDetailsPanel: React.FC<NodeDetailsPanelProps> = ({ node }) => {
     } catch (error) {
       console.error('Failed to update parameter:', paramName, error);
     }
-  }, [node, updateNode]);
+  }, [node.session_id, updateNode]);
 
   const handleCopyOutput = useCallback(() => {
     if (!executionResult?.output_data) return;
