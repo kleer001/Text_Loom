@@ -1,22 +1,27 @@
 // Node Details Panel - Shows information about selected node
 
-import React, { useState, useEffect, useRef } from 'react';
-import { Box, Typography, Divider, Chip, TextField, IconButton } from '@mui/material';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { Box, Typography, Divider, Chip, TextField, IconButton, Button, CircularProgress } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
-import type { NodeResponse } from './types';
+import PlayArrowIcon from '@mui/icons-material/PlayArrow';
+import type { NodeResponse, ExecutionResponse } from './types';
 import { useWorkspace } from './WorkspaceContext';
+import { ParameterEditor } from './ParameterEditor';
+import { ExecutionOutput } from './ExecutionOutput';
 
 interface NodeDetailsPanelProps {
   node: NodeResponse | null;
 }
 
 export const NodeDetailsPanel: React.FC<NodeDetailsPanelProps> = ({ node }) => {
-  const { updateNode } = useWorkspace();
+  const { updateNode, executeNode } = useWorkspace();
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState('');
   const [nameError, setNameError] = useState('');
+  const [isExecuting, setIsExecuting] = useState(false);
+  const [executionResult, setExecutionResult] = useState<ExecutionResponse | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Reset editing state when node changes
@@ -24,7 +29,36 @@ export const NodeDetailsPanel: React.FC<NodeDetailsPanelProps> = ({ node }) => {
     setIsEditing(false);
     setEditName('');
     setNameError('');
+    setExecutionResult(null);
   }, [node?.session_id]);
+
+  // Wrap handleCook in useCallback to prevent unnecessary re-renders
+  const handleCook = useCallback(async () => {
+    if (!node || isExecuting) return;
+
+    setIsExecuting(true);
+    try {
+      const result = await executeNode(node.session_id);
+      setExecutionResult(result);
+    } catch (error) {
+      console.error('Failed to execute node:', error);
+    } finally {
+      setIsExecuting(false);
+    }
+  }, [node, isExecuting, executeNode]);
+
+  // Keyboard shortcut for Cook (Shift+C)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.shiftKey && e.key === 'C' && node && !isExecuting) {
+        e.preventDefault();
+        handleCook();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [node, isExecuting, handleCook]);
 
   if (!node) {
     return (
@@ -84,6 +118,30 @@ export const NodeDetailsPanel: React.FC<NodeDetailsPanelProps> = ({ node }) => {
     }
   };
 
+  const handleParameterChange = useCallback(async (paramName: string, value: string | number | boolean | string[]) => {
+    if (!node) return;
+
+    try {
+      await updateNode(node.session_id, {
+        parameters: {
+          [paramName]: value,
+        },
+      });
+    } catch (error) {
+      console.error('Failed to update parameter:', paramName, error);
+    }
+  }, [node, updateNode]);
+
+  const handleCopyOutput = useCallback(() => {
+    if (!executionResult?.output_data) return;
+
+    const text = executionResult.output_data
+      .map(output => output.join('\n'))
+      .join('\n---\n');
+
+    navigator.clipboard.writeText(text);
+  }, [executionResult]);
+
   return (
     <Box sx={{ p: 2, overflow: 'auto', height: '100%' }}>
       {/* Header with editable name */}
@@ -137,15 +195,33 @@ export const NodeDetailsPanel: React.FC<NodeDetailsPanelProps> = ({ node }) => {
         <Typography variant="subtitle2" gutterBottom>
           State
         </Typography>
-        <Chip 
-          label={node.state} 
-          size="small" 
+        <Chip
+          label={node.state}
+          size="small"
           color={node.state === 'unchanged' ? 'success' : 'warning'}
         />
         <Typography variant="caption" sx={{ display: 'block', mt: 1 }}>
           Cook count: {node.cook_count}
         </Typography>
       </Box>
+
+      {/* Cook Button */}
+      <Button
+        variant="contained"
+        color="primary"
+        fullWidth
+        startIcon={isExecuting ? <CircularProgress size={20} color="inherit" /> : <PlayArrowIcon />}
+        onClick={handleCook}
+        disabled={isExecuting}
+        sx={{ mb: 2 }}
+      >
+        {isExecuting ? 'Cooking...' : 'Cook Node (Shift+C)'}
+      </Button>
+
+      {/* Execution Results */}
+      {executionResult && (
+        <ExecutionOutput executionResult={executionResult} onCopyOutput={handleCopyOutput} />
+      )}
 
       <Divider sx={{ my: 2 }} />
 
@@ -154,33 +230,18 @@ export const NodeDetailsPanel: React.FC<NodeDetailsPanelProps> = ({ node }) => {
         Parameters
       </Typography>
       {Object.keys(node.parameters).length === 0 ? (
-        <Typography variant="body2" color="text.secondary">
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
           No parameters
         </Typography>
       ) : (
         <Box sx={{ mb: 2 }}>
           {Object.entries(node.parameters).map(([name, param]) => (
-            <Box key={name} sx={{ mb: 1.5 }}>
-              <Typography variant="body2" fontWeight="bold">
-                {name}
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                {param.type} {param.read_only && '(read-only)'}
-              </Typography>
-              <Typography 
-                variant="body2" 
-                sx={{ 
-                  mt: 0.5, 
-                  fontFamily: 'monospace',
-                  bgcolor: 'grey.100',
-                  p: 0.5,
-                  borderRadius: 1,
-                  fontSize: '12px',
-                }}
-              >
-                {String(param.value)}
-              </Typography>
-            </Box>
+            <ParameterEditor
+              key={name}
+              name={name}
+              parameter={param}
+              onChange={handleParameterChange}
+            />
           ))}
         </Box>
       )}

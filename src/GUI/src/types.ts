@@ -93,3 +93,28 @@ export interface ConnectionDeleteRequest {
   target_node_path: string;
   target_input_index: number;
 }
+
+// Execution types
+export interface ExecutionResponse {
+  success: boolean;
+  message: string;
+  output_data: string[][] | null;
+  execution_time: number;
+  node_state: string;
+  errors: string[];
+  warnings: string[];
+}
+
+// Global variables types
+export interface GlobalResponse {
+  key: string;
+  value: string | number | boolean;
+}
+
+export interface GlobalsListResponse {
+  globals: Record<string, string | number | boolean>;
+}
+
+export interface GlobalSetRequest {
+  value: string | number | boolean;
+}

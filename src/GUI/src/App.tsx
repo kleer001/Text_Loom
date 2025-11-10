@@ -1,6 +1,6 @@
 // Main App Component - Application shell with layout
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Box,
   AppBar,
@@ -10,16 +10,22 @@ import {
   CircularProgress,
   Alert,
   Paper,
+  Tabs,
+  Tab,
 } from '@mui/material';
 import RefreshIcon from '@mui/icons-material/Refresh';
+import InfoIcon from '@mui/icons-material/Info';
+import PublicIcon from '@mui/icons-material/Public';
 import { WorkspaceProvider, useWorkspace } from './WorkspaceContext';
 import { GraphCanvas } from './GraphCanvas';
 import { NodeDetailsPanel } from './NodeDetailsPanel';
+import { GlobalsPanel } from './GlobalsPanel';
 import { AddNodeMenu } from './AddNodeMenu';
 
 const AppContent: React.FC = () => {
   const { loadWorkspace, loading, error, nodes } = useWorkspace();
-  const [selectedNodes, setSelectedNodes] = React.useState<any[]>([]);
+  const [selectedNodes, setSelectedNodes] = useState<any[]>([]);
+  const [activeTab, setActiveTab] = useState<'details' | 'globals'>('details');
 
   // Load workspace on mount
   useEffect(() => {
@@ -84,10 +90,10 @@ const AppContent: React.FC = () => {
           )}
         </Box>
 
-        {/* Right Sidebar - Node Details */}
+        {/* Right Sidebar - Tabbed Interface */}
         <Paper
           sx={{
-            width: 320,
+            width: 360,
             borderLeft: 1,
             borderColor: 'divider',
             overflow: 'hidden',
@@ -97,11 +103,30 @@ const AppContent: React.FC = () => {
           square
           elevation={0}
         >
-          <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
-            <Typography variant="h6">Node Details</Typography>
-          </Box>
-          <Box sx={{ flex: 1, overflow: 'auto' }}>
-            <NodeDetailsPanel node={selectedNode} />
+          {/* Tab Headers */}
+          <Tabs
+            value={activeTab}
+            onChange={(_, newValue) => setActiveTab(newValue)}
+            sx={{ borderBottom: 1, borderColor: 'divider' }}
+          >
+            <Tab
+              value="details"
+              label="Node Details"
+              icon={<InfoIcon />}
+              iconPosition="start"
+            />
+            <Tab
+              value="globals"
+              label="Globals"
+              icon={<PublicIcon />}
+              iconPosition="start"
+            />
+          </Tabs>
+
+          {/* Tab Content */}
+          <Box sx={{ flex: 1, overflow: 'hidden' }}>
+            {activeTab === 'details' && <NodeDetailsPanel node={selectedNode} />}
+            {activeTab === 'globals' && <GlobalsPanel />}
           </Box>
         </Paper>
       </Box>
