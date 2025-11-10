@@ -34,6 +34,15 @@ export const NodeDetailsPanel: React.FC<NodeDetailsPanelProps> = ({ node }) => {
   const [isExecuting, setIsExecuting] = useState(false);
   const [executionResult, setExecutionResult] = useState<ExecutionResponse | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const isMountedRef = useRef(true);
+
+  // Track component mount status to prevent setState on unmounted component
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   // Reset editing state when node changes
   useEffect(() => {
@@ -50,11 +59,15 @@ export const NodeDetailsPanel: React.FC<NodeDetailsPanelProps> = ({ node }) => {
     setIsExecuting(true);
     try {
       const result = await executeNode(node.session_id);
-      setExecutionResult(result);
+      if (isMountedRef.current) {
+        setExecutionResult(result);
+      }
     } catch (error) {
       console.error('Failed to execute node:', error);
     } finally {
-      setIsExecuting(false);
+      if (isMountedRef.current) {
+        setIsExecuting(false);
+      }
     }
   }, [node.session_id, isExecuting, executeNode]);
 
@@ -101,13 +114,17 @@ export const NodeDetailsPanel: React.FC<NodeDetailsPanelProps> = ({ node }) => {
       // Call the workspace context to update the node (updates both API and local state)
       await updateNode(node.session_id, { name: trimmedName });
 
-      // Success - exit edit mode
-      setIsEditing(false);
-      setEditName('');
-      setNameError('');
+      // Success - exit edit mode (only if still mounted)
+      if (isMountedRef.current) {
+        setIsEditing(false);
+        setEditName('');
+        setNameError('');
+      }
     } catch (error) {
-      // Show error message
-      setNameError(error instanceof Error ? error.message : 'Failed to rename node');
+      // Show error message (only if still mounted)
+      if (isMountedRef.current) {
+        setNameError(error instanceof Error ? error.message : 'Failed to rename node');
+      }
     }
   };
 
