@@ -16,50 +16,7 @@ interface NodeDetailsPanelProps {
 }
 
 export const NodeDetailsPanel: React.FC<NodeDetailsPanelProps> = ({ node }) => {
-  const { updateNode, executeNode } = useWorkspace();
-  const [isEditing, setIsEditing] = useState(false);
-  const [editName, setEditName] = useState('');
-  const [nameError, setNameError] = useState('');
-  const [isExecuting, setIsExecuting] = useState(false);
-  const [executionResult, setExecutionResult] = useState<ExecutionResponse | null>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  // Reset editing state when node changes
-  useEffect(() => {
-    setIsEditing(false);
-    setEditName('');
-    setNameError('');
-    setExecutionResult(null);
-  }, [node?.session_id]);
-
-  // Wrap handleCook in useCallback to prevent unnecessary re-renders
-  const handleCook = useCallback(async () => {
-    if (!node || isExecuting) return;
-
-    setIsExecuting(true);
-    try {
-      const result = await executeNode(node.session_id);
-      setExecutionResult(result);
-    } catch (error) {
-      console.error('Failed to execute node:', error);
-    } finally {
-      setIsExecuting(false);
-    }
-  }, [node, isExecuting, executeNode]);
-
-  // Keyboard shortcut for Cook (Shift+C)
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.shiftKey && e.key === 'C' && node && !isExecuting) {
-        e.preventDefault();
-        handleCook();
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [node, isExecuting, handleCook]);
-
+  // Early return BEFORE any hooks to comply with Rules of Hooks
   if (!node) {
     return (
       <Box sx={{ p: 2, color: 'text.secondary' }}>
@@ -69,6 +26,63 @@ export const NodeDetailsPanel: React.FC<NodeDetailsPanelProps> = ({ node }) => {
       </Box>
     );
   }
+
+  const { updateNode, executeNode } = useWorkspace();
+  const [isEditing, setIsEditing] = useState(false);
+  const [editName, setEditName] = useState('');
+  const [nameError, setNameError] = useState('');
+  const [isExecuting, setIsExecuting] = useState(false);
+  const [executionResult, setExecutionResult] = useState<ExecutionResponse | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const isMountedRef = useRef(true);
+
+  // Track component mount status to prevent setState on unmounted component
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
+  // Reset editing state when node changes
+  useEffect(() => {
+    setIsEditing(false);
+    setEditName('');
+    setNameError('');
+    setExecutionResult(null);
+  }, [node.session_id]);
+
+  // Wrap handleCook in useCallback to prevent unnecessary re-renders
+  const handleCook = useCallback(async () => {
+    if (isExecuting) return;
+
+    setIsExecuting(true);
+    try {
+      const result = await executeNode(node.session_id);
+      if (isMountedRef.current) {
+        setExecutionResult(result);
+      }
+    } catch (error) {
+      console.error('Failed to execute node:', error);
+    } finally {
+      if (isMountedRef.current) {
+        setIsExecuting(false);
+      }
+    }
+  }, [node.session_id, isExecuting, executeNode]);
+
+  // Keyboard shortcut for Cook (Shift+C)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.shiftKey && e.key === 'C' && !isExecuting) {
+        e.preventDefault();
+        handleCook();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isExecuting, handleCook]);
 
   const handleEditClick = () => {
     setEditName(node.name);
@@ -100,13 +114,17 @@ export const NodeDetailsPanel: React.FC<NodeDetailsPanelProps> = ({ node }) => {
       // Call the workspace context to update the node (updates both API and local state)
       await updateNode(node.session_id, { name: trimmedName });
 
-      // Success - exit edit mode
-      setIsEditing(false);
-      setEditName('');
-      setNameError('');
+      // Success - exit edit mode (only if still mounted)
+      if (isMountedRef.current) {
+        setIsEditing(false);
+        setEditName('');
+        setNameError('');
+      }
     } catch (error) {
-      // Show error message
-      setNameError(error instanceof Error ? error.message : 'Failed to rename node');
+      // Show error message (only if still mounted)
+      if (isMountedRef.current) {
+        setNameError(error instanceof Error ? error.message : 'Failed to rename node');
+      }
     }
   };
 
@@ -119,8 +137,6 @@ export const NodeDetailsPanel: React.FC<NodeDetailsPanelProps> = ({ node }) => {
   };
 
   const handleParameterChange = useCallback(async (paramName: string, value: string | number | boolean | string[]) => {
-    if (!node) return;
-
     try {
       await updateNode(node.session_id, {
         parameters: {
@@ -130,7 +146,7 @@ export const NodeDetailsPanel: React.FC<NodeDetailsPanelProps> = ({ node }) => {
     } catch (error) {
       console.error('Failed to update parameter:', paramName, error);
     }
-  }, [node, updateNode]);
+  }, [node.session_id, updateNode]);
 
   const handleCopyOutput = useCallback(() => {
     if (!executionResult?.output_data) return;

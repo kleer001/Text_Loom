@@ -1,7 +1,7 @@
 // Global Row - Display and edit a single global variable
 // Follows SRP: Only responsible for displaying one global variable
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { Box, Typography, TextField, IconButton, Chip } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
@@ -19,6 +19,15 @@ export const GlobalRow: React.FC<GlobalRowProps> = ({ globalKey, value, onEdit, 
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(String(value));
   const [isDeleting, setIsDeleting] = useState(false);
+  const isMountedRef = useRef(true);
+
+  // Track component mount status to prevent setState on unmounted component
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   const handleStartEdit = useCallback(() => {
     setEditValue(String(value));
@@ -38,7 +47,9 @@ export const GlobalRow: React.FC<GlobalRowProps> = ({ globalKey, value, onEdit, 
 
     try {
       await onEdit(globalKey, editValue);
-      setIsEditing(false);
+      if (isMountedRef.current) {
+        setIsEditing(false);
+      }
     } catch (error) {
       console.error('Failed to edit global:', error);
       // Keep editing mode open on error
@@ -53,9 +64,12 @@ export const GlobalRow: React.FC<GlobalRowProps> = ({ globalKey, value, onEdit, 
     setIsDeleting(true);
     try {
       await onDelete(globalKey);
+      // Note: Component will likely unmount after successful delete, so no setState needed
     } catch (error) {
       console.error('Failed to delete global:', error);
-      setIsDeleting(false);
+      if (isMountedRef.current) {
+        setIsDeleting(false);
+      }
     }
   }, [globalKey, onDelete]);
 

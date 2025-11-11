@@ -2,7 +2,7 @@
 // Follows SRP: Only responsible for global variable input
 // Follows DRY: Relies on backend validation instead of duplicating logic
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { Box, TextField, Button, Alert } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 
@@ -15,6 +15,15 @@ export const GlobalEditor: React.FC<GlobalEditorProps> = ({ onSave }) => {
   const [value, setValue] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const isMountedRef = useRef(true);
+
+  // Track component mount status to prevent setState on unmounted component
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   const handleSave = useCallback(async () => {
     // Basic client-side checks for UX (backend will do real validation)
@@ -28,14 +37,20 @@ export const GlobalEditor: React.FC<GlobalEditorProps> = ({ onSave }) => {
 
     try {
       await onSave(key, value);
-      // Clear form on success
-      setKey('');
-      setValue('');
+      // Clear form on success (only if still mounted)
+      if (isMountedRef.current) {
+        setKey('');
+        setValue('');
+      }
     } catch (err) {
-      // Display backend validation error
-      setError(err instanceof Error ? err.message : 'Failed to save global variable');
+      // Display backend validation error (only if still mounted)
+      if (isMountedRef.current) {
+        setError(err instanceof Error ? err.message : 'Failed to save global variable');
+      }
     } finally {
-      setIsSaving(false);
+      if (isMountedRef.current) {
+        setIsSaving(false);
+      }
     }
   }, [key, value, onSave]);
 
