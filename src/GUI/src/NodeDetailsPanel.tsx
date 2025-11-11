@@ -16,17 +16,7 @@ interface NodeDetailsPanelProps {
 }
 
 export const NodeDetailsPanel: React.FC<NodeDetailsPanelProps> = ({ node }) => {
-  // Early return BEFORE any hooks to comply with Rules of Hooks
-  if (!node) {
-    return (
-      <Box sx={{ p: 2, color: 'text.secondary' }}>
-        <Typography variant="body2">
-          Select a node to view details
-        </Typography>
-      </Box>
-    );
-  }
-
+  // All hooks must be called unconditionally at the top level (Rules of Hooks)
   const { updateNode, executeNode } = useWorkspace();
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState('');
@@ -50,11 +40,11 @@ export const NodeDetailsPanel: React.FC<NodeDetailsPanelProps> = ({ node }) => {
     setEditName('');
     setNameError('');
     setExecutionResult(null);
-  }, [node.session_id]);
+  }, [node?.session_id]);
 
   // Wrap handleCook in useCallback to prevent unnecessary re-renders
   const handleCook = useCallback(async () => {
-    if (isExecuting) return;
+    if (isExecuting || !node) return;
 
     setIsExecuting(true);
     try {
@@ -69,7 +59,7 @@ export const NodeDetailsPanel: React.FC<NodeDetailsPanelProps> = ({ node }) => {
         setIsExecuting(false);
       }
     }
-  }, [node.session_id, isExecuting, executeNode]);
+  }, [node, isExecuting, executeNode]);
 
   // Keyboard shortcut for Cook (Shift+C)
   useEffect(() => {
@@ -85,6 +75,7 @@ export const NodeDetailsPanel: React.FC<NodeDetailsPanelProps> = ({ node }) => {
   }, [isExecuting, handleCook]);
 
   const handleEditClick = () => {
+    if (!node) return;
     setEditName(node.name);
     setIsEditing(true);
     setNameError('');
@@ -98,6 +89,8 @@ export const NodeDetailsPanel: React.FC<NodeDetailsPanelProps> = ({ node }) => {
   };
 
   const handleSaveEdit = async () => {
+    if (!node) return;
+
     const trimmedName = editName.trim();
 
     if (!trimmedName) {
@@ -137,6 +130,7 @@ export const NodeDetailsPanel: React.FC<NodeDetailsPanelProps> = ({ node }) => {
   };
 
   const handleParameterChange = useCallback(async (paramName: string, value: string | number | boolean | string[]) => {
+    if (!node) return;
     try {
       await updateNode(node.session_id, {
         parameters: {
@@ -146,7 +140,7 @@ export const NodeDetailsPanel: React.FC<NodeDetailsPanelProps> = ({ node }) => {
     } catch (error) {
       console.error('Failed to update parameter:', paramName, error);
     }
-  }, [node.session_id, updateNode]);
+  }, [node, updateNode]);
 
   const handleCopyOutput = useCallback(() => {
     if (!executionResult?.output_data) return;
@@ -157,6 +151,17 @@ export const NodeDetailsPanel: React.FC<NodeDetailsPanelProps> = ({ node }) => {
 
     navigator.clipboard.writeText(text);
   }, [executionResult]);
+
+  // Conditional rendering AFTER all hooks are called
+  if (!node) {
+    return (
+      <Box sx={{ p: 2, color: 'text.secondary' }}>
+        <Typography variant="body2">
+          Select a node to view details
+        </Typography>
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ p: 2, overflow: 'auto', height: '100%' }}>
