@@ -12,12 +12,15 @@ interface WorkspaceContextType {
   loading: boolean;
   error: string | null;
   executingNodeId: string | null;
+  lastExecutionResult: ExecutionResponse | null;
+  lastExecutedNodeName: string | null;
   loadWorkspace: () => Promise<void>;
   createNode: (request: NodeCreateRequest) => Promise<NodeResponse>;
   updateNode: (sessionId: string, request: NodeUpdateRequest) => Promise<NodeResponse>;
   deleteNode: (sessionId: string) => Promise<void>;
   deleteNodes: (sessionIds: string[]) => Promise<void>;
   executeNode: (sessionId: string) => Promise<ExecutionResponse>;
+  clearExecutionResult: () => void;
   setGlobal: (key: string, value: string | number | boolean) => Promise<void>;
   deleteGlobal: (key: string) => Promise<void>;
 }
@@ -31,6 +34,8 @@ export const WorkspaceProvider: React.FC<{ children: ReactNode }> = ({ children 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [executingNodeId, setExecutingNodeId] = useState<string | null>(null);
+  const [lastExecutionResult, setLastExecutionResult] = useState<ExecutionResponse | null>(null);
+  const [lastExecutedNodeName, setLastExecutedNodeName] = useState<string | null>(null);
 
   const loadWorkspace = useCallback(async () => {
     setLoading(true);
@@ -139,8 +144,16 @@ export const WorkspaceProvider: React.FC<{ children: ReactNode }> = ({ children 
     setExecutingNodeId(sessionId);
 
     try {
+      // Get node name before execution
+      const node = nodes.find(n => n.session_id === sessionId);
+      const nodeName = node?.name || 'Unknown Node';
+
       // Execute the node
       const executionResult = await apiClient.executeNode(sessionId);
+
+      // Store execution result for output panel
+      setLastExecutionResult(executionResult);
+      setLastExecutedNodeName(nodeName);
 
       // Refresh workspace to get updated node states and cook counts
       // This ensures all affected nodes (including dependencies) are updated
@@ -159,7 +172,7 @@ export const WorkspaceProvider: React.FC<{ children: ReactNode }> = ({ children 
     } finally {
       setLoading(false);
     }
-  }, [loadWorkspace]);
+  }, [loadWorkspace, nodes]);
 
   const setGlobal = useCallback(async (key: string, value: string | number | boolean): Promise<void> => {
     setLoading(true);
@@ -201,6 +214,11 @@ export const WorkspaceProvider: React.FC<{ children: ReactNode }> = ({ children 
     }
   }, []);
 
+  const clearExecutionResult = useCallback(() => {
+    setLastExecutionResult(null);
+    setLastExecutedNodeName(null);
+  }, []);
+
   const value: WorkspaceContextType = {
     nodes,
     connections,
@@ -208,12 +226,15 @@ export const WorkspaceProvider: React.FC<{ children: ReactNode }> = ({ children 
     loading,
     error,
     executingNodeId,
+    lastExecutionResult,
+    lastExecutedNodeName,
     loadWorkspace,
     createNode,
     updateNode,
     deleteNode,
     deleteNodes,
     executeNode,
+    clearExecutionResult,
     setGlobal,
     deleteGlobal,
   };

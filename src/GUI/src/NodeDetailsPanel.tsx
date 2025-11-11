@@ -6,10 +6,9 @@ import EditIcon from '@mui/icons-material/Edit';
 import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
-import type { NodeResponse, ExecutionResponse } from './types';
+import type { NodeResponse } from './types';
 import { useWorkspace } from './WorkspaceContext';
 import { ParameterEditor } from './ParameterEditor';
-import { ExecutionOutput } from './ExecutionOutput';
 
 interface NodeDetailsPanelProps {
   node: NodeResponse | null;
@@ -22,7 +21,6 @@ export const NodeDetailsPanel: React.FC<NodeDetailsPanelProps> = ({ node }) => {
   const [editName, setEditName] = useState('');
   const [nameError, setNameError] = useState('');
   const [isExecuting, setIsExecuting] = useState(false);
-  const [executionResult, setExecutionResult] = useState<ExecutionResponse | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const isMountedRef = useRef(true);
 
@@ -39,7 +37,6 @@ export const NodeDetailsPanel: React.FC<NodeDetailsPanelProps> = ({ node }) => {
     setIsEditing(false);
     setEditName('');
     setNameError('');
-    setExecutionResult(null);
   }, [node?.session_id]);
 
   // Wrap handleCook in useCallback to prevent unnecessary re-renders
@@ -48,10 +45,8 @@ export const NodeDetailsPanel: React.FC<NodeDetailsPanelProps> = ({ node }) => {
 
     setIsExecuting(true);
     try {
-      const result = await executeNode(node.session_id);
-      if (isMountedRef.current) {
-        setExecutionResult(result);
-      }
+      // Execute node - result will be shown in the bottom output panel
+      await executeNode(node.session_id);
     } catch (error) {
       console.error('Failed to execute node:', error);
     } finally {
@@ -142,16 +137,6 @@ export const NodeDetailsPanel: React.FC<NodeDetailsPanelProps> = ({ node }) => {
     }
   }, [node, updateNode]);
 
-  const handleCopyOutput = useCallback(() => {
-    if (!executionResult?.output_data) return;
-
-    const text = executionResult.output_data
-      .map(output => output.join('\n'))
-      .join('\n---\n');
-
-    navigator.clipboard.writeText(text);
-  }, [executionResult]);
-
   // Conditional rendering AFTER all hooks are called
   if (!node) {
     return (
@@ -238,11 +223,6 @@ export const NodeDetailsPanel: React.FC<NodeDetailsPanelProps> = ({ node }) => {
       >
         {isExecuting ? 'Cooking...' : 'Cook Node (Shift+C)'}
       </Button>
-
-      {/* Execution Results */}
-      {executionResult && (
-        <ExecutionOutput executionResult={executionResult} onCopyOutput={handleCopyOutput} />
-      )}
 
       <Divider sx={{ my: 2 }} />
 
