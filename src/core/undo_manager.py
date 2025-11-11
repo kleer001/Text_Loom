@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Set, Tuple, Any, Union, Deque
 from enum import Enum
 from pathlib import PurePosixPath
@@ -73,17 +73,17 @@ class FullNodeState:
     state: str
     errors: List[str]
     warnings: List[str]
-    is_time_dependent: bool
-    last_cook_time: float
-    cook_count: int
-    file_hash: Optional[str]
-    param_hash: Optional[str]
-    last_input_size: int
-    internal_nodes_created: bool
-    parent_looper: bool
-    parms: Dict[str, ParmState]
-    inputs: Dict[str, NodeConnectionState]
-    outputs: Dict[str, List[NodeConnectionState]]
+    is_time_dependent: bool = False
+    last_cook_time: float = 0.0
+    cook_count: int = 0
+    file_hash: Optional[str] = None
+    param_hash: Optional[str] = None
+    last_input_size: int = 0
+    internal_nodes_created: bool = False
+    parent_looper: bool = False
+    parms: Dict[str, ParmState] = field(default_factory=dict)
+    inputs: Dict[str, NodeConnectionState] = field(default_factory=dict)
+    outputs: Dict[str, List[NodeConnectionState]] = field(default_factory=dict)
 
 @dataclass
 class GlobalStoreState:
