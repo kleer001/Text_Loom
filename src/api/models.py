@@ -493,7 +493,7 @@ def node_to_response(node: 'Node') -> 'NodeResponse':
             outputs=outputs,
             position=full_state.position,
             color=list(node._color) if hasattr(node, '_color') else [1.0, 1.0, 1.0],
-            is_time_dependent=full_state.is_time_dependent,
+            is_time_dependent=full_state.is_time_dependent if full_state.is_time_dependent is not None else False,
             cook_count=full_state.cook_count,
             last_cook_time=full_state.last_cook_time
         )
