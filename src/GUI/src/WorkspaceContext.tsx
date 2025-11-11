@@ -11,6 +11,7 @@ interface WorkspaceContextType {
   globals: Record<string, string | number | boolean>;
   loading: boolean;
   error: string | null;
+  executingNodeId: string | null;
   loadWorkspace: () => Promise<void>;
   createNode: (request: NodeCreateRequest) => Promise<NodeResponse>;
   updateNode: (sessionId: string, request: NodeUpdateRequest) => Promise<NodeResponse>;
@@ -29,6 +30,7 @@ export const WorkspaceProvider: React.FC<{ children: ReactNode }> = ({ children 
   const [globals, setGlobals] = useState<Record<string, string | number | boolean>>({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [executingNodeId, setExecutingNodeId] = useState<string | null>(null);
 
   const loadWorkspace = useCallback(async () => {
     setLoading(true);
@@ -134,6 +136,7 @@ export const WorkspaceProvider: React.FC<{ children: ReactNode }> = ({ children 
   const executeNode = useCallback(async (sessionId: string): Promise<ExecutionResponse> => {
     setLoading(true);
     setError(null);
+    setExecutingNodeId(sessionId);
 
     try {
       // Execute the node
@@ -143,11 +146,15 @@ export const WorkspaceProvider: React.FC<{ children: ReactNode }> = ({ children 
       // This ensures all affected nodes (including dependencies) are updated
       await loadWorkspace();
 
+      // Keep executing node ID set for a moment to prevent deselection
+      setTimeout(() => setExecutingNodeId(null), 100);
+
       return executionResult;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to execute node';
       setError(message);
       console.error('Node execution error:', err);
+      setExecutingNodeId(null);
       throw err;
     } finally {
       setLoading(false);
@@ -200,6 +207,7 @@ export const WorkspaceProvider: React.FC<{ children: ReactNode }> = ({ children 
     globals,
     loading,
     error,
+    executingNodeId,
     loadWorkspace,
     createNode,
     updateNode,

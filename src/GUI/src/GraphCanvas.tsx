@@ -33,6 +33,7 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onSelectionChange }) =
     updateNode,
     deleteNodes,
     loadWorkspace,
+    executingNodeId,
   } = useWorkspace();
   const [nodes, setNodes, onNodesChangeInternal] = useNodesState<Node>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
@@ -41,24 +42,32 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onSelectionChange }) =
   const [_isDragging, setIsDragging] = useState(false);
   const [draggedNodeIds, setDraggedNodeIds] = useState<Set<string>>(new Set());
 
-  // Wrapped onNodesChange to prevent deselection after drag
+  // Wrapped onNodesChange to prevent deselection after drag or execution
   //
   // Why this is needed:
-  // - When a node is dragged, onNodeDragStop calls updateNode()
+  // - When a node is dragged or executed, updateNode() or loadWorkspace() is called
   // - This updates workspaceNodes, triggering the workspace sync useEffect
   // - The useEffect calls setNodes(), which triggers React Flow's internal state
   // - React Flow then sends a deselection change (select: false) through onNodesChange
   // - This is a known quirk of using setNodes with useNodesState
   //
-  // We intercept and filter out these deselection changes for recently dragged nodes.
+  // We intercept and filter out these deselection changes for recently dragged or executed nodes.
   const onNodesChange = useCallback((changes: NodeChange<Node>[]) => {
     console.log('[onNodesChange]', changes);
 
-    // Filter out deselection changes for nodes that were just dragged
+    // Filter out deselection changes for nodes that were just dragged or executed
     const filteredChanges = changes.filter(change => {
-      if (change.type === 'select' && !change.selected && draggedNodeIds.has(change.id)) {
-        console.log('[INTERCEPTED] Preventing deselection of dragged node:', change.id);
-        return false; // Filter out this deselection
+      if (change.type === 'select' && !change.selected) {
+        // Prevent deselection of dragged nodes
+        if (draggedNodeIds.has(change.id)) {
+          console.log('[INTERCEPTED] Preventing deselection of dragged node:', change.id);
+          return false;
+        }
+        // Prevent deselection of the node being executed
+        if (executingNodeId && change.id === executingNodeId) {
+          console.log('[INTERCEPTED] Preventing deselection of executing node:', change.id);
+          return false;
+        }
       }
       return true;
     });
@@ -69,7 +78,7 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onSelectionChange }) =
     }
 
     onNodesChangeInternal(filteredChanges);
-  }, [onNodesChangeInternal, draggedNodeIds]);
+  }, [onNodesChangeInternal, draggedNodeIds, executingNodeId]);
 
   // Convert workspace nodes to React Flow nodes
   useEffect(() => {
