@@ -13,6 +13,7 @@ interface WorkspaceContextType {
   loading: boolean;
   error: string | null;
   executingNodeId: string | null;
+  newlyCreatedNodeId: string | null;
   lastExecutionResult: ExecutionResponse | null;
   lastExecutedNodeName: string | null;
   loadWorkspace: () => Promise<void>;
@@ -35,6 +36,7 @@ export const WorkspaceProvider: React.FC<{ children: ReactNode }> = ({ children 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [executingNodeId, setExecutingNodeId] = useState<string | null>(null);
+  const [newlyCreatedNodeId, setNewlyCreatedNodeId] = useState<string | null>(null);
   const [lastExecutionResult, setLastExecutionResult] = useState<ExecutionResponse | null>(null);
   const [lastExecutedNodeName, setLastExecutedNodeName] = useState<string | null>(null);
 
@@ -62,8 +64,16 @@ export const WorkspaceProvider: React.FC<{ children: ReactNode }> = ({ children 
 
     try {
       const newNode = await apiClient.createNode(request);
+
+      // Mark this node as newly created so it will be auto-selected
+      setNewlyCreatedNodeId(newNode.session_id);
+
       // Reload workspace to fetch child nodes (e.g., looper's input_null/output_null)
       await loadWorkspace();
+
+      // Clear the newly created flag after a delay
+      setTimeout(() => setNewlyCreatedNodeId(null), DESELECTION_DELAY_MS);
+
       return newNode;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to create node';
@@ -222,6 +232,7 @@ export const WorkspaceProvider: React.FC<{ children: ReactNode }> = ({ children 
     loading,
     error,
     executingNodeId,
+    newlyCreatedNodeId,
     lastExecutionResult,
     lastExecutedNodeName,
     loadWorkspace,

@@ -40,6 +40,7 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onSelectionChange }) =
     deleteNodes,
     loadWorkspace,
     executingNodeId,
+    newlyCreatedNodeId,
   } = useWorkspace();
   const [nodes, setNodes, onNodesChangeInternal] = useNodesState<Node>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
@@ -86,14 +87,21 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onSelectionChange }) =
           type: 'custom',
           position: { x: node.position[0], y: node.position[1] },
           data: { node },
-          selected: false, // Will be restored by restoreSelection
+          selected: false, // Will be restored by restoreSelection or auto-selected if newly created
         };
       });
 
-      // Restore selection to the new nodes
-      return restoreSelection(newNodes);
+      // Auto-select newly created node, or restore previous selection
+      const nodesWithSelection = newlyCreatedNodeId
+        ? newNodes.map(node => ({
+            ...node,
+            selected: node.id === newlyCreatedNodeId
+          }))
+        : restoreSelection(newNodes);
+
+      return nodesWithSelection;
     });
-  }, [workspaceNodes, connections, setNodes, captureSelection, restoreSelection]);
+  }, [workspaceNodes, connections, setNodes, captureSelection, restoreSelection, newlyCreatedNodeId]);
 
   useEffect(() => {
     const transformedConnections = transformConnectionNodeIds(connections, looperSystems);
