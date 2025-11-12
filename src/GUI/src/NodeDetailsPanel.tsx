@@ -40,9 +40,11 @@ export const NodeDetailsPanel: React.FC<NodeDetailsPanelProps> = ({ node }) => {
   const handleCook = useCallback(async () => {
     if (isExecuting || !node) return;
 
+    const targetNodeId = isLooperPart(node.type) ? getOriginalNodeId(node.session_id) : node.session_id;
+
     setIsExecuting(true);
     try {
-      await executeNode(node.session_id);
+      await executeNode(targetNodeId);
     } catch (error) {
       console.error('Failed to execute node:', error);
     } finally {
