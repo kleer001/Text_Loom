@@ -98,12 +98,14 @@ function createLooperEndNode(system: LooperSystem): NodeResponse {
   const [x, y] = looperNode.position;
 
   return {
-    ...outputNullNode,
+    ...looperNode,
     session_id: createTransformedId(looperNode.session_id, LOOPER_END_SUFFIX),
     name: createTransformedId(looperNode.name, LOOPER_END_SUFFIX),
     glyph: '⟲◁',
     type: 'looper_end',
     position: [x + (NODE_WIDTH * 2), y],
+    inputs: outputNullNode.inputs,
+    outputs: outputNullNode.outputs,
   };
 }
 
