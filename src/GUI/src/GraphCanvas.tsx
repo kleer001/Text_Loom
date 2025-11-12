@@ -82,13 +82,41 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onSelectionChange }) =
   }, [workspaceNodes, setNodes]);
 
   useEffect(() => {
-    const flowEdges = connectionsToEdges(connections, {
+    // Transform connection node IDs to match display nodes
+    const transformedConnections = connections.map(conn => {
+      let sourceId = conn.source_node_session_id;
+      let targetId = conn.target_node_session_id;
+
+      // Check if source is an inputNull inside a looper (becomes looper_start output)
+      for (const system of looperSystems.values()) {
+        if (conn.source_node_session_id === system.inputNullNode.session_id) {
+          sourceId = `${system.looperNode.session_id}_start`;
+        }
+        if (conn.source_node_session_id === system.outputNullNode.session_id) {
+          sourceId = `${system.looperNode.session_id}_end`;
+        }
+        if (conn.target_node_session_id === system.inputNullNode.session_id) {
+          targetId = `${system.looperNode.session_id}_start`;
+        }
+        if (conn.target_node_session_id === system.outputNullNode.session_id) {
+          targetId = `${system.looperNode.session_id}_end`;
+        }
+      }
+
+      return {
+        ...conn,
+        source_node_session_id: sourceId,
+        target_node_session_id: targetId,
+      };
+    });
+
+    const flowEdges = connectionsToEdges(transformedConnections, {
       type: 'smoothstep',
       animated: false,
       style: { stroke: '#888', strokeWidth: 2 },
     });
     setEdges(flowEdges);
-  }, [connections, setEdges]);
+  }, [connections, looperSystems, setEdges]);
 
   const handleSelectionChange = useCallback(
     (params: { nodes: Node[]; edges: Edge[] }) => {

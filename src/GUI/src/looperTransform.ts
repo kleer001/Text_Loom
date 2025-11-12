@@ -100,7 +100,7 @@ function createLooperEndNode(system: LooperSystem): NodeResponse {
     ...outputNullNode,
     session_id: createTransformedId(looperNode.session_id, LOOPER_END_SUFFIX),
     name: createTransformedId(looperNode.name, LOOPER_END_SUFFIX),
-    glyph: '◁',
+    glyph: '⟲◁',
     type: 'looper_end',
     position: [x + (NODE_WIDTH * 2), y],
   };
