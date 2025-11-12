@@ -4,6 +4,7 @@ import React, { createContext, useContext, useState, useCallback } from 'react';
 import type { ReactNode } from 'react';
 import type { NodeResponse, ConnectionResponse, NodeCreateRequest, NodeUpdateRequest, ExecutionResponse } from './types';
 import { apiClient } from './apiClient';
+import { DESELECTION_DELAY_MS } from './constants';
 
 interface WorkspaceContextType {
   nodes: NodeResponse[];
@@ -144,23 +145,17 @@ export const WorkspaceProvider: React.FC<{ children: ReactNode }> = ({ children 
     setExecutingNodeId(sessionId);
 
     try {
-      // Get node name before execution
       const node = nodes.find(n => n.session_id === sessionId);
       const nodeName = node?.name || 'Unknown Node';
 
-      // Execute the node
       const executionResult = await apiClient.executeNode(sessionId);
 
-      // Store execution result for output panel
       setLastExecutionResult(executionResult);
       setLastExecutedNodeName(nodeName);
 
-      // Refresh workspace to get updated node states and cook counts
-      // This ensures all affected nodes (including dependencies) are updated
       await loadWorkspace();
 
-      // Keep executing node ID set for a moment to prevent deselection
-      setTimeout(() => setExecutingNodeId(null), 100);
+      setTimeout(() => setExecutingNodeId(null), DESELECTION_DELAY_MS);
 
       return executionResult;
     } catch (err) {

@@ -15,7 +15,6 @@ interface NodeDetailsPanelProps {
 }
 
 export const NodeDetailsPanel: React.FC<NodeDetailsPanelProps> = ({ node }) => {
-  // All hooks must be called unconditionally at the top level (Rules of Hooks)
   const { updateNode, executeNode } = useWorkspace();
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState('');
@@ -24,7 +23,6 @@ export const NodeDetailsPanel: React.FC<NodeDetailsPanelProps> = ({ node }) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const isMountedRef = useRef(true);
 
-  // Track component mount status to prevent setState on unmounted component
   useEffect(() => {
     isMountedRef.current = true;
     return () => {
@@ -32,20 +30,17 @@ export const NodeDetailsPanel: React.FC<NodeDetailsPanelProps> = ({ node }) => {
     };
   }, []);
 
-  // Reset editing state when node changes
   useEffect(() => {
     setIsEditing(false);
     setEditName('');
     setNameError('');
   }, [node?.session_id]);
 
-  // Wrap handleCook in useCallback to prevent unnecessary re-renders
   const handleCook = useCallback(async () => {
     if (isExecuting || !node) return;
 
     setIsExecuting(true);
     try {
-      // Execute node - result will be shown in the bottom output panel
       await executeNode(node.session_id);
     } catch (error) {
       console.error('Failed to execute node:', error);
@@ -56,7 +51,6 @@ export const NodeDetailsPanel: React.FC<NodeDetailsPanelProps> = ({ node }) => {
     }
   }, [node, isExecuting, executeNode]);
 
-  // Keyboard shortcut for Cook (Shift+C)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.shiftKey && e.key === 'C' && !isExecuting) {
@@ -99,17 +93,14 @@ export const NodeDetailsPanel: React.FC<NodeDetailsPanelProps> = ({ node }) => {
     }
 
     try {
-      // Call the workspace context to update the node (updates both API and local state)
       await updateNode(node.session_id, { name: trimmedName });
 
-      // Success - exit edit mode (only if still mounted)
       if (isMountedRef.current) {
         setIsEditing(false);
         setEditName('');
         setNameError('');
       }
     } catch (error) {
-      // Show error message (only if still mounted)
       if (isMountedRef.current) {
         setNameError(error instanceof Error ? error.message : 'Failed to rename node');
       }
@@ -137,7 +128,6 @@ export const NodeDetailsPanel: React.FC<NodeDetailsPanelProps> = ({ node }) => {
     }
   }, [node, updateNode]);
 
-  // Conditional rendering AFTER all hooks are called
   if (!node) {
     return (
       <Box sx={{ p: 2, color: 'text.secondary' }}>

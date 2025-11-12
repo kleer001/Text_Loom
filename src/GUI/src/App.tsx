@@ -68,11 +68,8 @@ const AppContent: React.FC = () => {
         </Alert>
       )}
 
-      {/* Main Content Area with Output Panel */}
       <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
-        {/* Graph and Sidebar Container */}
         <Box sx={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-          {/* Graph Canvas */}
           <Box sx={{ flex: 1, position: 'relative' }}>
             {loading && !error ? (
               <Box
@@ -93,7 +90,6 @@ const AppContent: React.FC = () => {
             )}
           </Box>
 
-          {/* Right Sidebar - Tabbed Interface */}
           <Paper
             sx={{
               width: 360,
@@ -106,7 +102,6 @@ const AppContent: React.FC = () => {
             square
             elevation={0}
           >
-            {/* Tab Headers */}
             <Tabs
               value={activeTab}
               onChange={(_, newValue) => setActiveTab(newValue)}
@@ -126,7 +121,6 @@ const AppContent: React.FC = () => {
               />
             </Tabs>
 
-            {/* Tab Content */}
             <Box sx={{ flex: 1, overflow: 'hidden' }}>
               {activeTab === 'details' && <NodeDetailsPanel node={selectedNode} />}
               {activeTab === 'globals' && <GlobalsPanel />}
@@ -134,7 +128,6 @@ const AppContent: React.FC = () => {
           </Paper>
         </Box>
 
-        {/* Output Panel at Bottom */}
         <OutputPanel
           executionResult={lastExecutionResult}
           nodeName={lastExecutedNodeName || undefined}
