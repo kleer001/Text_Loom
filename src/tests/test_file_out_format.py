@@ -20,7 +20,7 @@ def test_format(use_format_output):
     file_out = Node.create_node(NodeType.FILE_OUT, node_name="file_out_1")
     
     print(f"\nTesting with format_output={use_format_output}")
-    file_out.set_input("input", file_in)
+    file_out.set_input(0, file_in)
     file_out._parms["format_output"].set(use_format_output)
 
     for filename, content in test_cases:

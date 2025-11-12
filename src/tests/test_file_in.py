@@ -20,7 +20,7 @@ null_node = Node.create_node(NodeType.NULL, node_name="null_1")
 merge_node = Node.create_node(NodeType.MERGE, node_name="merge_1")
 
 print("\nSetting up node connections...")
-null_node.set_input("input", file_in, "output")
+null_node.set_input(0, file_in, 0)
 merge_node.set_input(0, null_node)
 
 merge_node._parms["single_string"].set(False)
