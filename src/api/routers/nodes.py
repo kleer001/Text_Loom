@@ -34,6 +34,36 @@ logger = logging.getLogger("api.routers.nodes")
 router = APIRouter()
 
 
+def _find_node_class(module):
+    for attr_name in dir(module):
+        attr = getattr(module, attr_name)
+        if (isinstance(attr, type) and
+            issubclass(attr, Node) and
+            attr != Node and
+            hasattr(attr, 'GLYPH')):
+            return attr
+    return None
+
+
+def _load_node_module(file_stem: str):
+    import importlib
+    import sys
+
+    module_name = f"core.{file_stem}"
+    if module_name in sys.modules:
+        return sys.modules[module_name]
+    return importlib.import_module(module_name)
+
+
+def _create_node_type_info(node_type_id: str, node_class) -> NodeTypeInfo:
+    label = node_type_id.replace('_', ' ').title()
+    return NodeTypeInfo(
+        id=node_type_id,
+        label=label,
+        glyph=node_class.GLYPH
+    )
+
+
 @router.get(
     "/node-types",
     response_model=List[NodeTypeInfo],
@@ -41,8 +71,6 @@ router = APIRouter()
     description="Returns a list of all available node types with their glyphs and labels.",
 )
 def get_node_types() -> List[NodeTypeInfo]:
-    import importlib
-    import sys
     from pathlib import Path as FilePath
 
     core_dir = FilePath(__file__).parent.parent.parent / "core"
@@ -56,29 +84,13 @@ def get_node_types() -> List[NodeTypeInfo]:
             continue
 
         try:
-            module_name = f"core.{file.stem}"
-            if module_name in sys.modules:
-                module = sys.modules[module_name]
-            else:
-                module = importlib.import_module(module_name)
+            module = _load_node_module(file.stem)
+            node_class = _find_node_class(module)
 
-            for attr_name in dir(module):
-                attr = getattr(module, attr_name)
-                if (isinstance(attr, type) and
-                    issubclass(attr, Node) and
-                    attr != Node and
-                    hasattr(attr, 'GLYPH')):
-
-                    label = node_type_id.replace('_', ' ').title()
-                    node_types.append(NodeTypeInfo(
-                        id=node_type_id,
-                        label=label,
-                        glyph=attr.GLYPH
-                    ))
-                    break
+            if node_class:
+                node_types.append(_create_node_type_info(node_type_id, node_class))
         except Exception as e:
             logger.warning(f"Could not load node type {node_type_id}: {e}")
-            continue
 
     node_types.sort(key=lambda x: x.id)
     return node_types

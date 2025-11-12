@@ -12,6 +12,12 @@ export interface TransformedNodes {
 }
 
 const NODE_WIDTH = 250;
+const LOOPER_START_SUFFIX = '_start';
+const LOOPER_END_SUFFIX = '_end';
+
+function createTransformedId(baseId: string, suffix: string): string {
+  return `${baseId}${suffix}`;
+}
 
 export function identifyLooperSystems(nodes: NodeResponse[]): Map<string, LooperSystem> {
   const looperSystems = new Map<string, LooperSystem>();
@@ -77,8 +83,8 @@ function createLooperStartNode(system: LooperSystem): NodeResponse {
 
   return {
     ...looperNode,
-    session_id: `${looperNode.session_id}_start`,
-    name: `${looperNode.name}_start`,
+    session_id: createTransformedId(looperNode.session_id, LOOPER_START_SUFFIX),
+    name: createTransformedId(looperNode.name, LOOPER_START_SUFFIX),
     glyph: '⟲▷',
     type: 'looper_start',
     inputs: looperNode.inputs,
@@ -92,8 +98,8 @@ function createLooperEndNode(system: LooperSystem): NodeResponse {
 
   return {
     ...outputNullNode,
-    session_id: `${looperNode.session_id}_end`,
-    name: `${looperNode.name}_end`,
+    session_id: createTransformedId(looperNode.session_id, LOOPER_END_SUFFIX),
+    name: createTransformedId(looperNode.name, LOOPER_END_SUFFIX),
     glyph: '◁',
     type: 'looper_end',
     position: [x + (NODE_WIDTH * 2), y],
@@ -101,7 +107,7 @@ function createLooperEndNode(system: LooperSystem): NodeResponse {
 }
 
 export function getOriginalNodeId(transformedId: string): string {
-  return transformedId.replace(/_start$|_end$/, '');
+  return transformedId.replace(new RegExp(`${LOOPER_START_SUFFIX}$|${LOOPER_END_SUFFIX}$`), '');
 }
 
 export function isLooperPart(nodeType: string): boolean {
