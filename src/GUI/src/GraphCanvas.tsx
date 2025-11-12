@@ -15,6 +15,8 @@ import { CustomNode } from './CustomNode';
 import { useWorkspace } from './WorkspaceContext';
 import { DeleteConfirmDialog } from './DeleteConfirmDialog';
 import { connectionsToEdges } from './utils/edgeMapping';
+import { transformConnectionNodeIds, enrichNodesWithConnectionState } from './utils/looperConnections';
+import { gatherBoundaryNodes } from './utils/looperBoundary';
 import { apiClient } from './apiClient';
 import type { NodeResponse, ConnectionRequest } from './types';
 import { DESELECTION_DELAY_MS } from './constants';
@@ -65,58 +67,11 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onSelectionChange }) =
     const { displayNodes, looperSystems: systems } = transformLooperNodes(workspaceNodes);
     setLooperSystems(systems);
 
-    // Transform connections to get correct node IDs for counting
-    const transformedConnections = connections.map(conn => {
-      let sourceId = conn.source_node_session_id;
-      let targetId = conn.target_node_session_id;
-
-      for (const system of systems.values()) {
-        if (conn.source_node_session_id === system.inputNullNode.session_id) {
-          sourceId = `${system.looperNode.session_id}_start`;
-        }
-        if (conn.source_node_session_id === system.outputNullNode.session_id) {
-          sourceId = `${system.looperNode.session_id}_end`;
-        }
-        if (conn.target_node_session_id === system.inputNullNode.session_id) {
-          targetId = `${system.looperNode.session_id}_start`;
-        }
-        if (conn.target_node_session_id === system.outputNullNode.session_id) {
-          targetId = `${system.looperNode.session_id}_end`;
-        }
-      }
-
-      return { ...conn, source_node_session_id: sourceId, target_node_session_id: targetId };
-    });
-
-    // Update display nodes with correct connection counts
-    const updatedDisplayNodes = displayNodes.map((node: NodeResponse) => {
-      // Count connections for each output
-      const updatedOutputs = node.outputs.map(output => {
-        const connectionCount = transformedConnections.filter(
-          conn => conn.source_node_session_id === node.session_id &&
-                  conn.source_output_index === output.index
-        ).length;
-        return { ...output, connection_count: connectionCount };
-      });
-
-      // Check connections for each input
-      const updatedInputs = node.inputs.map(input => {
-        const connected = transformedConnections.some(
-          conn => conn.target_node_session_id === node.session_id &&
-                  conn.target_input_index === input.index
-        );
-        return { ...input, connected };
-      });
-
-      return {
-        ...node,
-        outputs: updatedOutputs,
-        inputs: updatedInputs,
-      };
-    });
+    const transformedConnections = transformConnectionNodeIds(connections, systems);
+    const enrichedNodes = enrichNodesWithConnectionState(displayNodes, transformedConnections);
 
     setNodes(prevNodes =>
-      updatedDisplayNodes.map((node: NodeResponse) => {
+      enrichedNodes.map((node: NodeResponse) => {
         const nodeId = String(node.session_id);
         const existingNode = prevNodes.find(n => n.id === nodeId);
 
@@ -132,34 +87,7 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onSelectionChange }) =
   }, [workspaceNodes, connections, setNodes]);
 
   useEffect(() => {
-    // Transform connection node IDs to match display nodes
-    const transformedConnections = connections.map(conn => {
-      let sourceId = conn.source_node_session_id;
-      let targetId = conn.target_node_session_id;
-
-      // Check if source is an inputNull inside a looper (becomes looper_start output)
-      for (const system of looperSystems.values()) {
-        if (conn.source_node_session_id === system.inputNullNode.session_id) {
-          sourceId = `${system.looperNode.session_id}_start`;
-        }
-        if (conn.source_node_session_id === system.outputNullNode.session_id) {
-          sourceId = `${system.looperNode.session_id}_end`;
-        }
-        if (conn.target_node_session_id === system.inputNullNode.session_id) {
-          targetId = `${system.looperNode.session_id}_start`;
-        }
-        if (conn.target_node_session_id === system.outputNullNode.session_id) {
-          targetId = `${system.looperNode.session_id}_end`;
-        }
-      }
-
-      return {
-        ...conn,
-        source_node_session_id: sourceId,
-        target_node_session_id: targetId,
-      };
-    });
-
+    const transformedConnections = transformConnectionNodeIds(connections, looperSystems);
     const flowEdges = connectionsToEdges(transformedConnections, {
       type: 'smoothstep',
       animated: false,
@@ -401,36 +329,12 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onSelectionChange }) =
       >
         <Background variant={BackgroundVariant.Dots} gap={12} size={1} />
         <Controls />
-        {Array.from(looperSystems.values()).map(system => {
-          // Get all nodes that are children of this looper (path starts with looper path)
-          // Plus the looper_start and looper_end display nodes
-          const looperPath = system.looperNode.path;
-          const childNodes = workspaceNodes.filter(n =>
-            n.path.startsWith(`${looperPath}/`) &&
-            n.session_id !== system.inputNullNode.session_id &&
-            n.session_id !== system.outputNullNode.session_id
-          );
-
-          // Map child nodes to display nodes
-          const displayChildNodes = childNodes.map(childNode =>
-            nodes.find(n => n.id === childNode.session_id)
-          ).filter(n => n !== undefined);
-
-          // Add the looper_start and looper_end nodes
-          const looperStartEnd = nodes.filter(n =>
-            n.id === `${system.looperNode.session_id}_start` ||
-            n.id === `${system.looperNode.session_id}_end`
-          );
-
-          const allBoundaryNodes = [...looperStartEnd, ...displayChildNodes];
-
-          return (
-            <LoopBoundary
-              key={system.looperNode.session_id}
-              nodes={allBoundaryNodes}
-            />
-          );
-        })}
+        {Array.from(looperSystems.values()).map(system => (
+          <LoopBoundary
+            key={system.looperNode.session_id}
+            nodes={gatherBoundaryNodes(system, workspaceNodes, nodes)}
+          />
+        ))}
       </ReactFlow>
     </>
   );

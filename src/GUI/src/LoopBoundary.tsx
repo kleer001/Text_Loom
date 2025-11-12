@@ -46,50 +46,57 @@ const NODE_WIDTH = 150;
 const NODE_HEIGHT = 60;
 const DEFAULT_PADDING = 30;
 
-export const LoopBoundary: React.FC<LoopBoundaryProps> = ({ nodes, padding = DEFAULT_PADDING }) => {
-  const { x: viewportX, y: viewportY, zoom } = useViewport();
-
-  if (nodes.length === 0) return null;
-
-  // Use all 4 corners of each node's bounding box
-  const nodePoints: Point[] = [];
+function extractBoundingBoxCorners(nodes: Node[]): Point[] {
+  const corners: Point[] = [];
   nodes.forEach(node => {
-    const x = node.position.x;
-    const y = node.position.y;
-    // Add all 4 corners of the node's bounding box
-    nodePoints.push(
-      { x, y },                           // Top-left
-      { x: x + NODE_WIDTH, y },           // Top-right
-      { x, y: y + NODE_HEIGHT },          // Bottom-left
-      { x: x + NODE_WIDTH, y: y + NODE_HEIGHT } // Bottom-right
+    const { x, y } = node.position;
+    corners.push(
+      { x, y },
+      { x: x + NODE_WIDTH, y },
+      { x, y: y + NODE_HEIGHT },
+      { x: x + NODE_WIDTH, y: y + NODE_HEIGHT }
     );
   });
+  return corners;
+}
 
-  const hull = getConvexHull(nodePoints);
-
-  // If hull is too small (line or single point), don't render
-  if (hull.length < 3) return null;
-
-  const center = {
-    x: nodePoints.reduce((sum, p) => sum + p.x, 0) / nodePoints.length,
-    y: nodePoints.reduce((sum, p) => sum + p.y, 0) / nodePoints.length,
+function calculateCentroid(points: Point[]): Point {
+  return {
+    x: points.reduce((sum, p) => sum + p.x, 0) / points.length,
+    y: points.reduce((sum, p) => sum + p.y, 0) / points.length,
   };
+}
 
-  const paddedHull = hull.map(point => {
-    const dx = point.x - center.x;
-    const dy = point.y - center.y;
+function expandHullWithPadding(hull: Point[], centroid: Point, padding: number): Point[] {
+  return hull.map(point => {
+    const dx = point.x - centroid.x;
+    const dy = point.y - centroid.y;
     const dist = Math.sqrt(dx * dx + dy * dy);
-    // Avoid division by zero
     if (dist === 0) return point;
     return {
       x: point.x + (dx / dist) * padding,
       y: point.y + (dy / dist) * padding,
     };
   });
+}
 
-  const pathData = paddedHull
-    .map((point, i) => `${i === 0 ? 'M' : 'L'} ${point.x} ${point.y}`)
-    .join(' ') + ' Z';
+function buildSvgPath(points: Point[]): string {
+  return points.map((point, i) => `${i === 0 ? 'M' : 'L'} ${point.x} ${point.y}`).join(' ') + ' Z';
+}
+
+export const LoopBoundary: React.FC<LoopBoundaryProps> = ({ nodes, padding = DEFAULT_PADDING }) => {
+  const { x: viewportX, y: viewportY, zoom } = useViewport();
+
+  if (nodes.length === 0) return null;
+
+  const boundingBoxCorners = extractBoundingBoxCorners(nodes);
+  const hull = getConvexHull(boundingBoxCorners);
+
+  if (hull.length < 3) return null;
+
+  const centroid = calculateCentroid(boundingBoxCorners);
+  const paddedHull = expandHullWithPadding(hull, centroid, padding);
+  const pathData = buildSvgPath(paddedHull);
 
   return (
     <svg
