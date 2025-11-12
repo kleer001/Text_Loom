@@ -42,19 +42,27 @@ interface LoopBoundaryProps {
   padding?: number;
 }
 
-const NODE_WIDTH = 150;
-const NODE_HEIGHT = 60;
+const DEFAULT_NODE_WIDTH = 180;
+const DEFAULT_NODE_HEIGHT = 80;
 const DEFAULT_PADDING = 30;
+
+function getNodeDimensions(node: Node): { width: number; height: number } {
+  return {
+    width: node.measured?.width ?? node.width ?? DEFAULT_NODE_WIDTH,
+    height: node.measured?.height ?? node.height ?? DEFAULT_NODE_HEIGHT,
+  };
+}
 
 function extractBoundingBoxCorners(nodes: Node[]): Point[] {
   const corners: Point[] = [];
   nodes.forEach(node => {
     const { x, y } = node.position;
+    const { width, height } = getNodeDimensions(node);
     corners.push(
       { x, y },
-      { x: x + NODE_WIDTH, y },
-      { x, y: y + NODE_HEIGHT },
-      { x: x + NODE_WIDTH, y: y + NODE_HEIGHT }
+      { x: x + width, y },
+      { x, y: y + height },
+      { x: x + width, y: y + height }
     );
   });
   return corners;
