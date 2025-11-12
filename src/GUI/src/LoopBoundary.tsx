@@ -58,6 +58,9 @@ export const LoopBoundary: React.FC<LoopBoundaryProps> = ({ nodes, padding = DEF
 
   const hull = getConvexHull(nodePoints);
 
+  // If hull is too small (line or single point), don't render
+  if (hull.length < 3) return null;
+
   const center = {
     x: nodePoints.reduce((sum, p) => sum + p.x, 0) / nodePoints.length,
     y: nodePoints.reduce((sum, p) => sum + p.y, 0) / nodePoints.length,
@@ -67,6 +70,8 @@ export const LoopBoundary: React.FC<LoopBoundaryProps> = ({ nodes, padding = DEF
     const dx = point.x - center.x;
     const dy = point.y - center.y;
     const dist = Math.sqrt(dx * dx + dy * dy);
+    // Avoid division by zero
+    if (dist === 0) return point;
     return {
       x: point.x + (dx / dist) * padding,
       y: point.y + (dy / dist) * padding,
@@ -86,16 +91,16 @@ export const LoopBoundary: React.FC<LoopBoundaryProps> = ({ nodes, padding = DEF
         width: '100%',
         height: '100%',
         pointerEvents: 'none',
-        zIndex: 0,
+        zIndex: 1000,
         overflow: 'visible',
       }}
     >
-      <g transform={`translate(${viewportX} ${viewportY}) scale(${zoom})`}>
+      <g transform={`translate(${viewportX}, ${viewportY}) scale(${zoom})`}>
         <path
           d={pathData}
-          fill="rgba(255, 140, 50, 0.1)"
-          stroke="rgba(255, 140, 50, 0.4)"
-          strokeWidth={2 / zoom}
+          fill="rgba(255, 140, 0, 0.15)"
+          stroke="rgba(255, 140, 0, 0.8)"
+          strokeWidth={3 / zoom}
         />
       </g>
     </svg>

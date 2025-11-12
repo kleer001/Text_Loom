@@ -402,14 +402,32 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onSelectionChange }) =
         <Background variant={BackgroundVariant.Dots} gap={12} size={1} />
         <Controls />
         {Array.from(looperSystems.values()).map(system => {
-          const looperNodes = nodes.filter(n =>
+          // Get all nodes that are children of this looper (path starts with looper path)
+          // Plus the looper_start and looper_end display nodes
+          const looperPath = system.looperNode.path;
+          const childNodes = workspaceNodes.filter(n =>
+            n.path.startsWith(`${looperPath}/`) &&
+            n.session_id !== system.inputNullNode.session_id &&
+            n.session_id !== system.outputNullNode.session_id
+          );
+
+          // Map child nodes to display nodes
+          const displayChildNodes = childNodes.map(childNode =>
+            nodes.find(n => n.id === childNode.session_id)
+          ).filter(n => n !== undefined);
+
+          // Add the looper_start and looper_end nodes
+          const looperStartEnd = nodes.filter(n =>
             n.id === `${system.looperNode.session_id}_start` ||
             n.id === `${system.looperNode.session_id}_end`
           );
+
+          const allBoundaryNodes = [...looperStartEnd, ...displayChildNodes];
+
           return (
             <LoopBoundary
               key={system.looperNode.session_id}
-              nodes={looperNodes}
+              nodes={allBoundaryNodes}
             />
           );
         })}
