@@ -1,5 +1,5 @@
 import type { Node } from '@xyflow/react';
-import type { NodeResponse } from '../types';
+import type { NodeResponse, ConnectionResponse } from '../types';
 import type { LooperSystem } from '../looperTransform';
 
 function isLooperInternalNode(nodeId: string, system: LooperSystem): boolean {
@@ -19,9 +19,29 @@ function findChildNodesInLooper(
   );
 }
 
-function mapToDisplayNodes(childNodes: NodeResponse[], displayNodes: Node[]): Node[] {
-  return childNodes
-    .map(childNode => displayNodes.find(n => n.id === childNode.session_id))
+function findNodesConnectedToLooperStart(
+  connections: ConnectionResponse[],
+  looperId: string
+): string[] {
+  const looperStartId = `${looperId}_start`;
+  return connections
+    .filter(conn => conn.source_node_session_id === looperStartId)
+    .map(conn => conn.target_node_session_id);
+}
+
+function findNodesConnectedToLooperEnd(
+  connections: ConnectionResponse[],
+  looperId: string
+): string[] {
+  const looperEndId = `${looperId}_end`;
+  return connections
+    .filter(conn => conn.target_node_session_id === looperEndId)
+    .map(conn => conn.source_node_session_id);
+}
+
+function findDisplayNodesByIds(displayNodes: Node[], nodeIds: string[]): Node[] {
+  return nodeIds
+    .map(id => displayNodes.find(n => n.id === id))
     .filter((n): n is Node => n !== undefined);
 }
 
@@ -34,11 +54,20 @@ function findLooperDisplayNodes(displayNodes: Node[], looperId: string): Node[] 
 export function gatherBoundaryNodes(
   system: LooperSystem,
   workspaceNodes: NodeResponse[],
-  displayNodes: Node[]
+  displayNodes: Node[],
+  connections: ConnectionResponse[]
 ): Node[] {
+  const looperId = system.looperNode.session_id;
   const childNodes = findChildNodesInLooper(workspaceNodes, system);
-  const displayChildNodes = mapToDisplayNodes(childNodes, displayNodes);
-  const looperDisplayNodes = findLooperDisplayNodes(displayNodes, system.looperNode.session_id);
+  const displayChildNodes = childNodes
+    .map(childNode => displayNodes.find(n => n.id === childNode.session_id))
+    .filter((n): n is Node => n !== undefined);
 
-  return [...looperDisplayNodes, ...displayChildNodes];
+  const looperDisplayNodes = findLooperDisplayNodes(displayNodes, looperId);
+  const connectedToStartIds = findNodesConnectedToLooperStart(connections, looperId);
+  const connectedToEndIds = findNodesConnectedToLooperEnd(connections, looperId);
+  const connectedToStart = findDisplayNodesByIds(displayNodes, connectedToStartIds);
+  const connectedToEnd = findDisplayNodesByIds(displayNodes, connectedToEndIds);
+
+  return [...looperDisplayNodes, ...displayChildNodes, ...connectedToStart, ...connectedToEnd];
 }

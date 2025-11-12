@@ -329,12 +329,15 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onSelectionChange }) =
       >
         <Background variant={BackgroundVariant.Dots} gap={12} size={1} />
         <Controls />
-        {Array.from(looperSystems.values()).map(system => (
-          <LoopBoundary
-            key={system.looperNode.session_id}
-            nodes={gatherBoundaryNodes(system, workspaceNodes, nodes)}
-          />
-        ))}
+        {Array.from(looperSystems.values()).map(system => {
+          const transformedConnections = transformConnectionNodeIds(connections, looperSystems);
+          return (
+            <LoopBoundary
+              key={system.looperNode.session_id}
+              nodes={gatherBoundaryNodes(system, workspaceNodes, nodes, transformedConnections)}
+            />
+          );
+        })}
       </ReactFlow>
     </>
   );
