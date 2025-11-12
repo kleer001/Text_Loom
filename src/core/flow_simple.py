@@ -38,10 +38,12 @@ VERSION = "0.01"
 
 def _serialize_value(value: Any, parm_type: ParameterType) -> str:
     if parm_type == ParameterType.STRING:
-        return f'"{str(value).replace('"', '\\"')}"'
+        escaped = str(value).replace('"', '\\"')
+        return f'"{escaped}"'
     elif parm_type == ParameterType.STRINGLIST:
         escaped = [s.replace('"', '\\"').replace(',', '\\,') for s in value]
-        return f'[{",".join(f'"{s}"' for s in escaped)}]'
+        quoted = [f'"{s}"' for s in escaped]
+        return f'[{",".join(quoted)}]'
     elif parm_type == ParameterType.INT:
         return str(int(value))
     elif parm_type == ParameterType.FLOAT:
