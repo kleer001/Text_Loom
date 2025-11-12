@@ -90,6 +90,7 @@ function createLooperStartNode(system: LooperSystem): NodeResponse {
     type: 'looper_start',
     inputs: looperNode.inputs,
     outputs: inputNullNode.outputs,
+    state: inputNullNode.state,
   };
 }
 
@@ -107,6 +108,7 @@ function createLooperEndNode(system: LooperSystem): NodeResponse {
     position: [x + (NODE_WIDTH * 2), y],
     inputs: outputNullNode.inputs,
     outputs: outputNullNode.outputs,
+    state: outputNullNode.state,
   };
 }
 

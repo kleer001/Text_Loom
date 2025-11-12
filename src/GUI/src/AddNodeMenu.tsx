@@ -3,12 +3,11 @@
 import React, { useState, useEffect } from 'react';
 import {
   Button,
-  Menu,
-  MenuItem,
-  ListItemText,
   CircularProgress,
   Fab,
   Tooltip,
+  Popover,
+  Box,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import { useWorkspace } from './WorkspaceContext';
@@ -24,6 +23,74 @@ interface AddNodeMenuProps {
   variant?: 'fab' | 'button';
   onNodeCreated?: () => void;
 }
+
+/**
+ * Calculate grid dimensions for a rectangular layout
+ * Returns number of columns (prefer more rows than columns)
+ * For 12 items: 3 columns x 4 rows
+ */
+const calculateGridColumns = (itemCount: number): number => {
+  return Math.floor(Math.sqrt(itemCount));
+};
+
+/**
+ * Node Type Button - Individual node type selector
+ */
+interface NodeTypeButtonProps {
+  nodeType: NodeTypeInfo;
+  onClick: () => void;
+  disabled: boolean;
+}
+
+const NodeTypeButton: React.FC<NodeTypeButtonProps> = ({
+  nodeType,
+  onClick,
+  disabled,
+}) => (
+  <Box
+    onClick={disabled ? undefined : onClick}
+    sx={{
+      display: 'flex',
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'flex-start',
+      gap: 1.5,
+      padding: 2,
+      backgroundColor: '#f5f5f5',
+      border: '1px solid #e0e0e0',
+      borderRadius: 1,
+      cursor: disabled ? 'not-allowed' : 'pointer',
+      opacity: disabled ? 0.5 : 1,
+      transition: 'all 0.2s ease',
+      '&:hover': disabled
+        ? {}
+        : {
+            backgroundColor: '#e8e8e8',
+            transform: 'translateY(-2px)',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+          },
+    }}
+  >
+    <Box
+      sx={{
+        fontSize: '20px',
+        fontWeight: 'bold',
+        minWidth: '24px',
+        textAlign: 'center',
+      }}
+    >
+      {nodeType.glyph}
+    </Box>
+    <Box
+      sx={{
+        fontSize: '13px',
+        whiteSpace: 'nowrap',
+      }}
+    >
+      {nodeType.label}
+    </Box>
+  </Box>
+);
 
 export const AddNodeMenu: React.FC<AddNodeMenuProps> = ({
   variant = 'fab',
@@ -60,14 +127,12 @@ export const AddNodeMenu: React.FC<AddNodeMenuProps> = ({
 
   const calculateNodePosition = (): [number, number] => {
     // Auto-position: place new nodes in a grid pattern
-    // Starting position
     const startX = 100;
     const startY = 100;
     const gridSpacing = 250;
 
-    // Calculate position based on node count
     const nodeCount = nodes.length;
-    const col = nodeCount % 4; // 4 columns
+    const col = nodeCount % 4;
     const row = Math.floor(nodeCount / 4);
 
     return [startX + col * gridSpacing, startY + row * gridSpacing];
@@ -92,6 +157,7 @@ export const AddNodeMenu: React.FC<AddNodeMenuProps> = ({
   };
 
   const isOpen = Boolean(anchorEl);
+  const gridColumns = calculateGridColumns(nodeTypes.length);
 
   return (
     <>
@@ -123,44 +189,53 @@ export const AddNodeMenu: React.FC<AddNodeMenuProps> = ({
         </Button>
       )}
 
-      <Menu
+      <Popover
         anchorEl={anchorEl}
         open={isOpen}
         onClose={handleClose}
-        PaperProps={{
-          style: {
-            maxHeight: 400,
-            width: '280px',
-          },
+        anchorOrigin={{
+          vertical: 'bottom',
+          horizontal: 'right',
+        }}
+        transformOrigin={{
+          vertical: 'top',
+          horizontal: 'right',
         }}
       >
-        {loading ? (
-          <MenuItem disabled>
-            <CircularProgress size={20} />
-            <ListItemText primary="Loading..." sx={{ ml: 2 }} />
-          </MenuItem>
-        ) : (
-          nodeTypes.map((nodeType) => (
-            <MenuItem
-              key={nodeType.id}
-              onClick={() => handleCreateNode(nodeType.id)}
-              disabled={creating}
+        <Box sx={{ p: 2 }}>
+          {loading ? (
+            <Box
               sx={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: 1.5,
+                gap: 2,
+                padding: 2,
               }}
             >
-              <span style={{ fontSize: '18px', fontWeight: 'bold', minWidth: '24px' }}>
-                {nodeType.glyph}
-              </span>
-              <ListItemText
-                primary={nodeType.label}
-              />
-            </MenuItem>
-          ))
-        )}
-      </Menu>
+              <CircularProgress size={20} />
+              <Box>Loading...</Box>
+            </Box>
+          ) : (
+            <Box
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: `repeat(${gridColumns}, 1fr)`,
+                gap: 1.5,
+                minWidth: 'fit-content',
+              }}
+            >
+              {nodeTypes.map((nodeType) => (
+                <NodeTypeButton
+                  key={nodeType.id}
+                  nodeType={nodeType}
+                  onClick={() => handleCreateNode(nodeType.id)}
+                  disabled={creating}
+                />
+              ))}
+            </Box>
+          )}
+        </Box>
+      </Popover>
     </>
   );
 };
