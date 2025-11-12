@@ -9,6 +9,7 @@ import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import type { NodeResponse } from './types';
 import { useWorkspace } from './WorkspaceContext';
 import { ParameterEditor } from './ParameterEditor';
+import { getOriginalNodeId, isLooperPart } from './looperTransform';
 
 interface NodeDetailsPanelProps {
   node: NodeResponse | null;
@@ -117,8 +118,9 @@ export const NodeDetailsPanel: React.FC<NodeDetailsPanelProps> = ({ node }) => {
 
   const handleParameterChange = useCallback(async (paramName: string, value: string | number | boolean | string[]) => {
     if (!node) return;
+    const targetNodeId = isLooperPart(node.type) ? getOriginalNodeId(node.session_id) : node.session_id;
     try {
-      await updateNode(node.session_id, {
+      await updateNode(targetNodeId, {
         parameters: {
           [paramName]: value,
         },
