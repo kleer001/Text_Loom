@@ -22,6 +22,7 @@ import type { NodeResponse, ConnectionRequest } from './types';
 import { DESELECTION_DELAY_MS } from './constants';
 import { transformLooperNodes, type LooperSystem, getOriginalNodeId } from './looperTransform';
 import { LoopBoundary } from './LoopBoundary';
+import { useSelectionPersistence } from './hooks/useSelectionPersistence';
 
 const nodeTypes = {
   custom: CustomNode,
@@ -39,6 +40,7 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onSelectionChange }) =
     deleteNodes,
     loadWorkspace,
     executingNodeId,
+    newlyCreatedNodeId,
   } = useWorkspace();
   const [nodes, setNodes, onNodesChangeInternal] = useNodesState<Node>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
@@ -47,6 +49,9 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onSelectionChange }) =
   const [_isDragging, setIsDragging] = useState(false);
   const [draggedNodeIds, setDraggedNodeIds] = useState<Set<string>>(new Set());
   const [looperSystems, setLooperSystems] = useState<Map<string, LooperSystem>>(new Map());
+
+  // Industry standard: Store selection separately to persist across updates
+  const { captureSelection, restoreSelection } = useSelectionPersistence();
 
   const shouldPreventDeselection = useCallback((change: NodeChange<Node>): boolean => {
     if (change.type !== 'select' || change.selected) return false;
@@ -70,21 +75,33 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onSelectionChange }) =
     const transformedConnections = transformConnectionNodeIds(connections, systems);
     const enrichedNodes = enrichNodesWithConnectionState(displayNodes, transformedConnections);
 
-    setNodes(prevNodes =>
-      enrichedNodes.map((node: NodeResponse) => {
+    setNodes(prevNodes => {
+      // Capture current selection before recreating nodes
+      captureSelection(prevNodes);
+
+      const newNodes = enrichedNodes.map((node: NodeResponse) => {
         const nodeId = String(node.session_id);
-        const existingNode = prevNodes.find(n => n.id === nodeId);
 
         return {
           id: nodeId,
           type: 'custom',
           position: { x: node.position[0], y: node.position[1] },
           data: { node },
-          selected: existingNode?.selected ?? false,
+          selected: false, // Will be restored by restoreSelection or auto-selected if newly created
         };
-      })
-    );
-  }, [workspaceNodes, connections, setNodes]);
+      });
+
+      // Auto-select newly created node, or restore previous selection
+      const nodesWithSelection = newlyCreatedNodeId
+        ? newNodes.map(node => ({
+            ...node,
+            selected: node.id === newlyCreatedNodeId
+          }))
+        : restoreSelection(newNodes);
+
+      return nodesWithSelection;
+    });
+  }, [workspaceNodes, connections, setNodes, captureSelection, restoreSelection, newlyCreatedNodeId]);
 
   useEffect(() => {
     const transformedConnections = transformConnectionNodeIds(connections, looperSystems);
@@ -100,8 +117,10 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onSelectionChange }) =
     (params: { nodes: Node[]; edges: Edge[] }) => {
       setSelectedNodes(params.nodes);
       onSelectionChange?.(params.nodes);
+      // Capture selection whenever it changes to persist across updates
+      captureSelection(params.nodes);
     },
-    [onSelectionChange]
+    [onSelectionChange, captureSelection]
   );
 
   const onNodeDragStart = useCallback(
