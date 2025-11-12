@@ -81,6 +81,10 @@ class ApiClient {
     return this.fetchJson<NodeResponse[]>('/nodes');
   }
 
+  async getNodeTypes(): Promise<Array<{id: string; label: string; glyph: string}>> {
+    return this.fetchJson<Array<{id: string; label: string; glyph: string}>>('/node-types');
+  }
+
   async executeNode(sessionId: string): Promise<ExecutionResponse> {
     return this.fetchJson<ExecutionResponse>(`/nodes/${sessionId}/execute`, {
       method: 'POST',

@@ -18,6 +18,8 @@ import { connectionsToEdges } from './utils/edgeMapping';
 import { apiClient } from './apiClient';
 import type { NodeResponse, ConnectionRequest } from './types';
 import { DESELECTION_DELAY_MS } from './constants';
+import { transformLooperNodes, type LooperSystem, getOriginalNodeId } from './looperTransform';
+import { LoopBoundary } from './LoopBoundary';
 
 const nodeTypes = {
   custom: CustomNode,
@@ -42,6 +44,7 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onSelectionChange }) =
   const [selectedNodes, setSelectedNodes] = useState<Node[]>([]);
   const [_isDragging, setIsDragging] = useState(false);
   const [draggedNodeIds, setDraggedNodeIds] = useState<Set<string>>(new Set());
+  const [looperSystems, setLooperSystems] = useState<Map<string, LooperSystem>>(new Map());
 
   const shouldPreventDeselection = useCallback((change: NodeChange<Node>): boolean => {
     if (change.type !== 'select' || change.selected) return false;
@@ -59,8 +62,11 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onSelectionChange }) =
   }, [onNodesChangeInternal, shouldPreventDeselection]);
 
   useEffect(() => {
+    const { displayNodes, looperSystems: systems } = transformLooperNodes(workspaceNodes);
+    setLooperSystems(systems);
+
     setNodes(prevNodes =>
-      workspaceNodes.map((node: NodeResponse) => {
+      displayNodes.map((node: NodeResponse) => {
         const nodeId = String(node.session_id);
         const existingNode = prevNodes.find(n => n.id === nodeId);
 
@@ -103,9 +109,10 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onSelectionChange }) =
   const onNodeDragStop = useCallback(
     async (_event: unknown, node: Node) => {
       const newPosition: [number, number] = [node.position.x, node.position.y];
+      const originalNodeId = getOriginalNodeId(node.id);
 
       try {
-        await updateNode(node.id, { position: newPosition });
+        await updateNode(originalNodeId, { position: newPosition });
       } catch (error) {
         console.error('Failed to update node position:', node.id, error);
       }
@@ -129,7 +136,8 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onSelectionChange }) =
         await Promise.all(
           draggedNodes.map(node => {
             const newPosition: [number, number] = [node.position.x, node.position.y];
-            return updateNode(node.id, { position: newPosition });
+            const originalNodeId = getOriginalNodeId(node.id);
+            return updateNode(originalNodeId, { position: newPosition });
           })
         );
       } catch (error) {
@@ -144,8 +152,9 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onSelectionChange }) =
   const handleDeleteConfirm = useCallback(async () => {
     setDeleteDialogOpen(false);
     try {
-      const nodeIds = selectedNodes.map(n => n.id);
-      await deleteNodes(nodeIds);
+      const nodeIds = selectedNodes.map(n => getOriginalNodeId(n.id));
+      const uniqueNodeIds = Array.from(new Set(nodeIds));
+      await deleteNodes(uniqueNodeIds);
       setSelectedNodes([]);
     } catch (error) {
       console.error('Failed to delete nodes:', error);
@@ -314,6 +323,18 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onSelectionChange }) =
       >
         <Background variant={BackgroundVariant.Dots} gap={12} size={1} />
         <Controls />
+        {Array.from(looperSystems.values()).map(system => {
+          const looperNodes = nodes.filter(n =>
+            n.id === `${system.looperNode.session_id}_start` ||
+            n.id === `${system.looperNode.session_id}_end`
+          );
+          return (
+            <LoopBoundary
+              key={system.looperNode.session_id}
+              nodes={looperNodes}
+            />
+          );
+        })}
       </ReactFlow>
     </>
   );

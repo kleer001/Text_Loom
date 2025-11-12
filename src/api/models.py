@@ -177,10 +177,16 @@ class NodeResponse(BaseModel):
     last_cook_time: float = Field(default=0.0, description="Last cook duration in milliseconds")
 
 
+class NodeTypeInfo(BaseModel):
+    id: str = Field(..., description="Node type identifier (e.g., 'text', 'looper')")
+    label: str = Field(..., description="Display name")
+    glyph: str = Field(..., description="Unicode glyph character")
+
+
 class NodeCreateRequest(BaseModel):
     """
     Request to create a new node.
-    
+
     Example:
         {
             "type": "text",
