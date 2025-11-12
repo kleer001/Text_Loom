@@ -25,11 +25,12 @@ interface AddNodeMenuProps {
 }
 
 /**
- * Calculate grid dimensions for a square layout
- * Returns number of columns based on item count
+ * Calculate grid dimensions for a rectangular layout
+ * Returns number of columns (prefer more rows than columns)
+ * For 12 items: 3 columns x 4 rows
  */
 const calculateGridColumns = (itemCount: number): number => {
-  return Math.ceil(Math.sqrt(itemCount));
+  return Math.floor(Math.sqrt(itemCount));
 };
 
 /**
@@ -50,9 +51,10 @@ const NodeTypeButton: React.FC<NodeTypeButtonProps> = ({
     onClick={disabled ? undefined : onClick}
     sx={{
       display: 'flex',
-      flexDirection: 'column',
+      flexDirection: 'row',
       alignItems: 'center',
-      justifyContent: 'center',
+      justifyContent: 'flex-start',
+      gap: 1.5,
       padding: 2,
       backgroundColor: '#f5f5f5',
       border: '1px solid #e0e0e0',
@@ -71,17 +73,17 @@ const NodeTypeButton: React.FC<NodeTypeButtonProps> = ({
   >
     <Box
       sx={{
-        fontSize: '24px',
+        fontSize: '20px',
         fontWeight: 'bold',
-        marginBottom: 0.5,
+        minWidth: '24px',
+        textAlign: 'center',
       }}
     >
       {nodeType.glyph}
     </Box>
     <Box
       sx={{
-        fontSize: '12px',
-        textAlign: 'center',
+        fontSize: '13px',
         whiteSpace: 'nowrap',
       }}
     >
