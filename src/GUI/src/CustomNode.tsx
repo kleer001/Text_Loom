@@ -33,6 +33,7 @@ export const CustomNode: React.FC<{ data: CustomNodeData; selected?: boolean }> 
         background: 'white',
         minWidth: '150px',
         boxShadow: selected ? '0 4px 8px rgba(0,0,0,0.2)' : '0 2px 4px rgba(0,0,0,0.1)',
+        // TODO: For merge nodes with >4 inputs, dynamically scale height to maintain 12px handle spacing
       }}
     >
       {/* Input handles */}
