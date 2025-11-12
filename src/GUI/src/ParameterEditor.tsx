@@ -8,6 +8,9 @@ import {
   FormControlLabel,
   Button,
   Typography,
+  Select,
+  MenuItem,
+  FormControl,
 } from '@mui/material';
 import type { ParameterInfo } from './types';
 
@@ -53,6 +56,30 @@ export const ParameterEditor: React.FC<ParameterEditorProps> = ({
       return () => clearTimeout(timer);
     }
   }, [localValue, parameter.value, parameter.type, name, onChange, debounceMs, error]);
+
+  // Helper to parse menu options from value
+  const parseMenuOptions = useCallback((value: string | number | boolean | string[]): Record<string, string> | null => {
+    if (typeof value !== 'string') return null;
+
+    try {
+      // The backend stores menu options as a Python dict string like "{'key': 'Label', ...}"
+      // We need to convert Python dict syntax to JSON
+      const jsonStr = value
+        .replace(/'/g, '"')  // Replace single quotes with double quotes
+        .replace(/True/g, 'true')
+        .replace(/False/g, 'false')
+        .replace(/None/g, 'null');
+
+      const parsed = JSON.parse(jsonStr);
+      if (typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed)) {
+        return parsed as Record<string, string>;
+      }
+    } catch (e) {
+      // Not a dict, might be a selected value or invalid format
+      return null;
+    }
+    return null;
+  }, []);
 
   // Validation helper
   const validateValue = useCallback((value: string | number | boolean | string[], type: string): string => {
@@ -168,21 +195,50 @@ export const ParameterEditor: React.FC<ParameterEditorProps> = ({
           />
         );
 
-      case 'MENU':
-        // TODO: Need to get menu options from backend metadata
-        // For now, treat as string
+      case 'MENU': {
+        // Parse menu options from the value (which contains a Python dict string)
+        const menuOptions = parseMenuOptions(parameter.value);
+
+        if (!menuOptions || Object.keys(menuOptions).length === 0) {
+          // Fallback to text field if we can't parse options
+          return (
+            <TextField
+              fullWidth
+              size="small"
+              value={localValue}
+              onChange={(e) => handleChange(e.target.value)}
+              disabled={isReadOnly}
+              placeholder={String(parameter.default)}
+              error={!!error}
+              helperText={error || 'No menu options available'}
+            />
+          );
+        }
+
+        // Determine selected value: if localValue is a dict string, select first option
+        // If it's a plain key, use that
+        const selectedValue = parseMenuOptions(localValue) ? Object.keys(menuOptions)[0] : String(localValue);
+
         return (
-          <TextField
-            fullWidth
-            size="small"
-            value={localValue}
-            onChange={(e) => handleChange(e.target.value)}
-            disabled={isReadOnly}
-            placeholder={String(parameter.default)}
-            error={!!error}
-            helperText={error || 'Menu type (options needed from backend)'}
-          />
+          <FormControl fullWidth size="small">
+            <Select
+              value={selectedValue}
+              onChange={(e) => {
+                const newValue = e.target.value;
+                setLocalValue(newValue);
+                onChange(name, newValue); // No debounce for menu selection
+              }}
+              disabled={isReadOnly}
+            >
+              {Object.entries(menuOptions).map(([key, label]) => (
+                <MenuItem key={key} value={key}>
+                  {label}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
         );
+      }
 
       default:
         // Fallback for unknown types
