@@ -4,6 +4,7 @@ import React, { createContext, useContext, useState, useCallback } from 'react';
 import type { ReactNode } from 'react';
 import type { NodeResponse, ConnectionResponse, NodeCreateRequest, NodeUpdateRequest, ExecutionResponse } from './types';
 import { apiClient } from './apiClient';
+import { DESELECTION_DELAY_MS } from './constants';
 
 interface WorkspaceContextType {
   nodes: NodeResponse[];
@@ -11,12 +12,16 @@ interface WorkspaceContextType {
   globals: Record<string, string | number | boolean>;
   loading: boolean;
   error: string | null;
+  executingNodeId: string | null;
+  lastExecutionResult: ExecutionResponse | null;
+  lastExecutedNodeName: string | null;
   loadWorkspace: () => Promise<void>;
   createNode: (request: NodeCreateRequest) => Promise<NodeResponse>;
   updateNode: (sessionId: string, request: NodeUpdateRequest) => Promise<NodeResponse>;
   deleteNode: (sessionId: string) => Promise<void>;
   deleteNodes: (sessionIds: string[]) => Promise<void>;
   executeNode: (sessionId: string) => Promise<ExecutionResponse>;
+  clearExecutionResult: () => void;
   setGlobal: (key: string, value: string | number | boolean) => Promise<void>;
   deleteGlobal: (key: string) => Promise<void>;
 }
@@ -29,6 +34,9 @@ export const WorkspaceProvider: React.FC<{ children: ReactNode }> = ({ children 
   const [globals, setGlobals] = useState<Record<string, string | number | boolean>>({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [executingNodeId, setExecutingNodeId] = useState<string | null>(null);
+  const [lastExecutionResult, setLastExecutionResult] = useState<ExecutionResponse | null>(null);
+  const [lastExecutedNodeName, setLastExecutedNodeName] = useState<string | null>(null);
 
   const loadWorkspace = useCallback(async () => {
     setLoading(true);
@@ -134,25 +142,32 @@ export const WorkspaceProvider: React.FC<{ children: ReactNode }> = ({ children 
   const executeNode = useCallback(async (sessionId: string): Promise<ExecutionResponse> => {
     setLoading(true);
     setError(null);
+    setExecutingNodeId(sessionId);
 
     try {
-      // Execute the node
+      const node = nodes.find(n => n.session_id === sessionId);
+      const nodeName = node?.name || 'Unknown Node';
+
       const executionResult = await apiClient.executeNode(sessionId);
 
-      // Refresh workspace to get updated node states and cook counts
-      // This ensures all affected nodes (including dependencies) are updated
+      setLastExecutionResult(executionResult);
+      setLastExecutedNodeName(nodeName);
+
       await loadWorkspace();
+
+      setTimeout(() => setExecutingNodeId(null), DESELECTION_DELAY_MS);
 
       return executionResult;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to execute node';
       setError(message);
       console.error('Node execution error:', err);
+      setExecutingNodeId(null);
       throw err;
     } finally {
       setLoading(false);
     }
-  }, [loadWorkspace]);
+  }, [loadWorkspace, nodes]);
 
   const setGlobal = useCallback(async (key: string, value: string | number | boolean): Promise<void> => {
     setLoading(true);
@@ -194,18 +209,27 @@ export const WorkspaceProvider: React.FC<{ children: ReactNode }> = ({ children 
     }
   }, []);
 
+  const clearExecutionResult = useCallback(() => {
+    setLastExecutionResult(null);
+    setLastExecutedNodeName(null);
+  }, []);
+
   const value: WorkspaceContextType = {
     nodes,
     connections,
     globals,
     loading,
     error,
+    executingNodeId,
+    lastExecutionResult,
+    lastExecutedNodeName,
     loadWorkspace,
     createNode,
     updateNode,
     deleteNode,
     deleteNodes,
     executeNode,
+    clearExecutionResult,
     setGlobal,
     deleteGlobal,
   };

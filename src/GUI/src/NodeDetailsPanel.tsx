@@ -6,27 +6,23 @@ import EditIcon from '@mui/icons-material/Edit';
 import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
-import type { NodeResponse, ExecutionResponse } from './types';
+import type { NodeResponse } from './types';
 import { useWorkspace } from './WorkspaceContext';
 import { ParameterEditor } from './ParameterEditor';
-import { ExecutionOutput } from './ExecutionOutput';
 
 interface NodeDetailsPanelProps {
   node: NodeResponse | null;
 }
 
 export const NodeDetailsPanel: React.FC<NodeDetailsPanelProps> = ({ node }) => {
-  // All hooks must be called unconditionally at the top level (Rules of Hooks)
   const { updateNode, executeNode } = useWorkspace();
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState('');
   const [nameError, setNameError] = useState('');
   const [isExecuting, setIsExecuting] = useState(false);
-  const [executionResult, setExecutionResult] = useState<ExecutionResponse | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const isMountedRef = useRef(true);
 
-  // Track component mount status to prevent setState on unmounted component
   useEffect(() => {
     isMountedRef.current = true;
     return () => {
@@ -34,24 +30,18 @@ export const NodeDetailsPanel: React.FC<NodeDetailsPanelProps> = ({ node }) => {
     };
   }, []);
 
-  // Reset editing state when node changes
   useEffect(() => {
     setIsEditing(false);
     setEditName('');
     setNameError('');
-    setExecutionResult(null);
   }, [node?.session_id]);
 
-  // Wrap handleCook in useCallback to prevent unnecessary re-renders
   const handleCook = useCallback(async () => {
     if (isExecuting || !node) return;
 
     setIsExecuting(true);
     try {
-      const result = await executeNode(node.session_id);
-      if (isMountedRef.current) {
-        setExecutionResult(result);
-      }
+      await executeNode(node.session_id);
     } catch (error) {
       console.error('Failed to execute node:', error);
     } finally {
@@ -61,7 +51,6 @@ export const NodeDetailsPanel: React.FC<NodeDetailsPanelProps> = ({ node }) => {
     }
   }, [node, isExecuting, executeNode]);
 
-  // Keyboard shortcut for Cook (Shift+C)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.shiftKey && e.key === 'C' && !isExecuting) {
@@ -104,17 +93,14 @@ export const NodeDetailsPanel: React.FC<NodeDetailsPanelProps> = ({ node }) => {
     }
 
     try {
-      // Call the workspace context to update the node (updates both API and local state)
       await updateNode(node.session_id, { name: trimmedName });
 
-      // Success - exit edit mode (only if still mounted)
       if (isMountedRef.current) {
         setIsEditing(false);
         setEditName('');
         setNameError('');
       }
     } catch (error) {
-      // Show error message (only if still mounted)
       if (isMountedRef.current) {
         setNameError(error instanceof Error ? error.message : 'Failed to rename node');
       }
@@ -142,17 +128,6 @@ export const NodeDetailsPanel: React.FC<NodeDetailsPanelProps> = ({ node }) => {
     }
   }, [node, updateNode]);
 
-  const handleCopyOutput = useCallback(() => {
-    if (!executionResult?.output_data) return;
-
-    const text = executionResult.output_data
-      .map(output => output.join('\n'))
-      .join('\n---\n');
-
-    navigator.clipboard.writeText(text);
-  }, [executionResult]);
-
-  // Conditional rendering AFTER all hooks are called
   if (!node) {
     return (
       <Box sx={{ p: 2, color: 'text.secondary' }}>
@@ -238,11 +213,6 @@ export const NodeDetailsPanel: React.FC<NodeDetailsPanelProps> = ({ node }) => {
       >
         {isExecuting ? 'Cooking...' : 'Cook Node (Shift+C)'}
       </Button>
-
-      {/* Execution Results */}
-      {executionResult && (
-        <ExecutionOutput executionResult={executionResult} onCopyOutput={handleCopyOutput} />
-      )}
 
       <Divider sx={{ my: 2 }} />
 
