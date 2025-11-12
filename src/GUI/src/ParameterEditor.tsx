@@ -8,10 +8,7 @@ import {
   FormControlLabel,
   Button,
   Typography,
-  Tooltip,
-  IconButton,
 } from '@mui/material';
-import InfoIcon from '@mui/icons-material/Info';
 import type { ParameterInfo } from './types';
 
 interface ParameterEditorProps {
@@ -205,26 +202,20 @@ export const ParameterEditor: React.FC<ParameterEditorProps> = ({
   };
 
   return (
-    <Box sx={{ mb: 2 }}>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
+    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, minWidth: '150px' }}>
         <Typography variant="body2" fontWeight="bold">
           {name}
         </Typography>
         {parameter.read_only && (
-          <Typography variant="caption" color="text.secondary" sx={{ ml: 0.5 }}>
+          <Typography variant="caption" color="text.secondary">
             (read-only)
           </Typography>
         )}
-        <Tooltip title={`Type: ${parameter.type}\nDefault: ${parameter.default}`}>
-          <IconButton size="small" sx={{ ml: 'auto', p: 0 }}>
-            <InfoIcon fontSize="small" />
-          </IconButton>
-        </Tooltip>
       </Box>
-      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
-        {parameter.type}
-      </Typography>
-      {renderWidget()}
+      <Box sx={{ flex: 1 }}>
+        {renderWidget()}
+      </Box>
     </Box>
   );
 };
