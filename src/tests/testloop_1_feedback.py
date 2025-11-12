@@ -18,9 +18,9 @@ text1._parms["text_string"].set("Filler Text $$L ")
 looper1._parms["feedback_mode"].set(True)
 
 # Connect nodes
-looper1._output_node.set_input(0, text1, "output")
+looper1._output_node.set_input(0, text1, 0)
 text1.set_input(0, merge1)
-merge1.set_input(0, looper1._input_node, "output")
+merge1.set_input(0, looper1._input_node, 0)
 
 # print_node_info(text1)
 # print_node_info(looper1)

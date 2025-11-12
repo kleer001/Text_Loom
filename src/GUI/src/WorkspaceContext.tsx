@@ -62,7 +62,8 @@ export const WorkspaceProvider: React.FC<{ children: ReactNode }> = ({ children 
 
     try {
       const newNode = await apiClient.createNode(request);
-      setNodes(prev => [...prev, newNode]);
+      // Reload workspace to fetch child nodes (e.g., looper's input_null/output_null)
+      await loadWorkspace();
       return newNode;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to create node';
@@ -72,7 +73,7 @@ export const WorkspaceProvider: React.FC<{ children: ReactNode }> = ({ children 
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [loadWorkspace]);
 
   const updateNode = useCallback(async (sessionId: string, request: NodeUpdateRequest): Promise<NodeResponse> => {
     setLoading(true);

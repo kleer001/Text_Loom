@@ -11,8 +11,8 @@ file_out = Node.create_node(NodeType.FILE_OUT)
 null_node = Node.create_node(NodeType.NULL)
 
 # Connect nodes
-null_node.set_input("input", file_in, "output")
-file_out.set_input("input", null_node, "output")
+null_node.set_input(0, file_in, 0)
+file_out.set_input(0, null_node, 0)
 
 # Set up input file
 input_file_path = os.path.abspath("input.txt")

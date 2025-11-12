@@ -18,7 +18,7 @@ text1._parms["text_string"].set("Filler Text 1")
 # Set merge node parameter
 
 # Connect nodes
-looper1._output_node.set_input(0,text1,"output")
+looper1._output_node.set_input(0,text1,0)
 text1.set_input(0,looper1._input_node)
 
 # print_node_info(text1)
