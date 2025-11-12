@@ -281,6 +281,16 @@ class LooperNode(Node):
     def _create_internal_nodes(self):
         if self._internal_nodes_created:
             return
+
+        # Skip if called during parent node registration (when _creating_node is True)
+        # This ensures child nodes are only created after parent is fully registered
+        from core.node_environment import NodeEnvironment
+        if NodeEnvironment.get_instance()._creating_node:
+            return
+
+        # Mark as created to prevent duplicate calls
+        self._internal_nodes_created = True
+
         try:
             input_node_name = "inputNullNode"
             self._input_node = Node.create_node(NodeType.INPUT_NULL, node_name=input_node_name, parent_path=self.path())
@@ -300,6 +310,7 @@ class LooperNode(Node):
             self._children.append(self._output_node)
 
         except Exception as e:
+            self._internal_nodes_created = False  # Reset on error
             self.add_error(f"Failed to create internal nodes: {str(e)}")
 
     def connect_loop_in(self, node: 'Node'):
