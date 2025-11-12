@@ -83,6 +83,7 @@ function createLooperStartNode(system: LooperSystem): NodeResponse {
 
   return {
     ...looperNode,
+    path: inputNullNode.path,
     session_id: createTransformedId(looperNode.session_id, LOOPER_START_SUFFIX),
     name: createTransformedId(looperNode.name, LOOPER_START_SUFFIX),
     glyph: '⟲▷',
