@@ -42,8 +42,8 @@ interface LoopBoundaryProps {
   padding?: number;
 }
 
-const NODE_CENTER_OFFSET_X = 75;
-const NODE_CENTER_OFFSET_Y = 25;
+const NODE_WIDTH = 150;
+const NODE_HEIGHT = 60;
 const DEFAULT_PADDING = 30;
 
 export const LoopBoundary: React.FC<LoopBoundaryProps> = ({ nodes, padding = DEFAULT_PADDING }) => {
@@ -51,10 +51,19 @@ export const LoopBoundary: React.FC<LoopBoundaryProps> = ({ nodes, padding = DEF
 
   if (nodes.length === 0) return null;
 
-  const nodePoints = nodes.map(node => ({
-    x: node.position.x + NODE_CENTER_OFFSET_X,
-    y: node.position.y + NODE_CENTER_OFFSET_Y,
-  }));
+  // Use all 4 corners of each node's bounding box
+  const nodePoints: Point[] = [];
+  nodes.forEach(node => {
+    const x = node.position.x;
+    const y = node.position.y;
+    // Add all 4 corners of the node's bounding box
+    nodePoints.push(
+      { x, y },                           // Top-left
+      { x: x + NODE_WIDTH, y },           // Top-right
+      { x, y: y + NODE_HEIGHT },          // Bottom-left
+      { x: x + NODE_WIDTH, y: y + NODE_HEIGHT } // Bottom-right
+    );
+  });
 
   const hull = getConvexHull(nodePoints);
 
