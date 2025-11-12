@@ -91,7 +91,11 @@ export const WorkspaceProvider: React.FC<{ children: ReactNode }> = ({ children 
 
     try {
       const updatedNode = await apiClient.updateNode(sessionId, request);
-      setNodes(prev => prev.map(n => n.session_id === sessionId ? updatedNode : n));
+
+      // Reload workspace to ensure full state sync (node state, connections, etc.)
+      // This also triggers selection restoration in GraphCanvas
+      await loadWorkspace();
+
       return updatedNode;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to update node';
@@ -101,7 +105,7 @@ export const WorkspaceProvider: React.FC<{ children: ReactNode }> = ({ children 
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [loadWorkspace]);
 
   const deleteNode = useCallback(async (sessionId: string): Promise<void> => {
     setLoading(true);
