@@ -20,16 +20,68 @@ from api.models import (
     ExecutionResponse,
     ErrorResponse,
     SuccessResponse,
+    NodeTypeInfo,
     node_to_response
 )
 from core.base_classes import Node, NodeType, NodeEnvironment, NodeState
 from core.enums import generate_node_types
 from core.undo_manager import UndoManager
+from pathlib import Path as FilePath
 
 import logging
 logger = logging.getLogger("api.routers.nodes")
 
 router = APIRouter()
+
+
+@router.get(
+    "/node-types",
+    response_model=List[NodeTypeInfo],
+    summary="Get available node types",
+    description="Returns a list of all available node types with their glyphs and labels.",
+)
+def get_node_types() -> List[NodeTypeInfo]:
+    import importlib
+    import sys
+    from pathlib import Path as FilePath
+
+    core_dir = FilePath(__file__).parent.parent.parent / "core"
+    node_types = []
+    excluded_types = {'input_null', 'output_null'}
+
+    for file in core_dir.glob("*_node.py"):
+        node_type_id = file.stem.replace("_node", "")
+
+        if node_type_id in excluded_types:
+            continue
+
+        try:
+            module_name = f"core.{file.stem}"
+            if module_name in sys.modules:
+                module = sys.modules[module_name]
+            else:
+                module = importlib.import_module(module_name)
+
+            for attr_name in dir(module):
+                attr = getattr(module, attr_name)
+                if (isinstance(attr, type) and
+                    issubclass(attr, Node) and
+                    attr != Node and
+                    hasattr(attr, 'GLYPH')):
+
+                    label = node_type_id.replace('_', ' ').title()
+                    node_types.append(NodeTypeInfo(
+                        id=node_type_id,
+                        label=label,
+                        glyph=attr.GLYPH
+                    ))
+                    break
+        except Exception as e:
+            logger.warning(f"Could not load node type {node_type_id}: {e}")
+            continue
+
+    node_types.sort(key=lambda x: x.id)
+    return node_types
 
 
 @router.get(

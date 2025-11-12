@@ -1,6 +1,6 @@
 // Add Node Menu - Allows users to create new nodes
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Button,
   Menu,
@@ -12,24 +12,13 @@ import {
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import { useWorkspace } from './WorkspaceContext';
+import { apiClient } from './apiClient';
 
-// Available node types from the backend
-const NODE_TYPES = [
-  { id: 'text', label: 'Text', description: 'Text content node' },
-  { id: 'file_in', label: 'File In', description: 'Read file input' },
-  { id: 'file_out', label: 'File Out', description: 'Write file output' },
-  { id: 'folder', label: 'Folder', description: 'Directory operations' },
-  { id: 'json', label: 'JSON', description: 'JSON processing' },
-  { id: 'looper', label: 'Looper', description: 'Loop over items' },
-  { id: 'make_list', label: 'Make List', description: 'Create list' },
-  { id: 'merge', label: 'Merge', description: 'Merge inputs' },
-  { id: 'null', label: 'Null', description: 'Null node' },
-  { id: 'query', label: 'Query', description: 'Query operations' },
-  { id: 'section', label: 'Section', description: 'Section node' },
-  { id: 'split', label: 'Split', description: 'Split text' },
-  { id: 'input_null', label: 'Input Null', description: 'Null input' },
-  { id: 'output_null', label: 'Output Null', description: 'Null output' },
-];
+interface NodeTypeInfo {
+  id: string;
+  label: string;
+  glyph: string;
+}
 
 interface AddNodeMenuProps {
   variant?: 'fab' | 'button';
@@ -43,6 +32,23 @@ export const AddNodeMenu: React.FC<AddNodeMenuProps> = ({
   const { createNode, nodes } = useWorkspace();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [creating, setCreating] = useState(false);
+  const [nodeTypes, setNodeTypes] = useState<NodeTypeInfo[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchNodeTypes = async () => {
+      try {
+        const types = await apiClient.getNodeTypes();
+        setNodeTypes(types);
+      } catch (error) {
+        console.error('Failed to fetch node types:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchNodeTypes();
+  }, []);
 
   const handleClick = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -128,22 +134,32 @@ export const AddNodeMenu: React.FC<AddNodeMenuProps> = ({
           },
         }}
       >
-        {NODE_TYPES.map((nodeType) => (
-          <MenuItem
-            key={nodeType.id}
-            onClick={() => handleCreateNode(nodeType.id)}
-            disabled={creating}
-          >
-            <ListItemText
-              primary={nodeType.label}
-              secondary={nodeType.description}
-              secondaryTypographyProps={{
-                variant: 'caption',
-                color: 'text.secondary',
-              }}
-            />
+        {loading ? (
+          <MenuItem disabled>
+            <CircularProgress size={20} />
+            <ListItemText primary="Loading..." sx={{ ml: 2 }} />
           </MenuItem>
-        ))}
+        ) : (
+          nodeTypes.map((nodeType) => (
+            <MenuItem
+              key={nodeType.id}
+              onClick={() => handleCreateNode(nodeType.id)}
+              disabled={creating}
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1.5,
+              }}
+            >
+              <span style={{ fontSize: '18px', fontWeight: 'bold', minWidth: '24px' }}>
+                {nodeType.glyph}
+              </span>
+              <ListItemText
+                primary={nodeType.label}
+              />
+            </MenuItem>
+          ))
+        )}
       </Menu>
     </>
   );
