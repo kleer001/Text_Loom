@@ -122,8 +122,8 @@ export const LoopBoundary: React.FC<LoopBoundaryProps> = ({ nodes, padding = DEF
       <g transform={`translate(${viewportX}, ${viewportY}) scale(${zoom})`}>
         <path
           d={pathData}
-          fill="rgba(255, 140, 0, 0.15)"
-          stroke="rgba(255, 140, 0, 0.8)"
+          fill="rgba(0, 60, 200, 0.02)"
+          stroke="rgba(0, 60, 200, 0.2)"
           strokeWidth={3 / zoom}
         />
       </g>
