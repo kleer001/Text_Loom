@@ -65,8 +65,58 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onSelectionChange }) =
     const { displayNodes, looperSystems: systems } = transformLooperNodes(workspaceNodes);
     setLooperSystems(systems);
 
+    // Transform connections to get correct node IDs for counting
+    const transformedConnections = connections.map(conn => {
+      let sourceId = conn.source_node_session_id;
+      let targetId = conn.target_node_session_id;
+
+      for (const system of systems.values()) {
+        if (conn.source_node_session_id === system.inputNullNode.session_id) {
+          sourceId = `${system.looperNode.session_id}_start`;
+        }
+        if (conn.source_node_session_id === system.outputNullNode.session_id) {
+          sourceId = `${system.looperNode.session_id}_end`;
+        }
+        if (conn.target_node_session_id === system.inputNullNode.session_id) {
+          targetId = `${system.looperNode.session_id}_start`;
+        }
+        if (conn.target_node_session_id === system.outputNullNode.session_id) {
+          targetId = `${system.looperNode.session_id}_end`;
+        }
+      }
+
+      return { ...conn, source_node_session_id: sourceId, target_node_session_id: targetId };
+    });
+
+    // Update display nodes with correct connection counts
+    const updatedDisplayNodes = displayNodes.map((node: NodeResponse) => {
+      // Count connections for each output
+      const updatedOutputs = node.outputs.map(output => {
+        const connectionCount = transformedConnections.filter(
+          conn => conn.source_node_session_id === node.session_id &&
+                  conn.source_output_index === output.index
+        ).length;
+        return { ...output, connection_count: connectionCount };
+      });
+
+      // Check connections for each input
+      const updatedInputs = node.inputs.map(input => {
+        const connected = transformedConnections.some(
+          conn => conn.target_node_session_id === node.session_id &&
+                  conn.target_input_index === input.index
+        );
+        return { ...input, connected };
+      });
+
+      return {
+        ...node,
+        outputs: updatedOutputs,
+        inputs: updatedInputs,
+      };
+    });
+
     setNodes(prevNodes =>
-      displayNodes.map((node: NodeResponse) => {
+      updatedDisplayNodes.map((node: NodeResponse) => {
         const nodeId = String(node.session_id);
         const existingNode = prevNodes.find(n => n.id === nodeId);
 
@@ -79,7 +129,7 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onSelectionChange }) =
         };
       })
     );
-  }, [workspaceNodes, setNodes]);
+  }, [workspaceNodes, connections, setNodes]);
 
   useEffect(() => {
     // Transform connection node IDs to match display nodes

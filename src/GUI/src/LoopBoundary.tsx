@@ -1,4 +1,5 @@
 import React from 'react';
+import { useViewport } from '@xyflow/react';
 import type { Node } from '@xyflow/react';
 
 interface Point {
@@ -46,6 +47,8 @@ const NODE_CENTER_OFFSET_Y = 25;
 const DEFAULT_PADDING = 30;
 
 export const LoopBoundary: React.FC<LoopBoundaryProps> = ({ nodes, padding = DEFAULT_PADDING }) => {
+  const { x: viewportX, y: viewportY, zoom } = useViewport();
+
   if (nodes.length === 0) return null;
 
   const nodePoints = nodes.map(node => ({
@@ -84,14 +87,17 @@ export const LoopBoundary: React.FC<LoopBoundaryProps> = ({ nodes, padding = DEF
         height: '100%',
         pointerEvents: 'none',
         zIndex: 0,
+        overflow: 'visible',
       }}
     >
-      <path
-        d={pathData}
-        fill="rgba(255, 140, 50, 0.1)"
-        stroke="rgba(255, 140, 50, 0.4)"
-        strokeWidth={2}
-      />
+      <g transform={`translate(${viewportX} ${viewportY}) scale(${zoom})`}>
+        <path
+          d={pathData}
+          fill="rgba(255, 140, 50, 0.1)"
+          stroke="rgba(255, 140, 50, 0.4)"
+          strokeWidth={2 / zoom}
+        />
+      </g>
     </svg>
   );
 };
