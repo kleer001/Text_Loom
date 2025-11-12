@@ -17,13 +17,19 @@ class NullNode(Node):
         super().__init__(name, path, position, node_type)
         self._input_value: Optional[List[str]] = None
 
+    def input_names(self) -> Dict[int, str]:
+        return {0: "Input"}
+
+    def output_names(self) -> Dict[int, str]:
+        return {0: "Output"}
+
     def _internal_cook(self, force: bool = False) -> None:
         self.set_state(NodeState.COOKING)
         try:
             if self.inputs():
                 input_connection = self.inputs()[0]
-                input_data = input_connection.output_node().eval(requesting_node=self)  
-                
+                input_data = input_connection.output_node().eval(requesting_node=self)
+
                 if isinstance(input_data, list) and all(isinstance(item, str) for item in input_data):
                     self._input_value = input_data
                     self._output = input_data  # Add this line to set the output
@@ -32,7 +38,7 @@ class NullNode(Node):
             else:
                 self._input_value = []
                 self._output = []  # Add this line to set empty output
-            
+
             self.set_state(NodeState.UNCHANGED)
 
         except Exception as e:

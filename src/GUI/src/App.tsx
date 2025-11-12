@@ -22,6 +22,7 @@ import { NodeDetailsPanel } from './NodeDetailsPanel';
 import { GlobalsPanel } from './GlobalsPanel';
 import { AddNodeMenu } from './AddNodeMenu';
 import { OutputPanel } from './OutputPanel';
+import { transformLooperNodes, getOriginalNodeId } from './looperTransform';
 
 const AppContent: React.FC = () => {
   const { loadWorkspace, loading, error, nodes, lastExecutionResult, lastExecutedNodeName, clearExecutionResult } = useWorkspace();
@@ -33,9 +34,18 @@ const AppContent: React.FC = () => {
     loadWorkspace();
   }, [loadWorkspace]);
 
-  // Get the selected node's full data from workspace
   const selectedNode = selectedNodes.length === 1
-    ? nodes.find(n => n.session_id === selectedNodes[0].id) || null
+    ? (() => {
+        const selectedId = selectedNodes[0].id;
+        const baseId = getOriginalNodeId(selectedId);
+        const node = nodes.find(n => n.session_id === baseId);
+
+        if (!node) return null;
+        if (baseId === selectedId) return node;
+
+        const { displayNodes } = transformLooperNodes(nodes);
+        return displayNodes.find(n => n.session_id === selectedId) || null;
+      })()
     : null;
 
   return (
