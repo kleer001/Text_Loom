@@ -22,31 +22,17 @@ import { NodeDetailsPanel } from './NodeDetailsPanel';
 import { GlobalsPanel } from './GlobalsPanel';
 import { AddNodeMenu } from './AddNodeMenu';
 import { OutputPanel } from './OutputPanel';
-import { transformLooperNodes, getOriginalNodeId } from './looperTransform';
+import type { NodeResponse } from './types';
 
 const AppContent: React.FC = () => {
-  const { loadWorkspace, loading, error, nodes, lastExecutionResult, lastExecutedNodeName, clearExecutionResult } = useWorkspace();
-  const [selectedNodes, setSelectedNodes] = useState<any[]>([]);
+  const { loadWorkspace, loading, error, lastExecutionResult, lastExecutedNodeName, clearExecutionResult } = useWorkspace();
+  const [focusedNode, setFocusedNode] = useState<NodeResponse | null>(null);
   const [activeTab, setActiveTab] = useState<'details' | 'globals'>('details');
 
   // Load workspace on mount
   useEffect(() => {
     loadWorkspace();
   }, [loadWorkspace]);
-
-  const selectedNode = selectedNodes.length === 1
-    ? (() => {
-        const selectedId = selectedNodes[0].id;
-        const baseId = getOriginalNodeId(selectedId);
-        const node = nodes.find(n => n.session_id === baseId);
-
-        if (!node) return null;
-        if (baseId === selectedId) return node;
-
-        const { displayNodes } = transformLooperNodes(nodes);
-        return displayNodes.find(n => n.session_id === selectedId) || null;
-      })()
-    : null;
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
@@ -94,7 +80,7 @@ const AppContent: React.FC = () => {
               </Box>
             ) : (
               <>
-                <GraphCanvas onSelectionChange={setSelectedNodes} />
+                <GraphCanvas onNodeFocus={setFocusedNode} />
                 <AddNodeMenu variant="fab" />
               </>
             )}
@@ -132,7 +118,7 @@ const AppContent: React.FC = () => {
             </Tabs>
 
             <Box sx={{ flex: 1, overflow: 'hidden' }}>
-              {activeTab === 'details' && <NodeDetailsPanel node={selectedNode} />}
+              {activeTab === 'details' && <NodeDetailsPanel node={focusedNode} />}
               {activeTab === 'globals' && <GlobalsPanel />}
             </Box>
           </Paper>
