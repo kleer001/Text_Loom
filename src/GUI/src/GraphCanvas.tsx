@@ -71,6 +71,9 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
     const transformedConnections = transformConnectionNodeIds(connections, systems);
     const enrichedNodes = enrichNodesWithConnectionState(displayNodes, transformedConnections);
 
+    // Preserve current selection state when recreating nodes
+    const currentlySelectedIds = new Set(nodes.filter(n => n.selected).map(n => n.id));
+
     const newNodes = enrichedNodes.map((node: NodeResponse) => {
       const nodeId = String(node.session_id);
 
@@ -79,8 +82,8 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
         type: 'custom',
         position: { x: node.position[0], y: node.position[1] },
         data: { node },
-        // Auto-select newly created nodes for immediate interaction
-        selected: nodeId === newlyCreatedNodeId,
+        // Preserve selection state or auto-select newly created nodes
+        selected: nodeId === newlyCreatedNodeId || currentlySelectedIds.has(nodeId),
       };
     });
 
@@ -93,7 +96,7 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
         onNodeFocus(newNode);
       }
     }
-  }, [workspaceNodes, connections, setNodes, newlyCreatedNodeId, onNodeFocus]);
+  }, [workspaceNodes, connections, setNodes, newlyCreatedNodeId, onNodeFocus, nodes]);
 
   useEffect(() => {
     const transformedConnections = transformConnectionNodeIds(connections, looperSystems);
