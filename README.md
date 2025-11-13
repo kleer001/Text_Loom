@@ -65,6 +65,24 @@ Run Text Loom in Docker with all dependencies isolated and managed.
 * **Docker** and **Docker Compose** installed
 * (Optional) Local LLM service running on host (Ollama, LM Studio, etc.)
 
+### :sparkles: Easy Setup with Wizard (Recommended)
+
+The interactive setup wizard checks your system, detects running LLMs, and guides you through configuration:
+
+```bash
+git clone https://github.com/kleer001/Text_Loom
+cd Text_Loom
+python3 docker_wizard.py
+```
+
+The wizard will:
+- ✓ Check Docker installation
+- ✓ Detect local LLM services (Ollama, LM Studio, etc.)
+- ✓ Help configure API keys for cloud LLMs
+- ✓ Set up environment variables
+- ✓ Optionally run Ollama in Docker
+- ✓ Launch containers automatically
+
 ### Quick Start with Docker Compose
 
 **1. Clone the repository**
