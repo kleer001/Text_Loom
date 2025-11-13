@@ -186,6 +186,7 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
       const uniqueNodeIds = Array.from(new Set(nodeIds));
       await deleteNodes(uniqueNodeIds);
       setSelectedNodes([]);
+      selectedNodeIdsRef.current = new Set(); // Clear ref to prevent stale node IDs
     } catch (error) {
       console.error('Failed to delete nodes:', error);
     }
