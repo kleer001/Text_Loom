@@ -10,39 +10,20 @@ services:
       - "8000:8000"
       - "5173:5173"
     volumes:
-      # Persist workspace files and save data
       - textloom-workspace:/workspace
-      # Mount settings.cfg for configuration
       - ./src/core/settings.cfg:/app/src/core/settings.cfg
-      # Optional: Mount local workspace directory for easy access
-      # - ./workspace:/workspace
     environment:
-      # Python environment
       - PYTHONPATH=/app/src
       - PYTHONUNBUFFERED=1
-
-      # API Keys for cloud LLMs (load from .env file)
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
       - PERPLEXITY_API_KEY=${PERPLEXITY_API_KEY:-}
       - GOOGLE_API_KEY=${GOOGLE_API_KEY:-}
-
-      # LLM Configuration
       - ACTIVE_LLM=${ACTIVE_LLM:-Ollama}
       - LLM_MODEL=${LLM_MODEL:-llama3:latest}
-
-    # Network mode options:
-    # Option 1: Use host network (allows access to localhost LLMs on host)
-    # network_mode: host
-
-    # Option 2: Use bridge network with extra_hosts (Docker Desktop)
     extra_hosts:
       - "host.docker.internal:host-gateway"
-
-    # Restart policy
     restart: unless-stopped
-
-    # Health check
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/"]
       interval: 30s
@@ -50,8 +31,6 @@ services:
       retries: 3
       start_period: 40s
 
-  # Optional: Include Ollama as a service
-  # Uncomment to run Ollama in Docker
   # ollama:
   #   image: ollama/ollama:latest
   #   container_name: textloom-ollama
@@ -60,14 +39,6 @@ services:
   #   volumes:
   #     - ollama-data:/root/.ollama
   #   restart: unless-stopped
-  #   # For GPU support, uncomment:
-  #   # deploy:
-  #   #   resources:
-  #   #     reservations:
-  #   #       devices:
-  #   #         - driver: nvidia
-  #   #           count: all
-  #   #           capabilities: [gpu]
 
 volumes:
   textloom-workspace:
