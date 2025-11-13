@@ -3,15 +3,15 @@ version: '3.8'
 services:
   textloom:
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: docker/Dockerfile
     container_name: textloom
     ports:
       - "8000:8000"
       - "5173:5173"
     volumes:
       - textloom-workspace:/workspace
-      - ./src/core/settings.cfg:/app/src/core/settings.cfg
+      - ../src/core/settings.cfg:/app/src/core/settings.cfg
     environment:
       - PYTHONPATH=/app/src
       - PYTHONUNBUFFERED=1
