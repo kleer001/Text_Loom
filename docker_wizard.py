@@ -235,7 +235,7 @@ def configure_environment(detected: List[str]) -> Dict[str, str]:
 def enable_ollama_service():
     styled_print("Enabling Ollama service...", Style.INFO, "ℹ ")
 
-    with open("docker-compose.yml", "r") as f:
+    with open("docker/docker-compose.yml", "r") as f:
         content = f.read()
 
     replacements = [
@@ -253,7 +253,7 @@ def enable_ollama_service():
     for old, new in replacements:
         content = content.replace(old, new)
 
-    with open("docker-compose.yml", "w") as f:
+    with open("docker/docker-compose.yml", "w") as f:
         f.write(content)
 
     styled_print("docker-compose.yml updated", Style.SUCCESS, "✓ ")
@@ -264,7 +264,7 @@ def launch_containers(use_ollama: bool):
     styled_print("Building and starting containers...", Style.INFO, "ℹ ")
 
     result = subprocess.run(
-        ["docker-compose", "up", "-d", "--build"],
+        ["docker-compose", "-f", "docker/docker-compose.yml", "up", "-d", "--build"],
         capture_output=True,
         text=True
     )
@@ -288,9 +288,9 @@ def launch_containers(use_ollama: bool):
     print(f"{'='*SEPARATOR_WIDTH}\n")
 
     styled_print("Useful commands:", Style.INFO, "ℹ ")
-    print("  • docker-compose logs -f")
-    print("  • docker-compose down")
-    print("  • docker-compose restart")
+    print("  • docker-compose -f docker/docker-compose.yml logs -f")
+    print("  • docker-compose -f docker/docker-compose.yml down")
+    print("  • docker-compose -f docker/docker-compose.yml restart")
 
     return True
 
@@ -356,7 +356,7 @@ def main():
     if prompt_yes_no("\nLaunch Text Loom now?"):
         launch_containers(use_ollama)
     else:
-        styled_print("Start manually: docker-compose up -d", Style.INFO, "ℹ ")
+        styled_print("Start manually: docker-compose -f docker/docker-compose.yml up -d", Style.INFO, "ℹ ")
 
     styled_print("\nHelp: https://github.com/kleer001/Text_Loom", Style.INFO, "ℹ ")
 
