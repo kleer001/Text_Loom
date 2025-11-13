@@ -4,7 +4,7 @@ Quick test to verify NodeConnection session ID functionality.
 """
 
 import sys
-sys.path.insert(0, 'src')
+sys.path.insert(0, '..')
 
 from core.base_classes import NodeEnvironment
 from core.node_connection import NodeConnection

@@ -11,7 +11,7 @@ Tests real-world connection scenarios:
 """
 
 import sys
-sys.path.insert(0, './src')
+sys.path.insert(0, '..')
 
 from core.base_classes import Node, NodeType, NodeEnvironment
 

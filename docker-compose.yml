@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  textloom:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: textloom
+    ports:
+      - "8000:8000"
+      - "5173:5173"
+    volumes:
+      - textloom-workspace:/workspace
+      - ./src/core/settings.cfg:/app/src/core/settings.cfg
+    environment:
+      - PYTHONPATH=/app/src
+      - PYTHONUNBUFFERED=1
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - PERPLEXITY_API_KEY=${PERPLEXITY_API_KEY:-}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY:-}
+      - ACTIVE_LLM=${ACTIVE_LLM:-Ollama}
+      - LLM_MODEL=${LLM_MODEL:-llama3:latest}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # ollama:
+  #   image: ollama/ollama:latest
+  #   container_name: textloom-ollama
+  #   ports:
+  #     - "11434:11434"
+  #   volumes:
+  #     - ollama-data:/root/.ollama
+  #   restart: unless-stopped
+
+volumes:
+  textloom-workspace:
+    driver: local
+  # ollama-data:
+  #   driver: local
+
+networks:
+  default:
+    name: textloom-network
