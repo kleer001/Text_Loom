@@ -10,18 +10,27 @@ Build complex text workflows by connecting nodes—no code required. Query LLMs,
 
 ## Quick Start
 
-**Docker (recommended):**
+**Traditional:**
+```bash
+git clone https://github.com/kleer001/Text_Loom
+cd Text_Loom
+python3 -m venv .venv
+source .venv/bin/activate
+export PYTHONPATH=$PYTHONPATH:$(pwd)/src
+pip install -e .
+python3 src/TUI/tui_skeleton.py
+```
+
+**One-liner:**
+```bash
+curl -fsSL https://raw.githubusercontent.com/kleer001/Text_Loom/master/install.sh | bash && cd Text_Loom
+```
+
+**Docker:**
 ```bash
 git clone https://github.com/kleer001/Text_Loom
 cd Text_Loom
 python3 docker_wizard.py
-```
-
-**Native:**
-```bash
-curl -fsSL https://raw.githubusercontent.com/kleer001/Text_Loom/master/install.sh | bash
-cd Text_Loom
-python3 src/TUI/tui_skeleton.py
 ```
 
 ---
