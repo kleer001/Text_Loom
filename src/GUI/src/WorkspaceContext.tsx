@@ -86,9 +86,6 @@ export const WorkspaceProvider: React.FC<{ children: ReactNode }> = ({ children 
   }, [loadWorkspace]);
 
   const updateNode = useCallback(async (sessionId: string, request: NodeUpdateRequest): Promise<NodeResponse> => {
-    setLoading(true);
-    setError(null);
-
     try {
       const updatedNode = await apiClient.updateNode(sessionId, request);
       setNodes(prev => prev.map(n => n.session_id === sessionId ? updatedNode : n));
@@ -98,8 +95,6 @@ export const WorkspaceProvider: React.FC<{ children: ReactNode }> = ({ children 
       setError(message);
       console.error('Node update error for session_id:', sessionId, err);
       throw err;
-    } finally {
-      setLoading(false);
     }
   }, []);
 
