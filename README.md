@@ -1,73 +1,27 @@
-<!-- <p align="center">
-  <img src="images/TL_logo.png" alt="Leaderloop GIF">
-</p> -->
+# Text Loom
 
-# <p style="text-align: center;">  ***Text Loom:***:pencil::thread:  <p>
+**Node-based visual programming for LLM workflows and text processing**
 
+Text Loom is a terminal-based and web-based node editor that enables procedural text manipulation through visual programming. Build complex LLM workflows by connecting nodes that read, transform, query, and output text—without writing code.
 
-## :tired_face: Why? 
-I was fed up with copying and pasting between an LLM and a text editor when trying to work procedurally with a limited context window (this was early 2024).  
-3D VFX has Houdini, images have Nuke, games have Unreal's Blueprint, music has Reaktor, sound has PureData. ***Why is there no node based editor for text?!***
-> Well, actually there's Nodysseus (https://nodysseus.io/) and Nodes (https://nodes.io) , but they have different use cases.
+---
 
-## :speech_balloon: What? 
-Text Loom is a fun workspace for creating networks that manage queries and build on them.  
-All from the comfort of your terminal!
+## Features
 
-# :page_with_curl: How?
+- **Visual Node Editor** - Create text processing workflows with an intuitive node-based interface
+- **LLM Integration** - Native support for 10+ LLM platforms (Ollama, OpenAI, Claude, Gemini, local models)
+- **Iterative Processing** - Looper nodes enable batch processing and recursive workflows
+- **File Operations** - Read/write files, manage workspaces, and persist results
+- **Terminal UI** - Textual-based TUI with keyboard-driven navigation
+- **REST API** - FastAPI backend for programmatic access and web integration
+- **Docker Ready** - Containerized deployment with interactive setup wizard
+- **Session Management** - Save/load workspaces with full state preservation
 
-*Text flows from one node to the next.*  
-The Text Loom philosophy, it's backend, is all about **text**.  
-*Specifically* **lists of text.**  
+---
 
-## Nodes pass text to each other:  
-* One node creates text: **([Text](https://github.com/kleer001/Text_Loom/wiki/Text-Node))**
-* Some nodes read and write text files: **([FileIn](https://github.com/kleer001/Text_Loom/wiki/FileIn-Node), [FileOut](https://github.com/kleer001/Text_Loom/wiki/FileOut-Node))**
-* Some nodes create lists: **([Section](https://github.com/kleer001/Text_Loom/wiki/Section-Node), [Split](https://github.com/kleer001/Text_Loom/wiki/Split-Node),  [MakeList](https://github.com/kleer001/Text_Loom/wiki/MakeList-Node))**
-* One node combines lists: **([Merge](https://github.com/kleer001/Text_Loom/wiki/Merge-Node))**
-* One node talks to an LLM: **([Query](https://github.com/kleer001/Text_Loom/wiki/Query-Node))**
-* One node can contain other nodes and iterate over them in loops: **([Looper](https://github.com/kleer001/Text_Loom/wiki/Looper-Node))**
-* And one node does nothing at all except pass the text along: **([Null](https://github.com/kleer001/Text_Loom/wiki/Null-Node))**
+## Quick Start
 
-
-
-## :rocket: Start (automagically)
-
-<code>curl -fsSL https://raw.githubusercontent.com/kleer001/Text_Loom/master/install.sh | bash ; cd Text_Loom </code>
- 
-
-## :sparkles: Start (manual) 
-<details>
-* Make sure you have **git** installed and **python3** (version 3.8 or higher)
-* **Clone** the repository  
-<code>git clone https://github.com/kleer001/Text_Loom ; cd Text_Loom</code>
-* **Create** a local venv  
-<code>python3 -m venv .venv</code>
-* **Activate** it and set PYTHONPATH  
-<code>source .venv/bin/activate ; export PYTHONPATH=\$PYTHONPATH:$(pwd)/src</code>
-* **Install** in development mode  
-<code>pip install -e .</code>
-* **Run** the program  
-<code>python3 src/TUI/tui_skeleton.py</code>
-
-Note for Windows users:
-<code>Replace  **source .venv/bin/activate** with **.venv\Scripts\activate**
-and **export PYTHONPATH=\$PYTHONPATH:$(pwd)/src** with **set PYTHONPATH=%PYTHONPATH%;%cd%\src**</code>
-</details>
-
-## :whale: Start (Docker)
-
-Run Text Loom in Docker with all dependencies isolated and managed.
-
-<details>
-
-### Prerequisites
-* **Docker** and **Docker Compose** installed
-* (Optional) Local LLM service running on host (Ollama, LM Studio, etc.)
-
-### :sparkles: Easy Setup with Wizard (Recommended)
-
-The interactive setup wizard checks your system, detects running LLMs, and guides you through configuration:
+### Docker (Recommended)
 
 ```bash
 git clone https://github.com/kleer001/Text_Loom
@@ -75,136 +29,271 @@ cd Text_Loom
 python3 docker_wizard.py
 ```
 
-The wizard will:
-- ✓ Check Docker installation
-- ✓ Detect local LLM services (Ollama, LM Studio, etc.)
-- ✓ Help configure API keys for cloud LLMs
-- ✓ Set up environment variables
-- ✓ Optionally run Ollama in Docker
-- ✓ Launch containers automatically
+The wizard handles Docker setup, LLM detection, and configuration automatically.
 
-### Quick Start with Docker Compose
+### Native Installation
 
-**1. Clone the repository**
+```bash
+curl -fsSL https://raw.githubusercontent.com/kleer001/Text_Loom/master/install.sh | bash
+cd Text_Loom
+python3 src/TUI/tui_skeleton.py
+```
+
+---
+
+## Architecture
+
+Text Loom uses a **list-based text processing model** where data flows through connected nodes:
+
+```
+[Text] → [Split] → [Query LLM] → [Merge] → [FileOut]
+```
+
+### Core Node Types
+
+| Node | Purpose | Example Use Case |
+|------|---------|------------------|
+| **Text** | Create static text | Prompts, templates |
+| **FileIn/FileOut** | Read/write files | Load documents, save results |
+| **Query** | LLM interaction | Text generation, analysis |
+| **Split/Merge** | List manipulation | Batch processing, aggregation |
+| **Section** | Text extraction | Parse structured data |
+| **Looper** | Iteration container | Process lists, recursive operations |
+| **MakeList** | List construction | Combine multiple inputs |
+
+[Full node documentation →](https://github.com/kleer001/Text_Loom/wiki/Nodes,-nodes,-nodes)
+
+### Technology Stack
+
+- **Frontend**: React + TypeScript + XYFlow (web), Textual (TUI)
+- **Backend**: Python 3.8+ with FastAPI
+- **Storage**: JSON-based workspace persistence
+- **Deployment**: Docker + docker-compose
+
+---
+
+## Installation
+
+<details>
+<summary><b>🐳 Docker Installation</b> (recommended for cross-platform deployment)</summary>
+
+### Interactive Setup Wizard
+
 ```bash
 git clone https://github.com/kleer001/Text_Loom
 cd Text_Loom
+python3 docker_wizard.py
 ```
 
-**2. Configure environment (optional)**
-```bash
-cp .env.example .env
-# Edit .env and add your API keys for cloud LLMs
-```
+The wizard:
+- Checks prerequisites (Docker, Docker Compose)
+- Detects LLM platforms from `src/core/settings.cfg`
+- Guides environment configuration
+- Launches containers automatically
 
-**3. Start the services**
+### Manual Docker Setup
+
 ```bash
+git clone https://github.com/kleer001/Text_Loom
+cd Text_Loom
+cp .env.example .env        # Configure API keys
 docker-compose up -d
 ```
 
-**4. Access the application**
-* **API**: http://localhost:8000
-* **API Docs**: http://localhost:8000/api/v1/docs
-* **Frontend** (if running dev mode): http://localhost:5173
+**Access points:**
+- API: http://localhost:8000
+- API Docs: http://localhost:8000/api/v1/docs
+- Frontend: http://localhost:5173 (dev mode)
 
-**5. Stop the services**
-```bash
-docker-compose down
-```
+### Host LLM Configuration
 
-### Using Local LLMs on Host Machine
+For LLMs running on host machine, update `src/core/settings.cfg`:
 
-If you're running Ollama, LM Studio, or other LLMs on your host machine:
-
-**Option 1: Use host network (Linux only)**
-Uncomment `network_mode: host` in `docker-compose.yml`
-
-**Option 2: Use host.docker.internal (macOS/Windows)**
-In `src/core/settings.cfg`, change localhost URLs to:
 ```ini
 [Ollama]
 url = http://host.docker.internal:11434
 ```
 
-### Running Ollama in Docker
+Linux users can use `network_mode: host` in `docker-compose.yml` instead.
 
-Uncomment the `ollama` service in `docker-compose.yml`, then:
+### Ollama in Docker
+
+Uncomment the `ollama` service in `docker-compose.yml`:
 
 ```bash
 docker-compose up -d
 docker exec -it textloom-ollama ollama pull llama3
 ```
 
-Update `src/core/settings.cfg`:
-```ini
-[Ollama]
-url = http://ollama:11434
-```
-
-### Building Custom Image
-
-```bash
-docker build -t textloom:latest .
-docker run -p 8000:8000 -v textloom-data:/workspace textloom:latest
-```
-
-### Running TUI Mode in Docker
-
-```bash
-docker run -it -v textloom-data:/workspace textloom:latest python3 TUI/tui_skeleton.py
-```
-
-### Persistent Data
-
-Your workspace files are stored in a Docker volume named `textloom-workspace`. To backup:
-
-```bash
-docker run --rm -v textloom-workspace:/data -v $(pwd):/backup alpine tar czf /backup/textloom-backup.tar.gz /data
-```
+Update settings to use `http://ollama:11434`.
 
 </details>
 
-
-## :package: Currently supported LLMS platforms 
 <details>
-  
-**in  src/core/settings.cfg**
+<summary><b>💻 Native Installation</b> (for local development)</summary>
 
-| LLM Platform | URL                                    | Endpoint                                     |
-|--------------|----------------------------------------|----------------------------------------------|
-| Ollama       | localhost:11434                        | /api/generate                                |
-| LM Studio    | localhost:1234                         | /v1/chat/completions                         |
-| GPT4All      | localhost:4891                         | /v1/completions                              |
-| LocalAI      | localhost:8080                         | /v1/chat/completions                         |
-| llama.cpp    | localhost:8080                         | /completion                                  |
-| oobabooga    | localhost:5000                         | /v1/chat/completions                         |
-| ChatGPT      | https://api.openai.com                 | /v1/chat/completions                         |
-| Perplexity   | https://api.perplexity.ai             | /v1/chat/completions                         |
-| Claude       | https://api.anthropic.com              | /v1/messages                                 |
-| Gemini       | https://generativelanguage.googleapis.com | /v1/models/gemini-1.5-pro:generateContent   |
+### Automated
 
-* Please suggest more free local LLMs if you like. And feel free to change your local settings.cfg to fit your own purposes. The structure should be self-evident from the examples in it.  
+```bash
+curl -fsSL https://raw.githubusercontent.com/kleer001/Text_Loom/master/install.sh | bash
+cd Text_Loom
+python3 src/TUI/tui_skeleton.py
+```
+
+### Manual
+
+**Prerequisites:** Python 3.8+, git
+
+```bash
+git clone https://github.com/kleer001/Text_Loom
+cd Text_Loom
+python3 -m venv .venv
+source .venv/bin/activate
+export PYTHONPATH=$PYTHONPATH:$(pwd)/src
+pip install -e .
+python3 src/TUI/tui_skeleton.py
+```
+
+**Windows:**
+```cmd
+.venv\Scripts\activate
+set PYTHONPATH=%PYTHONPATH%;%cd%\src
+```
+
 </details>
-
-## :walking: GUI WALK THROUGH 
-### :eyes: MAIN WINDOW 
-
-<img src="images/mainwin3_trim.gif" alt="Demo of MakeList functionality GIF">
-
-
-### Primary Workspace
-Each Primary window can be navigated to with the keycommand **CTRL+(n/a/g)** 
-- [**N**ode Network](#node-network) - Central workspace for creating and connecting nodes. Displays [node](https://github.com/kleer001/Text_Loom/wiki/Nodes,-nodes,-nodes) states, connections, and hierarchies using visual indicators.
-- [P**a**rameters](#parameters) - Center Top panel showing properties of selected nodes.
-- [**G**lobals](#globals) - Right Top panel. System-wide variables accessible across the network.
-
-### Execution and Output
-- **[Output Display](#output-display)** - Center bottom. Shows formatted results from node evaluations with clear item separation.
-- **[Status Window](#status-window)** - Right bottom. Real-time system message monitoring, capturing stdout and stderr streams.
-- **Help window** - Bottom. Shows the key commands available for the active window.
-- **Mode Line** - Gutter. Show the active window, current filename, last window switched to, and keypressed.
 
 ---
 
-# Please see the extensive [wiki](https://github.com/kleer001/Text_Loom/wiki) for more detailed information.
+## LLM Platform Support
 
+Text Loom integrates with local and cloud LLM providers through a unified configuration system.
+
+<details>
+<summary><b>View supported platforms</b></summary>
+
+Configure in `src/core/settings.cfg`:
+
+| Platform | Default URL | Type |
+|----------|-------------|------|
+| Ollama | `localhost:11434` | Local |
+| LM Studio | `localhost:1234` | Local |
+| GPT4All | `localhost:4891` | Local |
+| LocalAI | `localhost:8080` | Local |
+| llama.cpp | `localhost:8080` | Local |
+| oobabooga | `localhost:5000` | Local |
+| OpenAI | `api.openai.com` | Cloud |
+| Claude | `api.anthropic.com` | Cloud |
+| Gemini | `generativelanguage.googleapis.com` | Cloud |
+| Perplexity | `api.perplexity.ai` | Cloud |
+
+Add custom endpoints by extending the configuration file.
+
+</details>
+
+---
+
+## Usage
+
+### Terminal UI
+
+<img src="images/mainwin3_trim.gif" alt="Text Loom TUI Demo" width="800">
+
+**Keyboard Navigation:**
+- `Ctrl+N` - Node Network view
+- `Ctrl+A` - Parameters panel
+- `Ctrl+G` - Globals panel
+- `Tab` - Cycle through windows
+- `Enter` - Execute selected node
+
+### Primary Workspace Components
+
+| Component | Shortcut | Purpose |
+|-----------|----------|---------|
+| **Node Network** | `Ctrl+N` | Create and connect nodes |
+| **Parameters** | `Ctrl+A` | Configure selected node properties |
+| **Globals** | `Ctrl+G` | Manage workspace variables |
+| **Output Display** | - | View node execution results |
+| **Status Window** | - | Monitor system messages and errors |
+
+### API Access
+
+Start the API server:
+
+```bash
+uvicorn api.main:app --reload --port 8000
+```
+
+Example API call:
+
+```python
+import requests
+
+response = requests.get("http://localhost:8000/api/v1/workspace")
+nodes = response.json()["nodes"]
+```
+
+Full API documentation available at `/api/v1/docs` when server is running.
+
+---
+
+## Documentation
+
+- **[Wiki](https://github.com/kleer001/Text_Loom/wiki)** - Comprehensive documentation
+- **[Node Reference](https://github.com/kleer001/Text_Loom/wiki/Nodes,-nodes,-nodes)** - Detailed node documentation
+- **[API Docs](http://localhost:8000/api/v1/docs)** - Interactive API documentation (when running)
+
+---
+
+## Development
+
+### Running Tests
+
+```bash
+pytest
+```
+
+### Project Structure
+
+```
+Text_Loom/
+├── src/
+│   ├── TUI/              # Textual terminal interface
+│   ├── GUI/              # React web frontend
+│   ├── api/              # FastAPI backend
+│   ├── core/             # Node engine and logic
+│   └── tests/            # Test suite
+├── Dockerfile
+├── docker-compose.yml
+└── docker_wizard.py      # Interactive Docker setup
+```
+
+---
+
+## Contributing
+
+Contributions welcome! Please:
+1. Check existing issues or open a new one
+2. Fork the repository
+3. Create a feature branch
+4. Submit a pull request
+
+Suggest additional LLM platforms by opening an issue with endpoint details.
+
+---
+
+## License
+
+MIT License - see [LICENSE](LICENSE) for details
+
+---
+
+## Related Projects
+
+- [Nodysseus](https://nodysseus.io/) - Story-focused node editor
+- [Nodes.io](https://nodes.io) - Web-based node programming
+
+---
+
+**Why Text Loom?**
+
+Node-based editors exist for 3D (Houdini), images (Nuke), games (Unreal Blueprint), music (Reaktor), and audio (PureData). Text Loom brings visual programming to text processing and LLM workflows, enabling procedural approaches to prompt engineering and text manipulation.
