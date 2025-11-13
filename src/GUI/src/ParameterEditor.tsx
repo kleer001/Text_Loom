@@ -29,6 +29,11 @@ interface ParameterEditorProps {
 const isPathParameter = (paramName: string): 'file' | 'folder' | null => {
   const lowerName = paramName.toLowerCase();
 
+  // Exclude json_path (it's a JSONPath query, not a filesystem path)
+  if (lowerName === 'json_path') {
+    return null;
+  }
+
   // Check for folder-related parameters
   if (lowerName.includes('folder') || lowerName === 'folder_path') {
     return 'folder';
