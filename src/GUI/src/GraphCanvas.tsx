@@ -237,6 +237,9 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onSelectionChange }) =
         return [...filtered, newEdge];
       });
 
+      // Capture selection before workspace reload to preserve it
+      captureSelection(nodes);
+
       // 6. Refresh workspace to sync node states
       await loadWorkspace();
 
@@ -244,7 +247,7 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onSelectionChange }) =
       console.error('Failed to create connection:', error);
       // TODO: Show error notification to user
     }
-  }, [nodes, setEdges, loadWorkspace]);
+  }, [nodes, setEdges, loadWorkspace, captureSelection]);
 
   // Handle deleting connections (Phase 3.4)
   const onEdgesDelete = useCallback(async (edgesToDelete: Edge[]) => {
@@ -263,10 +266,13 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onSelectionChange }) =
       prevEdges.filter(e => !edgesToDelete.includes(e))
     );
 
+    // Capture selection before workspace reload to preserve it
+    captureSelection(nodes);
+
     // Refresh workspace to sync node states
     await loadWorkspace();
 
-  }, [setEdges, loadWorkspace]);
+  }, [setEdges, loadWorkspace, captureSelection, nodes]);
 
   // Validate connections before allowing them (Phase 3.4)
   const isValidConnection = useCallback((connection: Edge | Connection) => {
