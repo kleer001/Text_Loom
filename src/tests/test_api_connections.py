@@ -10,7 +10,7 @@ Tests connections through the API layer to ensure:
 """
 
 import sys
-sys.path.insert(0, './src')
+sys.path.insert(0, '..')
 
 from core.base_classes import Node, NodeType, NodeEnvironment
 from api.models import (
