@@ -50,9 +50,100 @@ The Text Loom philosophy, it's backend, is all about **text**.
 * **Run** the program  
 <code>python3 src/TUI/tui_skeleton.py</code>
 
-Note for Windows users:  
-<code>Replace  **source .venv/bin/activate** with **.venv\Scripts\activate**  
+Note for Windows users:
+<code>Replace  **source .venv/bin/activate** with **.venv\Scripts\activate**
 and **export PYTHONPATH=\$PYTHONPATH:$(pwd)/src** with **set PYTHONPATH=%PYTHONPATH%;%cd%\src**</code>
+</details>
+
+## :whale: Start (Docker)
+
+Run Text Loom in Docker with all dependencies isolated and managed.
+
+<details>
+
+### Prerequisites
+* **Docker** and **Docker Compose** installed
+* (Optional) Local LLM service running on host (Ollama, LM Studio, etc.)
+
+### Quick Start with Docker Compose
+
+**1. Clone the repository**
+```bash
+git clone https://github.com/kleer001/Text_Loom
+cd Text_Loom
+```
+
+**2. Configure environment (optional)**
+```bash
+cp .env.example .env
+# Edit .env and add your API keys for cloud LLMs
+```
+
+**3. Start the services**
+```bash
+docker-compose up -d
+```
+
+**4. Access the application**
+* **API**: http://localhost:8000
+* **API Docs**: http://localhost:8000/api/v1/docs
+* **Frontend** (if running dev mode): http://localhost:5173
+
+**5. Stop the services**
+```bash
+docker-compose down
+```
+
+### Using Local LLMs on Host Machine
+
+If you're running Ollama, LM Studio, or other LLMs on your host machine:
+
+**Option 1: Use host network (Linux only)**
+Uncomment `network_mode: host` in `docker-compose.yml`
+
+**Option 2: Use host.docker.internal (macOS/Windows)**
+In `src/core/settings.cfg`, change localhost URLs to:
+```ini
+[Ollama]
+url = http://host.docker.internal:11434
+```
+
+### Running Ollama in Docker
+
+Uncomment the `ollama` service in `docker-compose.yml`, then:
+
+```bash
+docker-compose up -d
+docker exec -it textloom-ollama ollama pull llama3
+```
+
+Update `src/core/settings.cfg`:
+```ini
+[Ollama]
+url = http://ollama:11434
+```
+
+### Building Custom Image
+
+```bash
+docker build -t textloom:latest .
+docker run -p 8000:8000 -v textloom-data:/workspace textloom:latest
+```
+
+### Running TUI Mode in Docker
+
+```bash
+docker run -it -v textloom-data:/workspace textloom:latest python3 TUI/tui_skeleton.py
+```
+
+### Persistent Data
+
+Your workspace files are stored in a Docker volume named `textloom-workspace`. To backup:
+
+```bash
+docker run --rm -v textloom-workspace:/data -v $(pwd):/backup alpine tar czf /backup/textloom-backup.tar.gz /data
+```
+
 </details>
 
 
