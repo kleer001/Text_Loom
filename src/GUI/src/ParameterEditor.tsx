@@ -1,6 +1,6 @@
 // Parameter Editor Component - Type-specific parameter editing widgets
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Box,
   TextField,
@@ -11,7 +11,11 @@ import {
   Select,
   MenuItem,
   FormControl,
+  IconButton,
+  Tooltip,
 } from '@mui/material';
+import FolderOpenIcon from '@mui/icons-material/FolderOpen';
+import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
 import type { ParameterInfo } from './types';
 
 interface ParameterEditorProps {
@@ -20,6 +24,23 @@ interface ParameterEditorProps {
   onChange: (name: string, value: string | number | boolean | string[]) => void;
   debounceMs?: number;
 }
+
+// Helper function to detect if a parameter represents a file/folder path
+const isPathParameter = (paramName: string): 'file' | 'folder' | null => {
+  const lowerName = paramName.toLowerCase();
+
+  // Check for folder-related parameters
+  if (lowerName.includes('folder') || lowerName === 'folder_path') {
+    return 'folder';
+  }
+
+  // Check for file-related parameters
+  if (lowerName.includes('file') || lowerName.includes('path')) {
+    return 'file';
+  }
+
+  return null;
+};
 
 export const ParameterEditor: React.FC<ParameterEditorProps> = ({
   name,
@@ -30,6 +51,7 @@ export const ParameterEditor: React.FC<ParameterEditorProps> = ({
   const [localValue, setLocalValue] = useState<string | number | boolean | string[]>(parameter.value);
   const [error, setError] = useState<string>('');
   const [hasGlobalRef, setHasGlobalRef] = useState<boolean>(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Update local value when parameter changes externally
   useEffect(() => {
@@ -102,29 +124,80 @@ export const ParameterEditor: React.FC<ParameterEditorProps> = ({
     setError(validationError);
   };
 
+  // Handle file browser button click
+  const handleBrowseClick = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
+  // Handle file selection from browser
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (files && files.length > 0) {
+      // Get the path - in web browsers, we get the file name
+      // For Electron apps, we could get the full path
+      const file = files[0];
+
+      // @ts-ignore - webkitRelativePath is available when directory selection is used
+      const path = file.webkitRelativePath || file.name;
+
+      handleChange(path);
+
+      // Reset the input so the same file can be selected again
+      event.target.value = '';
+    }
+  };
+
   // Render different widgets based on parameter type
   const renderWidget = () => {
     const isReadOnly = parameter.read_only;
 
     switch (parameter.type) {
-      case 'STRING':
+      case 'STRING': {
+        const pathType = isPathParameter(name);
+        const showBrowser = pathType !== null && !isReadOnly;
+
         return (
-          <TextField
-            fullWidth
-            size="small"
-            value={localValue}
-            onChange={(e) => handleChange(e.target.value)}
-            disabled={isReadOnly}
-            placeholder={String(parameter.default)}
-            error={!!error}
-            helperText={error || (hasGlobalRef ? 'Contains global variable reference' : '')}
-            sx={{
-              '& .MuiInputBase-input': {
-                fontFamily: hasGlobalRef ? 'monospace' : 'inherit',
-              },
-            }}
-          />
+          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
+            <TextField
+              fullWidth
+              size="small"
+              value={localValue}
+              onChange={(e) => handleChange(e.target.value)}
+              disabled={isReadOnly}
+              placeholder={String(parameter.default)}
+              error={!!error}
+              helperText={error || (hasGlobalRef ? 'Contains global variable reference' : '')}
+              sx={{
+                '& .MuiInputBase-input': {
+                  fontFamily: hasGlobalRef ? 'monospace' : 'inherit',
+                },
+              }}
+            />
+            {showBrowser && (
+              <>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  style={{ display: 'none' }}
+                  onChange={handleFileSelect}
+                  {...(pathType === 'folder' ? { webkitdirectory: '', directory: '' } : {})}
+                />
+                <Tooltip title={pathType === 'folder' ? 'Browse for folder' : 'Browse for file'}>
+                  <IconButton
+                    size="small"
+                    onClick={handleBrowseClick}
+                    sx={{ mt: 0.5 }}
+                  >
+                    {pathType === 'folder' ? <FolderOpenIcon /> : <InsertDriveFileIcon />}
+                  </IconButton>
+                </Tooltip>
+              </>
+            )}
+          </Box>
         );
+      }
 
       case 'INT':
       case 'FLOAT':
