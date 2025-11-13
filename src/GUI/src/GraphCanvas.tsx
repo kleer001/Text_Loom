@@ -1,6 +1,6 @@
 // Graph Canvas - React Flow visualization of workspace
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState, useRef } from 'react';
 import {
   ReactFlow,
   Background,
@@ -52,6 +52,9 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onSelectionChange }) =
 
   // Industry standard: Store selection separately to persist across updates
   const { captureSelection, restoreSelection } = useSelectionPersistence();
+
+  // Track previous node selection to preserve it when edges are selected
+  const previousNodeSelectionRef = useRef<string[]>([]);
 
   const shouldPreventDeselection = useCallback((change: NodeChange<Node>): boolean => {
     if (change.type !== 'select' || change.selected) return false;
@@ -115,12 +118,30 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onSelectionChange }) =
 
   const handleSelectionChange = useCallback(
     (params: { nodes: Node[]; edges: Edge[] }) => {
-      setSelectedNodes(params.nodes);
-      onSelectionChange?.(params.nodes);
+      let nodesToSelect = params.nodes;
+
+      // Preserve node selection when only edges are being selected
+      // This prevents edges from deselecting nodes (better UX for this tool)
+      if (params.nodes.length === 0 && params.edges.length > 0 && previousNodeSelectionRef.current.length > 0) {
+        // Restore previous node selection
+        nodesToSelect = nodes.filter(n => previousNodeSelectionRef.current.includes(n.id));
+
+        // Update node selection state in React Flow
+        setNodes(prevNodes => prevNodes.map(n => ({
+          ...n,
+          selected: previousNodeSelectionRef.current.includes(n.id)
+        })));
+      } else if (params.nodes.length > 0) {
+        // Update tracking when nodes are actually selected
+        previousNodeSelectionRef.current = params.nodes.map(n => n.id);
+      }
+
+      setSelectedNodes(nodesToSelect);
+      onSelectionChange?.(nodesToSelect);
       // Capture selection whenever it changes to persist across updates
-      captureSelection(params.nodes);
+      captureSelection(nodesToSelect);
     },
-    [onSelectionChange, captureSelection]
+    [onSelectionChange, captureSelection, nodes, setNodes]
   );
 
   const onNodeDragStart = useCallback(
