@@ -153,6 +153,24 @@ class ApiClient {
       method: 'DELETE',
     });
   }
+
+  // Workspace file operations
+  async exportWorkspace(): Promise<Record<string, any>> {
+    return this.fetchJson<Record<string, any>>('/workspace/export');
+  }
+
+  async importWorkspace(flowstateData: Record<string, any>): Promise<{ success: boolean; message: string }> {
+    return this.fetchJson<{ success: boolean; message: string }>('/workspace/import', {
+      method: 'POST',
+      body: JSON.stringify(flowstateData),
+    });
+  }
+
+  async clearWorkspace(): Promise<{ success: boolean; message: string }> {
+    return this.fetchJson<{ success: boolean; message: string }>('/workspace/clear', {
+      method: 'POST',
+    });
+  }
 }
 
 export const apiClient = new ApiClient();

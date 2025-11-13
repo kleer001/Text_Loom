@@ -3,12 +3,21 @@ TextLoom API - Workspace Endpoints
 
 Handles workspace-related API operations:
 - Get complete workspace state (nodes, connections, globals)
+- Export workspace to flowstate format
+- Import workspace from flowstate format
+- Clear workspace
 """
 
-from fastapi import APIRouter, HTTPException
-from api.models import WorkspaceState, NodeResponse, ConnectionResponse, node_to_response, connection_to_response
+from fastapi import APIRouter, HTTPException, Body
+from fastapi.responses import JSONResponse
+from api.models import WorkspaceState, NodeResponse, ConnectionResponse, SuccessResponse, node_to_response, connection_to_response
 from core.base_classes import NodeEnvironment
 from core.global_store import GlobalStore
+from core.flowstate_manager import save_flowstate, load_flowstate
+from typing import Dict, Any
+import tempfile
+import json
+import os
 
 router = APIRouter()
 
@@ -141,5 +150,170 @@ def get_workspace() -> WorkspaceState:
             detail={
                 "error": "internal_error",
                 "message": f"Error retrieving workspace state: {str(e)}"
+            }
+        )
+
+
+@router.get(
+    "/workspace/export",
+    summary="Export workspace as flowstate JSON",
+    description="Exports the current workspace to Text Loom flowstate format (JSON). Used for file downloads.",
+    responses={
+        200: {
+            "description": "Workspace exported successfully",
+            "content": {"application/json": {}}
+        }
+    }
+)
+def export_workspace() -> JSONResponse:
+    """
+    Export the current workspace to flowstate JSON format.
+
+    Creates a temporary file, saves the workspace using flowstate_manager,
+    then returns the JSON content for download by the frontend.
+
+    Returns:
+        JSONResponse: The flowstate JSON data
+    """
+    try:
+        # Create a temporary file to save the flowstate
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.tl', delete=False) as tmp:
+            tmp_path = tmp.name
+
+        # Save current workspace to temp file
+        success = save_flowstate(tmp_path)
+        if not success:
+            raise Exception("Failed to save flowstate to temporary file")
+
+        # Read the JSON back
+        with open(tmp_path, 'r', encoding='utf-8') as f:
+            flowstate_data = json.load(f)
+
+        # Clean up temp file
+        os.unlink(tmp_path)
+
+        return JSONResponse(content=flowstate_data)
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "error": "export_failed",
+                "message": f"Error exporting workspace: {str(e)}"
+            }
+        )
+
+
+@router.post(
+    "/workspace/import",
+    response_model=SuccessResponse,
+    summary="Import workspace from flowstate JSON",
+    description="Imports a workspace from Text Loom flowstate format (JSON). Clears current workspace first.",
+    responses={
+        200: {
+            "description": "Workspace imported successfully",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "success": True,
+                        "message": "Workspace imported successfully"
+                    }
+                }
+            }
+        }
+    }
+)
+def import_workspace(flowstate_data: Dict[str, Any] = Body(...)) -> SuccessResponse:
+    """
+    Import a workspace from flowstate JSON format.
+
+    Accepts the flowstate JSON data, saves it to a temporary file,
+    then loads it using the flowstate_manager.
+
+    Args:
+        flowstate_data: The flowstate JSON data (entire file contents)
+
+    Returns:
+        SuccessResponse: Success confirmation
+    """
+    try:
+        # Create a temporary file with the flowstate data
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.tl', delete=False) as tmp:
+            json.dump(flowstate_data, tmp, indent=2)
+            tmp_path = tmp.name
+
+        # Load the flowstate from temp file
+        success = load_flowstate(tmp_path)
+
+        # Clean up temp file
+        os.unlink(tmp_path)
+
+        if not success:
+            raise Exception("Failed to load flowstate from data")
+
+        return SuccessResponse(
+            success=True,
+            message="Workspace imported successfully"
+        )
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "error": "import_failed",
+                "message": f"Error importing workspace: {str(e)}"
+            }
+        )
+
+
+@router.post(
+    "/workspace/clear",
+    response_model=SuccessResponse,
+    summary="Clear the entire workspace",
+    description="Deletes all nodes, connections, and global variables. Used for 'New Workspace'.",
+    responses={
+        200: {
+            "description": "Workspace cleared successfully",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "success": True,
+                        "message": "Workspace cleared successfully"
+                    }
+                }
+            }
+        }
+    }
+)
+def clear_workspace() -> SuccessResponse:
+    """
+    Clear the entire workspace.
+
+    Removes all nodes, connections, and global variables.
+    This is used when creating a new workspace.
+
+    Returns:
+        SuccessResponse: Success confirmation
+    """
+    try:
+        # Clear all nodes
+        NodeEnvironment.nodes.clear()
+
+        # Clear global variables
+        global_store = GlobalStore()
+        for key in list(global_store.list().keys()):
+            global_store.delete(key)
+
+        return SuccessResponse(
+            success=True,
+            message="Workspace cleared successfully"
+        )
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "error": "clear_failed",
+                "message": f"Error clearing workspace: {str(e)}"
             }
         )
