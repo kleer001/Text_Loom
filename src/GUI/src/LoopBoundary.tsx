@@ -45,6 +45,7 @@ interface LoopBoundaryProps {
 const DEFAULT_NODE_WIDTH = 180;
 const DEFAULT_NODE_HEIGHT = 80;
 const DEFAULT_PADDING = 30;
+const DEFAULT_CORNER_RADIUS = 20;
 
 function getNodeDimensions(node: Node): { width: number; height: number } {
   return {
@@ -88,7 +89,7 @@ function expandHullWithPadding(hull: Point[], centroid: Point, padding: number):
   });
 }
 
-function buildSvgPath(points: Point[], cornerRadius: number = 20): string {
+function buildSvgPath(points: Point[], cornerRadius: number = DEFAULT_CORNER_RADIUS): string {
   if (points.length < 3) {
     return points.map((point, i) => `${i === 0 ? 'M' : 'L'} ${point.x} ${point.y}`).join(' ') + ' Z';
   }
