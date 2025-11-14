@@ -37,7 +37,6 @@ export const NodeDetailsPanel: React.FC<NodeDetailsPanelProps> = ({ node }) => {
     setNameError('');
   }, [node?.session_id]);
 
-  // Use ref to avoid recreating handleCook on every render
   const nodeRef = useRef<NodeResponse | null>(null);
   const isExecutingRef = useRef(false);
 

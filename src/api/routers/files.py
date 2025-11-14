@@ -1,10 +1,3 @@
-"""
-Files Router - File system browsing endpoints
-
-Provides API endpoints for browsing the local filesystem.
-Security: Only allows browsing under the user's home directory.
-"""
-
 from fastapi import APIRouter, HTTPException
 from pathlib import Path
 from typing import List
@@ -14,7 +7,6 @@ router = APIRouter()
 
 
 class FileItem(BaseModel):
-    """Represents a file or directory in the filesystem"""
     id: str
     name: str
     path: str
@@ -23,108 +15,82 @@ class FileItem(BaseModel):
 
 
 class BrowseResponse(BaseModel):
-    """Response for file browsing requests"""
     current_path: str
     parent_path: str | None
     items: List[FileItem]
 
 
+def validate_path_security(target: Path, home: Path) -> None:
+    try:
+        target.relative_to(home)
+    except ValueError:
+        raise HTTPException(403, "Access denied: Cannot browse outside home directory")
+
+
+def validate_symlink(item: Path, home: Path) -> bool:
+    if not item.is_symlink():
+        return True
+
+    try:
+        resolved = item.resolve()
+        resolved.relative_to(home)
+        return True
+    except (ValueError, OSError):
+        return False
+
+
+def get_file_item(item: Path) -> FileItem | None:
+    try:
+        if item.name.startswith('.'):
+            return None
+
+        is_dir = item.is_dir()
+        size = None if is_dir else item.stat().st_size
+
+        return FileItem(
+            id=str(item),
+            name=item.name,
+            path=str(item),
+            is_dir=is_dir,
+            size=size
+        )
+    except (FileNotFoundError, PermissionError, OSError):
+        return None
+
+
+def list_directory_items(target: Path, home: Path) -> List[FileItem]:
+    try:
+        items = []
+        for item in target.iterdir():
+            if not validate_symlink(item, home):
+                continue
+
+            file_item = get_file_item(item)
+            if file_item:
+                items.append(file_item)
+
+        items.sort(key=lambda x: (not x.is_dir, x.name.lower()))
+        return items
+    except PermissionError:
+        raise HTTPException(403, f"Permission denied: Cannot read directory")
+
+
 @router.get("/files/browse", response_model=BrowseResponse)
 def browse_directory(path: str = "~") -> BrowseResponse:
-    """
-    Browse files and directories at the specified path.
-
-    Security: Only allows browsing within the user's home directory.
-
-    Args:
-        path: Directory path to browse (defaults to home directory)
-
-    Returns:
-        BrowseResponse containing current path, parent path, and items
-
-    Raises:
-        HTTPException: If path is outside home directory or doesn't exist
-    """
     try:
-        # Expand user home and resolve to absolute path
         target_path = Path(path).expanduser().resolve()
         home_path = Path.home().resolve()
 
-        # Security check: ensure we're within home directory
-        try:
-            target_path.relative_to(home_path)
-        except ValueError:
-            raise HTTPException(
-                status_code=403,
-                detail=f"Access denied: Cannot browse outside home directory"
-            )
+        validate_path_security(target_path, home_path)
 
-        # Check if path exists and is a directory
         if not target_path.exists():
-            raise HTTPException(
-                status_code=404,
-                detail=f"Path not found: {path}"
-            )
+            raise HTTPException(404, f"Path not found: {path}")
 
         if not target_path.is_dir():
-            raise HTTPException(
-                status_code=400,
-                detail=f"Path is not a directory: {path}"
-            )
+            raise HTTPException(400, f"Path is not a directory: {path}")
 
-        # Get parent path (None if at home directory)
         parent_path = str(target_path.parent) if target_path != home_path else None
-
-        # List directory contents
-        items = []
-        try:
-            # Get items first, then sort safely
-            dir_items = list(target_path.iterdir())
-
-            # Filter and process items
-            for item in dir_items:
-                try:
-                    # Skip hidden files/directories (starting with .)
-                    if item.name.startswith('.'):
-                        continue
-
-                    # Follow symlinks but check they're within home
-                    if item.is_symlink():
-                        try:
-                            resolved = item.resolve()
-                            # Security: ensure symlink target is within home directory
-                            resolved.relative_to(home_path)
-                        except (ValueError, OSError):
-                            # Broken symlink or points outside home - skip
-                            continue
-
-                    # Get file info (may fail on race conditions)
-                    try:
-                        is_dir = item.is_dir()
-                        size = None if is_dir else item.stat().st_size
-                    except (FileNotFoundError, OSError):
-                        # File disappeared or inaccessible - skip
-                        continue
-
-                    items.append(FileItem(
-                        id=str(item),
-                        name=item.name,
-                        path=str(item),
-                        is_dir=is_dir,
-                        size=size
-                    ))
-                except (PermissionError, OSError):
-                    # Skip items we can't access
-                    continue
-
-            # Sort after filtering (safer than sorting during iteration)
-            items.sort(key=lambda x: (not x.is_dir, x.name.lower()))
-
-        except PermissionError:
-            raise HTTPException(
-                status_code=403,
-                detail=f"Permission denied: Cannot read directory {path}"
-            )
+        items = list_directory_items(target_path, home_path)
 
         return BrowseResponse(
             current_path=str(target_path),
@@ -135,7 +101,4 @@ def browse_directory(path: str = "~") -> BrowseResponse:
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Error browsing directory: {str(e)}"
-        )
+        raise HTTPException(500, f"Error browsing directory: {str(e)}")

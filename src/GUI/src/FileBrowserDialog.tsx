@@ -1,5 +1,3 @@
-// File Browser Dialog - Browse and select files from filesystem
-
 import React, { useState, useEffect } from 'react';
 import {
   Dialog,
@@ -39,6 +37,14 @@ interface FileItem {
   size: number | null;
 }
 
+const formatFileSize = (bytes: number | null): string => {
+  if (!bytes) return 'File';
+  return `${(bytes / 1024).toFixed(1)} KB`;
+};
+
+const getItemSecondary = (item: FileItem): string =>
+  item.is_dir ? 'Folder' : formatFileSize(item.size);
+
 export const FileBrowserDialog: React.FC<FileBrowserDialogProps> = ({
   open,
   onClose,
@@ -52,7 +58,6 @@ export const FileBrowserDialog: React.FC<FileBrowserDialogProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Reset to initial path when dialog opens
   useEffect(() => {
     if (open) {
       setCurrentPath(initialPath);
@@ -61,46 +66,40 @@ export const FileBrowserDialog: React.FC<FileBrowserDialogProps> = ({
   }, [open, initialPath]);
 
   useEffect(() => {
-    if (open) {
-      loadDirectory(currentPath);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    if (!open) return;
+
+    const loadDirectory = async () => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const response = await apiClient.browseFiles(currentPath);
+        setItems(response.items);
+        setParentPath(response.parent_path);
+        setCurrentPath(response.current_path);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load directory');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadDirectory();
   }, [open, currentPath]);
-
-  const loadDirectory = async (path: string) => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const response = await apiClient.browseFiles(path);
-      setItems(response.items);
-      setParentPath(response.parent_path);
-      setCurrentPath(response.current_path);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load directory');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleItemClick = (item: FileItem) => {
     if (item.is_dir) {
-      // Navigate into directory
       setCurrentPath(item.path);
-    } else {
-      // Select file
-      if (mode === 'file') {
-        onSelect(item.path);
-        onClose();
-      }
+      return;
+    }
+
+    if (mode === 'file') {
+      onSelect(item.path);
+      onClose();
     }
   };
 
-  const handleParentClick = () => {
-    if (parentPath) {
-      setCurrentPath(parentPath);
-    }
-  };
+  const handleParentClick = () => parentPath && setCurrentPath(parentPath);
 
   const handleSelectFolder = () => {
     if (mode === 'folder') {
@@ -109,30 +108,21 @@ export const FileBrowserDialog: React.FC<FileBrowserDialogProps> = ({
     }
   };
 
-  const getPathParts = () => {
-    // Handle both absolute paths (/home/user) and relative paths
-    const parts = currentPath.split('/').filter(Boolean);
-    return parts;
-  };
+  const pathParts = currentPath.split('/').filter(Boolean);
 
   const handleBreadcrumbClick = (index: number) => {
-    const parts = getPathParts();
-    // Reconstruct path with leading slash for absolute paths
-    const newPath = '/' + parts.slice(0, index + 1).join('/');
+    const newPath = '/' + pathParts.slice(0, index + 1).join('/');
     setCurrentPath(newPath);
   };
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-      <DialogTitle>
-        Select {mode === 'file' ? 'File' : 'Folder'}
-      </DialogTitle>
+      <DialogTitle>Select {mode === 'file' ? 'File' : 'Folder'}</DialogTitle>
 
       <DialogContent>
-        {/* Breadcrumb navigation */}
         <Box sx={{ mb: 2 }}>
           <Breadcrumbs>
-            {getPathParts().map((part, index) => (
+            {pathParts.map((part, index) => (
               <Link
                 key={index}
                 component="button"
@@ -146,34 +136,23 @@ export const FileBrowserDialog: React.FC<FileBrowserDialogProps> = ({
           </Breadcrumbs>
         </Box>
 
-        {/* Error display */}
-        {error && (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {error}
-          </Alert>
-        )}
+        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
-        {/* Loading indicator */}
         {loading && (
           <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
             <CircularProgress />
           </Box>
         )}
 
-        {/* File/folder list */}
         {!loading && (
           <List sx={{ maxHeight: 400, overflow: 'auto' }}>
-            {/* Parent directory option */}
             {parentPath && (
               <ListItemButton onClick={handleParentClick}>
-                <ListItemIcon>
-                  <ArrowUpwardIcon />
-                </ListItemIcon>
+                <ListItemIcon><ArrowUpwardIcon /></ListItemIcon>
                 <ListItemText primary=".." secondary="Parent directory" />
               </ListItemButton>
             )}
 
-            {/* Items */}
             {items.length === 0 && !error && (
               <Typography variant="body2" color="text.secondary" sx={{ p: 2 }}>
                 No items in this directory
@@ -181,24 +160,13 @@ export const FileBrowserDialog: React.FC<FileBrowserDialogProps> = ({
             )}
 
             {items.map((item) => (
-              <ListItemButton
-                key={item.id}
-                onClick={() => handleItemClick(item)}
-                // In file mode: folders are clickable (for navigation), files are selectable
-                // In folder mode: everything is clickable
-              >
+              <ListItemButton key={item.id} onClick={() => handleItemClick(item)}>
                 <ListItemIcon>
                   {item.is_dir ? <FolderIcon /> : <InsertDriveFileIcon />}
                 </ListItemIcon>
                 <ListItemText
                   primary={item.name}
-                  secondary={
-                    item.is_dir
-                      ? 'Folder'
-                      : item.size
-                      ? `${(item.size / 1024).toFixed(1)} KB`
-                      : 'File'
-                  }
+                  secondary={getItemSecondary(item)}
                 />
               </ListItemButton>
             ))}

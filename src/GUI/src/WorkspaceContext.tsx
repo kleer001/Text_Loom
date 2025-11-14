@@ -242,8 +242,6 @@ export const WorkspaceProvider: React.FC<{ children: ReactNode }> = ({ children 
   }, []);
 
   const setOnChange = useCallback((callback: (() => void) | null) => {
-    // When setting a function as state, we need to wrap it in an arrow function
-    // AND ensure the wrapper actually calls the callback when invoked
     setOnChangeCallback(callback ? () => callback() : null);
   }, []);
 

@@ -107,13 +107,11 @@ export const ParameterEditor: React.FC<ParameterEditorProps> = ({
         return parsed as Record<string, string>;
       }
     } catch (e) {
-      // Not a dict, might be a selected value or invalid format
       return null;
     }
     return null;
   }, []);
 
-  // Validation helper
   const validateValue = useCallback((value: string | number | boolean | string[], type: string): string => {
     if (type === 'INT') {
       const num = Number(value);
@@ -129,23 +127,19 @@ export const ParameterEditor: React.FC<ParameterEditorProps> = ({
   const handleChange = (newValue: string | number | boolean | string[]) => {
     setLocalValue(newValue);
 
-    // Validate immediately for better UX
     const validationError = validateValue(newValue, parameter.type);
     setError(validationError);
   };
 
-  // Handle file browser button click
   const handleBrowseClick = (mode: 'file' | 'folder') => {
     setBrowserMode(mode);
     setBrowserOpen(true);
   };
 
-  // Handle file/folder selection from browser
   const handleFileSelect = (path: string) => {
     handleChange(path);
   };
 
-  // Render different widgets based on parameter type
   const renderWidget = () => {
     const isReadOnly = parameter.read_only;
 
@@ -184,7 +178,6 @@ export const ParameterEditor: React.FC<ParameterEditorProps> = ({
                 </Tooltip>
               )}
             </Box>
-            {/* Only mount dialog when needed */}
             {showBrowser && browserOpen && (
               <FileBrowserDialog
                 open={browserOpen}
