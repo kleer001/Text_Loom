@@ -1,6 +1,6 @@
 // Graph Canvas - React Flow visualization of workspace
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ReactFlow,
   Background,
@@ -48,6 +48,7 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
   const [_isDragging, setIsDragging] = useState(false);
   const [draggedNodeIds, setDraggedNodeIds] = useState<Set<string>>(new Set());
   const [looperSystems, setLooperSystems] = useState<Map<string, LooperSystem>>(new Map());
+  const selectedNodeIdsRef = useRef<Set<string>>(new Set());
 
   const shouldPreventDeselection = useCallback((change: NodeChange<Node>): boolean => {
     if (change.type !== 'select' || change.selected) return false;
@@ -72,7 +73,7 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
     const enrichedNodes = enrichNodesWithConnectionState(displayNodes, transformedConnections);
 
     // Preserve current selection state when recreating nodes
-    const currentlySelectedIds = new Set(nodes.filter(n => n.selected).map(n => n.id));
+    const currentlySelectedIds = selectedNodeIdsRef.current;
 
     const newNodes = enrichedNodes.map((node: NodeResponse) => {
       const nodeId = String(node.session_id);
@@ -96,7 +97,7 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
         onNodeFocus(newNode);
       }
     }
-  }, [workspaceNodes, connections, setNodes, newlyCreatedNodeId, onNodeFocus, nodes]);
+  }, [workspaceNodes, connections, setNodes, newlyCreatedNodeId, onNodeFocus]);
 
   useEffect(() => {
     const transformedConnections = transformConnectionNodeIds(connections, looperSystems);
@@ -111,6 +112,7 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
   const handleSelectionChange = useCallback(
     (params: { nodes: Node[]; edges: Edge[] }) => {
       setSelectedNodes(params.nodes);
+      selectedNodeIdsRef.current = new Set(params.nodes.map(n => n.id));
 
       // Update focused node when a node is selected
       if (params.nodes.length > 0 && onNodeFocus) {
@@ -180,6 +182,7 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
       const uniqueNodeIds = Array.from(new Set(nodeIds));
       await deleteNodes(uniqueNodeIds);
       setSelectedNodes([]);
+      selectedNodeIdsRef.current = new Set();
     } catch (error) {
       console.error('Failed to delete nodes:', error);
     }
