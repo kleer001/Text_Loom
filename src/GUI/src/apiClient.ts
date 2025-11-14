@@ -171,6 +171,21 @@ class ApiClient {
       method: 'POST',
     });
   }
+
+  // File browsing operations
+  async browseFiles(path: string = '~'): Promise<{
+    current_path: string;
+    parent_path: string | null;
+    items: Array<{
+      id: string;
+      name: string;
+      path: string;
+      is_dir: boolean;
+      size: number | null;
+    }>;
+  }> {
+    return this.fetchJson(`/files/browse?path=${encodeURIComponent(path)}`);
+  }
 }
 
 export const apiClient = new ApiClient();

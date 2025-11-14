@@ -10,7 +10,7 @@ Usage:
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from api.routers import nodes, workspace, connections
+from api.routers import nodes, workspace, connections, files
 from api.routers import globals as globals_router
 import logging
 
@@ -67,6 +67,12 @@ app.include_router(
     tags=["globals"]
 )
 
+app.include_router(
+    files.router,
+    prefix="/api/v1",
+    tags=["files"]
+)
+
 logging.basicConfig(
     level=logging.DEBUG,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
@@ -120,6 +126,9 @@ def api_info():
                 "get": "/api/v1/globals/{key}",
                 "set": "PUT /api/v1/globals/{key}",
                 "delete": "DELETE /api/v1/globals/{key}"
+            },
+            "files": {
+                "browse": "/api/v1/files/browse?path={path}"
             },
             "documentation": "/api/v1/docs"
         }
