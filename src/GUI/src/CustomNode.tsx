@@ -1,5 +1,3 @@
-// Custom Node Component - Displays node in React Flow graph
-
 import React from 'react';
 import { Handle, Position } from '@xyflow/react';
 import type { NodeResponse } from './types';
@@ -8,28 +6,25 @@ interface CustomNodeData {
   node: NodeResponse;
 }
 
+const MIN_HANDLE_SPACING = 12;
+const VERTICAL_PADDING = 20;
+
+const STATE_COLORS: Record<string, string> = {
+  unchanged: '#4caf50',
+  uncooked: '#ff9800',
+  cooking: '#2196f3',
+};
+
+function calculateMinHeight(inputCount: number, outputCount: number): number {
+  const handleCount = Math.max(inputCount, outputCount);
+  return handleCount > 0 ? (handleCount + 1) * MIN_HANDLE_SPACING + VERTICAL_PADDING : 0;
+}
+
 export const CustomNode: React.FC<{ data: CustomNodeData; selected?: boolean }> = ({ data, selected }) => {
   const { node } = data;
 
-  // State color mapping
-  const getStateColor = (state: string): string => {
-    switch (state) {
-      case 'unchanged': return '#4caf50';
-      case 'uncooked': return '#ff9800';
-      case 'cooking': return '#2196f3';
-      default: return '#757575';
-    }
-  };
-
-  // Calculate minimum height to maintain proper handle spacing
-  const MIN_HANDLE_SPACING = 12;
-  const BASE_PADDING = 20; // Padding for top and bottom
-  const maxHandles = Math.max(node.inputs.length, node.outputs.length);
-  const minHeightForHandles = maxHandles > 0
-    ? (maxHandles + 1) * MIN_HANDLE_SPACING + BASE_PADDING
-    : 0;
-
-  const stateColor = getStateColor(node.state);
+  const minHeight = calculateMinHeight(node.inputs.length, node.outputs.length);
+  const stateColor = STATE_COLORS[node.state] ?? '#757575';
   const borderColor = selected ? '#1976d2' : '#ccc';
 
   return (
@@ -40,13 +35,12 @@ export const CustomNode: React.FC<{ data: CustomNodeData; selected?: boolean }> 
         borderRadius: '8px',
         background: 'white',
         minWidth: '150px',
-        minHeight: minHeightForHandles > 0 ? `${minHeightForHandles}px` : undefined,
+        minHeight: minHeight || undefined,
         boxShadow: selected ? '0 4px 8px rgba(0,0,0,0.2)' : '0 2px 4px rgba(0,0,0,0.1)',
         display: 'flex',
         alignItems: 'center',
       }}
     >
-      {/* Input handles */}
       {node.inputs.map((input, idx) => (
         <Handle
           key={`input-${input.index}`}
@@ -63,9 +57,7 @@ export const CustomNode: React.FC<{ data: CustomNodeData; selected?: boolean }> 
         />
       ))}
 
-      {/* Node content */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-        {/* Top Row: Cook Circle | Node Glyph | Node Type */}
         <div
           style={{
             display: 'flex',
@@ -74,7 +66,6 @@ export const CustomNode: React.FC<{ data: CustomNodeData; selected?: boolean }> 
             gap: '8px',
           }}
         >
-          {/* Cooking color circle (left) */}
           <div
             style={{
               width: '12px',
@@ -85,7 +76,6 @@ export const CustomNode: React.FC<{ data: CustomNodeData; selected?: boolean }> 
             }}
           />
 
-          {/* Node glyph (middle) */}
           <div
             style={{
               fontSize: '18px',
@@ -97,7 +87,6 @@ export const CustomNode: React.FC<{ data: CustomNodeData; selected?: boolean }> 
             {node.glyph || '?'}
           </div>
 
-          {/* Node type (right) */}
           <div
             style={{
               fontSize: '11px',
@@ -110,7 +99,6 @@ export const CustomNode: React.FC<{ data: CustomNodeData; selected?: boolean }> 
           </div>
         </div>
 
-        {/* Bottom Row: Node Name (centered) */}
         <div
           style={{
             fontSize: '12px',
@@ -123,7 +111,6 @@ export const CustomNode: React.FC<{ data: CustomNodeData; selected?: boolean }> 
         </div>
       </div>
 
-      {/* Output handles */}
       {node.outputs.map((output, idx) => (
         <Handle
           key={`output-${output.index}`}

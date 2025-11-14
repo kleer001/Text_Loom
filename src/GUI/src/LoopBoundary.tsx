@@ -89,6 +89,23 @@ function expandHullWithPadding(hull: Point[], centroid: Point, padding: number):
   });
 }
 
+function vectorBetween(from: Point, to: Point): Point {
+  return { x: to.x - from.x, y: to.y - from.y };
+}
+
+function magnitude(vector: Point): number {
+  return Math.sqrt(vector.x * vector.x + vector.y * vector.y);
+}
+
+function moveTowards(origin: Point, direction: Point, distance: number): Point {
+  const length = magnitude(direction);
+  const scale = distance / length;
+  return {
+    x: origin.x + direction.x * scale,
+    y: origin.y + direction.y * scale,
+  };
+}
+
 function buildSvgPath(points: Point[], cornerRadius: number = DEFAULT_CORNER_RADIUS): string {
   if (points.length < 3) {
     return points.map((point, i) => `${i === 0 ? 'M' : 'L'} ${point.x} ${point.y}`).join(' ') + ' Z';
@@ -101,37 +118,19 @@ function buildSvgPath(points: Point[], cornerRadius: number = DEFAULT_CORNER_RAD
     const next = points[(i + 1) % points.length];
     const prev = points[(i - 1 + points.length) % points.length];
 
-    // Calculate vectors from current point to previous and next points
-    const toPrev = { x: prev.x - current.x, y: prev.y - current.y };
-    const toNext = { x: next.x - current.x, y: next.y - current.y };
+    const toPrev = vectorBetween(current, prev);
+    const toNext = vectorBetween(current, next);
 
-    // Calculate distances
-    const distToPrev = Math.sqrt(toPrev.x * toPrev.x + toPrev.y * toPrev.y);
-    const distToNext = Math.sqrt(toNext.x * toNext.x + toNext.y * toNext.y);
+    const edgeRadius = Math.min(
+      cornerRadius,
+      Math.min(magnitude(toPrev), magnitude(toNext)) / 2
+    );
 
-    // Limit corner radius to half of the shortest edge
-    const maxRadius = Math.min(distToPrev, distToNext) / 2;
-    const actualRadius = Math.min(cornerRadius, maxRadius);
+    const curveStart = moveTowards(current, toPrev, edgeRadius);
+    const curveEnd = moveTowards(current, toNext, edgeRadius);
 
-    // Calculate the points where the curve should start and end
-    const startPoint = {
-      x: current.x + (toPrev.x / distToPrev) * actualRadius,
-      y: current.y + (toPrev.y / distToPrev) * actualRadius,
-    };
-
-    const endPoint = {
-      x: current.x + (toNext.x / distToNext) * actualRadius,
-      y: current.y + (toNext.y / distToNext) * actualRadius,
-    };
-
-    if (i === 0) {
-      pathCommands.push(`M ${startPoint.x} ${startPoint.y}`);
-    } else {
-      pathCommands.push(`L ${startPoint.x} ${startPoint.y}`);
-    }
-
-    // Add quadratic bezier curve with control point at the corner
-    pathCommands.push(`Q ${current.x} ${current.y} ${endPoint.x} ${endPoint.y}`);
+    pathCommands.push(i === 0 ? `M ${curveStart.x} ${curveStart.y}` : `L ${curveStart.x} ${curveStart.y}`);
+    pathCommands.push(`Q ${current.x} ${current.y} ${curveEnd.x} ${curveEnd.y}`);
   }
 
   return pathCommands.join(' ') + ' Z';
