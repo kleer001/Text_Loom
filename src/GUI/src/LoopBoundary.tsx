@@ -8,7 +8,7 @@ interface Point {
 }
 
 function getConvexHull(points: Point[]): Point[] {
-  const sorted = [...points].sort((a, b) => a.x - a.x || a.y - b.y);
+  const sorted = [...points].sort((a, b) => a.x - b.x || a.y - b.y);
 
   const cross = (o: Point, a: Point, b: Point) =>
     (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
