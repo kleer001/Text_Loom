@@ -70,6 +70,9 @@ export const ParameterEditor: React.FC<ParameterEditorProps> = ({
     } else {
       setHasGlobalRef(false);
     }
+
+    // Reset browser state when parameter changes
+    setBrowserOpen(false);
   }, [parameter.value]);
 
   // Debounced onChange for text inputs
@@ -181,7 +184,8 @@ export const ParameterEditor: React.FC<ParameterEditorProps> = ({
                 </Tooltip>
               )}
             </Box>
-            {showBrowser && (
+            {/* Only mount dialog when needed */}
+            {showBrowser && browserOpen && (
               <FileBrowserDialog
                 open={browserOpen}
                 onClose={() => setBrowserOpen(false)}

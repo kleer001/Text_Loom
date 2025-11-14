@@ -78,14 +78,33 @@ def browse_directory(path: str = "~") -> BrowseResponse:
         # List directory contents
         items = []
         try:
-            for item in sorted(target_path.iterdir(), key=lambda x: (not x.is_dir(), x.name.lower())):
+            # Get items first, then sort safely
+            dir_items = list(target_path.iterdir())
+
+            # Filter and process items
+            for item in dir_items:
                 try:
                     # Skip hidden files/directories (starting with .)
                     if item.name.startswith('.'):
                         continue
 
-                    is_dir = item.is_dir()
-                    size = None if is_dir else item.stat().st_size
+                    # Follow symlinks but check they're within home
+                    if item.is_symlink():
+                        try:
+                            resolved = item.resolve()
+                            # Security: ensure symlink target is within home directory
+                            resolved.relative_to(home_path)
+                        except (ValueError, OSError):
+                            # Broken symlink or points outside home - skip
+                            continue
+
+                    # Get file info (may fail on race conditions)
+                    try:
+                        is_dir = item.is_dir()
+                        size = None if is_dir else item.stat().st_size
+                    except (FileNotFoundError, OSError):
+                        # File disappeared or inaccessible - skip
+                        continue
 
                     items.append(FileItem(
                         id=str(item),
@@ -97,6 +116,10 @@ def browse_directory(path: str = "~") -> BrowseResponse:
                 except (PermissionError, OSError):
                     # Skip items we can't access
                     continue
+
+            # Sort after filtering (safer than sorting during iteration)
+            items.sort(key=lambda x: (not x.is_dir, x.name.lower()))
+
         except PermissionError:
             raise HTTPException(
                 status_code=403,

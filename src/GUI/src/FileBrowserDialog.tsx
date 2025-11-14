@@ -52,10 +52,19 @@ export const FileBrowserDialog: React.FC<FileBrowserDialogProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Reset to initial path when dialog opens
+  useEffect(() => {
+    if (open) {
+      setCurrentPath(initialPath);
+      setError(null);
+    }
+  }, [open, initialPath]);
+
   useEffect(() => {
     if (open) {
       loadDirectory(currentPath);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, currentPath]);
 
   const loadDirectory = async (path: string) => {
@@ -101,11 +110,14 @@ export const FileBrowserDialog: React.FC<FileBrowserDialogProps> = ({
   };
 
   const getPathParts = () => {
-    return currentPath.split('/').filter(Boolean);
+    // Handle both absolute paths (/home/user) and relative paths
+    const parts = currentPath.split('/').filter(Boolean);
+    return parts;
   };
 
   const handleBreadcrumbClick = (index: number) => {
     const parts = getPathParts();
+    // Reconstruct path with leading slash for absolute paths
     const newPath = '/' + parts.slice(0, index + 1).join('/');
     setCurrentPath(newPath);
   };
@@ -172,7 +184,8 @@ export const FileBrowserDialog: React.FC<FileBrowserDialogProps> = ({
               <ListItemButton
                 key={item.id}
                 onClick={() => handleItemClick(item)}
-                disabled={mode === 'file' && item.is_dir ? false : false}
+                // In file mode: folders are clickable (for navigation), files are selectable
+                // In folder mode: everything is clickable
               >
                 <ListItemIcon>
                   {item.is_dir ? <FolderIcon /> : <InsertDriveFileIcon />}
