@@ -65,6 +65,8 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
     onNodesChangeInternal(filteredChanges);
   }, [onNodesChangeInternal, shouldPreventDeselection]);
 
+  // Combined effect to update both nodes and edges together
+  // This prevents a cascade of renders from looperSystems updates
   useEffect(() => {
     const { displayNodes, looperSystems: systems } = transformLooperNodes(workspaceNodes);
     setLooperSystems(systems);
@@ -90,6 +92,14 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
 
     setNodes(newNodes);
 
+    // Update edges with the same transformed connections
+    const flowEdges = connectionsToEdges(transformedConnections, {
+      type: 'smoothstep',
+      animated: false,
+      style: { stroke: '#888', strokeWidth: 2 },
+    });
+    setEdges(flowEdges);
+
     // Auto-focus newly created node
     if (newlyCreatedNodeId) {
       const newNode = enrichedNodes.find((n: NodeResponse) => String(n.session_id) === newlyCreatedNodeId);
@@ -97,17 +107,7 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
         onNodeFocus(newNode);
       }
     }
-  }, [workspaceNodes, connections, setNodes, newlyCreatedNodeId, onNodeFocus]);
-
-  useEffect(() => {
-    const transformedConnections = transformConnectionNodeIds(connections, looperSystems);
-    const flowEdges = connectionsToEdges(transformedConnections, {
-      type: 'smoothstep',
-      animated: false,
-      style: { stroke: '#888', strokeWidth: 2 },
-    });
-    setEdges(flowEdges);
-  }, [connections, looperSystems, setEdges]);
+  }, [workspaceNodes, connections, setNodes, setEdges, newlyCreatedNodeId, onNodeFocus]);
 
   const handleSelectionChange = useCallback(
     (params: { nodes: Node[]; edges: Edge[] }) => {
