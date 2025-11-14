@@ -37,10 +37,20 @@ export const NodeDetailsPanel: React.FC<NodeDetailsPanelProps> = ({ node }) => {
     setNameError('');
   }, [node?.session_id]);
 
-  const handleCook = useCallback(async () => {
-    if (isExecuting || !node) return;
+  const nodeRef = useRef<NodeResponse | null>(null);
+  const isExecutingRef = useRef(false);
 
-    const targetNodeId = isLooperPart(node.type) ? getOriginalNodeId(node.session_id) : node.session_id;
+  useEffect(() => {
+    nodeRef.current = node;
+    isExecutingRef.current = isExecuting;
+  }, [node, isExecuting]);
+
+  const handleCook = useCallback(async () => {
+    if (isExecutingRef.current || !nodeRef.current) return;
+
+    const targetNodeId = isLooperPart(nodeRef.current.type)
+      ? getOriginalNodeId(nodeRef.current.session_id)
+      : nodeRef.current.session_id;
 
     setIsExecuting(true);
     try {
@@ -52,7 +62,7 @@ export const NodeDetailsPanel: React.FC<NodeDetailsPanelProps> = ({ node }) => {
         setIsExecuting(false);
       }
     }
-  }, [node, isExecuting, executeNode]);
+  }, [executeNode]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

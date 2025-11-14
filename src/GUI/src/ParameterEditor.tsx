@@ -1,6 +1,6 @@
 // Parameter Editor Component - Type-specific parameter editing widgets
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   TextField,
@@ -17,6 +17,7 @@ import {
 import FolderOpenIcon from '@mui/icons-material/FolderOpen';
 import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
 import type { ParameterInfo } from './types';
+import { FileBrowserDialog } from './FileBrowserDialog';
 
 interface ParameterEditorProps {
   name: string;
@@ -56,7 +57,8 @@ export const ParameterEditor: React.FC<ParameterEditorProps> = ({
   const [localValue, setLocalValue] = useState<string | number | boolean | string[]>(parameter.value);
   const [error, setError] = useState<string>('');
   const [hasGlobalRef, setHasGlobalRef] = useState<boolean>(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [browserOpen, setBrowserOpen] = useState(false);
+  const [browserMode, setBrowserMode] = useState<'file' | 'folder'>('file');
 
   // Update local value when parameter changes externally
   useEffect(() => {
@@ -68,6 +70,9 @@ export const ParameterEditor: React.FC<ParameterEditorProps> = ({
     } else {
       setHasGlobalRef(false);
     }
+
+    // Reset browser state when parameter changes
+    setBrowserOpen(false);
   }, [parameter.value]);
 
   // Debounced onChange for text inputs
@@ -102,13 +107,11 @@ export const ParameterEditor: React.FC<ParameterEditorProps> = ({
         return parsed as Record<string, string>;
       }
     } catch (e) {
-      // Not a dict, might be a selected value or invalid format
       return null;
     }
     return null;
   }, []);
 
-  // Validation helper
   const validateValue = useCallback((value: string | number | boolean | string[], type: string): string => {
     if (type === 'INT') {
       const num = Number(value);
@@ -124,37 +127,19 @@ export const ParameterEditor: React.FC<ParameterEditorProps> = ({
   const handleChange = (newValue: string | number | boolean | string[]) => {
     setLocalValue(newValue);
 
-    // Validate immediately for better UX
     const validationError = validateValue(newValue, parameter.type);
     setError(validationError);
   };
 
-  // Handle file browser button click
-  const handleBrowseClick = () => {
-    if (fileInputRef.current) {
-      fileInputRef.current.click();
-    }
+  const handleBrowseClick = (mode: 'file' | 'folder') => {
+    setBrowserMode(mode);
+    setBrowserOpen(true);
   };
 
-  // Handle file selection from browser
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
-    if (files && files.length > 0) {
-      // Get the path - in web browsers, we get the file name
-      // For Electron apps, we could get the full path
-      const file = files[0];
-
-      // @ts-ignore - webkitRelativePath is available when directory selection is used
-      const path = file.webkitRelativePath || file.name;
-
-      handleChange(path);
-
-      // Reset the input so the same file can be selected again
-      event.target.value = '';
-    }
+  const handleFileSelect = (path: string) => {
+    handleChange(path);
   };
 
-  // Render different widgets based on parameter type
   const renderWidget = () => {
     const isReadOnly = parameter.read_only;
 
@@ -164,43 +149,44 @@ export const ParameterEditor: React.FC<ParameterEditorProps> = ({
         const showBrowser = pathType !== null && !isReadOnly;
 
         return (
-          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
-            <TextField
-              fullWidth
-              size="small"
-              value={localValue}
-              onChange={(e) => handleChange(e.target.value)}
-              disabled={isReadOnly}
-              placeholder={String(parameter.default)}
-              error={!!error}
-              helperText={error || (hasGlobalRef ? 'Contains global variable reference' : '')}
-              sx={{
-                '& .MuiInputBase-input': {
-                  fontFamily: hasGlobalRef ? 'monospace' : 'inherit',
-                },
-              }}
-            />
-            {showBrowser && (
-              <>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  style={{ display: 'none' }}
-                  onChange={handleFileSelect}
-                  {...(pathType === 'folder' ? { webkitdirectory: '', directory: '' } : {})}
-                />
+          <>
+            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
+              <TextField
+                fullWidth
+                size="small"
+                value={localValue}
+                onChange={(e) => handleChange(e.target.value)}
+                disabled={isReadOnly}
+                placeholder={String(parameter.default)}
+                error={!!error}
+                helperText={error || (hasGlobalRef ? 'Contains global variable reference' : '')}
+                sx={{
+                  '& .MuiInputBase-input': {
+                    fontFamily: hasGlobalRef ? 'monospace' : 'inherit',
+                  },
+                }}
+              />
+              {showBrowser && (
                 <Tooltip title={pathType === 'folder' ? 'Browse for folder' : 'Browse for file'}>
                   <IconButton
                     size="small"
-                    onClick={handleBrowseClick}
+                    onClick={() => handleBrowseClick(pathType)}
                     sx={{ mt: 0.5 }}
                   >
                     {pathType === 'folder' ? <FolderOpenIcon /> : <InsertDriveFileIcon />}
                   </IconButton>
                 </Tooltip>
-              </>
+              )}
+            </Box>
+            {showBrowser && browserOpen && (
+              <FileBrowserDialog
+                open={browserOpen}
+                onClose={() => setBrowserOpen(false)}
+                onSelect={handleFileSelect}
+                mode={browserMode}
+              />
             )}
-          </Box>
+          </>
         );
       }
 

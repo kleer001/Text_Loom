@@ -242,7 +242,7 @@ export const WorkspaceProvider: React.FC<{ children: ReactNode }> = ({ children 
   }, []);
 
   const setOnChange = useCallback((callback: (() => void) | null) => {
-    setOnChangeCallback(() => callback);
+    setOnChangeCallback(callback ? () => callback() : null);
   }, []);
 
   const value: WorkspaceContextType = {
