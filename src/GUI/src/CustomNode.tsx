@@ -21,6 +21,14 @@ export const CustomNode: React.FC<{ data: CustomNodeData; selected?: boolean }> 
     }
   };
 
+  // Calculate minimum height to maintain proper handle spacing
+  const MIN_HANDLE_SPACING = 12;
+  const BASE_PADDING = 20; // Padding for top and bottom
+  const maxHandles = Math.max(node.inputs.length, node.outputs.length);
+  const minHeightForHandles = maxHandles > 0
+    ? (maxHandles + 1) * MIN_HANDLE_SPACING + BASE_PADDING
+    : 0;
+
   const stateColor = getStateColor(node.state);
   const borderColor = selected ? '#1976d2' : '#ccc';
 
@@ -32,8 +40,10 @@ export const CustomNode: React.FC<{ data: CustomNodeData; selected?: boolean }> 
         borderRadius: '8px',
         background: 'white',
         minWidth: '150px',
+        minHeight: minHeightForHandles > 0 ? `${minHeightForHandles}px` : undefined,
         boxShadow: selected ? '0 4px 8px rgba(0,0,0,0.2)' : '0 2px 4px rgba(0,0,0,0.1)',
-        // TODO: For merge nodes with >4 inputs, dynamically scale height to maintain 12px handle spacing
+        display: 'flex',
+        alignItems: 'center',
       }}
     >
       {/* Input handles */}
