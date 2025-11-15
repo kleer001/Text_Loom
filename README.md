@@ -10,7 +10,7 @@ Build complex text workflows by connecting nodes—no code required. Query LLMs,
 
 ## Quick Start
 
-**Traditional:**
+**Terminal UI:**
 ```bash
 git clone https://github.com/kleer001/Text_Loom
 cd Text_Loom
@@ -19,6 +19,13 @@ source .venv/bin/activate
 export PYTHONPATH=$PYTHONPATH:$(pwd)/src
 pip install -e .
 python3 src/TUI/tui_skeleton.py
+```
+
+**Python REPL (expert mode):**
+```bash
+./tloom                    # Interactive shell
+./tloom workflow.json      # Load and explore
+./tloom script.py          # Execute workflow script
 ```
 
 **One-liner:**
@@ -32,6 +39,18 @@ git clone https://github.com/kleer001/Text_Loom
 cd Text_Loom
 python3 docker_wizard.py
 ```
+
+---
+
+## Interfaces
+
+**Terminal UI** - Visual node editor with keyboard-driven workflow
+
+**Python REPL** - Direct API access for scripting and debugging (inspired by Houdini's hython)
+
+**REST API** - FastAPI backend for automation and integration
+
+**Web GUI** - Modern browser interface (experimental)
 
 ---
 
@@ -52,11 +71,15 @@ python3 docker_wizard.py
 
 ## What You Can Do
 
-- **Visual workflows** - Connect nodes instead of writing scripts
-- **LLM integration** - Works with Ollama, OpenAI, Claude, Gemini, and more
-- **Batch processing** - Loop over lists, process files in bulk
-- **Terminal UI** - Keyboard-driven interface, runs anywhere
-- **REST API** - FastAPI backend for automation
+**Visual workflows** - Connect nodes instead of writing scripts
+
+**Python scripting** - Full API access via tloom REPL for automation
+
+**LLM integration** - Works with Ollama, OpenAI, Claude, Gemini, and more
+
+**Batch processing** - Loop over lists, process files in bulk
+
+**Multiple interfaces** - Terminal UI, Python REPL, REST API, Web GUI
 
 ---
 
