@@ -27,32 +27,12 @@ from core.base_classes import Node, NodeType, NodeEnvironment, NodeState
 from core.enums import generate_node_types
 from core.undo_manager import UndoManager
 from pathlib import Path as FilePath
+from utils.node_loader import discover_node_types, get_node_class
 
 import logging
 logger = logging.getLogger("api.routers.nodes")
 
 router = APIRouter()
-
-
-def _find_node_class(module):
-    for attr_name in dir(module):
-        attr = getattr(module, attr_name)
-        if (isinstance(attr, type) and
-            issubclass(attr, Node) and
-            attr != Node and
-            hasattr(attr, 'GLYPH')):
-            return attr
-    return None
-
-
-def _load_node_module(file_stem: str):
-    import importlib
-    import sys
-
-    module_name = f"core.{file_stem}"
-    if module_name in sys.modules:
-        return sys.modules[module_name]
-    return importlib.import_module(module_name)
 
 
 def _create_node_type_info(node_type_id: str, node_class) -> NodeTypeInfo:
@@ -71,27 +51,11 @@ def _create_node_type_info(node_type_id: str, node_class) -> NodeTypeInfo:
     description="Returns a list of all available node types with their glyphs and labels.",
 )
 def get_node_types() -> List[NodeTypeInfo]:
-    from pathlib import Path as FilePath
-
-    core_dir = FilePath(__file__).parent.parent.parent / "core"
-    node_types = []
-    excluded_types = {'input_null', 'output_null'}
-
-    for file in core_dir.glob("*_node.py"):
-        node_type_id = file.stem.replace("_node", "")
-
-        if node_type_id in excluded_types:
-            continue
-
-        try:
-            module = _load_node_module(file.stem)
-            node_class = _find_node_class(module)
-
-            if node_class:
-                node_types.append(_create_node_type_info(node_type_id, node_class))
-        except Exception as e:
-            logger.warning(f"Could not load node type {node_type_id}: {e}")
-
+    node_type_map = discover_node_types()
+    node_types = [
+        _create_node_type_info(node_type_id, node_class)
+        for node_type_id, node_class in node_type_map.items()
+    ]
     node_types.sort(key=lambda x: x.id)
     return node_types
 
