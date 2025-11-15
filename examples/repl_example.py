@@ -1,4 +1,4 @@
-print("Creating text nodes...")
+print("Creating text nodes (naming them 'greeting' and 'subject')...")
 text1 = create('text', 'greeting', text_string="Hello")
 text2 = create('text', 'subject', text_string="World")
 

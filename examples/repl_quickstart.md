@@ -20,6 +20,8 @@ text = create('text', text_string="Hello World")
 query = create('query', 'llm_query', query_string="What is AI?")
 ```
 
+The second parameter is the node name. If omitted, TextLoom auto-generates names like `text_1`, `text_2`, etc.
+
 ### Setting Parameters
 
 ```python
@@ -32,8 +34,12 @@ value = parm(text, 'text_string')
 ```python
 text = create('text')
 merge = create('merge')
+
 connect(text, merge, source_output=0, target_input=0)
+connect_next(text, merge)
 ```
+
+`connect_next()` automatically finds the next available input slot, useful for nodes with multiple inputs.
 
 ### Running Nodes
 
@@ -70,15 +76,17 @@ all_globals = globals_dict()
 ## Example Workflow
 
 ```python
-text1 = create('text', text_string="Hello")
-text2 = create('text', text_string="World")
-merge = create('merge')
+text1 = create('text', 'greeting', text_string="Hello")
+text2 = create('text', 'farewell', text_string="World")
+merge = create('merge', 'combiner')
 
-connect(text1, merge, target_input=0)
-connect(text2, merge, target_input=1)
+connect_next(text1, merge)
+connect_next(text2, merge)
 
 result = run(merge)
 print(result)
+
+tree()
 
 save('hello_world.json')
 ```

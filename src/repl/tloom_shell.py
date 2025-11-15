@@ -3,7 +3,8 @@ from pathlib import Path
 from typing import Optional
 from repl.namespace import build_namespace
 from repl.helpers import (
-    create, connect, run, inspect, tree, ls, find,
+    create, connect, connect_next, disconnect, destroy,
+    run, inspect, tree, ls, find,
     load, save, clear, types, get_global, set_global, globals_dict, parm
 )
 
@@ -14,7 +15,10 @@ TextLoom Python Shell (tloom)
 ==============================
 Available helpers:
   create(type, name, **params)   - Create node with optional params
-  connect(src, dst, out=0, in=0) - Connect two nodes
+  connect(src, dst, out=0, in=0) - Connect nodes at specific indices
+  connect_next(src, dst, out=0)  - Connect to next available input
+  disconnect(node, input_idx)    - Remove input connection
+  destroy(node)                  - Delete node
   run(node, force=False)         - Execute node and return output
   parm(node, name, value=None)   - Get/set parameter value
   inspect(node)                  - Show node details
@@ -40,6 +44,9 @@ def run_shell(flowstate_file: Optional[Path] = None, script_file: Optional[Path]
     namespace.update({
         'create': create,
         'connect': connect,
+        'connect_next': connect_next,
+        'disconnect': disconnect,
+        'destroy': destroy,
         'run': run,
         'parm': parm,
         'inspect': inspect,

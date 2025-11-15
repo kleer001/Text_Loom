@@ -34,6 +34,18 @@ def connect(source: Node, target: Node,
     target.set_input(target_input, source, source_output)
 
 
+def connect_next(source: Node, target: Node, source_output: int = 0) -> None:
+    target.set_next_input(source, source_output)
+
+
+def disconnect(node: Node, input_index: int) -> None:
+    node.remove_input(input_index)
+
+
+def destroy(node: Node) -> None:
+    node.destroy()
+
+
 def run(node: Node, force: bool = False) -> List[str]:
     node.cook(force=force)
     return node.get_output()
