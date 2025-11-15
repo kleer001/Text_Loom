@@ -1,4 +1,5 @@
 import sys
+import argparse
 from pathlib import Path
 from typing import Optional
 from repl.namespace import build_namespace
@@ -7,6 +8,9 @@ from repl.helpers import (
     run, inspect, tree, ls, find,
     load, save, clear, types, get_global, set_global, globals_dict, parm
 )
+
+
+VERSION = "1.0.0"
 
 
 def get_banner():
@@ -80,17 +84,44 @@ def run_shell(flowstate_file: Optional[Path] = None, script_file: Optional[Path]
 
 
 def main():
+    parser = argparse.ArgumentParser(
+        prog='tloom',
+        description='TextLoom Python Shell - Interactive REPL for TextLoom node workflows',
+        epilog='Examples:\n  tloom                  # Interactive shell\n  tloom workflow.json    # Load flowstate\n  tloom script.py        # Execute script',
+        formatter_class=argparse.RawDescriptionHelpFormatter
+    )
+
+    parser.add_argument(
+        'file',
+        nargs='?',
+        help='Workflow file (.json) to load or script file (.py) to execute'
+    )
+
+    parser.add_argument(
+        '-v', '--version',
+        action='version',
+        version=f'tloom {VERSION}'
+    )
+
+    args = parser.parse_args()
+
     flowstate_file = None
     script_file = None
 
-    if len(sys.argv) > 1:
-        arg_path = Path(sys.argv[1])
-        if arg_path.suffix == '.json':
-            flowstate_file = arg_path
-        elif arg_path.suffix == '.py':
-            script_file = arg_path
+    if args.file:
+        file_path = Path(args.file)
+
+        if not file_path.exists():
+            print(f"Error: File not found: {file_path}", file=sys.stderr)
+            sys.exit(1)
+
+        if file_path.suffix == '.json':
+            flowstate_file = file_path
+        elif file_path.suffix == '.py':
+            script_file = file_path
         else:
-            print(f"Unknown file type: {arg_path}")
+            print(f"Error: Unknown file type: {file_path}", file=sys.stderr)
+            print("Supported types: .json (flowstate), .py (script)", file=sys.stderr)
             sys.exit(1)
 
     run_shell(flowstate_file, script_file)

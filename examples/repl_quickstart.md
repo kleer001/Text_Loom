@@ -2,12 +2,27 @@
 
 The TextLoom REPL (Read-Eval-Print Loop) provides a Python shell with the full TextLoom API pre-loaded, similar to Houdini's `hython`.
 
-## Starting the REPL
+## Installation
+
+**Quick Start (from repo):**
+```bash
+./tloom
+```
+
+**Install as command:**
+```bash
+pip install -e .
+tloom
+```
+
+## Usage
 
 ```bash
-./tloom                    # Start interactive shell
-./tloom workflow.json      # Load flowstate and start shell
-./tloom script.py          # Execute script with TextLoom environment
+tloom                    # Start interactive shell
+tloom workflow.json      # Load flowstate and start shell
+tloom script.py          # Execute script with TextLoom environment
+tloom --help             # Show help
+tloom --version          # Show version
 ```
 
 ## Basic Usage
