@@ -1,8 +1,11 @@
 import importlib
 import sys
+import logging
 from pathlib import Path
 from typing import Optional, List, Dict
 from core.base_classes import Node
+
+logger = logging.getLogger(__name__)
 
 
 def find_node_class(module):
@@ -46,7 +49,8 @@ def discover_node_types(exclude: Optional[List[str]] = None) -> Dict[str, type]:
             node_class = get_node_class(node_type)
             if node_class:
                 node_types[node_type] = node_class
-        except Exception:
-            pass
+        except (ImportError, AttributeError) as e:
+            logger.debug(f"Could not load node type {node_type}: {e}")
 
     return node_types
+

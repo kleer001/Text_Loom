@@ -1,4 +1,4 @@
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, Union
 from pathlib import Path
 from core.base_classes import Node, NodeEnvironment, NodeType
 from core.flowstate_manager import save_flowstate, load_flowstate
@@ -46,7 +46,7 @@ def destroy(node: Node) -> None:
     node.destroy()
 
 
-def run(node: Node, force: bool = False) -> List[str]:
+def run(node: Node, force: bool = False) -> Any:
     node.cook(force=force)
     return node.get_output()
 
@@ -56,7 +56,7 @@ def inspect(node: Node) -> Dict[str, Any]:
         'name': node.name(),
         'path': node.path(),
         'type': node.__class__.__name__,
-        'state': node.state().name if hasattr(node.state(), 'name') else str(node.state()),
+        'state': node.state().name,
         'inputs': len(node.inputs()),
         'outputs': len(node.outputs()),
         'parameters': {},
@@ -74,18 +74,15 @@ def inspect(node: Node) -> Dict[str, Any]:
         if inp:
             info['connections']['inputs'].append({
                 'index': i,
-                'from': inp.output_node().path() if hasattr(inp, 'output_node') else str(inp)
+                'from': inp.output_node().path()
             })
 
-    for node_name in NodeEnvironment.nodes:
-        n = NodeEnvironment.node_from_name(node_name)
-        if n:
-            for i, inp in enumerate(n.inputs()):
-                if inp and inp.output_node() == node:
-                    info['connections']['outputs'].append({
-                        'to': n.path(),
-                        'input_index': i
-                    })
+    for i, out in enumerate(node.outputs()):
+        if out:
+            info['connections']['outputs'].append({
+                'to': out.path(),
+                'input_index': i
+            })
 
     return info
 
@@ -146,12 +143,13 @@ def globals_dict() -> Dict[str, str]:
     return GlobalStore.get_all()
 
 
-def parm(node: Node, name: str, value=None):
+def parm(node: Node, name: str, value: Optional[Any] = None) -> Union[Any, Node]:
     if not hasattr(node, '_parms') or name not in node._parms:
         raise ValueError(f"Node {node.name()} has no parameter '{name}'")
 
     if value is None:
         return node._parms[name].eval()
-    else:
-        node._parms[name].set(value)
-        return node
+
+    node._parms[name].set(value)
+    return node
+
