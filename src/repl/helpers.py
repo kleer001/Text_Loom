@@ -153,3 +153,79 @@ def parm(node: Node, name: str, value: Optional[Any] = None) -> Union[Any, Node]
     node._parms[name].set(value)
     return node
 
+
+def children(node: Node) -> List[Node]:
+    return list(node.children())
+
+
+def set_parent(node: Node, parent_path: str) -> None:
+    node.set_parent(parent_path)
+
+
+def errors(node: Node) -> List[str]:
+    return list(node.errors())
+
+
+def clear_errors(node: Node) -> None:
+    node.clear_errors()
+
+
+def warnings(node: Node) -> List[str]:
+    return list(node.warnings())
+
+
+def clear_warnings(node: Node) -> None:
+    node.clear_warnings()
+
+
+def input_names(node: Node) -> Dict[int, str]:
+    return node.input_names()
+
+
+def output_names(node: Node) -> Dict[int, str]:
+    return node.output_names()
+
+
+def node_type(node: Node) -> str:
+    return node.type().name
+
+
+def input_nodes(node: Node) -> List[Node]:
+    return node.input_nodes()
+
+
+def cook_count(node: Node) -> int:
+    return node.cook_count()
+
+
+def last_cook_time(node: Node) -> float:
+    return node.last_cook_time()
+
+
+def needs_to_cook(node: Node) -> bool:
+    return node.needs_to_cook()
+
+
+def is_time_dependent(node: Node) -> bool:
+    return node.isTimeDependent()
+
+
+def cook_dependencies(node: Node) -> List[Node]:
+    return node.cook_dependencies()
+
+
+def inputs_with_indices(node: Node, use_names: bool = False) -> List[tuple]:
+    return list(node.inputs_with_indices(use_names=use_names))
+
+
+def outputs_with_indices(node: Node, use_names: bool = False) -> List[tuple]:
+    return list(node.outputs_with_indices(use_names=use_names))
+
+
+def node_exists(path: str) -> bool:
+    return NodeEnvironment.node_exists(path)
+
+
+def rename(old_path: str, new_parent_path: str) -> tuple:
+    return NodeEnvironment.update_node_path(old_path, new_parent_path)
+

@@ -6,7 +6,11 @@ from repl.namespace import build_namespace
 from repl.helpers import (
     create, connect, connect_next, disconnect, destroy,
     run, inspect, tree, ls, find,
-    load, save, clear, types, get_global, set_global, globals_dict, parm
+    load, save, clear, types, get_global, set_global, globals_dict, parm,
+    children, set_parent, errors, clear_errors, warnings, clear_warnings,
+    input_names, output_names, node_type, input_nodes,
+    cook_count, last_cook_time, needs_to_cook, is_time_dependent, cook_dependencies,
+    inputs_with_indices, outputs_with_indices, node_exists, rename
 )
 
 
@@ -17,7 +21,7 @@ def get_banner():
     return """
 TextLoom Python Shell (tloom)
 ==============================
-Available helpers:
+Core helpers:
   create(type, name, **params)   - Create node with optional params
   connect(src, dst, out=0, in=0) - Connect nodes at specific indices
   connect_next(src, dst, out=0)  - Connect to next available input
@@ -27,18 +31,27 @@ Available helpers:
   parm(node, name, value=None)   - Get/set parameter value
   inspect(node)                  - Show node details
   tree(root=None)                - Display node hierarchy
-  ls()                           - List all nodes
-  find(name)                     - Find node by path
-  load(filepath)                 - Load flowstate from file
-  save(filepath)                 - Save flowstate to file
+  ls(), find(name)               - List/find nodes
+  load(file), save(file)         - Flowstate persistence
   clear()                        - Clear all nodes
   types()                        - List available node types
-  get_global(key)                - Get global variable
-  set_global(key, value)         - Set global variable
-  globals_dict()                 - Get all globals
 
-Core classes and environment pre-loaded.
-Type 'help(<function>)' for more info.
+Debugging & performance:
+  errors(node), warnings(node)   - Get errors/warnings
+  cook_count(node)               - Times node has cooked
+  last_cook_time(node)           - Last cook time in ms
+  needs_to_cook(node)            - Check if node is dirty
+  cook_dependencies(node)        - Get upstream nodes
+
+Organization & introspection:
+  children(node)                 - Get child nodes
+  set_parent(node, path)         - Move node
+  rename(old_path, new_parent)   - Rename/move node
+  node_type(node)                - Get node type
+  input_names(node)              - Get input names dict
+  output_names(node)             - Get output names dict
+
+Type 'help()' to see all functions. Tab completion enabled.
 """
 
 
@@ -64,6 +77,25 @@ def run_shell(flowstate_file: Optional[Path] = None, script_file: Optional[Path]
         'get_global': get_global,
         'set_global': set_global,
         'globals_dict': globals_dict,
+        'children': children,
+        'set_parent': set_parent,
+        'errors': errors,
+        'clear_errors': clear_errors,
+        'warnings': warnings,
+        'clear_warnings': clear_warnings,
+        'input_names': input_names,
+        'output_names': output_names,
+        'node_type': node_type,
+        'input_nodes': input_nodes,
+        'cook_count': cook_count,
+        'last_cook_time': last_cook_time,
+        'needs_to_cook': needs_to_cook,
+        'is_time_dependent': is_time_dependent,
+        'cook_dependencies': cook_dependencies,
+        'inputs_with_indices': inputs_with_indices,
+        'outputs_with_indices': outputs_with_indices,
+        'node_exists': node_exists,
+        'rename': rename,
     })
 
     if flowstate_file:
