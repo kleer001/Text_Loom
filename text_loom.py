@@ -278,10 +278,12 @@ class GUILauncher:
 
     def _shutdown(self):
         Output.info("\n\nShutting down...")
-        self.backend.terminate()
-        self.frontend.terminate()
-        self.backend.wait()
-        self.frontend.wait()
+        if self.backend:
+            self.backend.terminate()
+            self.backend.wait()
+        if self.frontend:
+            self.frontend.terminate()
+            self.frontend.wait()
         Output.info("Services stopped.")
 
 
@@ -369,10 +371,17 @@ class ArgumentParser:
 
         parser.add_argument('-f', '--file', type=str, metavar='FILE', help='Workflow file to load (.json or .tl)')
         parser.add_argument('--no-browser', action='store_true', help='GUI mode: Do not automatically open browser')
-        parser.add_argument('-p', '--port', type=int, default=DEFAULT_BACKEND_PORT, metavar='PORT', help='API server port (default: 8000)')
-        parser.add_argument('--frontend-port', type=int, default=DEFAULT_FRONTEND_PORT, metavar='PORT', help='Frontend dev server port (default: 5173)')
+        parser.add_argument('-p', '--port', type=ArgumentParser._valid_port, default=DEFAULT_BACKEND_PORT, metavar='PORT', help='API server port (default: 8000)')
+        parser.add_argument('--frontend-port', type=ArgumentParser._valid_port, default=DEFAULT_FRONTEND_PORT, metavar='PORT', help='Frontend dev server port (default: 5173)')
 
         return parser.parse_args()
+
+    @staticmethod
+    def _valid_port(value):
+        port = int(value)
+        if not 1 <= port <= 65535:
+            raise argparse.ArgumentTypeError(f"Port must be between 1 and 65535, got {port}")
+        return port
 
     @staticmethod
     def _examples():
@@ -399,22 +408,17 @@ class Application:
 
     def _determine_mode(self, args):
         if args.repl:
-            return REPLLauncher
+            return lambda: REPLLauncher.run(self.workflow)
         if args.tui:
-            return TUILauncher
+            return lambda: TUILauncher.run(self.workflow)
         if args.api:
             return lambda: APILauncher.run(self.config.backend_port, self.workflow)
         if args.batch:
-            return BatchLauncher
+            return lambda: BatchLauncher.run(self.workflow)
         return lambda: GUILauncher(self.config, self.workflow).run()
 
     def run(self):
-        if self.mode == BatchLauncher:
-            self.mode.run(self.workflow)
-        elif self.mode == REPLLauncher or self.mode == TUILauncher:
-            self.mode.run(self.workflow)
-        else:
-            self.mode()
+        self.mode()
 
 
 def main():
