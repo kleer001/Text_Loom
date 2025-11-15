@@ -10,22 +10,18 @@ Build complex text workflows by connecting nodes—no code required. Query LLMs,
 
 ## Quick Start
 
-**Terminal UI:**
 ```bash
 git clone https://github.com/kleer001/Text_Loom
 cd Text_Loom
 python3 -m venv .venv
 source .venv/bin/activate
-export PYTHONPATH=$PYTHONPATH:$(pwd)/src
 pip install -e .
-python3 src/TUI/tui_skeleton.py
-```
+export PYTHONPATH=$PYTHONPATH:$(pwd)/src
 
-**Python REPL (expert mode):**
-```bash
-./tloom                    # Interactive shell
-./tloom workflow.json      # Load and explore
-./tloom script.py          # Execute workflow script
+./text_loom.py              # Start GUI (default)
+./text_loom.py -t           # Terminal UI
+./text_loom.py -r           # Python REPL
+./text_loom.py -b -f work.json  # Batch execute
 ```
 
 **One-liner:**
@@ -44,26 +40,34 @@ python3 docker_wizard.py
 
 ## Interfaces
 
-**Terminal UI** - Visual node editor with keyboard-driven workflow
+Choose your workflow—all use the same core:
 
-**Python REPL** - Direct API access for scripting and debugging (inspired by Houdini's hython)
-
-**REST API** - FastAPI backend for automation and integration
-
-**Web GUI** - Modern browser interface (experimental)
+```bash
+./text_loom.py -r           # REPL: Interactive Python shell (hython-style)
+./text_loom.py -t           # TUI: Terminal UI (keyboard-driven)
+./text_loom.py -a           # API: FastAPI server (automation)
+./text_loom.py -g           # GUI: Web interface (visual)
+./text_loom.py -b           # Batch: Non-interactive execution
+```
 
 ---
 
 ## What Makes Text Loom Different
 
-|  | Text Loom | n8n | LangChain |
-|---|-----------|-----|-----------|
-| **Architecture** | Text-first (lists of strings) | JSON objects | Python objects |
-| **Interface** | Terminal UI + Web | Web only | Code only |
-| **Text handling** | First-class citizen | Nested in JSON | Wrapped in objects |
-| **Deployment** | Local, lightweight | Server required | Library dependency |
-| **Learning curve** | Visual, immediate | Web automation focus | Programming required |
-| **LLM focus** | Built for prompt engineering | General automation | Framework/abstraction |
+| Feature | Text Loom | n8n | LangChain | ComfyUI | Zapier | Node-RED |
+|---------|-----------|-----|-----------|---------|--------|----------|
+| **Open Source** | ✅ | ✅ | ✅ | ✅ | ❌ | ✅ |
+| **Runs Offline** | ✅ | ✅ | ✅ | ✅ | ❌ | ✅ |
+| **Terminal UI** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **Web UI** | ✅ | ✅ | ❌ | ✅ | ✅ | ✅ |
+| **Code Interface** | ✅ | ❌ | ✅ | ❌ | ❌ | ❌ |
+| **Visual Programming** | ✅ | ✅ | ❌ | ✅ | ✅ | ✅ |
+| **Text-First Data** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **LLM-Focused** | ✅ | ❌ | ✅ | ❌ | ❌ | ❌ |
+| **No Programming Required** | ✅ | ✅ | ❌ | ✅ | ✅ | ✅ |
+| **Lightweight (<50MB)** | ✅ | ❌ | ✅ | ❌ | N/A | ✅ |
+| **Batch Processing** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **Self-Hosted** | ✅ | ✅ | ✅ | ✅ | ❌ | ✅ |
 
 **Text Loom treats text as the primary data type.** Everything is a list of strings flowing through nodes. No JSON wrappers, no object hierarchies—just text in, text out.
 
@@ -71,15 +75,15 @@ python3 docker_wizard.py
 
 ## What You Can Do
 
-**Visual workflows** - Connect nodes instead of writing scripts
+**Visual workflows** - Connect nodes, not code
 
-**Python scripting** - Full API access via tloom REPL for automation
+**LLM integration** - Ollama, OpenAI, Claude, Gemini, local models
 
-**LLM integration** - Works with Ollama, OpenAI, Claude, Gemini, and more
+**Batch processing** - Loop over lists, transform files in bulk
 
-**Batch processing** - Loop over lists, process files in bulk
+**Multiple interfaces** - TUI, GUI, REPL, API, batch—choose your style
 
-**Multiple interfaces** - Terminal UI, Python REPL, REST API, Web GUI
+**Scriptable** - Full Python API access for automation
 
 ---
 
