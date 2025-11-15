@@ -14,6 +14,9 @@ setup(
     install_requires=[
         "textual>=0.52.1",
     ],
+    extras_require={
+        'repl': ['ipython>=7.0.0'],
+    },
     entry_points={
         'console_scripts': [
             'tloom=repl.tloom_shell:main',

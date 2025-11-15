@@ -79,6 +79,14 @@ def run_shell(flowstate_file: Optional[Path] = None, script_file: Optional[Path]
         from IPython import embed
         embed(banner1=get_banner(), user_ns=namespace)
     except ImportError:
+        try:
+            import readline
+            import rlcompleter
+            readline.set_completer(rlcompleter.Completer(namespace).complete)
+            readline.parse_and_bind("tab: complete")
+        except ImportError:
+            pass
+
         import code
         code.interact(banner=get_banner(), local=namespace)
 

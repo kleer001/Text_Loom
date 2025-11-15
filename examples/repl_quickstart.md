@@ -11,9 +11,12 @@ The TextLoom REPL (Read-Eval-Print Loop) provides a Python shell with the full T
 
 **Install as command:**
 ```bash
-pip install -e .
+pip install -e .           # Basic install
+pip install -e ".[repl]"   # With IPython (enhanced tab completion)
 tloom
 ```
+
+**Note:** Tab completion is always available, but IPython provides enhanced completion with better formatting and introspection.
 
 ## Usage
 
@@ -108,8 +111,11 @@ save('hello_world.json')
 
 ## Tips
 
-- Use tab completion to explore available functions and classes
+- **Tab completion is enabled** - press TAB to autocomplete function names, variables, and methods
+- Type `cre` then TAB to see `create`, `create(` to see parameters (IPython only)
+- Type `text.` then TAB to see all methods available on a node object
 - Access node parameters via `node._parms['param_name']`
 - All core TextLoom classes are pre-loaded (Node, NodeEnvironment, etc.)
 - Type `types()` to see all available node types
 - Use `help(function)` for detailed documentation
+- Install IPython (`pip install ipython`) for enhanced tab completion with parameter hints
