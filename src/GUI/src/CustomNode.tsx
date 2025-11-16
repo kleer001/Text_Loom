@@ -170,42 +170,22 @@ export const CustomNode: React.FC<{ data: CustomNodeData; selected?: boolean }> 
       <div
         onClick={(e) => {
           e.stopPropagation();
-          onDisplayToggle?.(node.session_id);
-        }}
-        style={{
-          position: 'absolute',
-          right: `${design.DISPLAY_STATE_RIGHT}px`,
-          top: `${design.DISPLAY_STATE_TOP}px`,
-          width: `${design.DISPLAY_STATE_WIDTH}px`,
-          height: `${design.DISPLAY_STATE_HEIGHT}px`,
-          border: isOnDisplay
-            ? `${design.DISPLAY_STATE_BORDER_WIDTH_ON}px solid ${design.COLOR_DISPLAY_BORDER_ON}`
-            : `${design.DISPLAY_STATE_BORDER_WIDTH_OFF}px solid ${design.COLOR_DISPLAY_BORDER_OFF}`,
-          background: isOnDisplay ? design.COLOR_DISPLAY_FILL_ON : 'transparent',
-          opacity,
-          cursor: 'pointer',
-        }}
-        title={isOnDisplay ? 'On display' : 'Not on display'}
-      />
-
-      <div
-        onClick={(e) => {
-          e.stopPropagation();
           onBypassToggle?.(node.session_id);
         }}
         style={{
           position: 'absolute',
-          right: `${design.BYPASS_BUTTON_RIGHT}px`,
-          bottom: `${design.BYPASS_BUTTON_BOTTOM}px`,
-          width: `${design.BYPASS_BUTTON_WIDTH}px`,
-          height: `${design.BYPASS_BUTTON_HEIGHT}px`,
+          right: `${design.TEMPLATE_CIRCLE_RIGHT}px`,
+          top: '50%',
+          transform: 'translateY(-50%)',
+          width: `${design.TEMPLATE_CIRCLE_DIAMETER}px`,
+          height: `${design.TEMPLATE_CIRCLE_DIAMETER}px`,
+          borderRadius: '50%',
           background: design.COLOR_BYPASS_DEFAULT,
-          borderRadius: `${design.BYPASS_BUTTON_BORDER_RADIUS}px`,
           cursor: 'pointer',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          fontSize: `${design.BYPASS_BUTTON_FONT_SIZE}px`,
+          fontSize: `${design.TEMPLATE_CIRCLE_FONT_SIZE}px`,
           fontWeight: 'bold',
           color: 'white',
           opacity,
