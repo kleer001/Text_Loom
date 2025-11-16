@@ -1,3 +1,5 @@
+type ThemeMode = 'light' | 'dark';
+
 export const NODE_MIN_WIDTH = 150;
 export const NODE_PADDING_VERTICAL = 10;
 export const NODE_PADDING_HORIZONTAL = 15;
@@ -38,33 +40,56 @@ export const HANDLE_DIAMETER = 10;
 export const HANDLE_BORDER_WIDTH = 2;
 export const HANDLE_OFFSET = 6;
 
-export const COLOR_COOKING_UNCOOKED = '#ff9800';
-export const COLOR_COOKING_UNCHANGED = '#4caf50';
-export const COLOR_COOKING_COOKING = '#2196f3';
-
-export const COLOR_ERROR = '#A855F7';
-export const COLOR_ERROR_OUTLINE = '#D4AAFB';
-export const COLOR_WARNING = '#FCD34D';
-export const COLOR_WARNING_OUTLINE = '#FEE9A6';
-
-export const COLOR_BYPASS_DEFAULT = '#CED0D5';
-export const COLOR_BYPASS_HOVER = '#E5E7EB';
-
-export const COLOR_TEXT_ACTIVE = '#1F2937';
-export const COLOR_TEXT_BYPASSED = '#4B5563';
-
-export const COLOR_BG_ACTIVE = 'white';
-export const COLOR_BG_BYPASSED = '#374151';
-export const COLOR_BORDER_ACTIVE = '#ccc';
-export const COLOR_BORDER_BYPASSED = '#4B5563';
-export const COLOR_BORDER_SELECTED = '#1976d2';
-
-export const COLOR_HANDLE_INPUT_BORDER = '#E5E7EB';
-export const COLOR_HANDLE_INPUT_FILL = '#FFFFFF';
-export const COLOR_HANDLE_OUTPUT_BORDER = '#10B981';
-export const COLOR_HANDLE_OUTPUT_FILL = '#D1FAE5';
-export const COLOR_HANDLE_BYPASSED_BORDER = '#6B7280';
-export const COLOR_HANDLE_BYPASSED_FILL = '#9CA3AF';
-
 export const OPACITY_BYPASSED = 0.6;
 export const OPACITY_ACTIVE = 1;
+
+export const getColors = (mode: ThemeMode) => ({
+  cooking: {
+    uncooked: '#ff9800',
+    unchanged: '#4caf50',
+    cooking: '#2196f3',
+  },
+  error: {
+    fill: '#A855F7',
+    outline: '#D4AAFB',
+  },
+  warning: {
+    fill: '#FCD34D',
+    outline: '#FEE9A6',
+  },
+  bypass: {
+    default: mode === 'light' ? '#CED0D5' : '#4B5563',
+    hover: mode === 'light' ? '#E5E7EB' : '#6B7280',
+  },
+  text: {
+    active: mode === 'light' ? '#1F2937' : '#F9FAFB',
+    bypassed: mode === 'light' ? '#4B5563' : '#9CA3AF',
+  },
+  background: {
+    active: mode === 'light' ? '#FFFFFF' : '#374151',
+    bypassed: mode === 'light' ? '#374151' : '#1F2937',
+  },
+  border: {
+    active: mode === 'light' ? '#CCCCCC' : '#4B5563',
+    bypassed: mode === 'light' ? '#4B5563' : '#374151',
+    selected: mode === 'light' ? '#1976d2' : '#60a5fa',
+  },
+  handle: {
+    input: {
+      border: mode === 'light' ? '#E5E7EB' : '#4B5563',
+      fill: mode === 'light' ? '#FFFFFF' : '#374151',
+    },
+    output: {
+      border: mode === 'light' ? '#10B981' : '#34D399',
+      fill: mode === 'light' ? '#D1FAE5' : '#064E3B',
+    },
+    bypassed: {
+      border: mode === 'light' ? '#6B7280' : '#4B5563',
+      fill: mode === 'light' ? '#9CA3AF' : '#374151',
+    },
+  },
+  canvas: {
+    background: mode === 'light' ? '#f5f5f5' : '#111827',
+    grid: mode === 'light' ? '#d1d5db' : '#374151',
+  },
+});

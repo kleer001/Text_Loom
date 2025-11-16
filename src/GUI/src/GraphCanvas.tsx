@@ -20,6 +20,8 @@ import type { NodeResponse, ConnectionRequest, ParameterInfo } from './types';
 import { DESELECTION_DELAY_MS } from './constants';
 import { transformLooperNodes, type LooperSystem, getOriginalNodeId } from './looperTransform';
 import { LoopBoundary } from './LoopBoundary';
+import { useTheme } from './ThemeContext';
+import * as design from './nodeDesign';
 
 const nodeTypes = {
   custom: CustomNode,
@@ -30,6 +32,8 @@ interface GraphCanvasProps {
 }
 
 export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
+  const { mode } = useTheme();
+  const colors = design.getColors(mode);
   const {
     nodes: workspaceNodes,
     connections,
@@ -359,7 +363,13 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
         deleteKeyCode={null}
         selectionKeyCode="Shift"
       >
-        <Background variant={BackgroundVariant.Dots} gap={12} size={1} />
+        <Background
+          variant={BackgroundVariant.Dots}
+          gap={12}
+          size={1}
+          color={colors.canvas.grid}
+          style={{ backgroundColor: colors.canvas.background }}
+        />
         <Controls />
         {Array.from(looperSystems.values()).map(system => {
           const transformedConnections = transformConnectionNodeIds(connections, looperSystems);

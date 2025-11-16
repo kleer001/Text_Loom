@@ -2,6 +2,7 @@ import React from 'react';
 import { Handle, Position } from '@xyflow/react';
 import type { NodeResponse, InputInfo, OutputInfo } from './types';
 import * as design from './nodeDesign';
+import { useTheme } from './ThemeContext';
 
 interface CustomNodeData {
   node: NodeResponse;
@@ -12,12 +13,6 @@ interface CustomNodeData {
 const MIN_HANDLE_SPACING = 12;
 const VERTICAL_PADDING = 20;
 
-const STATE_COLORS: Record<string, string> = {
-  unchanged: design.COLOR_COOKING_UNCHANGED,
-  uncooked: design.COLOR_COOKING_UNCOOKED,
-  cooking: design.COLOR_COOKING_COOKING,
-};
-
 const calculateMinHeight = (inputCount: number, outputCount: number): number => {
   const handleCount = Math.max(inputCount, outputCount);
   return handleCount > 0 ? (handleCount + 1) * MIN_HANDLE_SPACING + VERTICAL_PADDING : 0;
@@ -25,20 +20,6 @@ const calculateMinHeight = (inputCount: number, outputCount: number): number => 
 
 const getOpacity = (isBypassed: boolean): number =>
   isBypassed ? design.OPACITY_BYPASSED : design.OPACITY_ACTIVE;
-
-const getHandleBorderColor = (isBypassed: boolean, type: 'input' | 'output'): string =>
-  isBypassed
-    ? design.COLOR_HANDLE_BYPASSED_BORDER
-    : type === 'input'
-    ? design.COLOR_HANDLE_INPUT_BORDER
-    : design.COLOR_HANDLE_OUTPUT_BORDER;
-
-const getHandleFillColor = (isBypassed: boolean, type: 'input' | 'output'): string =>
-  isBypassed
-    ? design.COLOR_HANDLE_BYPASSED_FILL
-    : type === 'input'
-    ? design.COLOR_HANDLE_INPUT_FILL
-    : design.COLOR_HANDLE_OUTPUT_FILL;
 
 interface IndicatorCircleProps {
   color: string;
@@ -115,21 +96,32 @@ export const CustomNode: React.FC<{ data: CustomNodeData; selected?: boolean }> 
   selected
 }) => {
   const { node, onBypassToggle, onDisplayToggle } = data;
+  const { mode } = useTheme();
+  const colors = design.getColors(mode);
+
   const isBypassed = node.parameters?.bypass?.value === true;
   const isOnDisplay = node.parameters?.display?.value === true;
   const hasError = node.errors.length > 0;
   const hasWarning = node.warnings.length > 0;
 
   const minHeight = calculateMinHeight(node.inputs.length, node.outputs.length);
-  const stateColor = STATE_COLORS[node.state] ?? design.COLOR_COOKING_UNCOOKED;
+  const stateColor = colors.cooking[node.state as keyof typeof colors.cooking] ?? colors.cooking.uncooked;
   const borderColor = selected
-    ? design.COLOR_BORDER_SELECTED
+    ? colors.border.selected
     : isBypassed
-    ? design.COLOR_BORDER_BYPASSED
-    : design.COLOR_BORDER_ACTIVE;
-  const backgroundColor = isBypassed ? design.COLOR_BG_BYPASSED : design.COLOR_BG_ACTIVE;
-  const textColor = isBypassed ? design.COLOR_TEXT_BYPASSED : design.COLOR_TEXT_ACTIVE;
+    ? colors.border.bypassed
+    : colors.border.active;
+  const backgroundColor = isBypassed ? colors.background.bypassed : colors.background.active;
+  const textColor = isBypassed ? colors.text.bypassed : colors.text.active;
   const opacity = getOpacity(isBypassed);
+
+  const getHandleBorderColor = (type: 'input' | 'output'): string =>
+    isBypassed ? colors.handle.bypassed.border :
+    type === 'input' ? colors.handle.input.border : colors.handle.output.border;
+
+  const getHandleFillColor = (type: 'input' | 'output'): string =>
+    isBypassed ? colors.handle.bypassed.fill :
+    type === 'input' ? colors.handle.input.fill : colors.handle.output.fill;
 
   return (
     <div
@@ -167,17 +159,17 @@ export const CustomNode: React.FC<{ data: CustomNodeData; selected?: boolean }> 
 
         {hasError && (
           <IndicatorCircle
-            color={design.COLOR_ERROR}
+            color={colors.error.fill}
             title="Has errors"
-            outlineColor={design.COLOR_ERROR_OUTLINE}
+            outlineColor={colors.error.outline}
           />
         )}
 
         {hasWarning && (
           <IndicatorCircle
-            color={design.COLOR_WARNING}
+            color={colors.warning.fill}
             title="Has warnings"
-            outlineColor={design.COLOR_WARNING_OUTLINE}
+            outlineColor={colors.warning.outline}
           />
         )}
       </div>
@@ -195,16 +187,16 @@ export const CustomNode: React.FC<{ data: CustomNodeData; selected?: boolean }> 
           width: `${design.TEMPLATE_CIRCLE_DIAMETER}px`,
           height: `${design.TEMPLATE_CIRCLE_DIAMETER}px`,
           borderRadius: '50%',
-          background: design.COLOR_BYPASS_DEFAULT,
+          background: colors.bypass.default,
           cursor: 'pointer',
           opacity,
           transition: 'background 0.2s',
         }}
         onMouseEnter={(e) => {
-          e.currentTarget.style.background = design.COLOR_BYPASS_HOVER;
+          e.currentTarget.style.background = colors.bypass.hover;
         }}
         onMouseLeave={(e) => {
-          e.currentTarget.style.background = design.COLOR_BYPASS_DEFAULT;
+          e.currentTarget.style.background = colors.bypass.default;
         }}
         title={isBypassed ? 'Bypassed (Template)' : 'Click to bypass'}
       />
@@ -275,8 +267,8 @@ export const CustomNode: React.FC<{ data: CustomNodeData; selected?: boolean }> 
           type="target"
           position={Position.Left}
           isBypassed={isBypassed}
-          borderColor={getHandleBorderColor(isBypassed, 'input')}
-          fillColor={getHandleFillColor(isBypassed, 'input')}
+          borderColor={getHandleBorderColor('input')}
+          fillColor={getHandleFillColor('input')}
         />
       ))}
 
@@ -289,8 +281,8 @@ export const CustomNode: React.FC<{ data: CustomNodeData; selected?: boolean }> 
           type="source"
           position={Position.Right}
           isBypassed={isBypassed}
-          borderColor={getHandleBorderColor(isBypassed, 'output')}
-          fillColor={getHandleFillColor(isBypassed, 'output')}
+          borderColor={getHandleBorderColor('output')}
+          fillColor={getHandleFillColor('output')}
         />
       ))}
     </div>

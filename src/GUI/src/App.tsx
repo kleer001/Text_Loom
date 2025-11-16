@@ -12,10 +12,13 @@ import {
   Paper,
   Tabs,
   Tab,
+  IconButton,
 } from '@mui/material';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import InfoIcon from '@mui/icons-material/Info';
 import PublicIcon from '@mui/icons-material/Public';
+import LightModeIcon from '@mui/icons-material/LightMode';
+import DarkModeIcon from '@mui/icons-material/DarkMode';
 import { WorkspaceProvider, useWorkspace } from './WorkspaceContext';
 import { GraphCanvas } from './GraphCanvas';
 import { NodeDetailsPanel } from './NodeDetailsPanel';
@@ -28,8 +31,10 @@ import { useFileManager } from './hooks/useFileManager';
 import { fileManager } from './services/fileManager';
 import { apiClient } from './apiClient';
 import type { NodeResponse } from './types';
+import { useTheme } from './ThemeContext';
 
 const AppContent: React.FC = () => {
+  const { mode, toggleTheme } = useTheme();
   const { loadWorkspace, loading, error, lastExecutionResult, lastExecutedNodeName, clearExecutionResult } = useWorkspace();
   const { save, saveAs, open, newWorkspace, isDirty, markClean } = useFileManager();
   const [focusedNode, setFocusedNode] = useState<NodeResponse | null>(null);
@@ -159,6 +164,13 @@ const AppContent: React.FC = () => {
           <Typography variant="h6" component="div" sx={{ flexGrow: 1, ml: 2 }}>
             TextLoom Workspace
           </Typography>
+          <IconButton
+            color="inherit"
+            onClick={toggleTheme}
+            title={mode === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
+          >
+            {mode === 'light' ? <DarkModeIcon /> : <LightModeIcon />}
+          </IconButton>
           <Button
             color="inherit"
             startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <RefreshIcon />}
