@@ -18,7 +18,7 @@ import { connectionsToEdges } from './utils/edgeMapping';
 import { transformConnectionNodeIds, enrichNodesWithConnectionState } from './utils/looperConnections';
 import { gatherBoundaryNodes } from './utils/looperBoundary';
 import { apiClient } from './apiClient';
-import type { NodeResponse, ConnectionRequest } from './types';
+import type { NodeResponse, ConnectionRequest, ParameterInfo } from './types';
 import { DESELECTION_DELAY_MS } from './constants';
 import { transformLooperNodes, type LooperSystem, getOriginalNodeId } from './looperTransform';
 import { LoopBoundary } from './LoopBoundary';
@@ -55,6 +55,26 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
     return draggedNodeIds.has(change.id) || (executingNodeId === change.id);
   }, [draggedNodeIds, executingNodeId]);
 
+  const handleBypassToggle = useCallback(async (sessionId: string) => {
+    const node = workspaceNodes.find(n => n.session_id === sessionId);
+    if (!node) return;
+
+    const currentBypass = node.parameters?.bypass?.value === true;
+    const parameterValues = Object.fromEntries(
+      Object.entries(node.parameters || {}).map(([key, param]) =>
+        [key, (param as ParameterInfo).value]
+      )
+    );
+
+    try {
+      await updateNode(sessionId, {
+        parameters: { ...parameterValues, bypass: !currentBypass }
+      });
+    } catch (error) {
+      console.error('Failed to toggle bypass:', error);
+    }
+  }, [workspaceNodes, updateNode]);
+
   const onNodesChange = useCallback((changes: NodeChange<Node>[]) => {
     const filteredChanges = changes.filter(change => !shouldPreventDeselection(change));
 
@@ -84,7 +104,7 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
         id: nodeId,
         type: 'custom',
         position: { x: node.position[0], y: node.position[1] },
-        data: { node },
+        data: { node, onBypassToggle: handleBypassToggle },
         // Preserve selection state or auto-select newly created nodes
         selected: nodeId === newlyCreatedNodeId || currentlySelectedIds.has(nodeId),
       };
@@ -107,7 +127,7 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
         onNodeFocus(newNode);
       }
     }
-  }, [workspaceNodes, connections, setNodes, setEdges, newlyCreatedNodeId, onNodeFocus]);
+  }, [workspaceNodes, connections, setNodes, setEdges, newlyCreatedNodeId, onNodeFocus, handleBypassToggle]);
 
   const handleSelectionChange = useCallback(
     (params: { nodes: Node[]; edges: Edge[] }) => {
