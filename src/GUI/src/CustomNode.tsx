@@ -197,12 +197,6 @@ export const CustomNode: React.FC<{ data: CustomNodeData; selected?: boolean }> 
           borderRadius: '50%',
           background: design.COLOR_BYPASS_DEFAULT,
           cursor: 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontSize: `${design.TEMPLATE_CIRCLE_FONT_SIZE}px`,
-          fontWeight: 'bold',
-          color: 'white',
           opacity,
           transition: 'background 0.2s',
         }}
@@ -213,9 +207,8 @@ export const CustomNode: React.FC<{ data: CustomNodeData; selected?: boolean }> 
           e.currentTarget.style.background = design.COLOR_BYPASS_DEFAULT;
         }}
         title={isBypassed ? 'Bypassed (Template)' : 'Click to bypass'}
-      >
-        {isBypassed && '×'}
-      </div>
+      />
+
 
       <div
         style={{
