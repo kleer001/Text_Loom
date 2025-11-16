@@ -8,7 +8,7 @@ interface Point {
 }
 
 function getConvexHull(points: Point[]): Point[] {
-  const sorted = [...points].sort((a, b) => a.x - a.x || a.y - b.y);
+  const sorted = [...points].sort((a, b) => a.x - b.x || a.y - b.y);
 
   const cross = (o: Point, a: Point, b: Point) =>
     (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
@@ -45,6 +45,7 @@ interface LoopBoundaryProps {
 const DEFAULT_NODE_WIDTH = 180;
 const DEFAULT_NODE_HEIGHT = 80;
 const DEFAULT_PADDING = 30;
+const DEFAULT_CORNER_RADIUS = 20;
 
 function getNodeDimensions(node: Node): { width: number; height: number } {
   return {
@@ -88,8 +89,51 @@ function expandHullWithPadding(hull: Point[], centroid: Point, padding: number):
   });
 }
 
-function buildSvgPath(points: Point[]): string {
-  return points.map((point, i) => `${i === 0 ? 'M' : 'L'} ${point.x} ${point.y}`).join(' ') + ' Z';
+function vectorBetween(from: Point, to: Point): Point {
+  return { x: to.x - from.x, y: to.y - from.y };
+}
+
+function magnitude(vector: Point): number {
+  return Math.sqrt(vector.x * vector.x + vector.y * vector.y);
+}
+
+function moveTowards(origin: Point, direction: Point, distance: number): Point {
+  const length = magnitude(direction);
+  const scale = distance / length;
+  return {
+    x: origin.x + direction.x * scale,
+    y: origin.y + direction.y * scale,
+  };
+}
+
+function buildSvgPath(points: Point[], cornerRadius: number = DEFAULT_CORNER_RADIUS): string {
+  if (points.length < 3) {
+    return points.map((point, i) => `${i === 0 ? 'M' : 'L'} ${point.x} ${point.y}`).join(' ') + ' Z';
+  }
+
+  const pathCommands: string[] = [];
+
+  for (let i = 0; i < points.length; i++) {
+    const current = points[i];
+    const next = points[(i + 1) % points.length];
+    const prev = points[(i - 1 + points.length) % points.length];
+
+    const toPrev = vectorBetween(current, prev);
+    const toNext = vectorBetween(current, next);
+
+    const edgeRadius = Math.min(
+      cornerRadius,
+      Math.min(magnitude(toPrev), magnitude(toNext)) / 2
+    );
+
+    const curveStart = moveTowards(current, toPrev, edgeRadius);
+    const curveEnd = moveTowards(current, toNext, edgeRadius);
+
+    pathCommands.push(i === 0 ? `M ${curveStart.x} ${curveStart.y}` : `L ${curveStart.x} ${curveStart.y}`);
+    pathCommands.push(`Q ${current.x} ${current.y} ${curveEnd.x} ${curveEnd.y}`);
+  }
+
+  return pathCommands.join(' ') + ' Z';
 }
 
 export const LoopBoundary: React.FC<LoopBoundaryProps> = ({ nodes, padding = DEFAULT_PADDING }) => {
