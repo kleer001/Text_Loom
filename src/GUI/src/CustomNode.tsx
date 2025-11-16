@@ -30,12 +30,14 @@ interface IndicatorCircleProps {
   color: string;
   title: string;
   diameter?: number;
+  outlineColor?: string;
 }
 
 const IndicatorCircle: React.FC<IndicatorCircleProps> = ({
   color,
   title,
-  diameter = design.ERROR_WARNING_DIAMETER
+  diameter = design.ERROR_WARNING_DIAMETER,
+  outlineColor
 }) => (
   <div
     style={{
@@ -43,6 +45,9 @@ const IndicatorCircle: React.FC<IndicatorCircleProps> = ({
       height: `${diameter}px`,
       borderRadius: '50%',
       background: color,
+      boxShadow: outlineColor
+        ? `0 0 0 2px ${color}, 0 0 0 4px ${outlineColor}`
+        : undefined,
     }}
     title={title}
   />
@@ -156,6 +161,7 @@ export const CustomNode: React.FC<{ data: CustomNodeData; selected?: boolean }> 
           <IndicatorCircle
             color={design.COLOR_ERROR}
             title="Has errors"
+            outlineColor={design.COLOR_ERROR_OUTLINE}
           />
         )}
 
@@ -163,6 +169,7 @@ export const CustomNode: React.FC<{ data: CustomNodeData; selected?: boolean }> 
           <IndicatorCircle
             color={design.COLOR_WARNING}
             title="Has warnings"
+            outlineColor={design.COLOR_WARNING_OUTLINE}
           />
         )}
       </div>
