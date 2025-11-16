@@ -40,7 +40,7 @@ const IndicatorCircle: React.FC<IndicatorCircleProps> = ({
   <div
     style={{
       width: `${diameter}px`,
-      height: `${design.ERROR_WARNING_DIAMETER}px`,
+      height: `${diameter}px`,
       borderRadius: '50%',
       background: color,
     }}
@@ -168,7 +168,10 @@ export const CustomNode: React.FC<{ data: CustomNodeData; selected?: boolean }> 
       </div>
 
       <div
-        onClick={() => onDisplayToggle?.(node.session_id)}
+        onClick={(e) => {
+          e.stopPropagation();
+          onDisplayToggle?.(node.session_id);
+        }}
         style={{
           position: 'absolute',
           right: `${design.DISPLAY_STATE_RIGHT}px`,
@@ -186,7 +189,10 @@ export const CustomNode: React.FC<{ data: CustomNodeData; selected?: boolean }> 
       />
 
       <div
-        onClick={() => onBypassToggle?.(node.session_id)}
+        onClick={(e) => {
+          e.stopPropagation();
+          onBypassToggle?.(node.session_id);
+        }}
         style={{
           position: 'absolute',
           right: `${design.BYPASS_BUTTON_RIGHT}px`,
