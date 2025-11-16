@@ -67,16 +67,9 @@ export const WorkspaceProvider: React.FC<{ children: ReactNode }> = ({ children 
     try {
       const newNode = await apiClient.createNode(request);
 
-      // Mark this node as newly created so it will be auto-selected
       setNewlyCreatedNodeId(newNode.session_id);
-
-      // Reload workspace to fetch child nodes (e.g., looper's input_null/output_null)
       await loadWorkspace();
-
-      // Clear the newly created flag after a delay
       setTimeout(() => setNewlyCreatedNodeId(null), DESELECTION_DELAY_MS);
-
-      // Notify change
       onChangeCallbackRef.current?.();
 
       return newNode;
@@ -94,8 +87,6 @@ export const WorkspaceProvider: React.FC<{ children: ReactNode }> = ({ children 
     try {
       const updatedNode = await apiClient.updateNode(sessionId, request);
       setNodes(prev => prev.map(n => n.session_id === sessionId ? updatedNode : n));
-
-      // Notify change
       onChangeCallbackRef.current?.();
 
       return updatedNode;
@@ -114,12 +105,9 @@ export const WorkspaceProvider: React.FC<{ children: ReactNode }> = ({ children 
     try {
       await apiClient.deleteNode(sessionId);
       setNodes(prev => prev.filter(n => n.session_id !== sessionId));
-      // Also remove connections involving this node
       setConnections(prev => prev.filter(c =>
         c.source_node_session_id !== sessionId && c.target_node_session_id !== sessionId
       ));
-
-      // Notify change
       onChangeCallbackRef.current?.();
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to delete node';
@@ -138,17 +126,13 @@ export const WorkspaceProvider: React.FC<{ children: ReactNode }> = ({ children 
     setError(null);
 
     try {
-      // Delete all nodes in parallel
       await Promise.all(sessionIds.map(id => apiClient.deleteNode(id)));
 
-      // Update state
       setNodes(prev => prev.filter(n => !sessionIds.includes(n.session_id)));
       setConnections(prev => prev.filter(c =>
         !sessionIds.includes(c.source_node_session_id) &&
         !sessionIds.includes(c.target_node_session_id)
       ));
-
-      // Notify change
       onChangeCallbackRef.current?.();
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to delete nodes';
@@ -196,10 +180,7 @@ export const WorkspaceProvider: React.FC<{ children: ReactNode }> = ({ children 
 
     try {
       await apiClient.setGlobal(key, value);
-      // Update local state
       setGlobals(prev => ({ ...prev, [key]: value }));
-
-      // Notify change
       onChangeCallbackRef.current?.();
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to set global variable';
@@ -217,14 +198,7 @@ export const WorkspaceProvider: React.FC<{ children: ReactNode }> = ({ children 
 
     try {
       await apiClient.deleteGlobal(key);
-      // Update local state
-      setGlobals(prev => {
-        const newGlobals = { ...prev };
-        delete newGlobals[key];
-        return newGlobals;
-      });
-
-      // Notify change
+      setGlobals(({ [key]: _, ...rest }) => rest);
       onChangeCallbackRef.current?.();
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to delete global variable';
