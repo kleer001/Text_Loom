@@ -41,10 +41,12 @@ export const COLOR_COOKING_UNCHANGED = '#4caf50';
 export const COLOR_COOKING_COOKING = '#2196f3';
 
 export const COLOR_ERROR = '#A855F7';
+export const COLOR_ERROR_OUTLINE = '#E0C4EC';
 export const COLOR_WARNING = '#FCD34D';
+export const COLOR_WARNING_OUTLINE = '#F2E8C4';
 
-export const COLOR_BYPASS_DEFAULT = '#6B7280';
-export const COLOR_BYPASS_HOVER = '#9CA3AF';
+export const COLOR_BYPASS_DEFAULT = '#CED0D5';
+export const COLOR_BYPASS_HOVER = '#E5E7EB';
 
 export const COLOR_TEXT_ACTIVE = '#1F2937';
 export const COLOR_TEXT_BYPASSED = '#4B5563';
