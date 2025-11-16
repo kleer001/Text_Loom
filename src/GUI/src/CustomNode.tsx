@@ -6,6 +6,7 @@ import * as design from './nodeDesign';
 interface CustomNodeData {
   node: NodeResponse;
   onBypassToggle?: (sessionId: string) => void;
+  onDisplayToggle?: (sessionId: string) => void;
 }
 
 const MIN_HANDLE_SPACING = 12;
@@ -94,7 +95,7 @@ export const CustomNode: React.FC<{ data: CustomNodeData; selected?: boolean }> 
   data,
   selected
 }) => {
-  const { node, onBypassToggle } = data;
+  const { node, onBypassToggle, onDisplayToggle } = data;
   const isBypassed = node.parameters?.bypass?.value === true;
   const isOnDisplay = node.parameters?.display?.value === true;
   const hasError = node.errors.length > 0;
@@ -135,59 +136,51 @@ export const CustomNode: React.FC<{ data: CustomNodeData; selected?: boolean }> 
           position: 'absolute',
           left: `${design.COOKING_STATE_LEFT}px`,
           top: `${design.COOKING_STATE_TOP}px`,
-          width: `${design.COOKING_STATE_DIAMETER}px`,
-          height: `${design.COOKING_STATE_DIAMETER}px`,
-          borderRadius: '50%',
-          background: stateColor,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: `${design.ERROR_WARNING_DUAL_GAP}px`,
           opacity,
         }}
-      />
-
-      {(hasError || hasWarning) && (
+      >
         <div
           style={{
-            position: 'absolute',
-            left: `${design.ERROR_WARNING_LEFT}px`,
-            bottom: `${design.ERROR_WARNING_BOTTOM}px`,
-            display: 'flex',
-            gap: `${design.ERROR_WARNING_DUAL_GAP}px`,
-            opacity,
+            width: `${design.COOKING_STATE_DIAMETER}px`,
+            height: `${design.COOKING_STATE_DIAMETER}px`,
+            borderRadius: '50%',
+            background: stateColor,
           }}
-        >
-          {hasError && hasWarning ? (
-            <>
-              <IndicatorCircle
-                color={design.COLOR_ERROR}
-                title="Has errors"
-                diameter={design.ERROR_WARNING_DUAL_WIDTH}
-              />
-              <IndicatorCircle
-                color={design.COLOR_WARNING}
-                title="Has warnings"
-                diameter={design.ERROR_WARNING_DUAL_WIDTH}
-              />
-            </>
-          ) : (
-            <IndicatorCircle
-              color={hasError ? design.COLOR_ERROR : design.COLOR_WARNING}
-              title={hasError ? 'Has errors' : 'Has warnings'}
-            />
-          )}
-        </div>
-      )}
+          title="Cooking state"
+        />
+
+        {hasError && (
+          <IndicatorCircle
+            color={design.COLOR_ERROR}
+            title="Has errors"
+          />
+        )}
+
+        {hasWarning && (
+          <IndicatorCircle
+            color={design.COLOR_WARNING}
+            title="Has warnings"
+          />
+        )}
+      </div>
 
       <div
+        onClick={() => onDisplayToggle?.(node.session_id)}
         style={{
           position: 'absolute',
           right: `${design.DISPLAY_STATE_RIGHT}px`,
           top: `${design.DISPLAY_STATE_TOP}px`,
-          width: `${design.DISPLAY_STATE_SIZE}px`,
-          height: `${design.DISPLAY_STATE_SIZE}px`,
+          width: `${design.DISPLAY_STATE_WIDTH}px`,
+          height: `${design.DISPLAY_STATE_HEIGHT}px`,
           border: isOnDisplay
             ? `${design.DISPLAY_STATE_BORDER_WIDTH_ON}px solid ${design.COLOR_DISPLAY_BORDER_ON}`
             : `${design.DISPLAY_STATE_BORDER_WIDTH_OFF}px solid ${design.COLOR_DISPLAY_BORDER_OFF}`,
           background: isOnDisplay ? design.COLOR_DISPLAY_FILL_ON : 'transparent',
           opacity,
+          cursor: 'pointer',
         }}
         title={isOnDisplay ? 'On display' : 'Not on display'}
       />
@@ -198,8 +191,8 @@ export const CustomNode: React.FC<{ data: CustomNodeData; selected?: boolean }> 
           position: 'absolute',
           right: `${design.BYPASS_BUTTON_RIGHT}px`,
           bottom: `${design.BYPASS_BUTTON_BOTTOM}px`,
-          width: `${design.BYPASS_BUTTON_SIZE}px`,
-          height: `${design.BYPASS_BUTTON_SIZE}px`,
+          width: `${design.BYPASS_BUTTON_WIDTH}px`,
+          height: `${design.BYPASS_BUTTON_HEIGHT}px`,
           background: design.COLOR_BYPASS_DEFAULT,
           borderRadius: `${design.BYPASS_BUTTON_BORDER_RADIUS}px`,
           cursor: 'pointer',
@@ -226,36 +219,45 @@ export const CustomNode: React.FC<{ data: CustomNodeData; selected?: boolean }> 
       <div
         style={{
           position: 'relative',
-          minHeight: `${design.TEXT_LINE_HEIGHT * 2}px`,
           paddingTop: `${design.TEXT_AREA_TOP}px`,
           paddingBottom: `${design.TEXT_AREA_BOTTOM}px`,
           paddingLeft: `${design.TEXT_AREA_LEFT - design.NODE_PADDING_HORIZONTAL}px`,
           paddingRight: `${design.TEXT_AREA_RIGHT - design.NODE_PADDING_HORIZONTAL}px`,
           display: 'flex',
           flexDirection: 'column',
-          justifyContent: 'center',
+          gap: '6px',
           opacity,
         }}
       >
         <div
           style={{
-            fontSize: `${design.TEXT_TYPE_FONT_SIZE}px`,
-            color: textColor,
-            marginBottom: `${design.TEXT_ELEMENT_MARGIN}px`,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '8px',
           }}
         >
-          {node.type}
-        </div>
+          <div
+            style={{
+              fontSize: `${design.TEXT_GLYPH_SIZE}px`,
+              fontWeight: 'bold',
+              flex: 1,
+              textAlign: 'center',
+              color: textColor,
+            }}
+          >
+            {node.glyph || '?'}
+          </div>
 
-        <div
-          style={{
-            fontSize: `${design.TEXT_GLYPH_SIZE}px`,
-            lineHeight: `${design.TEXT_LINE_HEIGHT}px`,
-            color: textColor,
-            marginBottom: `${design.TEXT_ELEMENT_MARGIN}px`,
-          }}
-        >
-          {node.glyph || '?'}
+          <div
+            style={{
+              fontSize: `${design.TEXT_TYPE_FONT_SIZE}px`,
+              color: textColor,
+              fontWeight: '500',
+            }}
+          >
+            {node.type}
+          </div>
         </div>
 
         <div
@@ -263,7 +265,7 @@ export const CustomNode: React.FC<{ data: CustomNodeData; selected?: boolean }> 
             fontSize: `${design.TEXT_FONT_SIZE}px`,
             fontWeight: 'bold',
             color: textColor,
-            lineHeight: `${design.TEXT_LINE_HEIGHT}px`,
+            textAlign: 'center',
           }}
         >
           {node.name}

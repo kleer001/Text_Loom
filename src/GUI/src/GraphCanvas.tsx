@@ -75,6 +75,26 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
     }
   }, [workspaceNodes, updateNode]);
 
+  const handleDisplayToggle = useCallback(async (sessionId: string) => {
+    const node = workspaceNodes.find(n => n.session_id === sessionId);
+    if (!node) return;
+
+    const currentDisplay = node.parameters?.display?.value === true;
+    const parameterValues = Object.fromEntries(
+      Object.entries(node.parameters || {}).map(([key, param]) =>
+        [key, (param as ParameterInfo).value]
+      )
+    );
+
+    try {
+      await updateNode(sessionId, {
+        parameters: { ...parameterValues, display: !currentDisplay }
+      });
+    } catch (error) {
+      console.error('Failed to toggle display:', error);
+    }
+  }, [workspaceNodes, updateNode]);
+
   const onNodesChange = useCallback((changes: NodeChange<Node>[]) => {
     const filteredChanges = changes.filter(change => !shouldPreventDeselection(change));
 
@@ -104,8 +124,7 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
         id: nodeId,
         type: 'custom',
         position: { x: node.position[0], y: node.position[1] },
-        data: { node, onBypassToggle: handleBypassToggle },
-        // Preserve selection state or auto-select newly created nodes
+        data: { node, onBypassToggle: handleBypassToggle, onDisplayToggle: handleDisplayToggle },
         selected: nodeId === newlyCreatedNodeId || currentlySelectedIds.has(nodeId),
       };
     });
@@ -127,7 +146,7 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
         onNodeFocus(newNode);
       }
     }
-  }, [workspaceNodes, connections, setNodes, setEdges, newlyCreatedNodeId, onNodeFocus, handleBypassToggle]);
+  }, [workspaceNodes, connections, setNodes, setEdges, newlyCreatedNodeId, onNodeFocus, handleBypassToggle, handleDisplayToggle]);
 
   const handleSelectionChange = useCallback(
     (params: { nodes: Node[]; edges: Edge[] }) => {
