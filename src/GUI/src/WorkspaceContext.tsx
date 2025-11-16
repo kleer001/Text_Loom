@@ -1,6 +1,6 @@
 // Workspace Context - Global state management for nodes, connections, and globals
 
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useRef } from 'react';
 import type { ReactNode } from 'react';
 import type { NodeResponse, ConnectionResponse, NodeCreateRequest, NodeUpdateRequest, ExecutionResponse } from './types';
 import { apiClient } from './apiClient';
@@ -40,7 +40,7 @@ export const WorkspaceProvider: React.FC<{ children: ReactNode }> = ({ children 
   const [newlyCreatedNodeId, setNewlyCreatedNodeId] = useState<string | null>(null);
   const [lastExecutionResult, setLastExecutionResult] = useState<ExecutionResponse | null>(null);
   const [lastExecutedNodeName, setLastExecutedNodeName] = useState<string | null>(null);
-  const [onChangeCallback, setOnChangeCallback] = useState<(() => void) | null>(null);
+  const onChangeCallbackRef = useRef<(() => void) | null>(null);
 
   const loadWorkspace = useCallback(async () => {
     setLoading(true);
@@ -77,7 +77,7 @@ export const WorkspaceProvider: React.FC<{ children: ReactNode }> = ({ children 
       setTimeout(() => setNewlyCreatedNodeId(null), DESELECTION_DELAY_MS);
 
       // Notify change
-      onChangeCallback?.();
+      onChangeCallbackRef.current?.();
 
       return newNode;
     } catch (err) {
@@ -88,7 +88,7 @@ export const WorkspaceProvider: React.FC<{ children: ReactNode }> = ({ children 
     } finally {
       setLoading(false);
     }
-  }, [loadWorkspace, onChangeCallback]);
+  }, [loadWorkspace]);
 
   const updateNode = useCallback(async (sessionId: string, request: NodeUpdateRequest): Promise<NodeResponse> => {
     try {
@@ -96,7 +96,7 @@ export const WorkspaceProvider: React.FC<{ children: ReactNode }> = ({ children 
       setNodes(prev => prev.map(n => n.session_id === sessionId ? updatedNode : n));
 
       // Notify change
-      onChangeCallback?.();
+      onChangeCallbackRef.current?.();
 
       return updatedNode;
     } catch (err) {
@@ -105,7 +105,7 @@ export const WorkspaceProvider: React.FC<{ children: ReactNode }> = ({ children 
       console.error('Node update error for session_id:', sessionId, err);
       throw err;
     }
-  }, [onChangeCallback]);
+  }, []);
 
   const deleteNode = useCallback(async (sessionId: string): Promise<void> => {
     setLoading(true);
@@ -120,7 +120,7 @@ export const WorkspaceProvider: React.FC<{ children: ReactNode }> = ({ children 
       ));
 
       // Notify change
-      onChangeCallback?.();
+      onChangeCallbackRef.current?.();
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to delete node';
       setError(message);
@@ -129,7 +129,7 @@ export const WorkspaceProvider: React.FC<{ children: ReactNode }> = ({ children 
     } finally {
       setLoading(false);
     }
-  }, [onChangeCallback]);
+  }, []);
 
   const deleteNodes = useCallback(async (sessionIds: string[]): Promise<void> => {
     if (sessionIds.length === 0) return;
@@ -149,7 +149,7 @@ export const WorkspaceProvider: React.FC<{ children: ReactNode }> = ({ children 
       ));
 
       // Notify change
-      onChangeCallback?.();
+      onChangeCallbackRef.current?.();
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to delete nodes';
       setError(message);
@@ -158,7 +158,7 @@ export const WorkspaceProvider: React.FC<{ children: ReactNode }> = ({ children 
     } finally {
       setLoading(false);
     }
-  }, [onChangeCallback]);
+  }, []);
 
   const executeNode = useCallback(async (sessionId: string): Promise<ExecutionResponse> => {
     setLoading(true);
@@ -200,7 +200,7 @@ export const WorkspaceProvider: React.FC<{ children: ReactNode }> = ({ children 
       setGlobals(prev => ({ ...prev, [key]: value }));
 
       // Notify change
-      onChangeCallback?.();
+      onChangeCallbackRef.current?.();
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to set global variable';
       setError(message);
@@ -209,7 +209,7 @@ export const WorkspaceProvider: React.FC<{ children: ReactNode }> = ({ children 
     } finally {
       setLoading(false);
     }
-  }, [onChangeCallback]);
+  }, []);
 
   const deleteGlobal = useCallback(async (key: string): Promise<void> => {
     setLoading(true);
@@ -225,7 +225,7 @@ export const WorkspaceProvider: React.FC<{ children: ReactNode }> = ({ children 
       });
 
       // Notify change
-      onChangeCallback?.();
+      onChangeCallbackRef.current?.();
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to delete global variable';
       setError(message);
@@ -234,7 +234,7 @@ export const WorkspaceProvider: React.FC<{ children: ReactNode }> = ({ children 
     } finally {
       setLoading(false);
     }
-  }, [onChangeCallback]);
+  }, []);
 
   const clearExecutionResult = useCallback(() => {
     setLastExecutionResult(null);
@@ -242,7 +242,7 @@ export const WorkspaceProvider: React.FC<{ children: ReactNode }> = ({ children 
   }, []);
 
   const setOnChange = useCallback((callback: (() => void) | null) => {
-    setOnChangeCallback(callback ? () => callback() : null);
+    onChangeCallbackRef.current = callback;
   }, []);
 
   const value: WorkspaceContextType = {
