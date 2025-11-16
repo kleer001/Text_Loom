@@ -48,6 +48,7 @@ export const getColors = (mode: ThemeMode) => ({
     uncooked: '#ff9800',
     unchanged: '#4caf50',
     cooking: '#2196f3',
+    cooked: '#4caf50',
   },
   error: {
     fill: '#A855F7',

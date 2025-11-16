@@ -57,12 +57,12 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
     return draggedNodeIds.has(change.id) || (executingNodeId === change.id);
   }, [draggedNodeIds, executingNodeId]);
 
-  const extractParameterValues = (node: NodeResponse) =>
+  const extractParameterValues = useCallback((node: NodeResponse) =>
     Object.fromEntries(
       Object.entries(node.parameters || {}).map(([key, param]) =>
         [key, (param as ParameterInfo).value]
       )
-    );
+    ), []);
 
   const handleBypassToggle = useCallback(async (sessionId: string) => {
     const node = workspaceNodes.find(n => n.session_id === sessionId);
@@ -72,7 +72,7 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
     await updateNode(sessionId, {
       parameters: { ...extractParameterValues(node), bypass: !currentBypass }
     });
-  }, [workspaceNodes, updateNode]);
+  }, [workspaceNodes, updateNode, extractParameterValues]);
 
   const handleDisplayToggle = useCallback(async (sessionId: string) => {
     const node = workspaceNodes.find(n => n.session_id === sessionId);
@@ -97,7 +97,7 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
     await updateNode(sessionId, {
       parameters: { ...extractParameterValues(node), display: !currentDisplay }
     });
-  }, [workspaceNodes, updateNode]);
+  }, [workspaceNodes, updateNode, extractParameterValues]);
 
   const onNodesChange = useCallback((changes: NodeChange<Node>[]) => {
     const filteredChanges = changes.filter(change => !shouldPreventDeselection(change));
