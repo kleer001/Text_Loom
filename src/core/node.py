@@ -147,9 +147,13 @@ class Node(MobileItem):
         # Import at runtime to avoid circular dependency
         from core.parm import Parm, ParameterType
         self._parms: Dict[str, 'Parm'] = {
-            "enabled": Parm("enabled", ParameterType.TOGGLE, self)
+            "enabled": Parm("enabled", ParameterType.TOGGLE, self),
+            "bypass": Parm("bypass", ParameterType.TOGGLE, self),
+            "display": Parm("display", ParameterType.TOGGLE, self)
         }
         self._parms["enabled"].set(True)
+        self._parms["bypass"].set(False)
+        self._parms["display"].set(False)
 
     def node_path(self) ->str:
         """Returns the current location in the hierarchy of the workspace."""
