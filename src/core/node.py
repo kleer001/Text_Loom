@@ -17,8 +17,8 @@ class Node(MobileItem):
     """
     Node: The foundational building block of a node-based graph processing system.
 
-    This abstract base class implements a composable, connectable processing unit that forms the 
-    backbone of a node graph architecture. Each Node can receive inputs, process data, and provide 
+    This abstract base class implements a composable, connectable processing unit that forms the
+    backbone of a node graph architecture. Each Node can receive inputs, process data, and provide
     outputs while maintaining its state and position within a hierarchical structure.
 
     Core Capabilities:
@@ -80,11 +80,11 @@ class Node(MobileItem):
             - Error handling
 
     Common Usage:
-        >>> node = Node.create_node(NodeType.SPLIT, "my_splitter")  # Create new node
-        >>> node.set_input(0, input_node)  # Connect input
-        >>> result = node.eval()  # Process and get result
-        >>> node.cook()  # Force reprocessing
-        >>> node.set_parent("/new/path")  # Move in hierarchy
+        >>> node = Node.create_node(NodeType.SPLIT, "my_splitter")
+        >>> node.set_input(0, input_node)
+        >>> result = node.eval()
+        >>> node.cook()
+        >>> node.set_parent("/new/path")
 
     Subclassing Notes:
         Required Implementations:
@@ -145,19 +145,17 @@ class Node(MobileItem):
 
         from core.parm import Parm, ParameterType
 
-        base_params = {
-            "enabled": (True, ParameterType.TOGGLE),
-            "bypass": (False, ParameterType.TOGGLE),
-            "display": (False, ParameterType.TOGGLE),
-        }
+        base_params = [
+            ("enabled", True, ParameterType.TOGGLE),
+            ("bypass", False, ParameterType.TOGGLE),
+            ("display", False, ParameterType.TOGGLE),
+        ]
 
-        self._parms: Dict[str, 'Parm'] = {
-            name: Parm(name, param_type, self)
-            for name, (_, param_type) in base_params.items()
-        }
-
-        for name, (default_value, _) in base_params.items():
-            self._parms[name].set(default_value)
+        self._parms: Dict[str, 'Parm'] = {}
+        for name, default, param_type in base_params:
+            parm = Parm(name, param_type, self)
+            parm.set(default)
+            self._parms[name] = parm
 
     def node_path(self) ->str:
         """Returns the current location in the hierarchy of the workspace."""
@@ -301,7 +299,6 @@ class Node(MobileItem):
             f'Connect {input_node.name()}[{output_index}] to {self.name()}[{input_index}]'
             )
         if input_node == self:
-            print(f'Rejected self-connection attempt for node: {self.name()}')
             return
         if hasattr(self, 'SINGLE_INPUT'
             ) and self.SINGLE_INPUT and self._inputs:
@@ -315,10 +312,7 @@ class Node(MobileItem):
             UndoManager().disable()
             self.remove_connection(self._inputs[input_index])
             UndoManager().enable()
-        connection = NodeConnection(input_node, self, output_index, input_index
-            )
-        print('New Connection: from input ', self.name(), 'at ', input_index, ' to output: ',
-            input_node.name(), 'at ', output_index)
+        connection = NodeConnection(input_node, self, output_index, input_index)
         self._inputs[input_index] = connection
         input_node._outputs.setdefault(output_index, []).append(connection)
         self.set_state(NodeState.UNCOOKED)
@@ -398,14 +392,8 @@ class Node(MobileItem):
         old_path = self.path()
         UndoManager().push_state(f'Move {old_path} to {new_parent_path}')
         try:
-            new_path, name_changed = NodeEnvironment.update_node_path(old_path,
-                new_parent_path)
-            if name_changed:
-                print(
-                    f'Node renamed to maintain uniqueness at new location: {new_path}'
-                    )
-        except ValueError as e:
-            print(f'Failed to move node: {e}')
+            NodeEnvironment.update_node_path(old_path, new_parent_path)
+        except ValueError:
             return
 
     def state(self) ->NodeState:
@@ -486,29 +474,11 @@ class Node(MobileItem):
         return nodes_to_cook
 
     def cook(self, force: bool=False) ->None:
-        """
-        Public cook method which includes dependency handling and core cooking logic.
-        This method should be called externally and will manage dependency cooking before
-        executing the core logic of this node.
-        """
-        # Import at runtime to avoid circular dependency
-        from core.parm import Parm, ParameterType
-
-        # Ensure _parms exists and has "enabled" parameter
-        if not hasattr(self, '_parms') or self._parms is None:
-            self._parms = {}
-        if "enabled" not in self._parms:
-            self._parms["enabled"] = Parm("enabled", ParameterType.TOGGLE, self)
-            self._parms["enabled"].set(True)
-
-        # Check if node is disabled
         if not self._parms["enabled"].eval():
-            # Cook dependencies first
             dependencies = self.cook_dependencies()
             for node in dependencies:
                 node._internal_cook()
 
-            # Pass through input unchanged or return empty
             if self.inputs():
                 input_conn = self.inputs()[0]
                 self._output = input_conn.output_node().get_output(requesting_node=self)
@@ -517,12 +487,8 @@ class Node(MobileItem):
             self.set_state(NodeState.UNCHANGED)
             return
 
-        print(f'☀ Starting cook for {self.name()}')
         dependencies = self.cook_dependencies()
         for node in dependencies:
-            # print(
-            #     f'Cooking {node.name()} via _internal_cook() from {self.name()}'
-            #     )
             node._internal_cook()
         self._internal_cook()
 
@@ -606,15 +572,15 @@ class Node(MobileItem):
                 else:
                     current.append(c)
                     
-            if escape or in_string:  # Invalid syntax
+            if escape or in_string:
                 return [s]
-                
+
             if current:
                 result.append(''.join(current))
-                
-            return [x for x in result if x or x == '']  # Preserve empty strings
-            
-        except:
+
+            return [x for x in result if x or x == '']
+
+        except (ValueError, IndexError):
             return [s]
 
     def inputs_with_indices(self, use_names: bool=False) ->Sequence[Tuple[
