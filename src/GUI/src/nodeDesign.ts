@@ -31,6 +31,8 @@ export const TEXT_FONT_SIZE = 14;
 export const TEXT_TYPE_FONT_SIZE = 9;
 export const TEXT_GLYPH_SIZE = 14;
 export const TEXT_ELEMENT_MARGIN = 2;
+export const TEXT_CONTENT_GAP = 6;
+export const TEXT_HEADER_GAP = 8;
 
 export const HANDLE_DIAMETER = 10;
 export const HANDLE_BORDER_WIDTH = 2;

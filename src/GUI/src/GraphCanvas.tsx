@@ -1,5 +1,3 @@
-// Graph Canvas - React Flow visualization of workspace
-
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ReactFlow,
@@ -55,24 +53,21 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
     return draggedNodeIds.has(change.id) || (executingNodeId === change.id);
   }, [draggedNodeIds, executingNodeId]);
 
-  const handleBypassToggle = useCallback(async (sessionId: string) => {
-    const node = workspaceNodes.find(n => n.session_id === sessionId);
-    if (!node) return;
-
-    const currentBypass = node.parameters?.bypass?.value === true;
-    const parameterValues = Object.fromEntries(
+  const extractParameterValues = (node: NodeResponse) =>
+    Object.fromEntries(
       Object.entries(node.parameters || {}).map(([key, param]) =>
         [key, (param as ParameterInfo).value]
       )
     );
 
-    try {
-      await updateNode(sessionId, {
-        parameters: { ...parameterValues, bypass: !currentBypass }
-      });
-    } catch (error) {
-      console.error('Failed to toggle bypass:', error);
-    }
+  const handleBypassToggle = useCallback(async (sessionId: string) => {
+    const node = workspaceNodes.find(n => n.session_id === sessionId);
+    if (!node) return;
+
+    const currentBypass = node.parameters?.bypass?.value === true;
+    await updateNode(sessionId, {
+      parameters: { ...extractParameterValues(node), bypass: !currentBypass }
+    });
   }, [workspaceNodes, updateNode]);
 
   const handleDisplayToggle = useCallback(async (sessionId: string) => {
@@ -81,43 +76,23 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
 
     const currentDisplay = node.parameters?.display?.value === true;
 
-    // If turning ON display, first turn OFF all other nodes' display
     if (!currentDisplay) {
       const otherNodesWithDisplay = workspaceNodes.filter(
         n => n.session_id !== sessionId && n.parameters?.display?.value === true
       );
 
-      for (const otherNode of otherNodesWithDisplay) {
-        const otherParams = Object.fromEntries(
-          Object.entries(otherNode.parameters || {}).map(([key, param]) =>
-            [key, (param as ParameterInfo).value]
-          )
-        );
-
-        try {
-          await updateNode(otherNode.session_id, {
-            parameters: { ...otherParams, display: false }
-          });
-        } catch (error) {
-          console.error('Failed to turn off display for node:', otherNode.session_id, error);
-        }
-      }
+      await Promise.all(
+        otherNodesWithDisplay.map(otherNode =>
+          updateNode(otherNode.session_id, {
+            parameters: { ...extractParameterValues(otherNode), display: false }
+          })
+        )
+      );
     }
 
-    // Now toggle the current node's display
-    const parameterValues = Object.fromEntries(
-      Object.entries(node.parameters || {}).map(([key, param]) =>
-        [key, (param as ParameterInfo).value]
-      )
-    );
-
-    try {
-      await updateNode(sessionId, {
-        parameters: { ...parameterValues, display: !currentDisplay }
-      });
-    } catch (error) {
-      console.error('Failed to toggle display:', error);
-    }
+    await updateNode(sessionId, {
+      parameters: { ...extractParameterValues(node), display: !currentDisplay }
+    });
   }, [workspaceNodes, updateNode]);
 
   const onNodesChange = useCallback((changes: NodeChange<Node>[]) => {
@@ -130,21 +105,16 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
     onNodesChangeInternal(filteredChanges);
   }, [onNodesChangeInternal, shouldPreventDeselection]);
 
-  // Combined effect to update both nodes and edges together
-  // This prevents a cascade of renders from looperSystems updates
   useEffect(() => {
     const { displayNodes, looperSystems: systems } = transformLooperNodes(workspaceNodes);
     setLooperSystems(systems);
 
     const transformedConnections = transformConnectionNodeIds(connections, systems);
     const enrichedNodes = enrichNodesWithConnectionState(displayNodes, transformedConnections);
-
-    // Preserve current selection state when recreating nodes
     const currentlySelectedIds = selectedNodeIdsRef.current;
 
     const newNodes = enrichedNodes.map((node: NodeResponse) => {
       const nodeId = String(node.session_id);
-
       return {
         id: nodeId,
         type: 'custom',
@@ -156,7 +126,6 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
 
     setNodes(newNodes);
 
-    // Update edges with the same transformed connections
     const flowEdges = connectionsToEdges(transformedConnections, {
       type: 'smoothstep',
       animated: false,
@@ -164,7 +133,6 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
     });
     setEdges(flowEdges);
 
-    // Auto-focus newly created node
     if (newlyCreatedNodeId) {
       const newNode = enrichedNodes.find((n: NodeResponse) => String(n.session_id) === newlyCreatedNodeId);
       if (newNode && onNodeFocus) {
@@ -178,7 +146,6 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
       setSelectedNodes(params.nodes);
       selectedNodeIdsRef.current = new Set(params.nodes.map(n => n.id));
 
-      // Update focused node when a node is selected
       if (params.nodes.length > 0 && onNodeFocus) {
         const focusedReactFlowNode = params.nodes[0];
         const nodeData = focusedReactFlowNode.data as { node: NodeResponse };
@@ -303,70 +270,50 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
         return [...filtered, newEdge];
       });
 
-      // Refresh workspace to sync node states
       await loadWorkspace();
-
     } catch (error) {
       console.error('Failed to create connection:', error);
-      // TODO: Show error notification to user
     }
   }, [nodes, setEdges, loadWorkspace]);
 
-  // Handle deleting connections (Phase 3.4)
   const onEdgesDelete = useCallback(async (edgesToDelete: Edge[]) => {
-    // Delete connections by their IDs (much simpler now!)
     for (const edge of edgesToDelete) {
       try {
         await apiClient.deleteConnectionById(edge.id);
       } catch (error) {
         console.error('Failed to delete connection:', error);
-        // Continue to next edge even if this one fails
       }
     }
 
-    // Remove edges from state
     setEdges(prevEdges =>
       prevEdges.filter(e => !edgesToDelete.includes(e))
     );
 
-    // Refresh workspace to sync node states
     await loadWorkspace();
-
   }, [setEdges, loadWorkspace]);
 
-  // Validate connections before allowing them (Phase 3.4)
   const isValidConnection = useCallback((connection: Edge | Connection) => {
-    // Prevent self-connections
     if (connection.source === connection.target) {
       console.warn('Cannot connect node to itself');
       return false;
     }
-
-    return true; // Allow connection
+    return true;
   }, []);
 
-  // Handle keyboard shortcuts (moved here to use onEdgesDelete)
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      // Ignore if user is typing in an input field
       const target = event.target as HTMLElement;
       const isInputField = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA';
 
-      // Delete key
       if (event.key === 'Delete' || event.key === 'Backspace') {
-        // Prevent default browser behavior (e.g., going back)
         if (event.key === 'Backspace' && !isInputField) {
           event.preventDefault();
         }
 
-        // Only delete if nodes are selected and not typing
         if (selectedNodes.length > 0 && !isInputField) {
           event.preventDefault();
           setDeleteDialogOpen(true);
-        }
-        // Handle edge deletion (Phase 3.4)
-        else if (!isInputField) {
-          // Get selected edges from React Flow
+        } else if (!isInputField) {
           const selectedEdges = edges.filter(e => e.selected);
           if (selectedEdges.length > 0) {
             event.preventDefault();

@@ -26,6 +26,20 @@ const calculateMinHeight = (inputCount: number, outputCount: number): number => 
 const getOpacity = (isBypassed: boolean): number =>
   isBypassed ? design.OPACITY_BYPASSED : design.OPACITY_ACTIVE;
 
+const getHandleBorderColor = (isBypassed: boolean, type: 'input' | 'output'): string =>
+  isBypassed
+    ? design.COLOR_HANDLE_BYPASSED_BORDER
+    : type === 'input'
+    ? design.COLOR_HANDLE_INPUT_BORDER
+    : design.COLOR_HANDLE_OUTPUT_BORDER;
+
+const getHandleFillColor = (isBypassed: boolean, type: 'input' | 'output'): string =>
+  isBypassed
+    ? design.COLOR_HANDLE_BYPASSED_FILL
+    : type === 'input'
+    ? design.COLOR_HANDLE_INPUT_FILL
+    : design.COLOR_HANDLE_OUTPUT_FILL;
+
 interface IndicatorCircleProps {
   color: string;
   title: string;
@@ -108,20 +122,14 @@ export const CustomNode: React.FC<{ data: CustomNodeData; selected?: boolean }> 
 
   const minHeight = calculateMinHeight(node.inputs.length, node.outputs.length);
   const stateColor = STATE_COLORS[node.state] ?? design.COLOR_COOKING_UNCOOKED;
-  const borderColor = selected ? design.COLOR_BORDER_SELECTED :
-                      isBypassed ? design.COLOR_BORDER_BYPASSED :
-                      design.COLOR_BORDER_ACTIVE;
+  const borderColor = selected
+    ? design.COLOR_BORDER_SELECTED
+    : isBypassed
+    ? design.COLOR_BORDER_BYPASSED
+    : design.COLOR_BORDER_ACTIVE;
   const backgroundColor = isBypassed ? design.COLOR_BG_BYPASSED : design.COLOR_BG_ACTIVE;
   const textColor = isBypassed ? design.COLOR_TEXT_BYPASSED : design.COLOR_TEXT_ACTIVE;
   const opacity = getOpacity(isBypassed);
-
-  const handleBorderColor = isBypassed ? design.COLOR_HANDLE_BYPASSED_BORDER :
-    (type: 'input' | 'output') => type === 'input' ?
-      design.COLOR_HANDLE_INPUT_BORDER : design.COLOR_HANDLE_OUTPUT_BORDER;
-
-  const handleFillColor = isBypassed ? design.COLOR_HANDLE_BYPASSED_FILL :
-    (type: 'input' | 'output') => type === 'input' ?
-      design.COLOR_HANDLE_INPUT_FILL : design.COLOR_HANDLE_OUTPUT_FILL;
 
   return (
     <div
@@ -218,7 +226,7 @@ export const CustomNode: React.FC<{ data: CustomNodeData; selected?: boolean }> 
           paddingRight: `${design.TEXT_AREA_RIGHT - design.NODE_PADDING_HORIZONTAL}px`,
           display: 'flex',
           flexDirection: 'column',
-          gap: '6px',
+          gap: `${design.TEXT_CONTENT_GAP}px`,
           opacity,
         }}
       >
@@ -227,7 +235,7 @@ export const CustomNode: React.FC<{ data: CustomNodeData; selected?: boolean }> 
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            gap: '8px',
+            gap: `${design.TEXT_HEADER_GAP}px`,
           }}
         >
           <div
@@ -274,8 +282,8 @@ export const CustomNode: React.FC<{ data: CustomNodeData; selected?: boolean }> 
           type="target"
           position={Position.Left}
           isBypassed={isBypassed}
-          borderColor={typeof handleBorderColor === 'function' ? handleBorderColor('input') : handleBorderColor}
-          fillColor={typeof handleFillColor === 'function' ? handleFillColor('input') : handleFillColor}
+          borderColor={getHandleBorderColor(isBypassed, 'input')}
+          fillColor={getHandleFillColor(isBypassed, 'input')}
         />
       ))}
 
@@ -288,8 +296,8 @@ export const CustomNode: React.FC<{ data: CustomNodeData; selected?: boolean }> 
           type="source"
           position={Position.Right}
           isBypassed={isBypassed}
-          borderColor={typeof handleBorderColor === 'function' ? handleBorderColor('output') : handleBorderColor}
-          fillColor={typeof handleFillColor === 'function' ? handleFillColor('output') : handleFillColor}
+          borderColor={getHandleBorderColor(isBypassed, 'output')}
+          fillColor={getHandleFillColor(isBypassed, 'output')}
         />
       ))}
     </div>
