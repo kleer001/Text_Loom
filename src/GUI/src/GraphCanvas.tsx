@@ -56,25 +56,19 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
   }, [draggedNodeIds, executingNodeId]);
 
   const handleBypassToggle = useCallback(async (sessionId: string) => {
-    // Find the node in workspace nodes
     const node = workspaceNodes.find(n => n.session_id === sessionId);
-    if (!node) {
-      console.error('Node not found for bypass toggle:', sessionId);
-      return;
-    }
+    if (!node) return;
 
-    // Get current bypass value (default to false if not set)
     const currentBypass = node.parameters?.bypass?.value === true;
+    const parameterValues = Object.fromEntries(
+      Object.entries(node.parameters || {}).map(([key, param]) =>
+        [key, (param as ParameterInfo).value]
+      )
+    );
 
     try {
-      // Toggle the bypass parameter
       await updateNode(sessionId, {
-        parameters: {
-          ...Object.fromEntries(
-            Object.entries(node.parameters || {}).map(([key, param]) => [key, (param as ParameterInfo).value])
-          ),
-          bypass: !currentBypass
-        }
+        parameters: { ...parameterValues, bypass: !currentBypass }
       });
     } catch (error) {
       console.error('Failed to toggle bypass:', error);
