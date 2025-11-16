@@ -80,6 +80,31 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
     if (!node) return;
 
     const currentDisplay = node.parameters?.display?.value === true;
+
+    // If turning ON display, first turn OFF all other nodes' display
+    if (!currentDisplay) {
+      const otherNodesWithDisplay = workspaceNodes.filter(
+        n => n.session_id !== sessionId && n.parameters?.display?.value === true
+      );
+
+      for (const otherNode of otherNodesWithDisplay) {
+        const otherParams = Object.fromEntries(
+          Object.entries(otherNode.parameters || {}).map(([key, param]) =>
+            [key, (param as ParameterInfo).value]
+          )
+        );
+
+        try {
+          await updateNode(otherNode.session_id, {
+            parameters: { ...otherParams, display: false }
+          });
+        } catch (error) {
+          console.error('Failed to turn off display for node:', otherNode.session_id, error);
+        }
+      }
+    }
+
+    // Now toggle the current node's display
     const parameterValues = Object.fromEntries(
       Object.entries(node.parameters || {}).map(([key, param]) =>
         [key, (param as ParameterInfo).value]
