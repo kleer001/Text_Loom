@@ -418,29 +418,48 @@ def update_node(
                 if p.startswith(old_path + '/')
             ]
 
-            # Try to rename the node
-            success = target_node.rename(sanitized_name)
-            if not success:
-                raise ValueError(f"Name '{sanitized_name}' is already in use by another node in the same path")
+            # Validate child path updates BEFORE renaming parent
+            # This ensures atomicity - either all updates succeed or none do
+            child_updates = []
 
-            # Update child paths
-            new_path = target_node.path()
+            # Pre-calculate what the new parent path would be
+            current_path_parent = str(target_node._path.parent())
+            hypothetical_new_path = f"{current_path_parent.rstrip('/')}/{sanitized_name}"
+
             for child in children:
                 if child:
                     old_child_path = child.path()
                     relative_path = old_child_path[len(old_path):]
-                    new_child_path = new_path + relative_path
+                    new_child_path = hypothetical_new_path + relative_path
 
-                    # Update child's path and name
-                    child._path = InternalPath(new_child_path)
-                    child._name = new_child_path.split('/')[-1]
+                    # Validate InternalPath construction before making any changes
+                    try:
+                        InternalPath(new_child_path)
+                    except Exception as e:
+                        raise ValueError(f"Cannot rename: child path '{new_child_path}' is invalid: {e}")
 
-                    # Update in NodeEnvironment
-                    if old_child_path in NodeEnvironment.nodes:
-                        del NodeEnvironment.nodes[old_child_path]
-                    NodeEnvironment.nodes[new_child_path] = child
+                    child_updates.append((child, old_child_path, relative_path))
 
-                    affected_nodes.append(child)
+            # Try to rename the node (validated above, should succeed)
+            success = target_node.rename(sanitized_name)
+            if not success:
+                raise ValueError(f"Name '{sanitized_name}' is already in use by another node in the same path")
+
+            # Update child paths (pre-validated, safe to execute)
+            new_path = target_node.path()
+            for child, old_child_path, relative_path in child_updates:
+                new_child_path = new_path + relative_path
+
+                # Update child's path and name
+                child._path = InternalPath(new_child_path)
+                child._name = new_child_path.split('/')[-1]
+
+                # Update in NodeEnvironment
+                if old_child_path in NodeEnvironment.nodes:
+                    del NodeEnvironment.nodes[old_child_path]
+                NodeEnvironment.nodes[new_child_path] = child
+
+                affected_nodes.append(child)
 
         # Update parameters if provided
         if request.parameters:
