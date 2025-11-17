@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ReactFlow,
   Background,
@@ -33,7 +33,7 @@ interface GraphCanvasProps {
 
 export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
   const { mode } = useTheme();
-  const colors = design.getColors(mode);
+  const colors = useMemo(() => design.getColors(mode), [mode]);
   const {
     nodes: workspaceNodes,
     connections,
@@ -51,6 +51,26 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
   const [draggedNodeIds, setDraggedNodeIds] = useState<Set<string>>(new Set());
   const [looperSystems, setLooperSystems] = useState<Map<string, LooperSystem>>(new Map());
   const selectedNodeIdsRef = useRef<Set<string>>(new Set());
+
+  const defaultEdgeConfig = useMemo(() => ({
+    type: 'smoothstep' as const,
+    animated: false,
+    style: {
+      stroke: colors.edge.default,
+      strokeWidth: design.EDGE_WIDTH_DEFAULT
+    },
+  }), [colors.edge.default]);
+
+  const edgeStyles = useMemo(() => `
+    .react-flow__edge:hover .react-flow__edge-path {
+      stroke: ${colors.edge.hover} !important;
+      stroke-width: ${design.EDGE_WIDTH_HOVER};
+    }
+    .react-flow__edge.selected .react-flow__edge-path {
+      stroke: ${colors.edge.selected} !important;
+      stroke-width: ${design.EDGE_WIDTH_SELECTED};
+    }
+  `, [colors.edge.hover, colors.edge.selected]);
 
   const shouldPreventDeselection = useCallback((change: NodeChange<Node>): boolean => {
     if (change.type !== 'select' || change.selected) return false;
@@ -130,11 +150,7 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
 
     setNodes(newNodes);
 
-    const flowEdges = connectionsToEdges(transformedConnections, {
-      type: 'smoothstep',
-      animated: false,
-      style: { stroke: '#888', strokeWidth: 2 },
-    });
+    const flowEdges = connectionsToEdges(transformedConnections, defaultEdgeConfig);
     setEdges(flowEdges);
 
     if (newlyCreatedNodeId) {
@@ -143,7 +159,7 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
         onNodeFocus(newNode);
       }
     }
-  }, [workspaceNodes, connections, setNodes, setEdges, newlyCreatedNodeId, onNodeFocus, handleBypassToggle, handleDisplayToggle]);
+  }, [workspaceNodes, connections, setNodes, setEdges, newlyCreatedNodeId, onNodeFocus, handleBypassToggle, handleDisplayToggle, defaultEdgeConfig]);
 
   const handleSelectionChange = useCallback(
     (params: { nodes: Node[]; edges: Edge[] }) => {
@@ -266,9 +282,7 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
           target: connection.target,
           sourceHandle: connection.sourceHandle!,
           targetHandle: connection.targetHandle!,
-          type: 'smoothstep',
-          animated: false,
-          style: { stroke: '#888', strokeWidth: 2 },
+          ...defaultEdgeConfig,
         };
 
         return [...filtered, newEdge];
@@ -278,7 +292,7 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
     } catch (error) {
       console.error('Failed to create connection:', error);
     }
-  }, [nodes, setEdges, loadWorkspace]);
+  }, [nodes, setEdges, loadWorkspace, defaultEdgeConfig]);
 
   const onEdgesDelete = useCallback(async (edgesToDelete: Edge[]) => {
     for (const edge of edgesToDelete) {
@@ -333,6 +347,7 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
 
   return (
     <>
+      <style>{edgeStyles}</style>
       <DeleteConfirmDialog
         open={deleteDialogOpen}
         nodeCount={selectedNodes.length}
@@ -353,8 +368,6 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
         onEdgesDelete={onEdgesDelete}
         isValidConnection={isValidConnection}
         nodeTypes={nodeTypes}
-        fitView
-        fitViewOptions={{ padding: 0.2 }}
         minZoom={0.1}
         maxZoom={2}
         selectNodesOnDrag={false}

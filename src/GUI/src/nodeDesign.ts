@@ -40,6 +40,10 @@ export const HANDLE_DIAMETER = 10;
 export const HANDLE_BORDER_WIDTH = 2;
 export const HANDLE_OFFSET = 6;
 
+export const EDGE_WIDTH_DEFAULT = 2;
+export const EDGE_WIDTH_HOVER = 3;
+export const EDGE_WIDTH_SELECTED = 4;
+
 export const OPACITY_BYPASSED = 0.6;
 export const OPACITY_ACTIVE = 1;
 
@@ -92,5 +96,10 @@ export const getColors = (mode: ThemeMode) => ({
   canvas: {
     background: mode === 'light' ? '#f5f5f5' : '#111827',
     grid: mode === 'light' ? '#d1d5db' : '#374151',
+  },
+  edge: {
+    default: mode === 'light' ? '#888888' : '#9CA3AF',
+    hover: mode === 'light' ? '#5B8FC7' : '#7CB3E8',
+    selected: mode === 'light' ? '#1976d2' : '#60a5fa',
   },
 });
