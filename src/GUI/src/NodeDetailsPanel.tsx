@@ -16,7 +16,7 @@ interface NodeDetailsPanelProps {
 }
 
 export const NodeDetailsPanel: React.FC<NodeDetailsPanelProps> = ({ node }) => {
-  const { updateNode, executeNode } = useWorkspace();
+  const { updateNode, executeNode, loadWorkspace } = useWorkspace();
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState('');
   const [nameError, setNameError] = useState('');
@@ -106,9 +106,14 @@ export const NodeDetailsPanel: React.FC<NodeDetailsPanelProps> = ({ node }) => {
     }
 
     const targetNodeId = isLooperPart(node.type) ? getOriginalNodeId(node.session_id) : node.session_id;
+    const isRenamingLooper = isLooperPart(node.type);
 
     try {
       await updateNode(targetNodeId, { name: trimmedName });
+
+      if (isRenamingLooper) {
+        await loadWorkspace();
+      }
 
       if (isMountedRef.current) {
         setIsEditing(false);
