@@ -80,6 +80,7 @@ const AppContent: React.FC = () => {
         if (!originalNode) {
           setFocusedNode(null);
         } else if (
+          originalNode.name !== focusedNode.name ||
           originalNode.parameters !== focusedNode.parameters ||
           originalNode.cook_count !== focusedNode.cook_count ||
           originalNode.errors !== focusedNode.errors ||
@@ -87,6 +88,7 @@ const AppContent: React.FC = () => {
         ) {
           setFocusedNode({
             ...focusedNode,
+            name: originalNode.name,
             parameters: originalNode.parameters,
             cook_count: originalNode.cook_count,
             errors: originalNode.errors,
