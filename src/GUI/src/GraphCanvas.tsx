@@ -383,6 +383,8 @@ const GraphCanvasInner: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
         isValidConnection={isValidConnection}
         nodeTypes={nodeTypes}
         onInit={onInit}
+        fitView={false}
+        fitViewOnInit={false}
         minZoom={0.1}
         maxZoom={2}
         selectNodesOnDrag={false}
