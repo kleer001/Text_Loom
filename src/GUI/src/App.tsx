@@ -35,7 +35,7 @@ import { useTheme } from './ThemeContext';
 
 const AppContent: React.FC = () => {
   const { mode, toggleTheme } = useTheme();
-  const { loadWorkspace, loading, error, lastExecutionResult, lastExecutedNodeName, clearExecutionResult } = useWorkspace();
+  const { nodes, loadWorkspace, loading, error, lastExecutionResult, lastExecutedNodeName, clearExecutionResult } = useWorkspace();
   const { save, saveAs, open, newWorkspace, isDirty, markClean } = useFileManager();
   const [focusedNode, setFocusedNode] = useState<NodeResponse | null>(null);
   const [activeTab, setActiveTab] = useState<'details' | 'globals'>('details');
@@ -70,6 +70,19 @@ const AppContent: React.FC = () => {
 
     checkAutosave();
   }, [loadWorkspace]);
+
+  // Sync focusedNode with updated node data
+  useEffect(() => {
+    if (focusedNode) {
+      const updatedNode = nodes.find(n => n.session_id === focusedNode.session_id);
+      if (updatedNode && updatedNode !== focusedNode) {
+        setFocusedNode(updatedNode);
+      } else if (!updatedNode) {
+        // Node was deleted
+        setFocusedNode(null);
+      }
+    }
+  }, [nodes, focusedNode]);
 
   // Handle autosave recovery
   const handleRecoverAutosave = useCallback(async () => {
