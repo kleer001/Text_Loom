@@ -93,4 +93,9 @@ export const getColors = (mode: ThemeMode) => ({
     background: mode === 'light' ? '#f5f5f5' : '#111827',
     grid: mode === 'light' ? '#d1d5db' : '#374151',
   },
+  edge: {
+    default: mode === 'light' ? '#888888' : '#9CA3AF',
+    hover: mode === 'light' ? '#5B8FC7' : '#7CB3E8',
+    selected: mode === 'light' ? '#1976d2' : '#60a5fa',
+  },
 });

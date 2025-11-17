@@ -133,7 +133,7 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
     const flowEdges = connectionsToEdges(transformedConnections, {
       type: 'smoothstep',
       animated: false,
-      style: { stroke: '#888', strokeWidth: 2 },
+      style: { stroke: colors.edge.default, strokeWidth: 2 },
     });
     setEdges(flowEdges);
 
@@ -268,7 +268,7 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
           targetHandle: connection.targetHandle!,
           type: 'smoothstep',
           animated: false,
-          style: { stroke: '#888', strokeWidth: 2 },
+          style: { stroke: colors.edge.default, strokeWidth: 2 },
         };
 
         return [...filtered, newEdge];
@@ -333,6 +333,16 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
 
   return (
     <>
+      <style>{`
+        .react-flow__edge:hover .react-flow__edge-path {
+          stroke: ${colors.edge.hover} !important;
+          stroke-width: 3;
+        }
+        .react-flow__edge.selected .react-flow__edge-path {
+          stroke: ${colors.edge.selected} !important;
+          stroke-width: 4;
+        }
+      `}</style>
       <DeleteConfirmDialog
         open={deleteDialogOpen}
         nodeCount={selectedNodes.length}
