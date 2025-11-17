@@ -318,9 +318,3 @@ class LooperNode(Node):
 
     def connect_loop_out(self, node: 'Node'):
         self._output_node.set_input(0, node, "output")
-
-    def __del__(self):
-        # Ensure the callback is unregistered when the LooperNode is deleted
-        if self._on_created_callback:
-            self._on_created_callback()
-        super().__del__()

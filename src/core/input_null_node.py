@@ -93,15 +93,9 @@ class InputNullNode(Node):
             self.set_state(NodeState.COOKED)
 
         except Exception as e:
-            import traceback
-            self.add_error(f"Error in InputNullNode: {str(e)}")
-            self._output = []
-            self.set_state(NodeState.UNCOOKED)
-
-        except Exception as e:
             self.add_error(f"Error in InputNullNode cook: {str(e)}")
             self.set_state(NodeState.UNCOOKED)
-            self._output = []  # Clear previous output on error
+            self._output = []
             self._parms["in_data"].set([])
 
         self._last_cook_time = (time.time() - start_time) * 1000
