@@ -32,6 +32,7 @@ import { fileManager } from './services/fileManager';
 import { apiClient } from './apiClient';
 import type { NodeResponse } from './types';
 import { useTheme } from './ThemeContext';
+import { isLooperPart, getOriginalNodeId } from './looperTransform';
 
 const AppContent: React.FC = () => {
   const { mode, toggleTheme } = useTheme();
@@ -71,15 +72,21 @@ const AppContent: React.FC = () => {
     checkAutosave();
   }, [loadWorkspace]);
 
-  // Sync focusedNode with updated node data
   useEffect(() => {
     if (focusedNode) {
-      const updatedNode = nodes.find(n => n.session_id === focusedNode.session_id);
-      if (updatedNode && updatedNode !== focusedNode) {
-        setFocusedNode(updatedNode);
-      } else if (!updatedNode) {
-        // Node was deleted
-        setFocusedNode(null);
+      if (isLooperPart(focusedNode.type)) {
+        const originalId = getOriginalNodeId(focusedNode.session_id);
+        const originalExists = nodes.some(n => n.session_id === originalId);
+        if (!originalExists) {
+          setFocusedNode(null);
+        }
+      } else {
+        const updatedNode = nodes.find(n => n.session_id === focusedNode.session_id);
+        if (updatedNode && updatedNode !== focusedNode) {
+          setFocusedNode(updatedNode);
+        } else if (!updatedNode) {
+          setFocusedNode(null);
+        }
       }
     }
   }, [nodes, focusedNode]);
