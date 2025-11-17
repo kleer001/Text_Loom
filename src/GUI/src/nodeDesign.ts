@@ -40,6 +40,10 @@ export const HANDLE_DIAMETER = 10;
 export const HANDLE_BORDER_WIDTH = 2;
 export const HANDLE_OFFSET = 6;
 
+export const EDGE_WIDTH_DEFAULT = 2;
+export const EDGE_WIDTH_HOVER = 3;
+export const EDGE_WIDTH_SELECTED = 4;
+
 export const OPACITY_BYPASSED = 0.6;
 export const OPACITY_ACTIVE = 1;
 
