@@ -60,8 +60,8 @@ class ApiClient {
     });
   }
 
-  async updateNode(sessionId: string, request: NodeUpdateRequest): Promise<NodeResponse> {
-    return this.fetchJson<NodeResponse>(`/nodes/${sessionId}`, {
+  async updateNode(sessionId: string, request: NodeUpdateRequest): Promise<NodeResponse[]> {
+    return this.fetchJson<NodeResponse[]>(`/nodes/${sessionId}`, {
       method: 'PUT',
       body: JSON.stringify(request),
     });

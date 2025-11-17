@@ -18,7 +18,7 @@ interface WorkspaceContextType {
   lastExecutedNodeName: string | null;
   loadWorkspace: () => Promise<void>;
   createNode: (request: NodeCreateRequest) => Promise<NodeResponse>;
-  updateNode: (sessionId: string, request: NodeUpdateRequest) => Promise<NodeResponse>;
+  updateNode: (sessionId: string, request: NodeUpdateRequest) => Promise<NodeResponse[]>;
   deleteNode: (sessionId: string) => Promise<void>;
   deleteNodes: (sessionIds: string[]) => Promise<void>;
   executeNode: (sessionId: string) => Promise<ExecutionResponse>;
@@ -83,13 +83,14 @@ export const WorkspaceProvider: React.FC<{ children: ReactNode }> = ({ children 
     }
   }, [loadWorkspace]);
 
-  const updateNode = useCallback(async (sessionId: string, request: NodeUpdateRequest): Promise<NodeResponse> => {
+  const updateNode = useCallback(async (sessionId: string, request: NodeUpdateRequest): Promise<NodeResponse[]> => {
     try {
-      const updatedNode = await apiClient.updateNode(sessionId, request);
-      setNodes(prev => prev.map(n => n.session_id === sessionId ? updatedNode : n));
+      const updatedNodes = await apiClient.updateNode(sessionId, request);
+      const updateMap = new Map(updatedNodes.map(n => [n.session_id, n]));
+      setNodes(prev => prev.map(n => updateMap.get(n.session_id) || n));
       onChangeCallbackRef.current?.();
 
-      return updatedNode;
+      return updatedNodes;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to update node';
       setError(message);

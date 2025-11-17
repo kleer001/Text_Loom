@@ -26,6 +26,7 @@ from api.models import (
 from core.base_classes import Node, NodeType, NodeEnvironment, NodeState
 from core.enums import generate_node_types
 from core.undo_manager import UndoManager
+from core.internal_path import InternalPath
 from pathlib import Path as FilePath
 from utils.node_loader import discover_node_types, get_node_class
 
@@ -330,11 +331,11 @@ def create_node(request: 'NodeCreateRequest') -> 'NodeResponse':
 
 @router.put(
     "/nodes/{session_id}",
-    response_model=NodeResponse,
+    response_model=List[NodeResponse],
     summary="Update a node",
-    description="Updates node parameters and/or UI state. Only provided fields are updated (partial update).",
+    description="Updates node parameters and/or UI state. Returns the updated node and any affected children. Only provided fields are updated (partial update).",
     responses={
-        200: {"description": "Node updated successfully"},
+        200: {"description": "Node and affected children updated successfully"},
         404: {"description": "Node not found", "model": ErrorResponse},
         400: {"description": "Invalid request", "model": ErrorResponse}
     }
@@ -342,19 +343,22 @@ def create_node(request: 'NodeCreateRequest') -> 'NodeResponse':
 def update_node(
     session_id: str,
     request: NodeUpdateRequest = Body(...)
-) -> NodeResponse:
+) -> List[NodeResponse]:
     """
     Update an existing node.
 
     Supports partial updates - only the provided fields are modified.
     Can update parameters, position, color, and selection state.
 
+    When renaming a node with children, all child node paths are updated
+    automatically and returned in the response.
+
     Args:
         session_id: The unique session identifier for the node
         request: Update parameters
 
     Returns:
-        NodeResponse: Updated node details
+        List[NodeResponse]: Updated node and any affected children
 
     Raises:
         HTTPException: 404 if node not found, 400 if update invalid
@@ -397,6 +401,8 @@ def update_node(
     # Disable undo during updates to prevent parm.set() from pushing duplicate states
     UndoManager().disable()
     try:
+        affected_nodes = [target_node]
+
         # Update name if provided
         if request.name is not None:
             # Validate and sanitize the name
@@ -404,10 +410,37 @@ def update_node(
             if not sanitized_name:
                 raise ValueError(f"Invalid node name: '{request.name}'. Name must contain alphanumeric characters or underscores.")
 
+            # Find children before rename
+            old_path = target_node.path()
+            children = [
+                NodeEnvironment.node_from_name(p)
+                for p in all_paths
+                if p.startswith(old_path + '/')
+            ]
+
             # Try to rename the node
             success = target_node.rename(sanitized_name)
             if not success:
                 raise ValueError(f"Name '{sanitized_name}' is already in use by another node in the same path")
+
+            # Update child paths
+            new_path = target_node.path()
+            for child in children:
+                if child:
+                    old_child_path = child.path()
+                    relative_path = old_child_path[len(old_path):]
+                    new_child_path = new_path + relative_path
+
+                    # Update child's path and name
+                    child._path = InternalPath(new_child_path)
+                    child._name = new_child_path.split('/')[-1]
+
+                    # Update in NodeEnvironment
+                    if old_child_path in NodeEnvironment.nodes:
+                        del NodeEnvironment.nodes[old_child_path]
+                    NodeEnvironment.nodes[new_child_path] = child
+
+                    affected_nodes.append(child)
 
         # Update parameters if provided
         if request.parameters:
@@ -424,8 +457,7 @@ def update_node(
         if request.color is not None:
             target_node._color = tuple(request.color)
 
-        response = node_to_response(target_node)
-        return response
+        return [node_to_response(node) for node in affected_nodes]
         
     except ValueError as e:
         logger.error(f"ValueError updating node: {e}")
