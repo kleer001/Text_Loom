@@ -5,9 +5,10 @@ import {
   Controls,
   useNodesState,
   useEdgesState,
+  ReactFlowProvider,
   BackgroundVariant,
 } from '@xyflow/react';
-import type { Node, Edge, NodeChange, Connection } from '@xyflow/react';
+import type { Node, Edge, NodeChange, Connection, ReactFlowInstance } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { CustomNode } from './CustomNode';
 import { useWorkspace } from './WorkspaceContext';
@@ -31,7 +32,7 @@ interface GraphCanvasProps {
   onNodeFocus?: (node: NodeResponse | null) => void;
 }
 
-export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
+const GraphCanvasInner: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
   const { mode } = useTheme();
   const colors = useMemo(() => design.getColors(mode), [mode]);
   const {
@@ -51,6 +52,7 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
   const [draggedNodeIds, setDraggedNodeIds] = useState<Set<string>>(new Set());
   const [looperSystems, setLooperSystems] = useState<Map<string, LooperSystem>>(new Map());
   const selectedNodeIdsRef = useRef<Set<string>>(new Set());
+  const reactFlowInstanceRef = useRef<ReactFlowInstance | null>(null);
 
   const defaultEdgeConfig = useMemo(() => ({
     type: 'smoothstep' as const,
@@ -130,6 +132,8 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
   }, [onNodesChangeInternal, shouldPreventDeselection]);
 
   useEffect(() => {
+    const viewport = reactFlowInstanceRef.current?.getViewport();
+
     const { displayNodes, looperSystems: systems } = transformLooperNodes(workspaceNodes);
     setLooperSystems(systems);
 
@@ -149,9 +153,13 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
     });
 
     setNodes(newNodes);
+    setEdges(connectionsToEdges(transformedConnections, defaultEdgeConfig));
 
-    const flowEdges = connectionsToEdges(transformedConnections, defaultEdgeConfig);
-    setEdges(flowEdges);
+    if (viewport) {
+      requestAnimationFrame(() => {
+        reactFlowInstanceRef.current?.setViewport(viewport, { duration: 0 });
+      });
+    }
 
     if (newlyCreatedNodeId) {
       const newNode = enrichedNodes.find((n: NodeResponse) => String(n.session_id) === newlyCreatedNodeId);
@@ -345,6 +353,10 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [selectedNodes, edges, onEdgesDelete]);
 
+  const onInit = useCallback((instance: ReactFlowInstance) => {
+    reactFlowInstanceRef.current = instance;
+  }, []);
+
   return (
     <>
       <style>{edgeStyles}</style>
@@ -368,6 +380,7 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
         onEdgesDelete={onEdgesDelete}
         isValidConnection={isValidConnection}
         nodeTypes={nodeTypes}
+        onInit={onInit}
         minZoom={0.1}
         maxZoom={2}
         selectNodesOnDrag={false}
@@ -395,5 +408,13 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
         })}
       </ReactFlow>
     </>
+  );
+};
+
+export const GraphCanvas: React.FC<GraphCanvasProps> = (props) => {
+  return (
+    <ReactFlowProvider>
+      <GraphCanvasInner {...props} />
+    </ReactFlowProvider>
   );
 };
