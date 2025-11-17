@@ -76,9 +76,22 @@ const AppContent: React.FC = () => {
     if (focusedNode) {
       if (isLooperPart(focusedNode.type)) {
         const originalId = getOriginalNodeId(focusedNode.session_id);
-        const originalExists = nodes.some(n => n.session_id === originalId);
-        if (!originalExists) {
+        const originalNode = nodes.find(n => n.session_id === originalId);
+        if (!originalNode) {
           setFocusedNode(null);
+        } else if (
+          originalNode.parameters !== focusedNode.parameters ||
+          originalNode.cook_count !== focusedNode.cook_count ||
+          originalNode.errors !== focusedNode.errors ||
+          originalNode.warnings !== focusedNode.warnings
+        ) {
+          setFocusedNode({
+            ...focusedNode,
+            parameters: originalNode.parameters,
+            cook_count: originalNode.cook_count,
+            errors: originalNode.errors,
+            warnings: originalNode.warnings,
+          });
         }
       } else {
         const updatedNode = nodes.find(n => n.session_id === focusedNode.session_id);
