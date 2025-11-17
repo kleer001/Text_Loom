@@ -87,24 +87,26 @@ const GraphCanvasInner: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
     ), []);
 
   const handleBypassToggle = useCallback(async (sessionId: string) => {
-    const node = workspaceNodes.find(n => n.session_id === sessionId);
+    const targetNodeId = getOriginalNodeId(sessionId);
+    const node = workspaceNodes.find(n => n.session_id === targetNodeId);
     if (!node) return;
 
     const currentBypass = node.parameters?.bypass?.value === true;
-    await updateNode(sessionId, {
+    await updateNode(targetNodeId, {
       parameters: { ...extractParameterValues(node), bypass: !currentBypass }
     });
   }, [workspaceNodes, updateNode, extractParameterValues]);
 
   const handleDisplayToggle = useCallback(async (sessionId: string) => {
-    const node = workspaceNodes.find(n => n.session_id === sessionId);
+    const targetNodeId = getOriginalNodeId(sessionId);
+    const node = workspaceNodes.find(n => n.session_id === targetNodeId);
     if (!node) return;
 
     const currentDisplay = node.parameters?.display?.value === true;
 
     if (!currentDisplay) {
       const otherNodesWithDisplay = workspaceNodes.filter(
-        n => n.session_id !== sessionId && n.parameters?.display?.value === true
+        n => n.session_id !== targetNodeId && n.parameters?.display?.value === true
       );
 
       await Promise.all(
@@ -116,7 +118,7 @@ const GraphCanvasInner: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
       );
     }
 
-    await updateNode(sessionId, {
+    await updateNode(targetNodeId, {
       parameters: { ...extractParameterValues(node), display: !currentDisplay }
     });
   }, [workspaceNodes, updateNode, extractParameterValues]);
