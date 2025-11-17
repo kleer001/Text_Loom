@@ -353,8 +353,6 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
         onEdgesDelete={onEdgesDelete}
         isValidConnection={isValidConnection}
         nodeTypes={nodeTypes}
-        fitView
-        fitViewOptions={{ padding: 0.2 }}
         minZoom={0.1}
         maxZoom={2}
         selectNodesOnDrag={false}
