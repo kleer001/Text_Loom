@@ -74,17 +74,15 @@ class OutputNullNode(Node):
                 current_data = self._parms["out_data"].raw_value()
                 if not isinstance(current_data, list):
                     current_data = []
-                    
-                if self._parms["feedback_mode"].eval():
-                    new_data = input_data
+
+                # Accumulate data regardless of feedback mode
+                if all(isinstance(x, str) for x in input_data):
+                    current_data.extend(input_data)
                 else:
-                    if all(isinstance(x, str) for x in input_data):
-                        current_data.extend(input_data)
-                    else:
-                        self.add_warning(f"Received non-string data: {input_data}")
-                        current_data.extend(str(x) for x in input_data if x)
-                    new_data = current_data
-                
+                    self.add_warning(f"Received non-string data: {input_data}")
+                    current_data.extend(str(x) for x in input_data if x)
+                new_data = current_data
+
                 self._parms["out_data"].set(new_data)
                 self._output = input_data
 
