@@ -42,7 +42,11 @@ const shortcutSections: ShortcutSection[] = [
     shortcuts: [
       { keys: 'Ctrl+Z', description: 'Undo' },
       { keys: 'Ctrl+Shift+Z', description: 'Redo' },
-      { keys: 'Delete', description: 'Delete selected nodes' },
+      { keys: 'Ctrl+X', description: 'Cut' },
+      { keys: 'Ctrl+C', description: 'Copy' },
+      { keys: 'Ctrl+V', description: 'Paste' },
+      { keys: 'Ctrl+D', description: 'Duplicate' },
+      { keys: 'Delete', description: 'Delete selected' },
       { keys: 'Ctrl+A', description: 'Select all' },
     ],
   },

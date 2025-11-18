@@ -200,6 +200,36 @@ export const MenuBar: React.FC<MenuBarProps> = ({ onKeyboardShortcuts, onAbout }
     }
   };
 
+  const handleCut = () => {
+    closeAllMenus();
+    window.dispatchEvent(new CustomEvent('textloom:cut'));
+  };
+
+  const handleCopy = () => {
+    closeAllMenus();
+    window.dispatchEvent(new CustomEvent('textloom:copy'));
+  };
+
+  const handlePaste = () => {
+    closeAllMenus();
+    window.dispatchEvent(new CustomEvent('textloom:paste'));
+  };
+
+  const handleDuplicate = () => {
+    closeAllMenus();
+    window.dispatchEvent(new CustomEvent('textloom:duplicate'));
+  };
+
+  const handleDelete = () => {
+    closeAllMenus();
+    window.dispatchEvent(new CustomEvent('textloom:deleteSelected'));
+  };
+
+  const handleSelectAll = () => {
+    closeAllMenus();
+    window.dispatchEvent(new CustomEvent('textloom:selectAll'));
+  };
+
   // Preferences actions
   const handleThemeToggle = () => {
     toggleTheme();
@@ -332,38 +362,38 @@ export const MenuBar: React.FC<MenuBarProps> = ({ onKeyboardShortcuts, onAbout }
             </Typography>
           </MenuItem>
           <Divider />
-          <MenuItem disabled>
+          <MenuItem onClick={handleCut}>
             <ListItemText>Cut</ListItemText>
             <Typography variant="body2" color="text.secondary" sx={{ ml: 3 }}>
               Ctrl+X
             </Typography>
           </MenuItem>
-          <MenuItem disabled>
+          <MenuItem onClick={handleCopy}>
             <ListItemText>Copy</ListItemText>
             <Typography variant="body2" color="text.secondary" sx={{ ml: 3 }}>
               Ctrl+C
             </Typography>
           </MenuItem>
-          <MenuItem disabled>
+          <MenuItem onClick={handlePaste}>
             <ListItemText>Paste</ListItemText>
             <Typography variant="body2" color="text.secondary" sx={{ ml: 3 }}>
               Ctrl+V
             </Typography>
           </MenuItem>
-          <MenuItem disabled>
+          <MenuItem onClick={handleDuplicate}>
             <ListItemText>Duplicate</ListItemText>
             <Typography variant="body2" color="text.secondary" sx={{ ml: 3 }}>
               Ctrl+D
             </Typography>
           </MenuItem>
-          <MenuItem disabled>
+          <MenuItem onClick={handleDelete}>
             <ListItemText>Delete</ListItemText>
             <Typography variant="body2" color="text.secondary" sx={{ ml: 3 }}>
               Delete
             </Typography>
           </MenuItem>
           <Divider />
-          <MenuItem disabled>
+          <MenuItem onClick={handleSelectAll}>
             <ListItemText>Select All</ListItemText>
             <Typography variant="body2" color="text.secondary" sx={{ ml: 3 }}>
               Ctrl+A

@@ -182,9 +182,34 @@ const AppContent: React.FC = () => {
         }
       }
 
-      // Ctrl+A - Select All (handled by ReactFlow, but prevent default)
+      // Ctrl+A - Select All
       if (e.ctrlKey && e.key === 'a') {
-        // Let ReactFlow handle this if canvas is focused
+        e.preventDefault();
+        window.dispatchEvent(new CustomEvent('textloom:selectAll'));
+      }
+
+      // Ctrl+C - Copy
+      if (e.ctrlKey && !e.shiftKey && e.key === 'c') {
+        e.preventDefault();
+        window.dispatchEvent(new CustomEvent('textloom:copy'));
+      }
+
+      // Ctrl+X - Cut
+      if (e.ctrlKey && e.key === 'x') {
+        e.preventDefault();
+        window.dispatchEvent(new CustomEvent('textloom:cut'));
+      }
+
+      // Ctrl+V - Paste
+      if (e.ctrlKey && e.key === 'v') {
+        e.preventDefault();
+        window.dispatchEvent(new CustomEvent('textloom:paste'));
+      }
+
+      // Ctrl+D - Duplicate
+      if (e.ctrlKey && e.key === 'd') {
+        e.preventDefault();
+        window.dispatchEvent(new CustomEvent('textloom:duplicate'));
       }
     };
 
