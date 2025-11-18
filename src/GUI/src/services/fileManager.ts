@@ -2,7 +2,8 @@
 // Uses File System Access API with fallback to download/upload
 
 import { apiClient } from '../apiClient';
-import { openDB, DBSchema, IDBPDatabase } from 'idb';
+import { openDB } from 'idb';
+import type { DBSchema, IDBPDatabase } from 'idb';
 
 interface AutosaveDB extends DBSchema {
   autosave: {
