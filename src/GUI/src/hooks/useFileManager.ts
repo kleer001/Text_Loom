@@ -41,7 +41,7 @@ export function useFileManager(): FileManagerState & FileManagerActions {
   const [error, setError] = useState<string | null>(null);
 
   // Autosave timer ref
-  const autosaveTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const autosaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastAutosaveRef = useRef<number>(0);
 
   /**

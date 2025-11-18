@@ -95,12 +95,15 @@ export const CustomNode: React.FC<{ data: CustomNodeData; selected?: boolean }> 
   data,
   selected
 }) => {
-  const { node, onBypassToggle, onDisplayToggle } = data;
+  const { node, onBypassToggle, onDisplayToggle: _onDisplayToggle } = data;
   const { mode } = useTheme();
   const colors = design.getColors(mode);
 
   const isBypassed = node.parameters?.bypass?.value === true;
-  const isOnDisplay = node.parameters?.display?.value === true;
+  const _isOnDisplay = node.parameters?.display?.value === true;
+  // _onDisplayToggle and _isOnDisplay are reserved for future display toggle feature
+  void _onDisplayToggle;
+  void _isOnDisplay;
   const hasError = node.errors.length > 0;
   const hasWarning = node.warnings.length > 0;
 

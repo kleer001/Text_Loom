@@ -28,7 +28,6 @@ export const AutosaveRecoveryDialog: React.FC<AutosaveRecoveryDialogProps> = ({
   onDiscard,
 }) => {
   const formatTimestamp = (ts: number): string => {
-    const date = new Date(ts);
     const now = new Date();
     const diffMs = now.getTime() - ts;
     const diffMins = Math.floor(diffMs / 60000);

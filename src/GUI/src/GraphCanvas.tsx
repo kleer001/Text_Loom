@@ -439,7 +439,6 @@ const GraphCanvasInner: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
         onInit={onInit}
         onMove={onMove}
         fitView={false}
-        fitViewOnInit={false}
         minZoom={0.1}
         maxZoom={2}
         selectNodesOnDrag={false}

@@ -2,7 +2,8 @@
 // Uses File System Access API with fallback to download/upload
 
 import { apiClient } from '../apiClient';
-import { openDB, DBSchema, IDBPDatabase } from 'idb';
+import { openDB } from 'idb';
+import type { DBSchema, IDBPDatabase } from 'idb';
 
 interface AutosaveDB extends DBSchema {
   autosave: {
@@ -204,7 +205,7 @@ export class FileManager {
   /**
    * Open using File System Access API
    */
-  private async openWithFileSystemAPI(): Promise<{ success: boolean; filePath: string }> {
+  private async openWithFileSystemAPI(): Promise<{ success: boolean; filePath: string | null }> {
     try {
       // Show open file picker
       const [handle] = await window.showOpenFilePicker!({
