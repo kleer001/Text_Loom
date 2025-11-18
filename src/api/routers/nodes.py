@@ -228,16 +228,16 @@ def get_node(
 
 @router.post(
     "/nodes",
-    response_model=NodeResponse,
+    response_model=List[NodeResponse],
     status_code=status.HTTP_201_CREATED,
     summary="Create a new node",
-    description="Creates a new node of the specified type. Name collisions are automatically handled by the backend.",
+    description="Creates a new node of the specified type. For loopers, returns the looper and its child nodes. Name collisions are automatically handled by the backend.",
     responses={
-        201: {"description": "Node created successfully"},
+        201: {"description": "Node(s) created successfully"},
         400: {"description": "Invalid request", "model": ErrorResponse}
     }
 )
-def create_node(request: 'NodeCreateRequest') -> 'NodeResponse':
+def create_node(request: 'NodeCreateRequest') -> List['NodeResponse']:
     """
     Create a new node with enhanced logging.
     
@@ -294,16 +294,30 @@ def create_node(request: 'NodeCreateRequest') -> 'NodeResponse':
         if request.position:
             node._position = tuple(request.position)
 
-        # Convert to response
-        response = node_to_response(node)
+        # Collect all created nodes (for loopers, include children)
+        created_nodes = [node]
 
-        # Verify the node in NodeEnvironment has the same session_id
+        # If it's a looper, find and include child nodes
+        if node_type == NodeType.LOOPER:
+            node_path = node.path()
+            all_paths = NodeEnvironment.list_nodes()
+
+            for path in all_paths:
+                if path.startswith(node_path + '/'):
+                    child_node = NodeEnvironment.node_from_name(path)
+                    if child_node:
+                        created_nodes.append(child_node)
+
+        # Convert all nodes to responses
+        responses = [node_to_response(n) for n in created_nodes]
+
+        # Verify the primary node in NodeEnvironment has the same session_id
         node_from_env = NodeEnvironment.node_from_name(node.path())
         if node_from_env:
-            if node_from_env.session_id() != response.session_id:
-                logger.error(f"[API_CREATE] SESSION_ID MISMATCH: Response has {response.session_id}, NodeEnvironment has {node_from_env.session_id()}")
+            if node_from_env.session_id() != responses[0].session_id:
+                logger.error(f"[API_CREATE] SESSION_ID MISMATCH: Response has {responses[0].session_id}, NodeEnvironment has {node_from_env.session_id()}")
 
-        return response
+        return responses
         
     except ValueError as e:
         logger.error(f"ValueError creating node: {e}")

@@ -17,7 +17,7 @@ interface WorkspaceContextType {
   lastExecutionResult: ExecutionResponse | null;
   lastExecutedNodeName: string | null;
   loadWorkspace: () => Promise<void>;
-  createNode: (request: NodeCreateRequest) => Promise<NodeResponse>;
+  createNode: (request: NodeCreateRequest) => Promise<NodeResponse[]>;
   updateNode: (sessionId: string, request: NodeUpdateRequest) => Promise<NodeResponse[]>;
   deleteNode: (sessionId: string) => Promise<void>;
   deleteNodes: (sessionIds: string[]) => Promise<void>;
@@ -60,19 +60,25 @@ export const WorkspaceProvider: React.FC<{ children: ReactNode }> = ({ children 
     }
   }, []);
 
-  const createNode = useCallback(async (request: NodeCreateRequest): Promise<NodeResponse> => {
+  const createNode = useCallback(async (request: NodeCreateRequest): Promise<NodeResponse[]> => {
     setLoading(true);
     setError(null);
 
     try {
-      const newNode = await apiClient.createNode(request);
+      const newNodes = await apiClient.createNode(request);
 
-      setNewlyCreatedNodeId(newNode.session_id);
-      await loadWorkspace();
+      // For loopers, newNodes will include the looper + inputNull + outputNull
+      // For regular nodes, newNodes will have just the one node
+      setNewlyCreatedNodeId(newNodes[0].session_id);
+
+      // Add all new nodes instead of reloading entire workspace
+      // This preserves viewport and is more efficient
+      setNodes(prev => [...prev, ...newNodes]);
+
       setTimeout(() => setNewlyCreatedNodeId(null), DESELECTION_DELAY_MS);
       onChangeCallbackRef.current?.();
 
-      return newNode;
+      return newNodes;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to create node';
       setError(message);
@@ -81,7 +87,7 @@ export const WorkspaceProvider: React.FC<{ children: ReactNode }> = ({ children 
     } finally {
       setLoading(false);
     }
-  }, [loadWorkspace]);
+  }, []);
 
   const updateNode = useCallback(async (sessionId: string, request: NodeUpdateRequest): Promise<NodeResponse[]> => {
     try {

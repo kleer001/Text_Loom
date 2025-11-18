@@ -86,6 +86,7 @@ function createLooperStartNode(system: LooperSystem): NodeResponse {
     path: inputNullNode.path,
     session_id: createTransformedId(looperNode.session_id, LOOPER_START_SUFFIX),
     name: looperNode.name,
+    position: inputNullNode.position,
     glyph: '⟲▷',
     type: 'looper_start',
     inputs: looperNode.inputs,
@@ -96,16 +97,15 @@ function createLooperStartNode(system: LooperSystem): NodeResponse {
 
 function createLooperEndNode(system: LooperSystem): NodeResponse {
   const { looperNode, outputNullNode } = system;
-  const [x, y] = looperNode.position;
 
   return {
     ...looperNode,
     path: outputNullNode.path,
     session_id: createTransformedId(looperNode.session_id, LOOPER_END_SUFFIX),
     name: looperNode.name,
+    position: outputNullNode.position,
     glyph: '⟲◁',
     type: 'looper_end',
-    position: [x + (NODE_WIDTH * 2), y],
     inputs: outputNullNode.inputs,
     outputs: outputNullNode.outputs,
     state: outputNullNode.state,

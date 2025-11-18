@@ -53,8 +53,8 @@ class ApiClient {
   }
 
   // Node operations
-  async createNode(request: NodeCreateRequest): Promise<NodeResponse> {
-    return this.fetchJson<NodeResponse>('/nodes', {
+  async createNode(request: NodeCreateRequest): Promise<NodeResponse[]> {
+    return this.fetchJson<NodeResponse[]>('/nodes', {
       method: 'POST',
       body: JSON.stringify(request),
     });

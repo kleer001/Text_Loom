@@ -206,17 +206,36 @@ const GraphCanvasInner: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
   const onNodeDragStop = useCallback(
     async (_event: unknown, node: Node) => {
       const newPosition: [number, number] = [node.position.x, node.position.y];
-      const originalNodeId = getOriginalNodeId(node.id);
+      const nodeData = node.data as { node: NodeResponse };
+      const nodeType = nodeData.node.type;
+
+      // For looper_start/end, update the actual child node (inputNull/outputNull)
+      // For regular nodes, update the node itself
+      let targetNodeId: string;
+
+      if (nodeType === 'looper_start') {
+        // Find inputNull for this looper
+        const looperId = getOriginalNodeId(node.id);
+        const looperSystem = looperSystems.get(looperId);
+        targetNodeId = looperSystem?.inputNullNode.session_id || node.id;
+      } else if (nodeType === 'looper_end') {
+        // Find outputNull for this looper
+        const looperId = getOriginalNodeId(node.id);
+        const looperSystem = looperSystems.get(looperId);
+        targetNodeId = looperSystem?.outputNullNode.session_id || node.id;
+      } else {
+        targetNodeId = node.id;
+      }
 
       try {
-        await updateNode(originalNodeId, { position: newPosition });
+        await updateNode(targetNodeId, { position: newPosition });
       } catch (error) {
         console.error('Failed to update node position:', node.id, error);
       }
 
       setIsDragging(false);
     },
-    [updateNode]
+    [updateNode, looperSystems]
   );
 
   const onSelectionDragStart = useCallback(
@@ -233,8 +252,24 @@ const GraphCanvasInner: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
         await Promise.all(
           draggedNodes.map(node => {
             const newPosition: [number, number] = [node.position.x, node.position.y];
-            const originalNodeId = getOriginalNodeId(node.id);
-            return updateNode(originalNodeId, { position: newPosition });
+            const nodeData = node.data as { node: NodeResponse };
+            const nodeType = nodeData.node.type;
+
+            let targetNodeId: string;
+
+            if (nodeType === 'looper_start') {
+              const looperId = getOriginalNodeId(node.id);
+              const looperSystem = looperSystems.get(looperId);
+              targetNodeId = looperSystem?.inputNullNode.session_id || node.id;
+            } else if (nodeType === 'looper_end') {
+              const looperId = getOriginalNodeId(node.id);
+              const looperSystem = looperSystems.get(looperId);
+              targetNodeId = looperSystem?.outputNullNode.session_id || node.id;
+            } else {
+              targetNodeId = node.id;
+            }
+
+            return updateNode(targetNodeId, { position: newPosition });
           })
         );
       } catch (error) {
@@ -243,7 +278,7 @@ const GraphCanvasInner: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
 
       setIsDragging(false);
     },
-    [updateNode]
+    [updateNode, looperSystems]
   );
 
   const handleDeleteConfirm = useCallback(async () => {
