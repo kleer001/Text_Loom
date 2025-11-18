@@ -9,33 +9,27 @@ from core.parm import Parm, ParameterType
 
 
 class FolderNode(Node):
-    """
-    FolderNode: Scans directories and reads text file contents matching specified criteria.
+    """Scans directories and reads text file contents matching specified criteria.
 
-    Enables batch file processing workflows by scanning directories, filtering files,
-    and reading their contents. Primary use case is processing entire directories of
-    text files through LLM pipelines without manually specifying each file.
+    Enables batch file processing workflows by scanning directories, filtering
+    files based on various criteria, and reading their contents. This node is
+    ideal for processing entire directories of text files through LLM pipelines
+    without manually specifying each file.
 
-    Parameters:
-        folder_path (str): Path to directory to scan (supports $GLOBAL variables)
-        pattern (str): Filename matching pattern (wildcards and regex)
-        recursive (bool): Include subdirectories in search
-        sort_by (str): Sorting method - "name", "name_desc", "date", "date_desc",
-                      "size", "size_desc", "none"
-        max_files (int): Maximum number of files to return (0 = unlimited)
-        min_size (int): Minimum file size in bytes (0 = no minimum)
-        max_size (int): Maximum file size in bytes (0 = no maximum)
-        include_hidden (bool): Include hidden files (starting with .)
-        follow_symlinks (bool): Follow symbolic links during traversal
-        on_error (str): Error handling - "warn", "skip", "stop"
-        enabled (bool): Enable/disable node functionality
+    Attributes:
+        folder_path (str): Path to the directory to scan.
+        pattern (str): Filename matching pattern (supports wildcards and regex).
+        recursive (bool): If True, includes subdirectories in the search.
+        sort_by (str): Sorting method ("name", "date", "size", etc.).
+        max_files (int): Maximum number of files to return (0 for unlimited).
+        min_size (int): Minimum file size in bytes (0 for no minimum).
+        max_size (int): Maximum file size in bytes (0 for no maximum).
+        include_hidden (bool): If True, includes hidden files (starting with '.').
+        follow_symlinks (bool): If True, follows symbolic links during traversal.
+        on_error (str): Error handling method ("warn", "skip", "stop").
+        enabled (bool): Enable or disable the node's functionality.
 
-    Outputs:
-        output[0] (List[str]): List of file contents
-        output[1] (List[str]): List of file names (paths)
-        output[2] (List[str]): List of errors per file (empty string if successful)
-
-    Example Usage:
+    Example:
         Basic scan:
             folder_path = "./fables/"
             pattern = "*.txt"
@@ -43,9 +37,15 @@ class FolderNode(Node):
             Output[1]: ["./fables/fable_001.txt", "./fables/fable_002.txt"]
             Output[2]: ["", ""]
 
-        With errors:
-            If file2 is unreadable:
-            Output[2]: ["", "Permission denied: /path/file2.txt"]
+        With errors (if fable_002.txt is unreadable):
+            Output[2]: ["", "Permission denied: ./fables/fable_002.txt"]
+
+    Note:
+
+        **Outputs:**
+        *   Output[0] (List[str]): List of file contents.
+        *   Output[1] (List[str]): List of file names (paths).
+        *   Output[2] (List[str]): List of errors per file (empty string if successful).
     """
 
     GLYPH = '📁'

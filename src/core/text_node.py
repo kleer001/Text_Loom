@@ -6,34 +6,41 @@ from core.parm import Parm, ParameterType
 from core.loop_manager import LoopManager
 
 class TextNode(Node):
-    """
-    A node that manipulates text strings with advanced list support.
+    """A node that manipulates text strings with advanced list support.
 
     Takes a list of strings as input and either appends or prepends text based on the node's parameters.
-    The text_string parameter supports both plain strings and Python-style list syntax:
+    The `text_string` parameter supports both plain strings and Python-style list syntax.
 
-    Plain string: "hello" -> creates ["hello"]
-    List syntax: ["first", "second"] -> creates ["first", "second"]
+    Attributes:
+        text_string (str): The text to process. Accepts a plain string or list syntax.
+        pass_through (bool): If True, processes input data. If False, uses only `text_string`.
+        per_item (bool): If True, applies each `text_string` item to every input item.
+                         If False, concatenates lists of strings.
+        prefix (bool): If True, adds `text_string` before input items. If False, adds after.
 
-    List Syntax Details:
-    - Uses Python-style list notation with square brackets
-    - Strings must be quoted with either single (') or double (") quotes
-    - Mixed quote types are supported: ["first", 'second']
-    - Supports escaped quotes: ["escaped\\"quote"]
-    - Empty strings are preserved: ["", "test", ""]
-    - Empty list [] creates [""]
-    - Invalid syntax falls back to treating input as plain string
+    Example:
+        >>> node = TextNode("my_text_node", "/root", NodeType.TEXT)
+        >>> node.parms()["text_string"].set('["Hello", "World"]')
+        >>> node.cook()
+        # Output: ["Hello", "World"]
 
-    Parameters:
-    text_string: The text to process. Accepts plain string or list syntax
-    pass_through: When True, processes input data. When False, uses only text_string
-    per_item: When True, applies each text string to every input item
-            When False, concatenates lists of strings
-    prefix: When True, adds text before input. When False, adds after
+    Note:
+        **List Syntax Details:**
+        *   Uses Python-style list notation with square brackets.
+        *   Strings must be quoted with either single (`'`) or double (`"`) quotes.
+        *   Mixed quote types are supported: `["first", 'second']`.
+        *   Supports escaped quotes: `['escaped\\"quote']`.
+        *   Empty strings are preserved: `["", "test", ""]`.
+        *   An empty list `[]` creates a list containing a single empty string `[""]`.
+        *   Invalid syntax falls back to treating the input as a plain string.
 
-    Input: List[str]
-    Output: List[str]
+        **Input:**
+        *   `List[str]`: A list of strings to be processed or appended to.
+
+        **Output:**
+        *   `List[str]`: A list of strings resulting from the text manipulation.
     """
+
 
     GLYPH = 'Ꭲ'
     SINGLE_INPUT = True

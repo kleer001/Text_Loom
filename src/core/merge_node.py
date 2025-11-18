@@ -4,49 +4,47 @@ from core.base_classes import Node, NodeType, NodeState
 from core.parm import Parm, ParameterType
 
 class MergeNode(Node):
-    """
-    Represents a Merge Node in the workspace.
+    """Represents a Merge Node in the workspace.
 
     The Merge Node combines multiple input string lists into a single string list
     with one item. It can have one or more input connections and produces a single
     output.
 
-    Example usage:
-    # Create a Merge node and three FILE_IN nodes
-    merge_node = Node.create_node(NodeType.MERGE)
-    file_in1 = Node.create_node(NodeType.FILE_IN)
-    file_in2 = Node.create_node(NodeType.FILE_IN)
-    file_in3 = Node.create_node(NodeType.FILE_IN)
+    Attributes:
+        single_string (bool): Merges input strings into a single string item list.
+        insert_string (str): The string to be inserted ahead of each string list item.
+                             'N' is replaced with the index number of the string list item (starting with 1).
+                             This string is surrounded by a complementary (and hard coded) pair of newline escaped characters.
+        use_insert (bool): Inserts the `insert_string` at the head of each item in the list as they're merged together.
 
-    # Connect the FILE_IN nodes to the Merge node
-    merge_node.set_input("input0", file_in1, "output")
-    merge_node.set_input("input1", file_in2, "output")
-    merge_node.set_input("input2", file_in3, "output")
-
-    # To reorder the inputs arbitrarily, you can use Python's built-in functions
-    # Get the current inputs
-    current_inputs = merge_node.inputs()
-
-    # Reorder the inputs (e.g., move the last input to the first position)
-    reordered_inputs = current_inputs[-1:] + current_inputs[:-1]
-
-    # Clear existing inputs
-    for i in range(len(current_inputs)):
-        merge_node.remove_input(f"input{i}")
-
-    # Set the reordered inputs
-    for i, input_node in enumerate(reordered_inputs):
-        merge_node.set_input(f"input{i}", input_node, "output")
-
-    # You can use any Python list operations to reorder the inputs as needed
-
-    Parms:
-
-    single_string = boolian, merges input strings into a single string item list
-
-    insert_string = string, the string to be inserted ahead of each string list item. N is replaced with the index number of the string list item (starting with 1). This string is surrounded by a complementary (and hard coded) pair of new line escaped characters
-
-    use_insert = boolian, inserts the insert_string at the head of each item in the list as they're merged together
+    Example:
+        >>> # Create a Merge node and three FILE_IN nodes
+        >>> merge_node = Node.create_node(NodeType.MERGE)
+        >>> file_in1 = Node.create_node(NodeType.FILE_IN)
+        >>> file_in2 = Node.create_node(NodeType.FILE_IN)
+        >>> file_in3 = Node.create_node(NodeType.FILE_IN)
+        >>>
+        >>> # Connect the FILE_IN nodes to the Merge node
+        >>> merge_node.set_input("input0", file_in1, "output")
+        >>> merge_node.set_input("input1", file_in2, "output")
+        >>> merge_node.set_input("input2", file_in3, "output")
+        >>>
+        >>> # To reorder the inputs arbitrarily, you can use Python's built-in functions
+        >>> # Get the current inputs
+        >>> current_inputs = merge_node.inputs()
+        >>>
+        >>> # Reorder the inputs (e.g., move the last input to the first position)
+        >>> reordered_inputs = current_inputs[-1:] + current_inputs[:-1]
+        >>>
+        >>> # Clear existing inputs
+        >>> for i in range(len(current_inputs)):
+        ...     merge_node.remove_input(f"input{i}")
+        >>>
+        >>> # Set the reordered inputs
+        >>> for i, input_node in enumerate(reordered_inputs):
+        ...     merge_node.set_input(f"input{i}", input_node, "output")
+        >>>
+        >>> # You can use any Python list operations to reorder the inputs as needed
     """
 
     GLYPH = '⋈'

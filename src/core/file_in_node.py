@@ -6,49 +6,37 @@ from core.base_classes import Node, NodeType, NodeState
 from core.parm import Parm, ParameterType
 
 class FileInNode(Node):
-    """
-    FileInNode: A node that reads and parses text files or input strings into lists.
+    """A node that reads and parses text files or input strings into lists.
 
-    This node can either read from a file or take input text, parsing formatted string lists 
-    like "[item1, item2, item3]" into proper Python lists. If no input is provided, reads 
-    from the specified file.
+    This node can either read from a file or take input text, parsing formatted
+    string lists like "[item1, item2, item3]" into proper Python lists. If no
+    input is provided, it reads from the specified file. The node monitors the
+    file for changes and automatically reloads its content.
 
-    Parameters:
-        file_name (str): Path to the target file (defaults to "./input.txt")
-        file_text (str): Contains the current file content
-        refresh (button): Force reloads the file content
+    Attributes:
+        file_name (str): Path to the target file to be read. Defaults to "./input.txt".
+        file_text (str): Contains the current content of the file.
+        refresh (button): A button to force a reload of the file content.
 
-    Input Processing:
-        - If input is provided, uses that instead of file content
-        - Parses text in format "[item1, item2, ...]" into list items
-        - Handles quoted strings, escapes, and empty items
-        - Falls back to single-item list for invalid formats
-
-    Features:
-        - Monitors file changes using MD5 hashing
-        - Automatically reloads when file content changes
-        - Provides error reporting for file access issues
-        - Supports force refresh via button
-
-    Example Usage:
+    Example:
         1. File reading:
-        Input: None
-        File: "['a', 'b', 'c']"
-        Output: ["a", "b", "c"]
-        
-        2. Input processing:
-        Input: ["[1, 2, 3]"]
-        Output: ["1", "2", "3"]
-        
-        3. Raw text:
-        Input: ["plain text"]
-        Output: ["plain text"]
+            Input: None
+            File: "['a', 'b', 'c']"
+            Output: ["a", "b", "c"]
 
-    Notes:
-        - Always time dependent (_is_time_dependent = True)
-        - Accepts optional input to override file content
-        - Output is List[str] containing parsed items
-        - Reports detailed errors for file and parsing issues
+        2. Input processing:
+            Input: ["[1, 2, 3]"]
+            Output: ["1", "2", "3"]
+
+        3. Raw text:
+            Input: ["plain text"]
+            Output: ["plain text"]
+
+    Note:
+        - This node is always time-dependent.
+        - Accepts optional input to override file content.
+        - Output is List[str] containing parsed items.
+        - Reports detailed errors for file and parsing issues.
     """
 
     GLYPH = '⤵'

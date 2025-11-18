@@ -34,6 +34,7 @@ class MakeListNode(Node):
 
     Limitations:
         - Only processes the first numbered list encountered in the text
+        - Does not count, as such. Any number type (see numbering format) will trigger a split. 
         - Cannot handle nested lists
         - Maximum number support up to thousands
         - Does not preserve the original numbering format
@@ -62,13 +63,16 @@ class MakeListNode(Node):
 
         >>> text = '''
         ... Project Steps:
-        ... First: Initialize repository
-        ... Second: Set up environment
-        ... Third: Begin development'''
+        ... 1 - First: Initialize repository
+        ... 2 - Second: Set up environment
+
         >>> parse_list(text)
-        ['Initialize repository',
-        'Set up environment',
-        'Begin development']
+        ['-',
+        ':',
+        'Initialize repository',
+        '-',
+        ':',
+        'Set up environment']
 
     Notes:
         - List items are assumed to start with a number or number word followed by a separator

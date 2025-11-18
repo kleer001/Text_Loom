@@ -8,72 +8,82 @@ from core.parm import Parm, ParameterType
 import json
 
 class SectionNode(Node):
-    r"""
-    A node that sections input text based on prefix matching patterns.
+    r"""A node that sections input text based on prefix matching patterns.
 
-    Separates input text into three outputs based on two prefix patterns.
+    Separates input text into three outputs based on two configurable prefix patterns.
     Lines matching either prefix are routed to corresponding outputs,
-    with unmatched lines sent to the third output.
+    with all unmatched lines sent to the third output.
 
-    Prefix Pattern Types:
-        1. Wildcard Patterns:
-            * Matches any sequence of characters
-            ? Matches exactly one character
-            Examples:
-            - "Q*" matches "Q:", "Query", "Question"
-            - "Speaker?" matches "Speaker1", "Speaker2"
-            - "*Bot" matches "ChatBot", "TestBot"
+    Attributes:
+        prefix1 (str): The first prefix pattern to match.
+        prefix2 (str): The second prefix pattern to match.
+        trim_prefix (bool): If True, removes the matching prefix from the output lines.
+        regex_file (str): The name of the JSON file containing predefined regex shortcut patterns.
+        enabled (bool): If True, the node's functionality is active; otherwise, it passes empty lists.
 
-        2. Regex Patterns (starting with ^):
-            Supports full regex matching
-            Example: "^Chapter\d+" matches "Chapter1", "Chapter22"
+    Example:
+        Simple usage:
+            >>> input_text = ["Q: What time?", "A: 3 PM", "Note: check later"]
+            >>> section_node = Node.create_node(NodeType.SECTION)
+            >>> section_node.parms()["prefix1"].set("Q*")
+            >>> section_node.parms()["prefix2"].set("A*")
+            >>> # Assuming cook method takes input directly for example simplicity
+            >>> # In actual use, input would come from connected nodes
+            >>> section_node._internal_cook(input_list=input_text) # Direct internal call for example
+            >>> section_node._output[0]
+            ['What time?']
+            >>> section_node._output[1]
+            ['3 PM']
+            >>> section_node._output[2]
+            ['Note: check later']
 
-        3. Shortcut Patterns (starting with @):
-            Predefined regex patterns from a configuration file
-            Example: "@scene" might match scene headings
+        Complex usage with shortcut pattern:
+            >>> input_text = [
+            ...     "INT. COFFEE SHOP - DAY",
+            ...     "DETECTIVE SMITH: Hello",
+            ...     "Q: First question",
+            ...     "(looking around)",
+            ...     "A: Detailed answer"
+            ... ]
+            >>> section_node = Node.create_node(NodeType.SECTION)
+            >>> section_node.parms()["prefix1"].set("@scene") # Assumes @scene is defined in regex.dat.json
+            >>> section_node.parms()["prefix2"].set("Q*")
+            >>> # Direct internal call for example
+            >>> section_node._internal_cook(input_list=input_text)
+            >>> section_node._output[0]
+            ['COFFEE SHOP - DAY']
+            >>> section_node._output[1]
+            ['First question']
+            >>> section_node._output[2]
+            ['DETECTIVE SMITH: Hello', '(looking around)', 'A: Detailed answer']
 
-    Parameters:
-        prefix1 (str): First prefix to match
-        prefix2 (str): Second prefix to match
-        delimiter (str): Separates prefix from content (default: ":")
-        trim_prefix (bool): Removes prefix when True
-        enabled (bool): Enables/disables node functionality
+    Note:
 
-    Inputs:
-        input (List[str]): Strings to process
+        **Input:**
+        *   `input` (List[str]): A list of strings to be processed.
 
-    Outputs:
-        output[0]: Lines matching first prefix
-        output[1]: Lines matching second prefix
-        output[2]: Unmatched lines
+        **Outputs:**
+        *   `output[0]` (List[str]): Lines that match the first prefix pattern.
+        *   `output[1]` (List[str]): Lines that match the second prefix pattern.
+        *   `output[2]` (List[str]): Lines that do not match either prefix pattern.
 
-    Example Usage (Simple):
-        Input: ["Q: What time?", "A: 3 PM", "Note: check later"]
-        prefix1 = "Q*"
-        prefix2 = "A*"
-        Output[0]: ["What time?"]
-        Output[1]: ["3 PM"]
-        Output[2]: ["Note: check later"]
+        **Prefix Pattern Types:**
+        *   Wildcard Patterns:
+            *   `*` Matches any sequence of characters.
+            *   `?` Matches exactly one character.
+            *   Examples: `"Q*"` matches `"Q:"`, `"Query"`, `"Question"`; `"Speaker?"` matches `"Speaker1"`, `"Speaker2"`; `"*Bot"` matches `"ChatBot"`, `"TestBot"`.
+        *   Regex Patterns (starting with `^`):
+            Supports full regular expression matching.
+            *   Example: `"^Chapter\\d+"` matches `"Chapter1"`, `"Chapter22"`.
+        *   Shortcut Patterns (starting with `@`):
+            Uses predefined regex patterns loaded from the `regex_file` configuration.
+            *   Example: `"@scene"` might match scene headings if defined.
 
-    Example Usage (Complex):
-        Input: [
-            "INT. COFFEE SHOP - DAY",
-            "DETECTIVE SMITH: Hello",
-            "Q: First question",
-            "(looking around)",
-            "A: Detailed answer"
-        ]
-        prefix1 = "@scene"
-        prefix2 = "Q*"
-        Output[0]: ["COFFEE SHOP - DAY"]
-        Output[1]: ["First question"]
-        Output[2]: ["DETECTIVE SMITH: Hello", "(looking around)", "A: Detailed answer"]
-
-    Notes:
-        - Whitespace around prefixes and delimiters is normalized
-        - Empty outputs contain [""] rather than []
-        - Wildcard patterns are converted to regex internally
-        - Delimiter within prefix is treated as part of the prefix
+        **General Notes:**
+        *   Whitespace around prefixes and delimiters is normalized.
+        *   Empty outputs will contain `[""]` rather than an empty list `[]`.
+        *   Wildcard patterns are converted to regex internally.
+        *   A delimiter present within the prefix itself is treated as part of the prefix.
     """
 
     GLYPH = '§'

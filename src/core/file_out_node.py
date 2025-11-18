@@ -10,32 +10,35 @@ from core.parm import Parm, ParameterType
 
 
 class FileOutNode(Node):
-    """
-    Write the given content to a text file. The function provides a refresh button to force the write.
+    """Writes the given content to a text file.
 
-    The hash check helps to determine whether the file needs to be written again. If the hash of the input content matches the previously recorded hash and `force_write` is False, the function will skip writing the file.
+    This node takes a list of strings and writes it to a specified file. A hash
+    check prevents rewriting the file if the input content is unchanged.
 
-    Parameters:
-        filename (str): The name of the file to write to.
-        content (list of str): A list of strings to be written to the file.
-        refresh (button): Force the file to be written regardless of content changes or hash matching. Default is False.
-        format_output (bool): When True (default), formats output by stripping brackets and joining with newlines. 
-                            When False, preserves Python list format (e.g. ["item1", "item2"]) for round-trip processing.
+    Attributes:
+        file_name (str): The name of the file to write to.
+        file_text (str): A preview of the text content that will be written.
+        refresh (button): Forces the file to be written, regardless of content changes.
+        format_output (bool): When True (default), formats the output by stripping
+                              list brackets and joining items with newlines. When False,
+                              preserves the Python list format (e.g., `["item1", "item2"]`)
+                              for round-trip processing.
 
-    Returns:
-        None
+    Example:
+        With `format_output=True` (default):
+            Input: `["a", "b", "c"]`
+            Output file content:
+            a
 
-    Raises:
-        FileNotFoundError: If the specified file does not exist.
 
-    Example Usage:
-        With format_output=True (default):
-            Input: ["a", "b", "c"]
-            Output file content: a\n\n\nb\n\n\nc
+            b
 
-        With format_output=False:
-            Input: ["a", "b", "c"]
-            Output file content: ["a", "b", "c"]
+
+            c
+
+        With `format_output=False`:
+            Input: `["a", "b", "c"]`
+            Output file content: `["a", "b", "c"]`
     """
 
     GLYPH = '⤴'
