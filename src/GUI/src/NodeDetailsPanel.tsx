@@ -105,8 +105,10 @@ export const NodeDetailsPanel: React.FC<NodeDetailsPanelProps> = ({ node }) => {
       return;
     }
 
+    const targetNodeId = isLooperPart(node.type) ? getOriginalNodeId(node.session_id) : node.session_id;
+
     try {
-      await updateNode(node.session_id, { name: trimmedName });
+      await updateNode(targetNodeId, { name: trimmedName });
 
       if (isMountedRef.current) {
         setIsEditing(false);

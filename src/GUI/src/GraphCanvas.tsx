@@ -53,6 +53,7 @@ const GraphCanvasInner: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
   const [looperSystems, setLooperSystems] = useState<Map<string, LooperSystem>>(new Map());
   const selectedNodeIdsRef = useRef<Set<string>>(new Set());
   const reactFlowInstanceRef = useRef<ReactFlowInstance | null>(null);
+  const viewportRef = useRef<{ x: number; y: number; zoom: number } | null>(null);
 
   const defaultEdgeConfig = useMemo(() => ({
     type: 'smoothstep' as const,
@@ -87,24 +88,26 @@ const GraphCanvasInner: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
     ), []);
 
   const handleBypassToggle = useCallback(async (sessionId: string) => {
-    const node = workspaceNodes.find(n => n.session_id === sessionId);
+    const targetNodeId = getOriginalNodeId(sessionId);
+    const node = workspaceNodes.find(n => n.session_id === targetNodeId);
     if (!node) return;
 
     const currentBypass = node.parameters?.bypass?.value === true;
-    await updateNode(sessionId, {
+    await updateNode(targetNodeId, {
       parameters: { ...extractParameterValues(node), bypass: !currentBypass }
     });
   }, [workspaceNodes, updateNode, extractParameterValues]);
 
   const handleDisplayToggle = useCallback(async (sessionId: string) => {
-    const node = workspaceNodes.find(n => n.session_id === sessionId);
+    const targetNodeId = getOriginalNodeId(sessionId);
+    const node = workspaceNodes.find(n => n.session_id === targetNodeId);
     if (!node) return;
 
     const currentDisplay = node.parameters?.display?.value === true;
 
     if (!currentDisplay) {
       const otherNodesWithDisplay = workspaceNodes.filter(
-        n => n.session_id !== sessionId && n.parameters?.display?.value === true
+        n => n.session_id !== targetNodeId && n.parameters?.display?.value === true
       );
 
       await Promise.all(
@@ -116,7 +119,7 @@ const GraphCanvasInner: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
       );
     }
 
-    await updateNode(sessionId, {
+    await updateNode(targetNodeId, {
       parameters: { ...extractParameterValues(node), display: !currentDisplay }
     });
   }, [workspaceNodes, updateNode, extractParameterValues]);
@@ -132,7 +135,10 @@ const GraphCanvasInner: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
   }, [onNodesChangeInternal, shouldPreventDeselection]);
 
   useEffect(() => {
-    const viewport = reactFlowInstanceRef.current?.getViewport();
+    // Save current viewport before transformation
+    if (reactFlowInstanceRef.current) {
+      viewportRef.current = reactFlowInstanceRef.current.getViewport();
+    }
 
     const { displayNodes, looperSystems: systems } = transformLooperNodes(workspaceNodes);
     setLooperSystems(systems);
@@ -155,10 +161,16 @@ const GraphCanvasInner: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
     setNodes(newNodes);
     setEdges(connectionsToEdges(transformedConnections, defaultEdgeConfig));
 
-    if (viewport) {
+    // Restore viewport after state updates
+    if (viewportRef.current && reactFlowInstanceRef.current) {
+      const savedViewport = viewportRef.current;
+      // Use multiple attempts to ensure restoration
       requestAnimationFrame(() => {
-        reactFlowInstanceRef.current?.setViewport(viewport, { duration: 0 });
+        reactFlowInstanceRef.current?.setViewport(savedViewport, { duration: 0 });
       });
+      setTimeout(() => {
+        reactFlowInstanceRef.current?.setViewport(savedViewport, { duration: 0 });
+      }, 0);
     }
 
     if (newlyCreatedNodeId) {
@@ -194,17 +206,36 @@ const GraphCanvasInner: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
   const onNodeDragStop = useCallback(
     async (_event: unknown, node: Node) => {
       const newPosition: [number, number] = [node.position.x, node.position.y];
-      const originalNodeId = getOriginalNodeId(node.id);
+      const nodeData = node.data as { node: NodeResponse };
+      const nodeType = nodeData.node.type;
+
+      // For looper_start/end, update the actual child node (inputNull/outputNull)
+      // For regular nodes, update the node itself
+      let targetNodeId: string;
+
+      if (nodeType === 'looper_start') {
+        // Find inputNull for this looper
+        const looperId = getOriginalNodeId(node.id);
+        const looperSystem = looperSystems.get(looperId);
+        targetNodeId = looperSystem?.inputNullNode.session_id || node.id;
+      } else if (nodeType === 'looper_end') {
+        // Find outputNull for this looper
+        const looperId = getOriginalNodeId(node.id);
+        const looperSystem = looperSystems.get(looperId);
+        targetNodeId = looperSystem?.outputNullNode.session_id || node.id;
+      } else {
+        targetNodeId = node.id;
+      }
 
       try {
-        await updateNode(originalNodeId, { position: newPosition });
+        await updateNode(targetNodeId, { position: newPosition });
       } catch (error) {
         console.error('Failed to update node position:', node.id, error);
       }
 
       setIsDragging(false);
     },
-    [updateNode]
+    [updateNode, looperSystems]
   );
 
   const onSelectionDragStart = useCallback(
@@ -221,8 +252,24 @@ const GraphCanvasInner: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
         await Promise.all(
           draggedNodes.map(node => {
             const newPosition: [number, number] = [node.position.x, node.position.y];
-            const originalNodeId = getOriginalNodeId(node.id);
-            return updateNode(originalNodeId, { position: newPosition });
+            const nodeData = node.data as { node: NodeResponse };
+            const nodeType = nodeData.node.type;
+
+            let targetNodeId: string;
+
+            if (nodeType === 'looper_start') {
+              const looperId = getOriginalNodeId(node.id);
+              const looperSystem = looperSystems.get(looperId);
+              targetNodeId = looperSystem?.inputNullNode.session_id || node.id;
+            } else if (nodeType === 'looper_end') {
+              const looperId = getOriginalNodeId(node.id);
+              const looperSystem = looperSystems.get(looperId);
+              targetNodeId = looperSystem?.outputNullNode.session_id || node.id;
+            } else {
+              targetNodeId = node.id;
+            }
+
+            return updateNode(targetNodeId, { position: newPosition });
           })
         );
       } catch (error) {
@@ -231,7 +278,7 @@ const GraphCanvasInner: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
 
       setIsDragging(false);
     },
-    [updateNode]
+    [updateNode, looperSystems]
   );
 
   const handleDeleteConfirm = useCallback(async () => {
@@ -355,6 +402,15 @@ const GraphCanvasInner: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
 
   const onInit = useCallback((instance: ReactFlowInstance) => {
     reactFlowInstanceRef.current = instance;
+    // Initialize viewport ref with current state
+    viewportRef.current = instance.getViewport();
+  }, []);
+
+  const onMove = useCallback(() => {
+    // Continuously track viewport changes
+    if (reactFlowInstanceRef.current) {
+      viewportRef.current = reactFlowInstanceRef.current.getViewport();
+    }
   }, []);
 
   return (
@@ -381,6 +437,9 @@ const GraphCanvasInner: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
         isValidConnection={isValidConnection}
         nodeTypes={nodeTypes}
         onInit={onInit}
+        onMove={onMove}
+        fitView={false}
+        fitViewOnInit={false}
         minZoom={0.1}
         maxZoom={2}
         selectNodesOnDrag={false}

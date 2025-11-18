@@ -26,6 +26,7 @@ from api.models import (
 from core.base_classes import Node, NodeType, NodeEnvironment, NodeState
 from core.enums import generate_node_types
 from core.undo_manager import UndoManager
+from core.internal_path import InternalPath
 from pathlib import Path as FilePath
 from utils.node_loader import discover_node_types, get_node_class
 
@@ -227,16 +228,16 @@ def get_node(
 
 @router.post(
     "/nodes",
-    response_model=NodeResponse,
+    response_model=List[NodeResponse],
     status_code=status.HTTP_201_CREATED,
     summary="Create a new node",
-    description="Creates a new node of the specified type. Name collisions are automatically handled by the backend.",
+    description="Creates a new node of the specified type. For loopers, returns the looper and its child nodes. Name collisions are automatically handled by the backend.",
     responses={
-        201: {"description": "Node created successfully"},
+        201: {"description": "Node(s) created successfully"},
         400: {"description": "Invalid request", "model": ErrorResponse}
     }
 )
-def create_node(request: 'NodeCreateRequest') -> 'NodeResponse':
+def create_node(request: 'NodeCreateRequest') -> List['NodeResponse']:
     """
     Create a new node with enhanced logging.
     
@@ -293,16 +294,30 @@ def create_node(request: 'NodeCreateRequest') -> 'NodeResponse':
         if request.position:
             node._position = tuple(request.position)
 
-        # Convert to response
-        response = node_to_response(node)
+        # Collect all created nodes (for loopers, include children)
+        created_nodes = [node]
 
-        # Verify the node in NodeEnvironment has the same session_id
+        # If it's a looper, find and include child nodes
+        if node_type == NodeType.LOOPER:
+            node_path = node.path()
+            all_paths = NodeEnvironment.list_nodes()
+
+            for path in all_paths:
+                if path.startswith(node_path + '/'):
+                    child_node = NodeEnvironment.node_from_name(path)
+                    if child_node:
+                        created_nodes.append(child_node)
+
+        # Convert all nodes to responses
+        responses = [node_to_response(n) for n in created_nodes]
+
+        # Verify the primary node in NodeEnvironment has the same session_id
         node_from_env = NodeEnvironment.node_from_name(node.path())
         if node_from_env:
-            if node_from_env.session_id() != response.session_id:
-                logger.error(f"[API_CREATE] SESSION_ID MISMATCH: Response has {response.session_id}, NodeEnvironment has {node_from_env.session_id()}")
+            if node_from_env.session_id() != responses[0].session_id:
+                logger.error(f"[API_CREATE] SESSION_ID MISMATCH: Response has {responses[0].session_id}, NodeEnvironment has {node_from_env.session_id()}")
 
-        return response
+        return responses
         
     except ValueError as e:
         logger.error(f"ValueError creating node: {e}")
@@ -330,11 +345,11 @@ def create_node(request: 'NodeCreateRequest') -> 'NodeResponse':
 
 @router.put(
     "/nodes/{session_id}",
-    response_model=NodeResponse,
+    response_model=List[NodeResponse],
     summary="Update a node",
-    description="Updates node parameters and/or UI state. Only provided fields are updated (partial update).",
+    description="Updates node parameters and/or UI state. Returns the updated node and any affected children. Only provided fields are updated (partial update).",
     responses={
-        200: {"description": "Node updated successfully"},
+        200: {"description": "Node and affected children updated successfully"},
         404: {"description": "Node not found", "model": ErrorResponse},
         400: {"description": "Invalid request", "model": ErrorResponse}
     }
@@ -342,19 +357,22 @@ def create_node(request: 'NodeCreateRequest') -> 'NodeResponse':
 def update_node(
     session_id: str,
     request: NodeUpdateRequest = Body(...)
-) -> NodeResponse:
+) -> List[NodeResponse]:
     """
     Update an existing node.
 
     Supports partial updates - only the provided fields are modified.
     Can update parameters, position, color, and selection state.
 
+    When renaming a node with children, all child node paths are updated
+    automatically and returned in the response.
+
     Args:
         session_id: The unique session identifier for the node
         request: Update parameters
 
     Returns:
-        NodeResponse: Updated node details
+        List[NodeResponse]: Updated node and any affected children
 
     Raises:
         HTTPException: 404 if node not found, 400 if update invalid
@@ -397,6 +415,8 @@ def update_node(
     # Disable undo during updates to prevent parm.set() from pushing duplicate states
     UndoManager().disable()
     try:
+        affected_nodes = [target_node]
+
         # Update name if provided
         if request.name is not None:
             # Validate and sanitize the name
@@ -404,10 +424,56 @@ def update_node(
             if not sanitized_name:
                 raise ValueError(f"Invalid node name: '{request.name}'. Name must contain alphanumeric characters or underscores.")
 
-            # Try to rename the node
+            # Find children before rename
+            old_path = target_node.path()
+            children = [
+                NodeEnvironment.node_from_name(p)
+                for p in all_paths
+                if p.startswith(old_path + '/')
+            ]
+
+            # Validate child path updates BEFORE renaming parent
+            # This ensures atomicity - either all updates succeed or none do
+            child_updates = []
+
+            # Pre-calculate what the new parent path would be
+            current_path_parent = str(target_node._path.parent())
+            hypothetical_new_path = f"{current_path_parent.rstrip('/')}/{sanitized_name}"
+
+            for child in children:
+                if child:
+                    old_child_path = child.path()
+                    relative_path = old_child_path[len(old_path):]
+                    new_child_path = hypothetical_new_path + relative_path
+
+                    # Validate InternalPath construction before making any changes
+                    try:
+                        InternalPath(new_child_path)
+                    except Exception as e:
+                        raise ValueError(f"Cannot rename: child path '{new_child_path}' is invalid: {e}")
+
+                    child_updates.append((child, old_child_path, relative_path))
+
+            # Try to rename the node (validated above, should succeed)
             success = target_node.rename(sanitized_name)
             if not success:
                 raise ValueError(f"Name '{sanitized_name}' is already in use by another node in the same path")
+
+            # Update child paths (pre-validated, safe to execute)
+            new_path = target_node.path()
+            for child, old_child_path, relative_path in child_updates:
+                new_child_path = new_path + relative_path
+
+                # Update child's path and name
+                child._path = InternalPath(new_child_path)
+                child._name = new_child_path.split('/')[-1]
+
+                # Update in NodeEnvironment
+                if old_child_path in NodeEnvironment.nodes:
+                    del NodeEnvironment.nodes[old_child_path]
+                NodeEnvironment.nodes[new_child_path] = child
+
+                affected_nodes.append(child)
 
         # Update parameters if provided
         if request.parameters:
@@ -424,8 +490,7 @@ def update_node(
         if request.color is not None:
             target_node._color = tuple(request.color)
 
-        response = node_to_response(target_node)
-        return response
+        return [node_to_response(node) for node in affected_nodes]
         
     except ValueError as e:
         logger.error(f"ValueError updating node: {e}")

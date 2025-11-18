@@ -53,15 +53,15 @@ class ApiClient {
   }
 
   // Node operations
-  async createNode(request: NodeCreateRequest): Promise<NodeResponse> {
-    return this.fetchJson<NodeResponse>('/nodes', {
+  async createNode(request: NodeCreateRequest): Promise<NodeResponse[]> {
+    return this.fetchJson<NodeResponse[]>('/nodes', {
       method: 'POST',
       body: JSON.stringify(request),
     });
   }
 
-  async updateNode(sessionId: string, request: NodeUpdateRequest): Promise<NodeResponse> {
-    return this.fetchJson<NodeResponse>(`/nodes/${sessionId}`, {
+  async updateNode(sessionId: string, request: NodeUpdateRequest): Promise<NodeResponse[]> {
+    return this.fetchJson<NodeResponse[]>(`/nodes/${sessionId}`, {
       method: 'PUT',
       body: JSON.stringify(request),
     });
