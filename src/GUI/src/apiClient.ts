@@ -172,6 +172,28 @@ class ApiClient {
     });
   }
 
+  // Undo/Redo operations
+  async getUndoStatus(): Promise<{
+    can_undo: boolean;
+    can_redo: boolean;
+    undo_description: string;
+    redo_description: string;
+  }> {
+    return this.fetchJson('/workspace/undo-status');
+  }
+
+  async undo(): Promise<{ success: boolean; operation: string; message: string }> {
+    return this.fetchJson('/workspace/undo', {
+      method: 'POST',
+    });
+  }
+
+  async redo(): Promise<{ success: boolean; operation: string; message: string }> {
+    return this.fetchJson('/workspace/redo', {
+      method: 'POST',
+    });
+  }
+
   // File browsing operations
   async browseFiles(path: string = '~'): Promise<{
     current_path: string;
