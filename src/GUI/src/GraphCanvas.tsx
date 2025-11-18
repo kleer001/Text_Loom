@@ -53,6 +53,7 @@ const GraphCanvasInner: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
   const [looperSystems, setLooperSystems] = useState<Map<string, LooperSystem>>(new Map());
   const selectedNodeIdsRef = useRef<Set<string>>(new Set());
   const reactFlowInstanceRef = useRef<ReactFlowInstance | null>(null);
+  const viewportRef = useRef<{ x: number; y: number; zoom: number } | null>(null);
 
   const defaultEdgeConfig = useMemo(() => ({
     type: 'smoothstep' as const,
@@ -134,7 +135,10 @@ const GraphCanvasInner: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
   }, [onNodesChangeInternal, shouldPreventDeselection]);
 
   useEffect(() => {
-    const viewport = reactFlowInstanceRef.current?.getViewport();
+    // Save current viewport before transformation
+    if (reactFlowInstanceRef.current) {
+      viewportRef.current = reactFlowInstanceRef.current.getViewport();
+    }
 
     const { displayNodes, looperSystems: systems } = transformLooperNodes(workspaceNodes);
     setLooperSystems(systems);
@@ -157,10 +161,16 @@ const GraphCanvasInner: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
     setNodes(newNodes);
     setEdges(connectionsToEdges(transformedConnections, defaultEdgeConfig));
 
-    if (viewport) {
+    // Restore viewport after state updates
+    if (viewportRef.current && reactFlowInstanceRef.current) {
+      const savedViewport = viewportRef.current;
+      // Use multiple attempts to ensure restoration
       requestAnimationFrame(() => {
-        reactFlowInstanceRef.current?.setViewport(viewport, { duration: 0 });
+        reactFlowInstanceRef.current?.setViewport(savedViewport, { duration: 0 });
       });
+      setTimeout(() => {
+        reactFlowInstanceRef.current?.setViewport(savedViewport, { duration: 0 });
+      }, 0);
     }
 
     if (newlyCreatedNodeId) {
@@ -357,6 +367,15 @@ const GraphCanvasInner: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
 
   const onInit = useCallback((instance: ReactFlowInstance) => {
     reactFlowInstanceRef.current = instance;
+    // Initialize viewport ref with current state
+    viewportRef.current = instance.getViewport();
+  }, []);
+
+  const onMove = useCallback(() => {
+    // Continuously track viewport changes
+    if (reactFlowInstanceRef.current) {
+      viewportRef.current = reactFlowInstanceRef.current.getViewport();
+    }
   }, []);
 
   return (
@@ -383,6 +402,7 @@ const GraphCanvasInner: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
         isValidConnection={isValidConnection}
         nodeTypes={nodeTypes}
         onInit={onInit}
+        onMove={onMove}
         fitView={false}
         fitViewOnInit={false}
         minZoom={0.1}
