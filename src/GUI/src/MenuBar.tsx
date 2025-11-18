@@ -399,12 +399,6 @@ export const MenuBar: React.FC<MenuBarProps> = ({ onKeyboardShortcuts, onAbout }
               Ctrl+A
             </Typography>
           </MenuItem>
-          <MenuItem disabled>
-            <ListItemText>Find Node...</ListItemText>
-            <Typography variant="body2" color="text.secondary" sx={{ ml: 3 }}>
-              Ctrl+F
-            </Typography>
-          </MenuItem>
         </Menu>
 
         {/* Preferences Menu */}
