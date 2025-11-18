@@ -252,7 +252,7 @@ export const MenuBar: React.FC<MenuBarProps> = ({ onKeyboardShortcuts, onAbout }
 
   const handleDocumentation = () => {
     closeAllMenus();
-    window.open('https://github.com/kleer001/Text_Loom', '_blank');
+    window.open('https://github.com/kleer001/Text_Loom/wiki', '_blank');
   };
 
   const handleReportIssue = () => {
