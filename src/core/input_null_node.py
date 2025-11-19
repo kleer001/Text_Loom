@@ -7,18 +7,27 @@ from core.parm import Parm, ParameterType
 from core.loop_manager import LoopManager, loop_manager
 
 class InputNullNode(Node):
-    """
-    A node that retrieves input from another specified node.
+    """A node that retrieves input from another specified node.
 
     This node is typically used inside a Looper Node, but can function independently.
     It retrieves the input value of another node specified by the in_node parameter.
 
     Attributes:
-        _input_hash (str): Hash of the last processed input.
-        _last_input_size (int): Size of the last processed input.
-    Parameters:
-        in_node (STRING) : path to the node
-        in_data (STRINGLIST) : data from that node
+        in_node (str): Path to the target node to retrieve input from.
+        in_data (List[str]): Data retrieved from the target node's input.
+        feedback_mode (bool): When True, retrieves output from parent looper's
+            output node instead of the target node's input (for iterative processing).
+
+    Example:
+        >>> input_null = Node.create_node(NodeType.INPUT_NULL)
+        >>> input_null.parms()["in_node"].set("/root/my_node")
+        >>> input_null.cook()
+        >>> # Output: data from the input of /root/my_node
+
+    Note:
+        The node retrieves data from the input connection of the target node,
+        not the target node's output. This allows looper constructs to access
+        data flowing into the loop boundary.
     """
 
     GLYPH = '▷'

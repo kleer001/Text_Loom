@@ -110,16 +110,19 @@ class SectionNode(Node):
         self._parms["regex_file"].set("regex.dat.json")
 
     def _process_sections(self, input_list: List[str]) -> Tuple[List[str], List[str], List[str]]:
-        """
-        Processes input list using two prefix patterns.
+        """Process input list using two prefix patterns.
 
         Applies first and second prefix patterns to input list,
         handling cases of invalid or missing prefixes.
 
+        Args:
+            input_list: A list of strings to be processed.
+
         Returns:
-        - Matches for first prefix
-        - Matches for second prefix
-        - Unmatched lines
+            A tuple containing three lists:
+                - Matches for first prefix
+                - Matches for second prefix
+                - Unmatched lines
         """
 
         prefix1 = self._parms["prefix1"].eval().strip()
@@ -156,17 +159,21 @@ class SectionNode(Node):
 
 
     def _process_pattern(self, input_list: List[str], prefix: str) -> Tuple[List[str], List[str]]:
-        """
-        Routes input list processing to appropriate pattern matching method.
+        """Route input list processing to appropriate pattern matching method.
 
         Detects pattern type by prefix:
-        - Regex patterns (starts with ^)
-        - Shortcut patterns (starts with @)
-        - Wildcard patterns (default)
+            - Regex patterns (starts with ^)
+            - Shortcut patterns (starts with @)
+            - Wildcard patterns (default)
+
+        Args:
+            input_list: A list of strings to be processed.
+            prefix: The prefix pattern to match against.
 
         Returns:
-        - Matching lines
-        - Non-matching lines
+            A tuple containing two lists:
+                - Matching lines
+                - Non-matching lines
         """
         if prefix.startswith('^'):
             return self._regex_pattern(input_list, prefix)
@@ -178,15 +185,19 @@ class SectionNode(Node):
 
 
     def _wildcard_pattern(self, input_list: List[str], prefix: str) -> Tuple[List[str], List[str]]:
-        """
-        Matches lines using wildcard (*,?) pattern with optional delimiter.
+        """Match lines using wildcard (*,?) pattern with optional delimiter.
 
         Converts wildcard to regex pattern.
         Supports optional prefix trimming.
 
+        Args:
+            input_list: A list of strings to be processed.
+            prefix: The wildcard prefix pattern to match against.
+
         Returns:
-        - Lines matching wildcard pattern
-        - Lines not matching pattern
+            A tuple containing two lists:
+                - Lines matching wildcard pattern
+                - Lines not matching pattern
         """
         trim_prefix = self._parms["trim_prefix"].eval()
 
@@ -216,15 +227,19 @@ class SectionNode(Node):
         return matches, non_matches
 
     def _regex_pattern(self, input_list: List[str], prefix: str) -> Tuple[List[str], List[str]]:
-        """
-        Matches lines using full regex pattern.
+        """Match lines using full regex pattern.
 
         Uses regex pattern directly after removing ^ prefix.
         Supports optional prefix trimming.
 
+        Args:
+            input_list: A list of strings to be processed.
+            prefix: The regex prefix pattern (starting with ^) to match against.
+
         Returns:
-        - Lines matching regex pattern
-        - Lines not matching pattern
+            A tuple containing two lists:
+                - Lines matching regex pattern
+                - Lines not matching pattern
         """
         trim_prefix = self._parms["trim_prefix"].eval()
         pattern = prefix[1:]  # Remove the ^ trigger
@@ -246,15 +261,19 @@ class SectionNode(Node):
         return matches, non_matches
 
     def _shortcut_pattern(self, input_list: List[str], prefix: str) -> Tuple[List[str], List[str]]:
-        """
-        Matches lines using predefined regex patterns from configuration.
+        """Match lines using predefined regex patterns from configuration.
 
         Loads patterns from regex configuration file.
         Handles missing or undefined shortcut patterns.
 
+        Args:
+            input_list: A list of strings to be processed.
+            prefix: The shortcut prefix pattern (starting with @) to match against.
+
         Returns:
-        - Lines matching shortcut pattern
-        - Lines not matching pattern
+            A tuple containing two lists:
+                - Lines matching shortcut pattern
+                - Lines not matching pattern
         """
         trim_prefix = self._parms["trim_prefix"].eval()
         regex_file = self._parms["regex_file"].eval()

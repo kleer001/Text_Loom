@@ -4,81 +4,67 @@ from core.parm import Parm, ParameterType
 from core.text_utils import parse_list
 
 class MakeListNode(Node):
-    """
-    A node that takes a string list as input, parses the first item, and outputs a new string list.
+    """A node that parses numbered lists from text into a list of strings.
 
-    This node uses the parse_list function to split the input string into a list of strings.
-    It can optionally limit the number of output items based on the 'limit' and 'max_list' parameters.
+    Takes a string list as input, parses the first item using the parse_list
+    utility function, and outputs a new string list. Supports both numeric
+    and word-based numbering formats.
+
+    The parse_list function intelligently extracts numbered lists from text
+    while handling various numbering formats and multi-line items. It's
+    particularly useful for processing structured text content like meeting
+    notes, instructions, or any text containing numbered lists.
 
     Attributes:
-        _is_time_dependent (bool): Always False for this node.
+        limit (bool): When True, restricts output to max_list items.
+        max_list (int): Maximum number of items to output when limit is True.
+        refresh (button): Triggers a forced recook of the node.
 
-    parse_list: 
+    Example:
+        Basic usage:
+            >>> text = '''
+            ... Meeting Agenda:
+            ... 1. Review previous minutes
+            ...    Additional notes about minutes
+            ... 2. Discuss new projects
+            ... 3. Plan next meeting'''
+            >>> make_list = Node.create_node(NodeType.MAKE_LIST)
+            >>> # Input would come from connected node
+            >>> # Output: ['Review previous minutes Additional notes about minutes',
+            ...           'Discuss new projects', 'Plan next meeting']
 
-    Parse numbered lists from text into a list of strings, supporting both numeric and word-based numbering.
+        With limit enabled:
+            >>> make_list.parms()["limit"].set(True)
+            >>> make_list.parms()["max_list"].set(2)
+            >>> # Output: ['Review previous minutes...', 'Discuss new projects']
 
-    This function intelligently extracts numbered lists from text while handling various numbering formats
-    and multi-line items. It's particularly useful for processing structured text content like meeting notes,
-    instructions, or any text containing numbered lists.
+    Note:
+        **Supported Numbering Formats:**
+            - Arabic numerals (1., 2., 3.)
+            - Written numbers (one., two., three.)
+            - Ordinal numbers (first., second., third.)
+            - Compound numbers (twenty-one, ninety-nine)
+            - Various separators (. : - _)
 
-    Capabilities:
-        - Supports multiple numbering formats:
-            * Arabic numerals (1., 2., 3.)
-            * Written numbers (one., two., three.)
-            * Ordinal numbers (first., second., third.)
-            * Compound numbers (twenty-one, ninety-nine)
-        - Handles various separators between numbers and text (. : - _)
-        - Preserves multi-line list items
-        - Maintains original text formatting within list items
-        - Case-insensitive number word recognition
+        **Capabilities:**
+            - Preserves multi-line list items
+            - Maintains original text formatting within list items
+            - Case-insensitive number word recognition
 
-    Limitations:
-        - Only processes the first numbered list encountered in the text
-        - Does not count, as such. Any number type (see numbering format) will trigger a split. 
-        - Cannot handle nested lists
-        - Maximum number support up to thousands
-        - Does not preserve the original numbering format
-        - Cannot process Roman numerals (i., ii., iii.)
-        - Does not handle lettered lists (a., b., c.)
+        **Limitations:**
+            - Only processes the first numbered list encountered in the text
+            - Does not count sequentially; any number type will trigger a split
+            - Cannot handle nested lists
+            - Maximum number support up to thousands
+            - Does not preserve the original numbering format
+            - Cannot process Roman numerals (i., ii., iii.)
+            - Does not handle lettered lists (a., b., c.)
 
-    Args:
-        text (str): Input text containing a numbered list
-
-    Returns:
-        Union[str, List[str]]: 
-            - If a numbered list is found: List of strings, each representing a list item
-            - If no list is found or input is not a string: Original text or empty string
-
-    Examples:
-        >>> text = '''
-        ... Meeting Agenda:
-        ... 1. Review previous minutes
-        ...    Additional notes about minutes
-        ... 2. Discuss new projects
-        ... 3. Plan next meeting'''
-        >>> parse_list(text)
-        ['Review previous minutes Additional notes about minutes',
-        'Discuss new projects',
-        'Plan next meeting']
-
-        >>> text = '''
-        ... Project Steps:
-        ... 1 - First: Initialize repository
-        ... 2 - Second: Set up environment
-
-        >>> parse_list(text)
-        ['-',
-        ':',
-        'Initialize repository',
-        '-',
-        ':',
-        'Set up environment']
-
-    Notes:
-        - List items are assumed to start with a number or number word followed by a separator
-        - Subsequent lines without numbers are considered continuation of the previous item
-        - The function preserves internal spacing but trims leading/trailing whitespace
-        - Non-string inputs return an empty string rather than raising an error
+        **Parsing Behavior:**
+            - List items start with a number or number word followed by a separator
+            - Subsequent lines without numbers are continuation of previous item
+            - Internal spacing is preserved but leading/trailing whitespace is trimmed
+            - Non-string inputs return an empty string rather than raising an error
     """
 
     GLYPH = '≣'

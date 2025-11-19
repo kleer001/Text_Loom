@@ -5,18 +5,30 @@ from core.base_classes import Node, NodeType, NodeState, NodeEnvironment
 from core.parm import Parm, ParameterType
 
 class OutputNullNode(Node):
-    """
-    A node that mirrors its input to an output parameter.
+    """A node that mirrors its input to an output parameter.
 
     This node is typically used inside a Looper Node, but can function independently.
-    It takes a list of strings as input and mirrors it to the out_data parameter.
+    It takes a list of strings as input and mirrors it to the out_data parameter,
+    accumulating results across loop iterations.
 
     Attributes:
-        _input_hash (str): Hash of the last processed input.
-        _last_input_size (int): Size of the last processed input.
+        out_data (List[str]): Accumulated output data from all loop iterations.
+        feedback_mode (bool): Enables feedback loop behavior.
+        cook_loops (bool): When True, forces cooking of input on each loop iteration.
+        in_node (str): Path to the parent looper node.
 
-    Parameter:
-        out_date (STRINGLIST) : duplication of this node's input
+    Example:
+        >>> output_null = Node.create_node(NodeType.OUTPUT_NULL)
+        >>> # Typically created automatically inside a Looper Node
+        >>> # Input: ['result1', 'result2']
+        >>> # After first iteration: out_data = ['result1', 'result2']
+        >>> # After second iteration: out_data = ['result1', 'result2', 'result3', 'result4']
+
+    Note:
+        Unlike other nodes, OutputNullNode accumulates data by extending the
+        out_data list with each cook operation. This allows looper constructs
+        to collect results from multiple iterations. The node is time-dependent
+        and will always recook when requested.
     """
 
     GLYPH = '◁'

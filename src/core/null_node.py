@@ -2,11 +2,20 @@ from typing import Any, Dict, List, Optional, Tuple
 from core.base_classes import Node, NodeType, NodeState
 
 class NullNode(Node):
-    """
-    Represents a Null Node in the workspace.
-    
-    The Null Node is a simple pass-through node that doesn't modify its input.
+    """A simple pass-through node that doesn't modify its input.
+
+    The Null Node passes input data directly to output without modification.
     It has a single input and can connect its output to multiple other nodes.
+    Useful for organizing node graphs or as a placeholder.
+
+    Example:
+        >>> null_node = Node.create_node(NodeType.NULL)
+        >>> # Input: ['Hello', 'World']
+        >>> # Output: ['Hello', 'World']
+
+    Note:
+        Input must be a list of strings. The node will raise a TypeError
+        if input data is not in the expected format.
     """
 
     GLYPH = '∅'
