@@ -29,6 +29,23 @@ Note:
         - **strict** (default: False): Markers must differ by exactly 1.
         - **greedy** (default: False): After a break, pick up from the rejected marker.
 
+    Four parameter combinations (ordered/strict):
+        1. **ordered=False, strict=False** (default): Accept all markers regardless of sequence.
+           Example: "1. A 3. B 2. C" → ['A', 'B', 'C']
+
+        2. **ordered=True, strict=False**: Markers must follow one direction, gaps allowed.
+           Example: "1. A 3. B 5. C" → ['A', 'B', 'C'] (all ascending)
+           Example: "1. A 3. B 2. C" → ['A', 'B 2. C'] (2 breaks ascending)
+
+        3. **ordered=False, strict=True**: Markers must differ by 1, direction can change.
+           Example: "1. A 2. B 1. C 2. D" → ['A', 'B', 'C', 'D'] (zigzag OK)
+           Example: "1. A 2. B 4. C" → ['A', 'B 4. C'] (gap breaks sequence)
+
+        4. **ordered=True, strict=True**: Consecutive markers AND single direction.
+           Example: "1. A 2. B 3. C" → ['A', 'B', 'C'] (strict ascending)
+           Example: "5. A 4. B 3. C" → ['A', 'B', 'C'] (strict descending)
+           Example: "1. A 2. B 4. C" → ['A', 'B 4. C'] (4 not consecutive)
+
 Example:
     Basic sticky parsing::
 
