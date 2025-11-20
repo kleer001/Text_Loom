@@ -6,7 +6,9 @@ numbered markers appear inline (on the same line) rather than on separate lines.
 
 The parser looks for numbered markers in text and splits at those positions.
 When you enable "sticky" mode, it locks onto the first marker type it finds
-(numeric, cardinal words, or ordinal words) and ignores all other types.
+(numeric, cardinal words, or ordinal words) and ignores all other types. You can
+further refine parsing with "ordered" (markers must ascend or descend), "strict"
+(markers must differ by exactly 1), and "greedy" (pick up the sequence after breaks).
 
 Attributes:
     NUMBER_WORDS (dict): Combined mapping of all number words to numeric values.
