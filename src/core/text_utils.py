@@ -287,6 +287,12 @@ def _parse_list_sticky(text, ordered=False, strict=False):
         if accept:
             filtered_markers.append((start, end, value))
             prev_value = value
+        else:
+            # Pick up the thread: update prev_value to rejected marker
+            # so subsequent markers can continue from here
+            prev_value = value
+            if ordered:
+                direction = None  # Reset direction for new thread
 
     # Split text at marker positions
     result = []
