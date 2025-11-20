@@ -4,84 +4,80 @@ Smart Parse - Intelligent list parsing for inline numbered lists.
 This module provides enhanced list parsing that can extract items from text where
 numbered markers appear inline (on the same line) rather than on separate lines.
 
-HOW IT WORKS
-============
-
 The parser looks for numbered markers in text and splits at those positions.
 When you enable "sticky" mode, it locks onto the first marker type it finds
 (numeric, cardinal words, or ordinal words) and ignores all other types.
 
-Marker Types:
-    - Numeric: 1. 2. 3. -1. 0. 100.
-    - Cardinal words: one. two. three. twenty-one.
-    - Ordinal words: first. second. third. twenty-first.
+Attributes:
+    NUMBER_WORDS (dict): Combined mapping of all number words to numeric values.
+    CARDINAL_WORDS (dict): Cardinal numbers only (one, two, twenty-one, etc.).
+    ORDINAL_WORDS (dict): Ordinal numbers only (first, second, twenty-first, etc.).
 
-Separators:
-    Markers must be followed by one of: . : - _
-    Then whitespace (or end of string).
+Note:
+    Marker Types:
+        - Numeric: 1. 2. 3. -1. 0. 100.
+        - Cardinal words: one. two. three. twenty-one.
+        - Ordinal words: first. second. third. twenty-first.
 
-PARAMETERS
-==========
+    Separators:
+        Markers must be followed by one of: ``. : - _``
+        Then whitespace (or end of string).
 
-sticky (default: False)
-    Enable inline parsing. Without this, the parser works line-by-line.
+    Parameters for parse_list:
+        - **sticky** (default: False): Enable inline parsing. Without this, works line-by-line.
+        - **ordered** (default: False): Markers must go in one direction (ascending or descending).
+        - **strict** (default: False): Markers must differ by exactly 1.
+        - **greedy** (default: False): After a break, pick up from the rejected marker.
 
-ordered (default: False)
-    Markers must go in one direction (ascending or descending).
-    Example: 1, 2, 3 is OK. 1, 3, 2 breaks at 2.
+Example:
+    Basic sticky parsing::
 
-strict (default: False)
-    Markers must differ by exactly 1.
-    Example: 1, 2, 3 is OK. 1, 2, 4 breaks at 4.
+        >>> from smart_parse import parse_list
+        >>> parse_list("1. Apple 2. Banana 3. Cherry", sticky=True)
+        ['Apple', 'Banana', 'Cherry']
 
-greedy (default: False)
-    After a break in sequence, try to pick up again from the rejected marker.
-    Without greedy, once a marker is rejected, we keep checking from the last
-    accepted value. With greedy, we update to the rejected value so subsequent
-    markers can continue from there.
+    Handles embedded periods (locks onto numeric, ignores "five.")::
 
-EXAMPLES
-========
+        >>> parse_list("1. Fourth five. 2. Sixty", sticky=True)
+        ['Fourth five.', 'Sixty']
 
-Basic sticky parsing:
-    >>> from smart_parse import parse_list
-    >>> parse_list("1. Apple 2. Banana 3. Cherry", sticky=True)
-    ['Apple', 'Banana', 'Cherry']
+    Phone numbers (digits in content don't confuse it)::
 
-Handles embedded periods (locks onto numeric, ignores "five."):
-    >>> parse_list("1. Fourth five. 2. Sixty", sticky=True)
-    ['Fourth five.', 'Sixty']
+        >>> parse_list("1. (909) 345-7789 2. (990) 233-6678", sticky=True)
+        ['(909) 345-7789', '(990) 233-6678']
 
-Phone numbers (digits in content don't confuse it):
-    >>> parse_list("1. (909) 345-7789 2. (990) 233-6678", sticky=True)
-    ['(909) 345-7789', '(990) 233-6678']
+    With ordinal words::
 
-With ordinal words:
-    >>> parse_list("first: Apple second: Banana third: Cherry", sticky=True)
-    ['Apple', 'Banana', 'Cherry']
+        >>> parse_list("first: Apple second: Banana third: Cherry", sticky=True)
+        ['Apple', 'Banana', 'Cherry']
 
-Ordered mode (rejects out-of-order markers):
-    >>> parse_list("1. A 2. B 5. C 3. D", sticky=True, ordered=True)
-    ['A', 'B', 'C 3. D']  # 3 < 5 breaks ascending
+    Ordered mode (rejects out-of-order markers)::
 
-Strict mode (markers must be consecutive):
-    >>> parse_list("1. A 2. B 4. C", sticky=True, strict=True)
-    ['A', 'B 4. C']  # 4 is not 3, breaks
+        >>> parse_list("1. A 2. B 5. C 3. D", sticky=True, ordered=True)
+        ['A', 'B', 'C 3. D']
 
-Greedy mode (pick up the thread after break):
-    >>> parse_list("1. A 2. B 4. C 5. D", sticky=True, strict=True, greedy=False)
-    ['A', 'B 4. C 5. D']  # stuck at 2, can't find 3
+    Strict mode (markers must be consecutive)::
 
-    >>> parse_list("1. A 2. B 4. C 5. D", sticky=True, strict=True, greedy=True)
-    ['A', 'B 4. C', 'D']  # picks up from 4, finds 5
+        >>> parse_list("1. A 2. B 4. C", sticky=True, strict=True)
+        ['A', 'B 4. C']
 
-Combined ordered + strict (consecutive AND single direction):
-    >>> parse_list("3. A 2. B 1. C", sticky=True, ordered=True, strict=True)
-    ['A', 'B', 'C']  # descending by 1 each time
+    Greedy mode (pick up the thread after break)::
 
-Zigzag with strict only (direction can change):
-    >>> parse_list("1. A 2. B 1. C 2. D", sticky=True, strict=True, greedy=True)
-    ['A', 'B', 'C', 'D']  # 1->2->1->2 all differ by 1
+        >>> parse_list("1. A 2. B 4. C 5. D", sticky=True, strict=True, greedy=False)
+        ['A', 'B 4. C 5. D']
+
+        >>> parse_list("1. A 2. B 4. C 5. D", sticky=True, strict=True, greedy=True)
+        ['A', 'B 4. C', 'D']
+
+    Combined ordered + strict (consecutive AND single direction)::
+
+        >>> parse_list("3. A 2. B 1. C", sticky=True, ordered=True, strict=True)
+        ['A', 'B', 'C']
+
+    Zigzag with strict only (direction can change)::
+
+        >>> parse_list("1. A 2. B 1. C 2. D", sticky=True, strict=True, greedy=True)
+        ['A', 'B', 'C', 'D']
 """
 import re
 
