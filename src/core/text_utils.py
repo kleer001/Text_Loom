@@ -201,11 +201,11 @@ def _parse_list_sticky(text, ordered=False, strict=False):
     cardinal_pattern = '|'.join(sorted(CARDINAL_WORDS.keys(), key=len, reverse=True))
     ordinal_pattern = '|'.join(sorted(ORDINAL_WORDS.keys(), key=len, reverse=True))
 
-    # Pattern to find any marker: (start of string or whitespace) + marker + separator + whitespace
+    # Pattern to find any marker: (start of string or whitespace) + marker + separator + (whitespace or end)
     # Using word boundary to avoid matching "one" in "someone"
-    numeric_marker_re = re.compile(r'(?:^|(?<=\s))(-?\d+)([.:\-_])\s', re.IGNORECASE)
-    cardinal_marker_re = re.compile(r'(?:^|(?<=\s))\b(' + cardinal_pattern + r')\b([.:\-_])\s', re.IGNORECASE)
-    ordinal_marker_re = re.compile(r'(?:^|(?<=\s))\b(' + ordinal_pattern + r')\b([.:\-_])\s', re.IGNORECASE)
+    numeric_marker_re = re.compile(r'(?:^|(?<=\s))(-?\d+)([.:\-_])(?:\s|$)', re.IGNORECASE)
+    cardinal_marker_re = re.compile(r'(?:^|(?<=\s))\b(' + cardinal_pattern + r')\b([.:\-_])(?:\s|$)', re.IGNORECASE)
+    ordinal_marker_re = re.compile(r'(?:^|(?<=\s))\b(' + ordinal_pattern + r')\b([.:\-_])(?:\s|$)', re.IGNORECASE)
 
     # Find first marker of each type
     first_numeric = numeric_marker_re.search(text)
