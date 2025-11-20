@@ -2,15 +2,6 @@ import re
 
 
 def generate_number_words():
-    """
-    Generate dictionaries mapping number words to their numeric values.
-
-    Returns:
-        tuple: (combined_dict, cardinal_dict, ordinal_dict)
-            - combined_dict: All number words (for backward compatibility)
-            - cardinal_dict: Cardinal numbers (one, two, twenty-one, etc.)
-            - ordinal_dict: Ordinal numbers (first, second, twenty-first, etc.)
-    """
     units = ["", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine"]
     teens = ["ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen"]
     tens = ["twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety"]
@@ -22,26 +13,20 @@ def generate_number_words():
                     "ninetieth"]
 
     number_words = {}
-    cardinal_words = {}
-    ordinal_words = {}
 
     # Add cardinal numbers
     for i, word in enumerate(units[1:] + teens):
         number_words[word] = i + 1
-        cardinal_words[word] = i + 1
 
     for i, ten in enumerate(tens):
         number_words[ten] = (i + 2) * 10
-        cardinal_words[ten] = (i + 2) * 10
 
     # Add ordinal numbers
     for i, word in enumerate(ordinal_units[1:] + ordinal_teens):
         number_words[word] = i + 1
-        ordinal_words[word] = i + 1
 
     for i, ten in enumerate(ordinal_tens):
         number_words[ten] = (i + 2) * 10
-        ordinal_words[ten] = (i + 2) * 10
 
     # Add compounds (twenty-one to ninety-nine, and twenty-first to ninety-ninth)
     for i, ten in enumerate(tens):
@@ -50,23 +35,20 @@ def generate_number_words():
             ordinal = f"{ten}-{ordinal_units[j + 1]}"
             number_words[cardinal] = (i + 2) * 10 + (j + 1)
             number_words[ordinal] = (i + 2) * 10 + (j + 1)
-            cardinal_words[cardinal] = (i + 2) * 10 + (j + 1)
-            ordinal_words[ordinal] = (i + 2) * 10 + (j + 1)
 
     # Add scales
     for i, scale in enumerate(scales):
         number_words[scale] = 10 ** ((i + 1) * 2)
         number_words[f"{scale}th"] = 10 ** ((i + 1) * 2)
-        cardinal_words[scale] = 10 ** ((i + 1) * 2)
-        ordinal_words[f"{scale}th"] = 10 ** ((i + 1) * 2)
 
-    return number_words, cardinal_words, ordinal_words
+    return number_words
 
 
-NUMBER_WORDS, CARDINAL_WORDS, ORDINAL_WORDS = generate_number_words()
+NUMBER_WORDS = generate_number_words()
 
 
-def parse_list(text, sticky=False, ordered=False, strict=False):
+def parse_list(text):
+
     """
     Parse numbered lists from text into a list of strings, supporting both numeric and word-based numbering.
 
@@ -95,16 +77,9 @@ def parse_list(text, sticky=False, ordered=False, strict=False):
 
     Args:
         text (str): Input text containing a numbered list
-        sticky (bool): When True, enables inline parsing that locks onto the first marker type found
-            (numeric, cardinal, or ordinal) and only splits on markers of that same type.
-            Default is False (line-by-line parsing).
-        ordered (bool): When True, only accepts markers that follow ascending or descending order.
-            Default is False.
-        strict (bool): When True, only accepts markers that differ by exactly 1 from the previous marker.
-            Default is False.
 
     Returns:
-        Union[str, List[str]]:
+        Union[str, List[str]]: 
             - If a numbered list is found: List of strings, each representing a list item
             - If no list is found or input is not a string: Original text or empty string
 
@@ -130,42 +105,23 @@ def parse_list(text, sticky=False, ordered=False, strict=False):
         'Set up environment',
         'Begin development']
 
-        >>> # Sticky parsing for inline lists
-        >>> text = "1. Fourth five. 2. Sixty"
-        >>> parse_list(text, sticky=True)
-        ['Fourth five.', 'Sixty']
-
-        >>> # With ordered=True, markers must ascend or descend
-        >>> text = "1. Apple 3. Banana 2. Cherry"
-        >>> parse_list(text, sticky=True, ordered=True)
-        ['Apple 3. Banana 2. Cherry']
-
-        >>> # With strict=True, markers must differ by exactly 1
-        >>> text = "1. Apple 2. Banana 4. Cherry"
-        >>> parse_list(text, sticky=True, strict=True)
-        ['Apple', 'Banana 4. Cherry']
-
     Notes:
         - List items are assumed to start with a number or number word followed by a separator
         - Subsequent lines without numbers are considered continuation of the previous item
         - The function preserves internal spacing but trims leading/trailing whitespace
         - Non-string inputs return an empty string rather than raising an error
-        - When sticky=True, newlines in content are collapsed to spaces
     """
 
     if not isinstance(text, str):
         return ""  # Return empty string if text is not a string
 
-    if sticky:
-        return _parse_list_sticky(text, ordered, strict)
-
-    # Original line-by-line parsing logic
-    number_word_pattern = '|'.join(sorted(NUMBER_WORDS.keys(), key=len, reverse=True))
+    number_words = generate_number_words()
+    number_word_pattern = '|'.join(sorted(number_words.keys(), key=len, reverse=True))
     lines = text.split('\n')
 
     start_index = next((i for i, line in enumerate(lines)
-                        if re.match(r'^(\d+|{word_pattern})([.:\-_]\s)'.format(word_pattern=number_word_pattern),
-                                    line.strip(), flags=re.IGNORECASE)), None)
+                        if re.match(r'^(\d+|{word_pattern})([.:\-_]?\s)'.format(word_pattern=number_word_pattern),
+                                    line.strip(), flags=re.IGNORECASE)),None)
 
     if start_index is None:
         return text  # If no numbered list is found, return the original text
@@ -173,10 +129,10 @@ def parse_list(text, sticky=False, ordered=False, strict=False):
     processed_items = []
     current_item = ""
     for line in lines[start_index:]:
-        clean_line = re.sub(r'^(\d+|{word_pattern})([.:\-_]\s)'.format(word_pattern=number_word_pattern), '',
+        clean_line = re.sub(r'^(\d+|{word_pattern})([.:\-_]?\s)'.format(word_pattern=number_word_pattern), '',
                             line.strip(), flags=re.IGNORECASE)
 
-        if re.match(r'^(\d+|{word_pattern})([.:\-_]\s)'.format(word_pattern=number_word_pattern), line.strip(),
+        if re.match(r'^(\d+|{word_pattern})([.:\-_]?\s)'.format(word_pattern=number_word_pattern), line.strip(),
                     flags=re.IGNORECASE):
             if current_item:
                 processed_items.append(current_item.strip())
@@ -188,123 +144,3 @@ def parse_list(text, sticky=False, ordered=False, strict=False):
         processed_items.append(current_item.strip())
 
     return processed_items
-
-
-def _parse_list_sticky(text, ordered=False, strict=False):
-    """
-    Internal function for sticky (inline) list parsing.
-
-    Finds the first marker, locks onto its type (numeric, cardinal, or ordinal),
-    and splits only on markers of that same type.
-    """
-    # Build patterns for each marker type
-    cardinal_pattern = '|'.join(sorted(CARDINAL_WORDS.keys(), key=len, reverse=True))
-    ordinal_pattern = '|'.join(sorted(ORDINAL_WORDS.keys(), key=len, reverse=True))
-
-    # Pattern to find any marker: (start of string or whitespace) + marker + separator + (whitespace or end)
-    # Using word boundary to avoid matching "one" in "someone"
-    numeric_marker_re = re.compile(r'(?:^|(?<=\s))(-?\d+)([.:\-_])(?:\s|$)', re.IGNORECASE)
-    cardinal_marker_re = re.compile(r'(?:^|(?<=\s))\b(' + cardinal_pattern + r')\b([.:\-_])(?:\s|$)', re.IGNORECASE)
-    ordinal_marker_re = re.compile(r'(?:^|(?<=\s))\b(' + ordinal_pattern + r')\b([.:\-_])(?:\s|$)', re.IGNORECASE)
-
-    # Find first marker of each type
-    first_numeric = numeric_marker_re.search(text)
-    first_cardinal = cardinal_marker_re.search(text)
-    first_ordinal = ordinal_marker_re.search(text)
-
-    # Determine which type appears first
-    first_markers = []
-    if first_numeric:
-        first_markers.append(('numeric', first_numeric.start(), first_numeric))
-    if first_cardinal:
-        first_markers.append(('cardinal', first_cardinal.start(), first_cardinal))
-    if first_ordinal:
-        first_markers.append(('ordinal', first_ordinal.start(), first_ordinal))
-
-    if not first_markers:
-        return text  # No markers found
-
-    # Sort by position and get the first one
-    first_markers.sort(key=lambda x: x[1])
-    marker_type, _, first_match = first_markers[0]
-
-    # Select the appropriate regex and word dict based on marker type
-    if marker_type == 'numeric':
-        marker_re = numeric_marker_re
-        word_dict = None
-    elif marker_type == 'cardinal':
-        marker_re = cardinal_marker_re
-        word_dict = CARDINAL_WORDS
-    else:  # ordinal
-        marker_re = ordinal_marker_re
-        word_dict = ORDINAL_WORDS
-
-    # Find all markers of the selected type
-    all_markers = list(marker_re.finditer(text))
-
-    if not all_markers:
-        return text
-
-    # Extract marker info: (position, end_position, value)
-    marker_info = []
-    for match in all_markers:
-        marker_text = match.group(1)
-        if marker_type == 'numeric':
-            value = int(marker_text)
-        else:
-            value = word_dict.get(marker_text.lower(), 0)
-        marker_info.append((match.start(), match.end(), value))
-
-    # Apply ordered/strict filtering
-    filtered_markers = [marker_info[0]]  # Always keep the first marker
-    prev_value = marker_info[0][2]
-    direction = None  # Will be determined by second marker
-
-    for start, end, value in marker_info[1:]:
-        accept = True
-
-        if strict:
-            # Must differ by exactly 1
-            if abs(value - prev_value) != 1:
-                accept = False
-
-        if ordered and accept:
-            # Must follow consistent direction
-            if direction is None:
-                # Determine direction from first two markers
-                if value > prev_value:
-                    direction = 'asc'
-                elif value < prev_value:
-                    direction = 'desc'
-                else:
-                    accept = False  # Same value, reject
-            else:
-                if direction == 'asc' and value <= prev_value:
-                    accept = False
-                elif direction == 'desc' and value >= prev_value:
-                    accept = False
-
-        if accept:
-            filtered_markers.append((start, end, value))
-            prev_value = value
-        else:
-            # Pick up the thread: update prev_value to rejected marker
-            # so subsequent markers can continue from here
-            prev_value = value
-            if ordered:
-                direction = None  # Reset direction for new thread
-
-    # Split text at marker positions
-    result = []
-    for i, (start, end, value) in enumerate(filtered_markers):
-        if i < len(filtered_markers) - 1:
-            next_start = filtered_markers[i + 1][0]
-            content = text[end:next_start]
-        else:
-            content = text[end:]
-
-        # Collapse newlines to spaces and strip
-        content = ' '.join(content.split())
-        result.append(content)
-
-    return result
