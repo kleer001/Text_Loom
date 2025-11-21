@@ -474,10 +474,10 @@ const GraphCanvasInner: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
             nodeData.position[1] + offset,
           ];
 
-          // Create new node via API
+          // Create new node via API - backend handles duplicate names automatically
           const createRequest = {
             type: nodeData.type,
-            name: `${nodeData.name}_copy`,
+            name: nodeData.name,
             parent_path: '/',
             position: newPosition,
           };
