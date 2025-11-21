@@ -475,6 +475,11 @@ def node_to_response(node: 'Node') -> 'NodeResponse':
     from core.undo_manager import UndoManager
 
     try:
+        # DEBUG: Check node type before conversion
+        print(f"[DEBUG API] Converting node {node.path()}")
+        print(f"[DEBUG API] node._node_type type: {type(node._node_type)}, value: {node._node_type}")
+        print(f"[DEBUG API] node.type() returns: {node.type()} (type: {type(node.type())})")
+
         # Capture node state
         undo_mgr = UndoManager()
         full_state = undo_mgr._capture_node_state(node)
@@ -483,6 +488,10 @@ def node_to_response(node: 'Node') -> 'NodeResponse':
         parameters = _convert_parameters(node, full_state)
         inputs = _convert_inputs(node)
         outputs = _convert_outputs(node)
+
+        # DEBUG: About to call .value on node.type()
+        node_type_obj = node.type()
+        print(f"[DEBUG API] About to call .value on {node_type_obj} (type: {type(node_type_obj)})")
 
         # Build response
         response = NodeResponse(
@@ -505,11 +514,12 @@ def node_to_response(node: 'Node') -> 'NodeResponse':
         )
 
         return response
-        
+
     except AttributeError as e:
         logger.error(f"AttributeError converting node {node.path()}: {e}")
+        print(f"[DEBUG API] ERROR - node._node_type is: {node._node_type} (type: {type(node._node_type)})")
         raise ValueError(f"Node state incomplete: {e}")
-        
+
     except Exception as e:
         logger.error(f"Unexpected error converting node {node.path()}: {type(e).__name__}: {e}")
         import traceback
