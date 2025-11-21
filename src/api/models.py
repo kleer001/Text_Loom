@@ -397,24 +397,42 @@ logger = logging.getLogger("api.models")
 def _convert_parameters(node: 'Node', full_state) -> Dict[str, 'ParameterInfo']:
     """Convert node parameters to ParameterInfo DTOs."""
     from api.models import ParameterInfo
-    
+
     parameters = {}
     for parm_name, parm_state in full_state.parms.items():
-        # Determine if parameter is read_only (output parameters)
-        is_read_only = parm_name in ['response', 'file_text', 'out_data', 'in_data', 'staging_data']
-        
-        # Get default value safely
-        default_value = parm_state.value
-        if hasattr(node, '_parms') and parm_name in node._parms:
-            if hasattr(node._parms[parm_name], '_default'):
-                default_value = node._parms[parm_name]._default
-        
-        parameters[parm_name] = ParameterInfo(
-            type=parm_state.parm_type.replace("ParameterType.", ""),
-            value=parm_state.value,
-            default=default_value,
-            read_only=is_read_only
-        )
+        try:
+            # Handle case where parm_state might not be a ParmState object
+            # (can happen after loading from file if deserialization failed)
+            if isinstance(parm_state, str):
+                # If it's a string, create a basic ParameterInfo with the string as value
+                logger.warning(f"Parameter {parm_name} in node {node.path()} is a string, not a ParmState object")
+                parameters[parm_name] = ParameterInfo(
+                    type="STRING",
+                    value=parm_state,
+                    default=parm_state,
+                    read_only=False
+                )
+                continue
+
+            # Determine if parameter is read_only (output parameters)
+            is_read_only = parm_name in ['response', 'file_text', 'out_data', 'in_data', 'staging_data']
+
+            # Get default value safely
+            default_value = parm_state.value
+            if hasattr(node, '_parms') and parm_name in node._parms:
+                if hasattr(node._parms[parm_name], '_default'):
+                    default_value = node._parms[parm_name]._default
+
+            parameters[parm_name] = ParameterInfo(
+                type=parm_state.parm_type.replace("ParameterType.", ""),
+                value=parm_state.value,
+                default=default_value,
+                read_only=is_read_only
+            )
+        except AttributeError as e:
+            logger.error(f"AttributeError processing parameter {parm_name} in node {node.path()}: {e}")
+            # Skip this parameter rather than failing the whole conversion
+            continue
 
     return parameters
 
