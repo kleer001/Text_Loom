@@ -1,24 +1,22 @@
 import hashlib
 import time
 import re
-from typing import List, Dict, Tuple
+from typing import Dict, Tuple
 from core.base_classes import Node, NodeType, NodeState
 from core.parm import Parm, ParameterType
 
 
 class SearchNode(Node):
-    """Searches and filters text items based on patterns and keywords.
-
-    GLYPH: 🔍
-
-    Supports multiple search modes (contains, exact, starts_with, ends_with, regex).
-    Can combine multiple keywords with AND/OR logic.
-    Provides two outputs: matching items and non-matching items.
-    """
-
     GLYPH = '🔍'
     SINGLE_INPUT = True
     SINGLE_OUTPUT = False
+
+    MATCHERS = {
+        'contains': lambda text, term: term in text,
+        'exact': lambda text, term: text == term,
+        'starts_with': str.startswith,
+        'ends_with': str.endswith
+    }
 
     def __init__(self, name: str, path: str, node_type: NodeType):
         super().__init__(name, path, [0.0, 0.0], node_type)
@@ -43,94 +41,63 @@ class SearchNode(Node):
         self._parms["invert_match"].set(False)
         self._parms["enabled"].set(True)
 
-    def _parse_search_terms(self, search_text: str) -> List[str]:
-        terms = [t.strip() for t in re.split(r'[,\s]+', search_text) if t.strip()]
-        return terms
-
-    def _matches_term(self, text: str, term: str, mode: str,
-                     case_sensitive: bool) -> bool:
+    def _matches_term(self, text: str, term: str, mode: str, case_sensitive: bool) -> bool:
         if not case_sensitive:
-            text = text.lower()
-            term = term.lower()
+            text, term = text.lower(), term.lower()
 
-        if mode == "contains":
-            return term in text
-        elif mode == "exact":
-            return text == term
-        elif mode == "starts_with":
-            return text.startswith(term)
-        elif mode == "ends_with":
-            return text.endswith(term)
-        elif mode == "regex":
+        if mode == 'regex':
             try:
-                flags = 0 if case_sensitive else re.IGNORECASE
-                return bool(re.search(term, text, flags=flags))
-            except re.error:
-                self.add_warning(f"Invalid regex pattern: {term}")
+                return bool(re.search(term, text, 0 if case_sensitive else re.IGNORECASE))
+            except re.error as e:
+                self.add_warning(f"Invalid regex: {e}")
                 return False
-        return False
 
-    def _item_matches(self, item: str, terms: List[str], mode: str,
-                     case_sensitive: bool, boolean_mode: str) -> bool:
+        return self.MATCHERS.get(mode, lambda t, r: False)(text, term)
+
+    def _filter_items(self, items, terms, mode, case_sensitive, boolean_mode, invert) -> Tuple:
         if not terms:
-            return True
+            return (items, []) if not invert else ([], items)
 
-        if boolean_mode == "AND":
-            return all(self._matches_term(item, term, mode, case_sensitive)
-                      for term in terms)
-        elif boolean_mode == "OR":
-            return any(self._matches_term(item, term, mode, case_sensitive)
-                      for term in terms)
-        elif boolean_mode == "NOT":
-            return not any(self._matches_term(item, term, mode, case_sensitive)
-                          for term in terms)
-        return False
+        evaluators = {
+            'AND': lambda item: all(self._matches_term(item, t, mode, case_sensitive) for t in terms),
+            'OR': lambda item: any(self._matches_term(item, t, mode, case_sensitive) for t in terms),
+            'NOT': lambda item: not any(self._matches_term(item, t, mode, case_sensitive) for t in terms)
+        }
 
-    def _filter_items(self, items: List[str], search_text: str, mode: str,
-                     case_sensitive: bool, boolean_mode: str,
-                     invert_match: bool) -> Tuple[List[str], List[str]]:
-        terms = self._parse_search_terms(search_text)
-
-        matching = []
-        non_matching = []
+        matcher = evaluators.get(boolean_mode, lambda item: False)
+        matching, non_matching = [], []
 
         for item in items:
-            matches = self._item_matches(item, terms, mode, case_sensitive, boolean_mode)
-
-            if invert_match:
-                matches = not matches
-
-            if matches:
-                matching.append(item)
-            else:
-                non_matching.append(item)
+            (matching if matcher(item) != invert else non_matching).append(item)
 
         return matching, non_matching
+
+    def _get_input_data(self):
+        if not self.inputs():
+            return []
+        raw = self.inputs()[0].output_node().eval(requesting_node=self)
+        return [str(item) for item in raw] if isinstance(raw, list) else []
+
+    def _compute_param_hash(self, accessor='eval'):
+        getter = lambda k: getattr(self._parms[k], accessor)()
+        keys = ['enabled', 'search_text', 'search_mode', 'case_sensitive', 'boolean_mode', 'invert_match']
+        return hashlib.md5(''.join(str(getter(k)) for k in keys).encode()).hexdigest()
 
     def _internal_cook(self, force: bool = False) -> None:
         self.set_state(NodeState.COOKING)
         self._cook_count += 1
         start_time = time.time()
 
-        enabled = self._parms["enabled"].eval()
-        search_text = self._parms["search_text"].eval()
-        search_mode = self._parms["search_mode"].eval()
-        case_sensitive = self._parms["case_sensitive"].eval()
-        boolean_mode = self._parms["boolean_mode"].eval()
-        invert_match = self._parms["invert_match"].eval()
+        p = lambda k: self._parms[k].eval()
+        input_data = self._get_input_data()
 
-        input_data = []
-        if self.inputs():
-            raw_input = self.inputs()[0].output_node().eval(requesting_node=self)
-            if isinstance(raw_input, list):
-                input_data = [str(item) for item in raw_input]
-
-        if not enabled or not input_data:
+        if not p('enabled') or not input_data:
             self._output = [input_data, [], []]
         else:
+            terms = [t.strip() for t in re.split(r'[,\s]+', p('search_text')) if t.strip()]
             matching, non_matching = self._filter_items(
-                input_data, search_text, search_mode,
-                case_sensitive, boolean_mode, invert_match
+                input_data, terms, p('search_mode'),
+                p('case_sensitive'), p('boolean_mode'), p('invert_match')
             )
             self._output = [matching, non_matching, []]
 
@@ -139,39 +106,19 @@ class SearchNode(Node):
                     for conn in self._outputs[output_idx]:
                         conn.input_node().set_state(NodeState.UNCOOKED)
 
-        param_str = f"{enabled}{search_text}{search_mode}{case_sensitive}{boolean_mode}{invert_match}"
-        self._param_hash = self._calculate_hash(param_str)
-        self._input_hash = self._calculate_hash(str(input_data))
-
+        self._param_hash = self._compute_param_hash()
+        self._input_hash = hashlib.md5(str(input_data).encode()).hexdigest()
         self.set_state(NodeState.UNCHANGED)
         self._last_cook_time = (time.time() - start_time) * 1000
 
     def needs_to_cook(self) -> bool:
         if super().needs_to_cook():
             return True
-
         try:
-            enabled = self._parms["enabled"].raw_value()
-            search_text = self._parms["search_text"].raw_value()
-            search_mode = self._parms["search_mode"].raw_value()
-            case_sensitive = self._parms["case_sensitive"].raw_value()
-            boolean_mode = self._parms["boolean_mode"].raw_value()
-            invert_match = self._parms["invert_match"].raw_value()
-
-            param_str = f"{enabled}{search_text}{search_mode}{case_sensitive}{boolean_mode}{invert_match}"
-            new_param_hash = self._calculate_hash(param_str)
-
-            input_data = []
-            if self.inputs():
-                input_data = self.inputs()[0].output_node().get_output()
-            new_input_hash = self._calculate_hash(str(input_data))
-
-            return new_input_hash != self._input_hash or new_param_hash != self._param_hash
+            return (self._compute_param_hash('raw_value') != self._param_hash or
+                    hashlib.md5(str(self._get_input_data()).encode()).hexdigest() != self._input_hash)
         except Exception:
             return True
-
-    def _calculate_hash(self, content: str) -> str:
-        return hashlib.md5(content.encode()).hexdigest()
 
     def input_names(self) -> Dict[int, str]:
         return {0: "Input List"}

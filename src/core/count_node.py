@@ -1,47 +1,29 @@
 import hashlib
 import time
 import json
-from typing import List, Dict
+from typing import Dict
 from collections import Counter
 from core.base_classes import Node, NodeType, NodeState
 from core.parm import Parm, ParameterType
 
 
 class CountNode(Node):
-    """A node that performs counting and statistical operations on text lists.
-
-    This node can count items, deduplicate lists, find unique counts, and provide
-    word/character frequency analysis. Output can be formatted as plain numbers,
-    labeled text, or JSON.
-
-    Attributes:
-        stat_mode (str): The statistical operation to perform.
-            Options: "count", "deduplicate", "word_freq", "char_freq"
-        count_what (str): What to count for "count" mode.
-            Options: "items", "words", "characters", "lines"
-        preserve_order (bool): For deduplication, whether to preserve original order
-        top_n (int): For frequency modes, return only top N most frequent (0 = all)
-        case_sensitive (bool): Whether to treat text as case-sensitive
-        format_output (str): How to format the output.
-            Options: "plain", "labeled", "json"
-        enabled (bool): If True, performs operation; otherwise passes through
-
-    Input:
-        List[str]: A list of strings to analyze
-
-    Output:
-        List[str]: Results formatted according to format_output parameter
-
-    Example:
-        >>> node = CountNode("counter", "/root", NodeType.COUNT)
-        >>> node.parms()["stat_mode"].set("count")
-        >>> node.parms()["count_what"].set("items")
-        >>> # Input: ["a", "b", "c"] -> Output: ["3"]
-    """
-
     GLYPH = '#'
     SINGLE_INPUT = True
     SINGLE_OUTPUT = True
+
+    COUNTERS = {
+        'items': lambda data: len(data),
+        'words': lambda data: sum(len(item.split()) for item in data),
+        'characters': lambda data: sum(len(item) for item in data),
+        'lines': lambda data: sum(item.count('\n') + 1 for item in data)
+    }
+
+    FORMATTERS = {
+        'plain': lambda v, l=None: [str(v)] if isinstance(v, int) else ([f"{k}: {c}" for k, c in v.items()] if isinstance(v, dict) else v),
+        'labeled': lambda v, l=None: [f"{l}: {v}"] if isinstance(v, int) else ([f"Item {i+1}: {item}" for i, item in enumerate(v)] if isinstance(v, list) else [f"Frequency - {k}: {c}" for k, c in v.items()]),
+        'json': lambda v, l=None: [json.dumps({"count": v, "label": l})] if isinstance(v, int) else ([json.dumps({"items": v, "count": len(v)})] if isinstance(v, list) else [json.dumps(v)])
+    }
 
     def __init__(self, name: str, path: str, node_type: NodeType):
         super().__init__(name, path, [0.0, 0.0], node_type)
@@ -59,7 +41,6 @@ class CountNode(Node):
             "enabled": Parm("enabled", ParameterType.TOGGLE, self),
         })
 
-        # Set defaults
         self._parms["stat_mode"].set("count")
         self._parms["count_what"].set("items")
         self._parms["preserve_order"].set(True)
@@ -68,208 +49,73 @@ class CountNode(Node):
         self._parms["format_output"].set("plain")
         self._parms["enabled"].set(True)
 
-    def _count_items(self, data: List[str]) -> int:
-        """Count the number of items in the list."""
-        return len(data)
+    def _deduplicate(self, data, preserve_order, case_sensitive):
+        normalizer = (lambda x: x) if case_sensitive else str.lower
+        if preserve_order:
+            seen = set()
+            return [item for item in data if not (normalizer(item) in seen or seen.add(normalizer(item)))]
+        seen = {normalizer(item): item for item in data}
+        return sorted(seen.values())
 
-    def _count_words(self, data: List[str]) -> int:
-        """Count total words across all items."""
-        total = 0
-        for item in data:
-            total += len(item.split())
-        return total
+    def _frequency(self, items, top_n):
+        counter = Counter(items)
+        return dict(counter.most_common(top_n) if top_n > 0 else counter)
 
-    def _count_characters(self, data: List[str]) -> int:
-        """Count total characters across all items."""
-        return sum(len(item) for item in data)
+    def _get_input_data(self):
+        if not self.inputs():
+            return []
+        raw = self.inputs()[0].output_node().eval(requesting_node=self)
+        return [str(item) for item in raw] if isinstance(raw, list) else []
 
-    def _count_lines(self, data: List[str]) -> int:
-        """Count total lines across all items."""
-        total = 0
-        for item in data:
-            total += item.count('\n') + 1
-        return total
-
-    def _deduplicate(self, data: List[str], preserve_order: bool,
-                     case_sensitive: bool) -> List[str]:
-        """Remove duplicate items from the list."""
-        if not case_sensitive:
-            # Track original case versions
-            seen = {}
-            result = []
-            for item in data:
-                key = item.lower()
-                if key not in seen:
-                    seen[key] = item
-                    if preserve_order:
-                        result.append(item)
-            if preserve_order:
-                return result
-            else:
-                return sorted(seen.values())
-        else:
-            if preserve_order:
-                seen = set()
-                result = []
-                for item in data:
-                    if item not in seen:
-                        seen.add(item)
-                        result.append(item)
-                return result
-            else:
-                return sorted(list(set(data)))
-
-    def _word_frequency(self, data: List[str], top_n: int,
-                       case_sensitive: bool) -> Dict[str, int]:
-        """Calculate word frequency across all items."""
-        words = []
-        for item in data:
-            words.extend(item.split())
-
-        if not case_sensitive:
-            words = [w.lower() for w in words]
-
-        counter = Counter(words)
-        if top_n > 0:
-            return dict(counter.most_common(top_n))
-        return dict(counter)
-
-    def _char_frequency(self, data: List[str], top_n: int,
-                       case_sensitive: bool) -> Dict[str, int]:
-        """Calculate character frequency across all items."""
-        chars = []
-        for item in data:
-            if not case_sensitive:
-                chars.extend(item.lower())
-            else:
-                chars.extend(item)
-
-        counter = Counter(chars)
-        if top_n > 0:
-            return dict(counter.most_common(top_n))
-        return dict(counter)
-
-    def _format_count(self, count: int, format_mode: str, label: str) -> List[str]:
-        """Format a count value according to format_output."""
-        if format_mode == "plain":
-            return [str(count)]
-        elif format_mode == "labeled":
-            return [f"{label}: {count}"]
-        elif format_mode == "json":
-            return [json.dumps({"count": count, "label": label})]
-        return [str(count)]
-
-    def _format_list(self, items: List[str], format_mode: str) -> List[str]:
-        """Format a list of items according to format_output."""
-        if format_mode == "plain":
-            return items
-        elif format_mode == "labeled":
-            return [f"Item {i+1}: {item}" for i, item in enumerate(items)]
-        elif format_mode == "json":
-            return [json.dumps({"items": items, "count": len(items)})]
-        return items
-
-    def _format_frequency(self, freq: Dict[str, int], format_mode: str) -> List[str]:
-        """Format frequency data according to format_output."""
-        if format_mode == "plain":
-            return [f"{key}: {value}" for key, value in freq.items()]
-        elif format_mode == "labeled":
-            return [f"Frequency - {key}: {value}" for key, value in freq.items()]
-        elif format_mode == "json":
-            return [json.dumps(freq)]
-        return [f"{key}: {value}" for key, value in freq.items()]
+    def _compute_param_hash(self, accessor='eval'):
+        getter = lambda k: getattr(self._parms[k], accessor)()
+        keys = ['enabled', 'stat_mode', 'count_what', 'preserve_order', 'top_n', 'case_sensitive', 'format_output']
+        return hashlib.md5(''.join(str(getter(k)) for k in keys).encode()).hexdigest()
 
     def _internal_cook(self, force: bool = False) -> None:
         self.set_state(NodeState.COOKING)
         self._cook_count += 1
         start_time = time.time()
 
-        # Get parameters
-        enabled = self._parms["enabled"].eval()
-        stat_mode = self._parms["stat_mode"].eval()
-        count_what = self._parms["count_what"].eval()
-        preserve_order = self._parms["preserve_order"].eval()
-        top_n = self._parms["top_n"].eval()
-        case_sensitive = self._parms["case_sensitive"].eval()
-        format_output = self._parms["format_output"].eval()
+        p = lambda k: self._parms[k].eval()
+        input_data = self._get_input_data()
 
-        # Get input data
-        input_data = []
-        if self.inputs():
-            raw_input = self.inputs()[0].output_node().eval(requesting_node=self)
-            if isinstance(raw_input, list):
-                input_data = [str(item) for item in raw_input]
-
-        if not enabled or not input_data:
+        if not p('enabled') or not input_data:
             self._output = input_data
         else:
-            result = []
+            mode = p('stat_mode')
+            fmt = p('format_output')
 
-            if stat_mode == "count":
-                if count_what == "items":
-                    count = self._count_items(input_data)
-                    result = self._format_count(count, format_output, "Item count")
-                elif count_what == "words":
-                    count = self._count_words(input_data)
-                    result = self._format_count(count, format_output, "Word count")
-                elif count_what == "characters":
-                    count = self._count_characters(input_data)
-                    result = self._format_count(count, format_output, "Character count")
-                elif count_what == "lines":
-                    count = self._count_lines(input_data)
-                    result = self._format_count(count, format_output, "Line count")
-
-            elif stat_mode == "deduplicate":
-                deduped = self._deduplicate(input_data, preserve_order, case_sensitive)
-                result = self._format_list(deduped, format_output)
-
-            elif stat_mode == "word_freq":
-                freq = self._word_frequency(input_data, top_n, case_sensitive)
-                result = self._format_frequency(freq, format_output)
-
-            elif stat_mode == "char_freq":
-                freq = self._char_frequency(input_data, top_n, case_sensitive)
-                result = self._format_frequency(freq, format_output)
+            if mode == 'count':
+                count = self.COUNTERS[p('count_what')](input_data)
+                result = self.FORMATTERS[fmt](count, f"{p('count_what').capitalize()} count")
+            elif mode == 'deduplicate':
+                deduped = self._deduplicate(input_data, p('preserve_order'), p('case_sensitive'))
+                result = self.FORMATTERS[fmt](deduped)
+            elif mode == 'word_freq':
+                words = [w if p('case_sensitive') else w.lower() for item in input_data for w in item.split()]
+                result = self.FORMATTERS[fmt](self._frequency(words, p('top_n')))
+            elif mode == 'char_freq':
+                chars = [c if p('case_sensitive') else c.lower() for item in input_data for c in item]
+                result = self.FORMATTERS[fmt](self._frequency(chars, p('top_n')))
+            else:
+                result = input_data
 
             self._output = result
 
-        # Update hashes for caching
-        param_str = f"{enabled}{stat_mode}{count_what}{preserve_order}{top_n}{case_sensitive}{format_output}"
-        self._param_hash = self._calculate_hash(param_str)
-        self._input_hash = self._calculate_hash(str(input_data))
-
+        self._param_hash = self._compute_param_hash()
+        self._input_hash = hashlib.md5(str(input_data).encode()).hexdigest()
         self.set_state(NodeState.UNCHANGED)
         self._last_cook_time = (time.time() - start_time) * 1000
 
     def needs_to_cook(self) -> bool:
-        """Check if node needs to recook based on parameter or input changes."""
         if super().needs_to_cook():
             return True
-
         try:
-            enabled = self._parms["enabled"].raw_value()
-            stat_mode = self._parms["stat_mode"].raw_value()
-            count_what = self._parms["count_what"].raw_value()
-            preserve_order = self._parms["preserve_order"].raw_value()
-            top_n = self._parms["top_n"].raw_value()
-            case_sensitive = self._parms["case_sensitive"].raw_value()
-            format_output = self._parms["format_output"].raw_value()
-
-            param_str = f"{enabled}{stat_mode}{count_what}{preserve_order}{top_n}{case_sensitive}{format_output}"
-            new_param_hash = self._calculate_hash(param_str)
-
-            input_data = []
-            if self.inputs():
-                input_data = self.inputs()[0].output_node().get_output()
-            new_input_hash = self._calculate_hash(str(input_data))
-
-            return new_input_hash != self._input_hash or new_param_hash != self._param_hash
+            return (self._compute_param_hash('raw_value') != self._param_hash or
+                    hashlib.md5(str(self._get_input_data()).encode()).hexdigest() != self._input_hash)
         except Exception:
             return True
-
-    def _calculate_hash(self, content: str) -> str:
-        """Calculate MD5 hash of content."""
-        return hashlib.md5(content.encode()).hexdigest()
 
     def input_names(self) -> Dict[int, str]:
         return {0: "Input Text"}
