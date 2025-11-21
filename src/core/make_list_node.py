@@ -27,7 +27,7 @@ class MakeListNode(Node):
             * Written numbers (one., two., three.)
             * Ordinal numbers (first., second., third.)
             * Compound numbers (twenty-one, ninety-nine)
-        - Handles various separators between numbers and text (. : - _)
+        - Handles various separators between numbers and text (. : - _ ))
         - Preserves multi-line list items
         - Maintains original text formatting within list items
         - Case-insensitive number word recognition
