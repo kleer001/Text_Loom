@@ -7,6 +7,18 @@ from core.parm import Parm, ParameterType
 
 
 class SearchNode(Node):
+    """Searches and filters text items based on patterns and keywords.
+
+    Supports multiple search modes (contains, exact, starts_with, ends_with, regex)
+    and can combine multiple keywords with AND/OR/NOT boolean logic. Provides
+    dual outputs: matching items and non-matching items.
+
+    Attributes:
+        GLYPH (str): Display glyph '🔍'
+        SINGLE_INPUT (bool): Accepts single input connection
+        SINGLE_OUTPUT (bool): Produces multiple output connections
+    """
+
     GLYPH = '🔍'
     SINGLE_INPUT = True
     SINGLE_OUTPUT = False

@@ -8,6 +8,19 @@ from core.parm import Parm, ParameterType
 
 
 class CountNode(Node):
+    """Performs counting and statistical operations on text lists.
+
+    Provides counting operations (items, words, characters, lines),
+    deduplication with order preservation, and frequency analysis for
+    words and characters. Results can be formatted as plain text,
+    labeled output, or JSON.
+
+    Attributes:
+        GLYPH (str): Display glyph '#'
+        SINGLE_INPUT (bool): Accepts single input connection
+        SINGLE_OUTPUT (bool): Produces single output connection
+    """
+
     GLYPH = '#'
     SINGLE_INPUT = True
     SINGLE_OUTPUT = True

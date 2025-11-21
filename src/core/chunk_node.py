@@ -7,6 +7,18 @@ from core.parm import Parm, ParameterType
 
 
 class ChunkNode(Node):
+    """Splits text into chunks using various strategies.
+
+    Supports chunking by character count, sentence boundaries, or paragraph
+    boundaries. Can respect sentence/paragraph boundaries to avoid mid-sentence
+    splits and supports overlapping chunks for context preservation.
+
+    Attributes:
+        GLYPH (str): Display glyph '⊞'
+        SINGLE_INPUT (bool): Accepts single input connection
+        SINGLE_OUTPUT (bool): Produces single output connection
+    """
+
     GLYPH = '⊞'
     SINGLE_INPUT = True
     SINGLE_OUTPUT = True

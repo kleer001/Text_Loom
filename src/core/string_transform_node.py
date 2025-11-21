@@ -7,6 +7,18 @@ from core.parm import Parm, ParameterType
 
 
 class StringTransformNode(Node):
+    """Performs string transformations on text items.
+
+    Applies various text transformations including find/replace operations,
+    regex-based substitutions, case transformations, whitespace normalization,
+    and trimming to each item in the input list.
+
+    Attributes:
+        GLYPH (str): Display glyph '⎔'
+        SINGLE_INPUT (bool): Accepts single input connection
+        SINGLE_OUTPUT (bool): Produces single output connection
+    """
+
     GLYPH = '⎔'
     SINGLE_INPUT = True
     SINGLE_OUTPUT = True
