@@ -511,3 +511,100 @@ def redo_operation() -> UndoRedoResponse:
                 "message": f"Error performing redo: {str(e)}"
             }
         )
+
+
+@router.post(
+    "/workspace/undo/disable",
+    response_model=SuccessResponse,
+    summary="Disable undo tracking",
+    description="Temporarily disables undo state tracking. Used during batch operations.",
+    responses={
+        200: {
+            "description": "Undo tracking disabled",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "success": True,
+                        "message": "Undo tracking disabled"
+                    }
+                }
+            }
+        }
+    }
+)
+def disable_undo() -> SuccessResponse:
+    """
+    Disable undo tracking.
+
+    Prevents operations from being added to the undo stack.
+    Useful for batch operations like paste where you don't want
+    individual node creations to clutter the undo stack.
+
+    Returns:
+        SuccessResponse: Success confirmation
+    """
+    try:
+        undo_mgr = UndoManager()
+        undo_mgr.disable()
+
+        return SuccessResponse(
+            success=True,
+            message="Undo tracking disabled"
+        )
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "error": "disable_failed",
+                "message": f"Error disabling undo: {str(e)}"
+            }
+        )
+
+
+@router.post(
+    "/workspace/undo/enable",
+    response_model=SuccessResponse,
+    summary="Enable undo tracking",
+    description="Re-enables undo state tracking after being disabled.",
+    responses={
+        200: {
+            "description": "Undo tracking enabled",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "success": True,
+                        "message": "Undo tracking enabled"
+                    }
+                }
+            }
+        }
+    }
+)
+def enable_undo() -> SuccessResponse:
+    """
+    Enable undo tracking.
+
+    Re-enables undo state tracking after it was disabled.
+    Should always be called after disable_undo() to restore normal operation.
+
+    Returns:
+        SuccessResponse: Success confirmation
+    """
+    try:
+        undo_mgr = UndoManager()
+        undo_mgr.enable()
+
+        return SuccessResponse(
+            success=True,
+            message="Undo tracking enabled"
+        )
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "error": "enable_failed",
+                "message": f"Error enabling undo: {str(e)}"
+            }
+        )

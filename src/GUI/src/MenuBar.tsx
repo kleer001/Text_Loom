@@ -101,11 +101,9 @@ export const MenuBar: React.FC<MenuBarProps> = ({ onKeyboardShortcuts, onAbout }
     }
   }, []);
 
-  // Fetch undo status on mount and periodically
+  // Fetch undo status on mount and after operations
   useEffect(() => {
     fetchUndoStatus();
-    const interval = setInterval(fetchUndoStatus, 2000);
-    return () => clearInterval(interval);
   }, [fetchUndoStatus]);
 
   // Menu handlers

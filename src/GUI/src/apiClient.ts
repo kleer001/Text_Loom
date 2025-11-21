@@ -194,6 +194,18 @@ class ApiClient {
     });
   }
 
+  async disableUndo(): Promise<{ success: boolean; message: string }> {
+    return this.fetchJson('/workspace/undo/disable', {
+      method: 'POST',
+    });
+  }
+
+  async enableUndo(): Promise<{ success: boolean; message: string }> {
+    return this.fetchJson('/workspace/undo/enable', {
+      method: 'POST',
+    });
+  }
+
   // File browsing operations
   async browseFiles(path: string = '~'): Promise<{
     current_path: string;

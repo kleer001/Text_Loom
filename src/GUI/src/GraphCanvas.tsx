@@ -467,6 +467,9 @@ const GraphCanvasInner: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
       }
 
       try {
+        // Disable undo tracking during paste operations
+        await apiClient.disableUndo();
+
         const offset = 50; // Offset for pasted nodes
         for (const nodeData of clipboard.nodes) {
           const newPosition: [number, number] = [
@@ -498,6 +501,9 @@ const GraphCanvasInner: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
           }
         }
 
+        // Re-enable undo tracking
+        await apiClient.enableUndo();
+
         // Update clipboard positions for subsequent pastes
         (window as any).__textloom_clipboard.nodes = clipboard.nodes.map((n: any) => ({
           ...n,
@@ -508,6 +514,12 @@ const GraphCanvasInner: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
         console.log(`Pasted ${clipboard.nodes.length} node(s)`);
       } catch (error) {
         console.error('Paste failed:', error);
+        // Always re-enable undo tracking even on error
+        try {
+          await apiClient.enableUndo();
+        } catch (enableError) {
+          console.error('Failed to re-enable undo:', enableError);
+        }
       }
     };
 
