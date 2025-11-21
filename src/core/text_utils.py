@@ -69,7 +69,7 @@ def parse_list(text):
             - Written numbers (one., two., three.)
             - Ordinal numbers (first., second., third.)
             - Compound numbers (twenty-one, ninety-nine)
-            - Separators: . : - _
+            - Separators: . : - _ )
             - Case-insensitive number word recognition
             - Multi-line list items preserved
 
@@ -116,7 +116,7 @@ def parse_list(text):
     lines = text.split('\n')
 
     start_index = next((i for i, line in enumerate(lines)
-                        if re.match(r'^(\d+|{word_pattern})([.:\-_]?\s)'.format(word_pattern=number_word_pattern),
+                        if re.match(r'^(\d+|{word_pattern})([.:\-_)]?\s)'.format(word_pattern=number_word_pattern),
                                     line.strip(), flags=re.IGNORECASE)),None)
 
     if start_index is None:
@@ -125,10 +125,10 @@ def parse_list(text):
     processed_items = []
     current_item = ""
     for line in lines[start_index:]:
-        clean_line = re.sub(r'^(\d+|{word_pattern})([.:\-_]?\s)'.format(word_pattern=number_word_pattern), '',
+        clean_line = re.sub(r'^(\d+|{word_pattern})([.:\-_)]?\s)'.format(word_pattern=number_word_pattern), '',
                             line.strip(), flags=re.IGNORECASE)
 
-        if re.match(r'^(\d+|{word_pattern})([.:\-_]?\s)'.format(word_pattern=number_word_pattern), line.strip(),
+        if re.match(r'^(\d+|{word_pattern})([.:\-_)]?\s)'.format(word_pattern=number_word_pattern), line.strip(),
                     flags=re.IGNORECASE):
             if current_item:
                 processed_items.append(current_item.strip())
