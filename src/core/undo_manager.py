@@ -184,6 +184,13 @@ class UndoManager:
         parms = {}
         if hasattr(node, '_parms'):
             for parm_name, parm in node._parms.items():
+                # Validate that parm is actually a Parm object
+                if not hasattr(parm, 'type') or not callable(parm.type):
+                    self.logger.error(f"[UNDO_CAPTURE] Invalid parm object for {parm_name} in {node.path()}: type={type(parm)}, value={parm}")
+                    self.logger.error(f"[UNDO_CAPTURE] This indicates deserialization failure - parm should be a Parm object")
+                    # Skip this invalid parm instead of crashing
+                    continue
+
                 if str(parm.type()) == 'ParameterType.BUTTON':
                     continue
                 parms[parm_name] = ParmState(
