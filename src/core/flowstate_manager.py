@@ -86,11 +86,16 @@ def _clean_for_json(obj: Any) -> Any:
 def _apply_node_data(node: Node, node_data: dict) -> None:
     try:
         for attr in NODE_ATTRIBUTES:
+            # Skip _node_type - it's already set correctly by Node.create_node()
+            # Setting it from JSON would overwrite the enum with a string
+            if attr == '_node_type':
+                continue
+
             if attr in node_data:
                 value = node_data[attr]
                 if not inspect.ismethod(getattr(node, attr, None)):
                     setattr(node, attr, value)
-        
+
         if '_parms' in node_data and hasattr(node, '_parms'):
             for parm_name, parm_data in node_data['_parms'].items():
                 try:
@@ -202,6 +207,11 @@ def _deserialize_node(node_data: dict, env: NodeEnvironment) -> Optional[Node]:
         
         for attr in NODE_ATTRIBUTES:
             try:
+                # Skip _node_type - it's already set correctly by Node.create_node()
+                # Setting it from JSON would overwrite the enum with a string
+                if attr == '_node_type':
+                    continue
+
                 if attr in node_data:
                     value = node_data[attr]
                     if not inspect.ismethod(getattr(node, attr, None)):
