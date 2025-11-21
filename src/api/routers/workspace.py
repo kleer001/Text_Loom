@@ -14,10 +14,27 @@ from api.models import WorkspaceState, NodeResponse, ConnectionResponse, Success
 from core.base_classes import NodeEnvironment
 from core.global_store import GlobalStore
 from core.flowstate_manager import save_flowstate, load_flowstate
+from core.undo_manager import UndoManager
 from typing import Dict, Any
+from pydantic import BaseModel
 import tempfile
 import json
 import os
+
+
+class UndoStatusResponse(BaseModel):
+    """Response model for undo/redo status."""
+    can_undo: bool
+    can_redo: bool
+    undo_description: str
+    redo_description: str
+
+
+class UndoRedoResponse(BaseModel):
+    """Response model for undo/redo operations."""
+    success: bool
+    operation: str
+    message: str
 
 router = APIRouter()
 
@@ -315,5 +332,279 @@ def clear_workspace() -> SuccessResponse:
             detail={
                 "error": "clear_failed",
                 "message": f"Error clearing workspace: {str(e)}"
+            }
+        )
+
+
+@router.get(
+    "/workspace/undo-status",
+    response_model=UndoStatusResponse,
+    summary="Get undo/redo status",
+    description="Returns whether undo and redo operations are available, along with descriptions.",
+    responses={
+        200: {
+            "description": "Undo/redo status",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "can_undo": True,
+                        "can_redo": False,
+                        "undo_description": "Update text1 (parameters)",
+                        "redo_description": ""
+                    }
+                }
+            }
+        }
+    }
+)
+def get_undo_status() -> UndoStatusResponse:
+    """
+    Get the current undo/redo status.
+
+    Returns whether undo and redo operations are available,
+    along with descriptions of what would be undone/redone.
+
+    Returns:
+        UndoStatusResponse: Undo/redo availability and descriptions
+    """
+    try:
+        undo_mgr = UndoManager()
+
+        can_undo = len(undo_mgr.undo_stack) > 0
+        can_redo = len(undo_mgr.redo_stack) > 0
+
+        # Get the most recent operation names
+        undo_desc = ""
+        redo_desc = ""
+
+        if can_undo:
+            undo_desc = undo_mgr.undo_stack[-1][0]  # operation name
+        if can_redo:
+            redo_desc = undo_mgr.redo_stack[-1][0]  # operation name
+
+        return UndoStatusResponse(
+            can_undo=can_undo,
+            can_redo=can_redo,
+            undo_description=undo_desc,
+            redo_description=redo_desc
+        )
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "error": "internal_error",
+                "message": f"Error getting undo status: {str(e)}"
+            }
+        )
+
+
+@router.post(
+    "/workspace/undo",
+    response_model=UndoRedoResponse,
+    summary="Undo last operation",
+    description="Undoes the most recent operation in the workspace.",
+    responses={
+        200: {
+            "description": "Undo completed",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "success": True,
+                        "operation": "Update text1 (parameters)",
+                        "message": "Undo completed"
+                    }
+                }
+            }
+        }
+    }
+)
+def undo_operation() -> UndoRedoResponse:
+    """
+    Undo the most recent operation.
+
+    Restores the workspace to its previous state before the last operation.
+
+    Returns:
+        UndoRedoResponse: Result of the undo operation
+    """
+    try:
+        undo_mgr = UndoManager()
+
+        if len(undo_mgr.undo_stack) == 0:
+            return UndoRedoResponse(
+                success=False,
+                operation="",
+                message="Nothing to undo"
+            )
+
+        operation_name = undo_mgr.undo()
+
+        return UndoRedoResponse(
+            success=True,
+            operation=operation_name or "",
+            message="Undo completed"
+        )
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "error": "undo_failed",
+                "message": f"Error performing undo: {str(e)}"
+            }
+        )
+
+
+@router.post(
+    "/workspace/redo",
+    response_model=UndoRedoResponse,
+    summary="Redo last undone operation",
+    description="Redoes the most recently undone operation.",
+    responses={
+        200: {
+            "description": "Redo completed",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "success": True,
+                        "operation": "Update text1 (parameters)",
+                        "message": "Redo completed"
+                    }
+                }
+            }
+        }
+    }
+)
+def redo_operation() -> UndoRedoResponse:
+    """
+    Redo the most recently undone operation.
+
+    Restores the workspace to its state after the undone operation.
+
+    Returns:
+        UndoRedoResponse: Result of the redo operation
+    """
+    try:
+        undo_mgr = UndoManager()
+
+        if len(undo_mgr.redo_stack) == 0:
+            return UndoRedoResponse(
+                success=False,
+                operation="",
+                message="Nothing to redo"
+            )
+
+        operation_name = undo_mgr.redo()
+
+        return UndoRedoResponse(
+            success=True,
+            operation=operation_name or "",
+            message="Redo completed"
+        )
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "error": "redo_failed",
+                "message": f"Error performing redo: {str(e)}"
+            }
+        )
+
+
+@router.post(
+    "/workspace/undo/disable",
+    response_model=SuccessResponse,
+    summary="Disable undo tracking",
+    description="Temporarily disables undo state tracking. Used during batch operations.",
+    responses={
+        200: {
+            "description": "Undo tracking disabled",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "success": True,
+                        "message": "Undo tracking disabled"
+                    }
+                }
+            }
+        }
+    }
+)
+def disable_undo() -> SuccessResponse:
+    """
+    Disable undo tracking.
+
+    Prevents operations from being added to the undo stack.
+    Useful for batch operations like paste where you don't want
+    individual node creations to clutter the undo stack.
+
+    Returns:
+        SuccessResponse: Success confirmation
+    """
+    try:
+        undo_mgr = UndoManager()
+        undo_mgr.disable()
+
+        return SuccessResponse(
+            success=True,
+            message="Undo tracking disabled"
+        )
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "error": "disable_failed",
+                "message": f"Error disabling undo: {str(e)}"
+            }
+        )
+
+
+@router.post(
+    "/workspace/undo/enable",
+    response_model=SuccessResponse,
+    summary="Enable undo tracking",
+    description="Re-enables undo state tracking after being disabled.",
+    responses={
+        200: {
+            "description": "Undo tracking enabled",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "success": True,
+                        "message": "Undo tracking enabled"
+                    }
+                }
+            }
+        }
+    }
+)
+def enable_undo() -> SuccessResponse:
+    """
+    Enable undo tracking.
+
+    Re-enables undo state tracking after it was disabled.
+    Should always be called after disable_undo() to restore normal operation.
+
+    Returns:
+        SuccessResponse: Success confirmation
+    """
+    try:
+        undo_mgr = UndoManager()
+        undo_mgr.enable()
+
+        return SuccessResponse(
+            success=True,
+            message="Undo tracking enabled"
+        )
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "error": "enable_failed",
+                "message": f"Error enabling undo: {str(e)}"
             }
         )

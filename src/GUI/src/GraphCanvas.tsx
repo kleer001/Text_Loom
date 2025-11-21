@@ -413,6 +413,140 @@ const GraphCanvasInner: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
     }
   }, []);
 
+  // Handle custom events from MenuBar for edit operations
+  useEffect(() => {
+    const handleSelectAll = () => {
+      if (reactFlowInstanceRef.current) {
+        const allNodes = reactFlowInstanceRef.current.getNodes();
+        const allEdges = reactFlowInstanceRef.current.getEdges();
+        setNodes(allNodes.map(n => ({ ...n, selected: true })));
+        setEdges(allEdges.map(e => ({ ...e, selected: true })));
+        setSelectedNodes(allNodes);
+        selectedNodeIdsRef.current = new Set(allNodes.map(n => n.id));
+      }
+    };
+
+    const handleDeleteSelected = () => {
+      if (selectedNodes.length > 0) {
+        setDeleteDialogOpen(true);
+      }
+    };
+
+    const handleCopy = () => {
+      if (selectedNodes.length > 0) {
+        const nodesToCopy = selectedNodes.map(n => {
+          const nodeData = (n.data as { node: NodeResponse }).node;
+          return {
+            type: nodeData.type,
+            name: nodeData.name,
+            parameters: nodeData.parameters,
+            position: nodeData.position,
+          };
+        });
+        // Store in window for cross-component access
+        (window as any).__textloom_clipboard = {
+          nodes: nodesToCopy,
+          timestamp: Date.now(),
+        };
+        console.log(`Copied ${nodesToCopy.length} node(s)`);
+      }
+    };
+
+    const handleCut = () => {
+      handleCopy();
+      if (selectedNodes.length > 0) {
+        setDeleteDialogOpen(true);
+      }
+    };
+
+    const handlePaste = async () => {
+      const clipboard = (window as any).__textloom_clipboard;
+      if (!clipboard || !clipboard.nodes || clipboard.nodes.length === 0) {
+        console.log('Nothing to paste');
+        return;
+      }
+
+      try {
+        // Disable undo tracking during paste operations
+        await apiClient.disableUndo();
+
+        const offset = 50; // Offset for pasted nodes
+        for (const nodeData of clipboard.nodes) {
+          const newPosition: [number, number] = [
+            nodeData.position[0] + offset,
+            nodeData.position[1] + offset,
+          ];
+
+          // Create new node via API - backend handles duplicate names automatically
+          const createRequest = {
+            type: nodeData.type,
+            name: nodeData.name,
+            parent_path: '/',
+            position: newPosition,
+          };
+
+          const newNodes = await apiClient.createNode(createRequest);
+
+          // Update parameters if any
+          if (newNodes.length > 0 && nodeData.parameters) {
+            const paramValues: Record<string, any> = {};
+            for (const [key, param] of Object.entries(nodeData.parameters)) {
+              if (key !== 'bypass' && key !== 'display') {
+                paramValues[key] = (param as any).value;
+              }
+            }
+            if (Object.keys(paramValues).length > 0) {
+              await apiClient.updateNode(newNodes[0].session_id, { parameters: paramValues });
+            }
+          }
+        }
+
+        // Re-enable undo tracking
+        await apiClient.enableUndo();
+
+        // Update clipboard positions for subsequent pastes
+        (window as any).__textloom_clipboard.nodes = clipboard.nodes.map((n: any) => ({
+          ...n,
+          position: [n.position[0] + offset, n.position[1] + offset],
+        }));
+
+        await loadWorkspace();
+        console.log(`Pasted ${clipboard.nodes.length} node(s)`);
+      } catch (error) {
+        console.error('Paste failed:', error);
+        // Always re-enable undo tracking even on error
+        try {
+          await apiClient.enableUndo();
+        } catch (enableError) {
+          console.error('Failed to re-enable undo:', enableError);
+        }
+      }
+    };
+
+    const handleDuplicate = async () => {
+      if (selectedNodes.length > 0) {
+        handleCopy();
+        await handlePaste();
+      }
+    };
+
+    window.addEventListener('textloom:selectAll', handleSelectAll);
+    window.addEventListener('textloom:deleteSelected', handleDeleteSelected);
+    window.addEventListener('textloom:copy', handleCopy);
+    window.addEventListener('textloom:cut', handleCut);
+    window.addEventListener('textloom:paste', handlePaste);
+    window.addEventListener('textloom:duplicate', handleDuplicate);
+
+    return () => {
+      window.removeEventListener('textloom:selectAll', handleSelectAll);
+      window.removeEventListener('textloom:deleteSelected', handleDeleteSelected);
+      window.removeEventListener('textloom:copy', handleCopy);
+      window.removeEventListener('textloom:cut', handleCut);
+      window.removeEventListener('textloom:paste', handlePaste);
+      window.removeEventListener('textloom:duplicate', handleDuplicate);
+    };
+  }, [selectedNodes, setNodes, setEdges, loadWorkspace]);
+
   return (
     <>
       <style>{edgeStyles}</style>
@@ -439,7 +573,6 @@ const GraphCanvasInner: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
         onInit={onInit}
         onMove={onMove}
         fitView={false}
-        fitViewOnInit={false}
         minZoom={0.1}
         maxZoom={2}
         selectNodesOnDrag={false}

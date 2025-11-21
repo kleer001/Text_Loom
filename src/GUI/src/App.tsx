@@ -6,40 +6,37 @@ import {
   AppBar,
   Toolbar,
   Typography,
-  Button,
   CircularProgress,
   Alert,
   Paper,
   Tabs,
   Tab,
-  IconButton,
 } from '@mui/material';
-import RefreshIcon from '@mui/icons-material/Refresh';
 import InfoIcon from '@mui/icons-material/Info';
 import PublicIcon from '@mui/icons-material/Public';
-import LightModeIcon from '@mui/icons-material/LightMode';
-import DarkModeIcon from '@mui/icons-material/DarkMode';
 import { WorkspaceProvider, useWorkspace } from './WorkspaceContext';
 import { GraphCanvas } from './GraphCanvas';
 import { NodeDetailsPanel } from './NodeDetailsPanel';
 import { GlobalsPanel } from './GlobalsPanel';
 import { AddNodeMenu } from './AddNodeMenu';
 import { OutputPanel } from './OutputPanel';
-import { FileMenu } from './FileMenu';
+import { MenuBar } from './MenuBar';
+import { KeyboardShortcutsDialog } from './KeyboardShortcutsDialog';
+import { AboutDialog } from './AboutDialog';
 import { AutosaveRecoveryDialog } from './AutosaveRecoveryDialog';
 import { useFileManager } from './hooks/useFileManager';
 import { fileManager } from './services/fileManager';
 import { apiClient } from './apiClient';
 import type { NodeResponse } from './types';
-import { useTheme } from './ThemeContext';
 import { isLooperPart, getOriginalNodeId } from './looperTransform';
 
 const AppContent: React.FC = () => {
-  const { mode, toggleTheme } = useTheme();
   const { nodes, loadWorkspace, loading, error, lastExecutionResult, lastExecutedNodeName, clearExecutionResult } = useWorkspace();
   const { save, saveAs, open, newWorkspace, isDirty, markClean } = useFileManager();
   const [focusedNode, setFocusedNode] = useState<NodeResponse | null>(null);
   const [activeTab, setActiveTab] = useState<'details' | 'globals'>('details');
+  const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false);
+  const [showAbout, setShowAbout] = useState(false);
   const [autosaveRecovery, setAutosaveRecovery] = useState<{
     show: boolean;
     timestamp: number;
@@ -132,7 +129,7 @@ const AppContent: React.FC = () => {
 
   // Keyboard shortcuts
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
+    const handleKeyDown = async (e: KeyboardEvent) => {
       // Check if we're in an input/textarea
       const target = e.target as HTMLElement;
       if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
@@ -140,7 +137,7 @@ const AppContent: React.FC = () => {
       }
 
       // Ctrl+S - Save
-      if (e.ctrlKey && e.key === 's') {
+      if (e.ctrlKey && !e.shiftKey && e.key === 's') {
         e.preventDefault();
         save();
       }
@@ -162,11 +159,63 @@ const AppContent: React.FC = () => {
         e.preventDefault();
         newWorkspace();
       }
+
+      // Ctrl+Z - Undo
+      if (e.ctrlKey && !e.shiftKey && e.key === 'z') {
+        e.preventDefault();
+        try {
+          await apiClient.undo();
+          await loadWorkspace();
+        } catch (err) {
+          console.error('Undo failed:', err);
+        }
+      }
+
+      // Ctrl+Shift+Z - Redo
+      if (e.ctrlKey && e.shiftKey && e.key === 'Z') {
+        e.preventDefault();
+        try {
+          await apiClient.redo();
+          await loadWorkspace();
+        } catch (err) {
+          console.error('Redo failed:', err);
+        }
+      }
+
+      // Ctrl+A - Select All
+      if (e.ctrlKey && e.key === 'a') {
+        e.preventDefault();
+        window.dispatchEvent(new CustomEvent('textloom:selectAll'));
+      }
+
+      // Ctrl+C - Copy
+      if (e.ctrlKey && !e.shiftKey && e.key === 'c') {
+        e.preventDefault();
+        window.dispatchEvent(new CustomEvent('textloom:copy'));
+      }
+
+      // Ctrl+X - Cut
+      if (e.ctrlKey && e.key === 'x') {
+        e.preventDefault();
+        window.dispatchEvent(new CustomEvent('textloom:cut'));
+      }
+
+      // Ctrl+V - Paste
+      if (e.ctrlKey && e.key === 'v') {
+        e.preventDefault();
+        window.dispatchEvent(new CustomEvent('textloom:paste'));
+      }
+
+      // Ctrl+D - Duplicate
+      if (e.ctrlKey && e.key === 'd') {
+        e.preventDefault();
+        window.dispatchEvent(new CustomEvent('textloom:duplicate'));
+      }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [save, saveAs, open, newWorkspace]);
+  }, [save, saveAs, open, newWorkspace, loadWorkspace]);
 
   // Warn on page unload if there are unsaved changes
   useEffect(() => {
@@ -192,28 +241,28 @@ const AppContent: React.FC = () => {
         onDiscard={handleDiscardAutosave}
       />
 
+      {/* Dialogs */}
+      <KeyboardShortcutsDialog
+        open={showKeyboardShortcuts}
+        onClose={() => setShowKeyboardShortcuts(false)}
+      />
+      <AboutDialog
+        open={showAbout}
+        onClose={() => setShowAbout(false)}
+      />
+
       {/* Top Navigation Bar */}
       <AppBar position="static">
-        <Toolbar>
-          <FileMenu />
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1, ml: 2 }}>
-            TextLoom Workspace
+        <Toolbar variant="dense">
+          <MenuBar
+            onKeyboardShortcuts={() => setShowKeyboardShortcuts(true)}
+            onAbout={() => setShowAbout(true)}
+          />
+          <Box sx={{ flexGrow: 1 }} />
+          <Typography variant="h6" component="div">
+            TextLoom
           </Typography>
-          <IconButton
-            color="inherit"
-            onClick={toggleTheme}
-            title={mode === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
-          >
-            {mode === 'light' ? <DarkModeIcon /> : <LightModeIcon />}
-          </IconButton>
-          <Button
-            color="inherit"
-            startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <RefreshIcon />}
-            onClick={loadWorkspace}
-            disabled={loading}
-          >
-            Refresh
-          </Button>
+          <Box sx={{ flexGrow: 1 }} />
         </Toolbar>
       </AppBar>
 

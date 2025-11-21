@@ -397,18 +397,18 @@ logger = logging.getLogger("api.models")
 def _convert_parameters(node: 'Node', full_state) -> Dict[str, 'ParameterInfo']:
     """Convert node parameters to ParameterInfo DTOs."""
     from api.models import ParameterInfo
-    
+
     parameters = {}
     for parm_name, parm_state in full_state.parms.items():
         # Determine if parameter is read_only (output parameters)
         is_read_only = parm_name in ['response', 'file_text', 'out_data', 'in_data', 'staging_data']
-        
+
         # Get default value safely
         default_value = parm_state.value
         if hasattr(node, '_parms') and parm_name in node._parms:
             if hasattr(node._parms[parm_name], '_default'):
                 default_value = node._parms[parm_name]._default
-        
+
         parameters[parm_name] = ParameterInfo(
             type=parm_state.parm_type.replace("ParameterType.", ""),
             value=parm_state.value,

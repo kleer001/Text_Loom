@@ -11,7 +11,6 @@ export interface TransformedNodes {
   looperSystems: Map<string, LooperSystem>;
 }
 
-const NODE_WIDTH = 250;
 const LOOPER_START_SUFFIX = '_start';
 const LOOPER_END_SUFFIX = '_end';
 

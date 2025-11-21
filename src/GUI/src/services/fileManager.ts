@@ -205,7 +205,7 @@ export class FileManager {
   /**
    * Open using File System Access API
    */
-  private async openWithFileSystemAPI(): Promise<{ success: boolean; filePath: string }> {
+  private async openWithFileSystemAPI(): Promise<{ success: boolean; filePath: string | null }> {
     try {
       // Show open file picker
       const [handle] = await window.showOpenFilePicker!({
