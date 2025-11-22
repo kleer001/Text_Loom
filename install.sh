@@ -1,148 +1,134 @@
 #!/bin/bash
+set -e
 
-CYAN='\033[1;36m'    
-MAGENTA='\033[1;35m' 
-BOLD='\033[1m'       
-NC='\033[0m'         
+CYAN='\033[1;36m'
+MAGENTA='\033[1;35m'
+GREEN='\033[1;32m'
+YELLOW='\033[1;33m'
+RED='\033[1;31m'
+BOLD='\033[1m'
+NC='\033[0m'
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-LOG_DIR="$SCRIPT_DIR/logs"
-LOG_FILE=""
+INSTALL_DIR="${INSTALL_DIR:-Text_Loom}"
 
-cleanup() {
-    log "Cleaning up..."
-    rm -rf "$SCRIPT_DIR/Text_Loom"
-    rm -rf "$SCRIPT_DIR/venv"
+fail() {
+    echo -e "${RED}✗${NC} $1" >&2
+    exit 1
 }
 
-log() {
-    echo "[$(date +'%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOG_FILE"
+step() {
+    echo -e "${GREEN}▶${NC} $1"
 }
 
-setup_logging() {
-    mkdir -p "$LOG_DIR"
-    LOG_FILE="$LOG_DIR/install.log"
-    if [ -f "$LOG_FILE" ]; then
-        i=1
-        while [ -f "$LOG_DIR/install_$i.log" ]; do
-            ((i++))
-        done
-        LOG_FILE="$LOG_DIR/install_$i.log"
-    fi
-    touch "$LOG_FILE"
-    log "Logging started"
+ok() {
+    echo -e "${GREEN}✓${NC} $1"
 }
 
-command_exists() {
-    command -v "$1" >/dev/null 2>&1
+warn() {
+    echo -e "${YELLOW}⚠${NC} $1"
 }
 
-check_python_version() {
-    PYTHON_VERSION=$(python3 -c 'import sys; ver = sys.version_info; print(f"{ver.major}.{ver.minor}")')
-    MAJOR=$(echo $PYTHON_VERSION | cut -d. -f1)
-    MINOR=$(echo $PYTHON_VERSION | cut -d. -f2)
-    
-    if [ "$MAJOR" -lt 3 ] || ([ "$MAJOR" -eq 3 ] && [ "$MINOR" -lt 8 ]); then
-        log "Error: Python 3.8 or higher is required. Current version: $PYTHON_VERSION"
-        exit 1
-    fi
-    log "Python version $PYTHON_VERSION OK"
+header() {
+    echo -e "${CYAN}${BOLD}"
+    echo "╔══════════════════════════════════════╗"
+    echo "║      Text Loom Installer v1.0        ║"
+    echo "╚══════════════════════════════════════╝"
+    echo -e "${NC}"
+}
+
+require() {
+    command -v "$1" >/dev/null 2>&1 || fail "$1 not found - install it and retry"
 }
 
 check_prerequisites() {
-    log "Checking prerequisites..."
-    
-    if ! command_exists git; then
-        log "Error: git is not installed. Please install git and try again."
-        exit 1
-    fi
-    
-    if ! command_exists python3; then
-        log "Error: python3 is not installed. Please install python3 and try again."
-        exit 1
-    fi
-    
-    check_python_version
+    step "Checking prerequisites..."
+    require git
+    ok "git found"
+    require python3
+
+    local version major minor
+    version=$(python3 -c 'import sys; v=sys.version_info; print(f"{v.major}.{v.minor}")')
+    major=${version%.*}
+    minor=${version#*.}
+
+    [ "$major" -ge 3 ] && [ "$minor" -ge 8 ] || fail "Python 3.8+ required (found $version)"
+    ok "Python $version detected"
 }
 
 clone_repo() {
-    log "Cloning the repository..."
-    git clone https://github.com/kleer001/Text_Loom.git "$SCRIPT_DIR/Text_Loom"
-    cd "$SCRIPT_DIR/Text_Loom" || exit 1
+    step "Cloning Text_Loom repository..."
+
+    if [ -d "$INSTALL_DIR" ]; then
+        local timestamp
+        timestamp=$(date +%Y%m%d_%H%M%S)
+        warn "Directory exists - installing to ${INSTALL_DIR}_${timestamp}"
+        INSTALL_DIR="${INSTALL_DIR}_${timestamp}"
+    fi
+
+    git clone https://github.com/kleer001/Text_Loom.git "$INSTALL_DIR" || fail "Clone failed"
+    ok "Repository cloned"
 }
-
-
 
 setup_venv() {
-    log "Setting up virtual environment..."
-    cd "$SCRIPT_DIR/Text_Loom" || {
-        log "Error: Could not change to Text_Loom directory"
-        exit 1
-    }
-    python3 -m venv .venv
+    step "Setting up virtual environment..."
+
+    cd "$INSTALL_DIR" || fail "Cannot cd to $INSTALL_DIR"
+    python3 -m venv .venv || fail "venv creation failed"
+
+    # shellcheck disable=SC1091
     source .venv/bin/activate
-    pip install --upgrade pip
-    log "Installing requirements..."
-    if [ ! -f requirements.txt ]; then
-        log "Error: requirements.txt not found in $(pwd)"
-        exit 1
-    fi
-    pip install -r requirements.txt
-    pip install -e .
+
+    step "Upgrading pip..."
+    pip install --upgrade pip --quiet
+
+    step "Installing dependencies..."
+    [ -f requirements.txt ] || fail "requirements.txt not found"
+    pip install -r requirements.txt --quiet || fail "Dependency install failed"
+    pip install -e . --quiet || fail "Package install failed"
+
+    ok "Dependencies installed"
 }
 
-create_launcher() {
-    log "Creating text-loom launcher..."
-    INSTALL_DIR="$SCRIPT_DIR/Text_Loom"
-    cat > "$INSTALL_DIR/text-loom" << EOL
+create_activation_helper() {
+    step "Creating activation helper..."
+
+    cat > activate.sh << 'EOL'
 #!/bin/bash
-echo "=== Text_Loom Launcher ==="
-SCRIPT_PATH="\$(cd "\$(dirname "\${BASH_SOURCE[0]}")" && pwd)"
-INSTALL_DIR="\${SCRIPT_PATH}"
-echo "Install directory: \$INSTALL_DIR"
-
-echo "Activating virtual environment..."
-source "\$INSTALL_DIR/.venv/bin/activate"
-
-if [ -z "\$PYTHONPATH" ]; then
-    export PYTHONPATH="\$INSTALL_DIR/src"
-else
-    # Remove any empty elements from PYTHONPATH
-    CLEAN_PYTHONPATH=\$(echo "\$PYTHONPATH" | tr ':' '\n' | grep -v '^$' | tr '\n' ':' | sed 's/:$//')
-    export PYTHONPATH="\$INSTALL_DIR/src:\$CLEAN_PYTHONPATH"
-fi
-echo "PYTHONPATH: \$PYTHONPATH"
-
-echo "Changing to src directory..."
-cd "\$INSTALL_DIR/src" || {
-    echo "Error: Could not change to src directory"
-    exit 1
-}
-echo "Current directory: \$(pwd)"
-
-echo "Starting Text_Loom..."
-python3 TUI/tui_skeleton.py "\$@"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/.venv/bin/activate"
+export PYTHONPATH="$SCRIPT_DIR/src:$PYTHONPATH"
+echo "Text_Loom environment activated!"
+echo "Run: ./text_loom.py"
 EOL
-    chmod +x "$INSTALL_DIR/text-loom"
-    log "Launcher created at: $INSTALL_DIR/text-loom"
+
+    chmod +x activate.sh
+    ok "Activation helper created"
+}
+
+next_steps() {
+    echo
+    echo -e "${MAGENTA}${BOLD}Installation Complete!${NC}"
+    echo
+    echo -e "${CYAN}Quick start:${NC}"
+    echo -e "  ${GREEN}cd $INSTALL_DIR && source activate.sh && ./text_loom.py${NC}"
+    echo
+    echo -e "${CYAN}Available modes:${NC}"
+    echo -e "  ${GREEN}./text_loom.py -t${NC}  ${YELLOW}Terminal UI${NC}"
+    echo -e "  ${GREEN}./text_loom.py -r${NC}  ${YELLOW}Python REPL${NC}"
+    echo -e "  ${GREEN}./text_loom.py -g${NC}  ${YELLOW}Web GUI${NC}"
+    echo -e "  ${GREEN}./text_loom.py -b${NC}  ${YELLOW}Batch mode${NC}"
+    echo
+    echo -e "${MAGENTA}${BOLD}Set up LLM API keys before using Query nodes${NC}"
+    echo
 }
 
 main() {
-    setup_logging
-    trap cleanup EXIT
-
+    header
     check_prerequisites
     clone_repo
     setup_venv
-    create_launcher
-    
-    log "Installation complete!"
-    echo -e "${MAGENTA}IF YOU WANT TO USE THE QUERY NODE THEN...${NC}"
-    echo -e "${MAGENTA}PLEASE MAKE SURE YOUR LLM IS SETUP CORRECTLY!${NC}"
-    echo -e "${BOLD} - - - - - - - - - - - - - - - - - - - -${NC}"
-    echo -e "${CYAN}You can now run Text_Loom by executing:${NC}"
-    echo -e "${CYAN}  ./text-loom${NC}"
-    trap - EXIT
+    create_activation_helper
+    next_steps
 }
 
 main
