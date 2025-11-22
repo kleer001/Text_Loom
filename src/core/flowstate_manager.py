@@ -5,6 +5,7 @@ import json
 from core.base_classes import NodeEnvironment, Node, NodeConnection, NodeType
 from core.global_store import GlobalStore
 from core.parm import Parm, ParameterType
+from core.attribute_mapper import get_node_attribute, set_node_attribute, has_node_attribute
 import traceback
 import inspect
 
@@ -34,11 +35,11 @@ SOFTWARE_NAME = "Text Loom"
 VERSION = 0.01
 
 NODE_ATTRIBUTES = [
-    '_name', '_path', '_selected', '_color', '_position', '_session_id', '_node_type',
-    '_children', '_depth', '_inputs', '_outputs', '_state', '_errors', '_warnings',
-    '_is_time_dependent', '_last_cook_time', '_cook_count', '_file_hash',
-    '_param_hash', '_last_input_size', '_input_node', '_output_node',
-    '_internal_nodes_created', '_parent_looper'
+    'name', 'path', 'selected', 'color', 'position', 'session_id', 'node_type',
+    'children', 'depth', 'inputs', 'outputs', 'state', 'errors', 'warnings',
+    'is_time_dependent', 'last_cook_time', 'cook_count', 'file_hash',
+    'param_hash', 'last_input_size', 'input_node', 'output_node',
+    'internal_nodes_created', 'parent_looper'
 ]
 
 PARM_ATTRIBUTES = ['name', 'type', 'node', 'script_callback', 'value']
@@ -85,11 +86,15 @@ def _clean_for_json(obj: Any) -> Any:
 
 def _apply_node_data(node: Node, node_data: dict) -> None:
     try:
+        # Use attribute mapper to convert public names to internal names
         for attr in NODE_ATTRIBUTES:
             if attr in node_data:
                 value = node_data[attr]
-                if not inspect.ismethod(getattr(node, attr, None)):
-                    setattr(node, attr, value)
+                # Check if the internal attribute exists and is not a method
+                if has_node_attribute(node, attr):
+                    internal_attr = f'_{attr}'
+                    if not inspect.ismethod(getattr(node, internal_attr, None)):
+                        set_node_attribute(node, attr, value)
 
         # Fix _node_type if the attribute loop overwrote the enum with a string
         # The node was created with the correct enum, but JSON has it as a string
@@ -145,11 +150,12 @@ def _serialize_node(node: Node) -> dict:
             "_name": node.name(),
             "_is_internal": hasattr(node, '_parent_looper') and bool(node._parent_looper)
         }
-        
+
+        # Use attribute mapper to convert internal names to public names
         for attr in NODE_ATTRIBUTES:
             try:
-                if hasattr(node, attr):
-                    value = getattr(node, attr)
+                if has_node_attribute(node, attr):
+                    value = get_node_attribute(node, attr)
                     if not _is_method_or_callable(value):
                         node_data[attr] = _clean_for_json(value)
             except Exception as e:
@@ -207,12 +213,16 @@ def _deserialize_node(node_data: dict, env: NodeEnvironment) -> Optional[Node]:
         if not node:
             return None
 
+        # Use attribute mapper to convert public names to internal names
         for attr in NODE_ATTRIBUTES:
             try:
                 if attr in node_data:
                     value = node_data[attr]
-                    if not inspect.ismethod(getattr(node, attr, None)):
-                        setattr(node, attr, value)
+                    # Check if the internal attribute exists and is not a method
+                    if has_node_attribute(node, attr):
+                        internal_attr = f'_{attr}'
+                        if not inspect.ismethod(getattr(node, internal_attr, None)):
+                            set_node_attribute(node, attr, value)
             except Exception as e:
                 print(f"Error deserializing attribute {attr}")
                 traceback.print_exc()
