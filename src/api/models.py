@@ -493,12 +493,15 @@ def node_to_response(node: 'Node') -> 'NodeResponse':
         node_type_obj = node.type()
         print(f"[DEBUG API] About to call .value on {node_type_obj} (type: {type(node_type_obj)})")
 
+        # Defensive handling of node type - may be string or enum depending on deserialization state
+        node_type_value = node_type_obj.value if hasattr(node_type_obj, 'value') else node_type_obj
+
         # Build response
         response = NodeResponse(
             session_id=node.session_id(),
             name=node.name(),
             path=node.path(),
-            type=node.type().value,  # Use enum's value directly
+            type=node_type_value,  # Handle both enum.value and raw string
             glyph=getattr(node.__class__, 'GLYPH', ''),  # Get GLYPH class attribute
             state=full_state.state.value,
             errors=full_state.errors,
