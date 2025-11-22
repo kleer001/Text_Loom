@@ -85,32 +85,12 @@ def _clean_for_json(obj: Any) -> Any:
 
 def _apply_node_data(node: Node, node_data: dict) -> None:
     try:
-        print(f"[DEBUG] _apply_node_data for {node.path()}")
-        print(f"[DEBUG] BEFORE attr loop - node._node_type type: {type(node._node_type)}, value: {node._node_type}")
-
         for attr in NODE_ATTRIBUTES:
             if attr in node_data:
                 value = node_data[attr]
                 if not inspect.ismethod(getattr(node, attr, None)):
-                    if attr == '_node_type':
-                        print(f"[DEBUG] About to set _node_type to: {value} (type: {type(value)})")
                     setattr(node, attr, value)
-                    if attr == '_node_type':
-                        print(f"[DEBUG] After setattr - node._node_type type: {type(node._node_type)}, value: {node._node_type}")
-
-        print(f"[DEBUG] AFTER attr loop - node._node_type type: {type(node._node_type)}, value: {node._node_type}")
-
-        # Fix _node_type if the attribute loop overwrote the enum with a string
-        # The node was created with the correct enum, but JSON stores it as a string value
-        # NodeType(value) converts the string back to the enum (e.g., "text" -> NodeType.TEXT)
-        if isinstance(node._node_type, str):
-            print(f"[DEBUG] FIXING _node_type from string to enum")
-            print(f"[DEBUG] Converting: NodeType({repr(node._node_type)})")
-            node._node_type = NodeType(node._node_type)
-            print(f"[DEBUG] AFTER FIX - node._node_type type: {type(node._node_type)}, value: {node._node_type}")
-        else:
-            print(f"[DEBUG] No fix needed, _node_type is already correct type: {type(node._node_type)}")
-
+        
         if '_parms' in node_data and hasattr(node, '_parms'):
             for parm_name, parm_data in node_data['_parms'].items():
                 try:
@@ -210,49 +190,27 @@ def _deserialize_node(node_data: dict, env: NodeEnvironment) -> Optional[Node]:
         node_type = node_data.get("_node_type")
         if not node_type:
             return None
-
+        
         node_name = Path(node_data["_path"]).name
         parent_path = str(Path(node_data["_path"]).parent)
         node_enum = getattr(NodeType, node_type.split('.')[-1].upper())
-
+        
         node = Node.create_node(node_enum, node_name, parent_path)
         print("CREATED NODE : ", node)
         if not node:
             return None
-
-        # DEBUG: Check type BEFORE attribute restoration
-        print(f"[DEBUG] BEFORE attr loop - node._node_type type: {type(node._node_type)}, value: {node._node_type}")
-        print(f"[DEBUG] node_enum type: {type(node_enum)}, value: {node_enum}")
-
+        
         for attr in NODE_ATTRIBUTES:
             try:
                 if attr in node_data:
                     value = node_data[attr]
                     if not inspect.ismethod(getattr(node, attr, None)):
-                        if attr == '_node_type':
-                            print(f"[DEBUG] About to set _node_type to: {value} (type: {type(value)})")
                         setattr(node, attr, value)
-                        if attr == '_node_type':
-                            print(f"[DEBUG] After setattr - node._node_type type: {type(node._node_type)}, value: {node._node_type}")
             except Exception as e:
                 print(f"Error deserializing attribute {attr}")
                 traceback.print_exc()
                 continue
-
-        # DEBUG: Check type AFTER attribute restoration
-        print(f"[DEBUG] AFTER attr loop - node._node_type type: {type(node._node_type)}, value: {node._node_type}")
-
-        # Fix _node_type if the attribute loop overwrote the enum with a string
-        # Node.create_node() correctly sets it as NodeType enum, but the JSON stores it as a string value
-        # NodeType(value) converts the string back to the enum (e.g., "text" -> NodeType.TEXT)
-        if isinstance(node._node_type, str):
-            print(f"[DEBUG] FIXING _node_type from string to enum")
-            print(f"[DEBUG] Converting: NodeType({repr(node._node_type)})")
-            node._node_type = NodeType(node._node_type)
-            print(f"[DEBUG] AFTER FIX - node._node_type type: {type(node._node_type)}, value: {node._node_type}")
-        else:
-            print(f"[DEBUG] No fix needed, _node_type is already correct type: {type(node._node_type)}")
-
+        
         if '_parms' in node_data and hasattr(node, '_parms'):
             for parm_name, parm_data in node_data['_parms'].items():
                 try:
@@ -261,15 +219,9 @@ def _deserialize_node(node_data: dict, env: NodeEnvironment) -> Optional[Node]:
                     print(f"Error deserializing parm {parm_name}")
                     traceback.print_exc()
                     continue
-
-        # FINAL VERIFICATION
-        print(f"[DEBUG] === FINAL STATE for {node.path()} ===")
-        print(f"[DEBUG] node._node_type type: {type(node._node_type)}, value: {node._node_type}")
-        print(f"[DEBUG] node.type() returns: {node.type()} (type: {type(node.type())})")
-        print(f"[DEBUG] === END FINAL STATE ===")
-
+        
         return node
-
+        
     except Exception as e:
         print(f"Error in _deserialize_node {e}")
         traceback.print_exc()
