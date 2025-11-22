@@ -11,9 +11,9 @@ Handles workspace-related API operations:
 from fastapi import APIRouter, HTTPException, Body
 from fastapi.responses import JSONResponse
 from api.models import WorkspaceState, NodeResponse, ConnectionResponse, SuccessResponse, node_to_response, connection_to_response
-from core.base_classes import NodeEnvironment
+from core.base_classes import NodeEnvironment, NodeType
 from core.global_store import GlobalStore
-from core.flowstate_manager import save_flowstate, load_flowstate
+from core.flowstate_manager import save_flowstate, load_flowstate, NODE_ATTRIBUTES
 from core.undo_manager import UndoManager
 from typing import Dict, Any
 from pydantic import BaseModel
@@ -39,39 +39,19 @@ class UndoRedoResponse(BaseModel):
 router = APIRouter()
 
 
-def _fix_loaded_node_attributes_for_gui():
-    """
-    GUI-specific fix for node attributes after loading from flowstate.
-
-    The flowstate_manager (sacred file) uses non-underscored attribute names
-    in NODE_ATTRIBUTES for compatibility with TUI/REPL/batch mode. However,
-    when loading, it does setattr(node, 'is_time_dependent', value) which
-    creates a NEW non-underscored attribute instead of setting the existing
-    node._is_time_dependent (underscored).
-
-    This function migrates any non-underscored attributes to their correct
-    underscored locations after load_flowstate() completes.
-    """
-    from core.flowstate_manager import NODE_ATTRIBUTES
-
-    all_node_paths = NodeEnvironment.list_nodes()
-    for path in all_node_paths:
+def _migrate_node_attributes():
+    for path in NodeEnvironment.list_nodes():
         node = NodeEnvironment.node_from_name(path)
         if not node:
             continue
 
-        # For each public attribute name in NODE_ATTRIBUTES
         for attr in NODE_ATTRIBUTES:
-            # Check if a non-underscored version was incorrectly created
-            if hasattr(node, attr):
-                non_underscored_value = getattr(node, attr)
-                underscored_attr = f'_{attr}'
+            if hasattr(node, attr) and hasattr(node, f'_{attr}'):
+                setattr(node, f'_{attr}', getattr(node, attr))
+                delattr(node, attr)
 
-                # If the underscored version exists (which it should), update it
-                if hasattr(node, underscored_attr):
-                    setattr(node, underscored_attr, non_underscored_value)
-                    # Remove the incorrectly created non-underscored attribute
-                    delattr(node, attr)
+        if isinstance(node._node_type, str):
+            node._node_type = getattr(NodeType, node._node_type.split('.')[-1].upper())
 
 
 @router.get(
@@ -303,9 +283,7 @@ def import_workspace(flowstate_data: Dict[str, Any] = Body(...)) -> SuccessRespo
         if not success:
             raise Exception("Failed to load flowstate from data")
 
-        # GUI-specific: Fix node attributes after loading
-        # This migrates non-underscored attributes to their underscored locations
-        _fix_loaded_node_attributes_for_gui()
+        _migrate_node_attributes()
 
         return SuccessResponse(
             success=True,
