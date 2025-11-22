@@ -101,13 +101,12 @@ def _apply_node_data(node: Node, node_data: dict) -> None:
         print(f"[DEBUG] AFTER attr loop - node._node_type type: {type(node._node_type)}, value: {node._node_type}")
 
         # Fix _node_type if the attribute loop overwrote the enum with a string
-        # The node was created with the correct enum, but JSON has it as a string
+        # The node was created with the correct enum, but JSON stores it as a string value
+        # NodeType(value) converts the string back to the enum (e.g., "text" -> NodeType.TEXT)
         if isinstance(node._node_type, str):
             print(f"[DEBUG] FIXING _node_type from string to enum")
-            node_type_str = node._node_type
-            node_enum = getattr(NodeType, node_type_str.split('.')[-1].upper())
-            print(f"[DEBUG] Setting node._node_type = {node_enum} (type: {type(node_enum)})")
-            node._node_type = node_enum
+            print(f"[DEBUG] Converting: NodeType({repr(node._node_type)})")
+            node._node_type = NodeType(node._node_type)
             print(f"[DEBUG] AFTER FIX - node._node_type type: {type(node._node_type)}, value: {node._node_type}")
         else:
             print(f"[DEBUG] No fix needed, _node_type is already correct type: {type(node._node_type)}")
@@ -244,11 +243,12 @@ def _deserialize_node(node_data: dict, env: NodeEnvironment) -> Optional[Node]:
         print(f"[DEBUG] AFTER attr loop - node._node_type type: {type(node._node_type)}, value: {node._node_type}")
 
         # Fix _node_type if the attribute loop overwrote the enum with a string
-        # Node.create_node() correctly sets it as NodeType enum, but the JSON has it as a string
+        # Node.create_node() correctly sets it as NodeType enum, but the JSON stores it as a string value
+        # NodeType(value) converts the string back to the enum (e.g., "text" -> NodeType.TEXT)
         if isinstance(node._node_type, str):
             print(f"[DEBUG] FIXING _node_type from string to enum")
-            print(f"[DEBUG] Setting node._node_type = {node_enum} (type: {type(node_enum)})")
-            node._node_type = node_enum
+            print(f"[DEBUG] Converting: NodeType({repr(node._node_type)})")
+            node._node_type = NodeType(node._node_type)
             print(f"[DEBUG] AFTER FIX - node._node_type type: {type(node._node_type)}, value: {node._node_type}")
         else:
             print(f"[DEBUG] No fix needed, _node_type is already correct type: {type(node._node_type)}")
