@@ -39,6 +39,41 @@ class UndoRedoResponse(BaseModel):
 router = APIRouter()
 
 
+def _fix_loaded_node_attributes_for_gui():
+    """
+    GUI-specific fix for node attributes after loading from flowstate.
+
+    The flowstate_manager (sacred file) uses non-underscored attribute names
+    in NODE_ATTRIBUTES for compatibility with TUI/REPL/batch mode. However,
+    when loading, it does setattr(node, 'is_time_dependent', value) which
+    creates a NEW non-underscored attribute instead of setting the existing
+    node._is_time_dependent (underscored).
+
+    This function migrates any non-underscored attributes to their correct
+    underscored locations after load_flowstate() completes.
+    """
+    from core.flowstate_manager import NODE_ATTRIBUTES
+
+    all_node_paths = NodeEnvironment.list_nodes()
+    for path in all_node_paths:
+        node = NodeEnvironment.node_from_name(path)
+        if not node:
+            continue
+
+        # For each public attribute name in NODE_ATTRIBUTES
+        for attr in NODE_ATTRIBUTES:
+            # Check if a non-underscored version was incorrectly created
+            if hasattr(node, attr):
+                non_underscored_value = getattr(node, attr)
+                underscored_attr = f'_{attr}'
+
+                # If the underscored version exists (which it should), update it
+                if hasattr(node, underscored_attr):
+                    setattr(node, underscored_attr, non_underscored_value)
+                    # Remove the incorrectly created non-underscored attribute
+                    delattr(node, attr)
+
+
 @router.get(
     "/workspace",
     response_model=WorkspaceState,
@@ -267,6 +302,10 @@ def import_workspace(flowstate_data: Dict[str, Any] = Body(...)) -> SuccessRespo
 
         if not success:
             raise Exception("Failed to load flowstate from data")
+
+        # GUI-specific: Fix node attributes after loading
+        # This migrates non-underscored attributes to their underscored locations
+        _fix_loaded_node_attributes_for_gui()
 
         return SuccessResponse(
             success=True,

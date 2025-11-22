@@ -5,7 +5,6 @@ import json
 from core.base_classes import NodeEnvironment, Node, NodeConnection, NodeType
 from core.global_store import GlobalStore
 from core.parm import Parm, ParameterType
-from core.attribute_mapper import get_node_attribute, set_node_attribute, has_node_attribute
 import traceback
 import inspect
 
@@ -86,23 +85,12 @@ def _clean_for_json(obj: Any) -> Any:
 
 def _apply_node_data(node: Node, node_data: dict) -> None:
     try:
-        # Use attribute mapper to convert public names to internal names
         for attr in NODE_ATTRIBUTES:
             if attr in node_data:
                 value = node_data[attr]
-                # Check if the internal attribute exists and is not a method
-                if has_node_attribute(node, attr):
-                    internal_attr = f'_{attr}'
-                    if not inspect.ismethod(getattr(node, internal_attr, None)):
-                        set_node_attribute(node, attr, value)
-
-        # Fix _node_type if the attribute loop overwrote the enum with a string
-        # The node was created with the correct enum, but JSON has it as a string
-        if isinstance(node._node_type, str):
-            node_type_str = node._node_type
-            node_enum = getattr(NodeType, node_type_str.split('.')[-1].upper())
-            node._node_type = node_enum
-
+                if not inspect.ismethod(getattr(node, attr, None)):
+                    setattr(node, attr, value)
+        
         if '_parms' in node_data and hasattr(node, '_parms'):
             for parm_name, parm_data in node_data['_parms'].items():
                 try:
@@ -150,12 +138,11 @@ def _serialize_node(node: Node) -> dict:
             "_name": node.name(),
             "_is_internal": hasattr(node, '_parent_looper') and bool(node._parent_looper)
         }
-
-        # Use attribute mapper to convert internal names to public names
+        
         for attr in NODE_ATTRIBUTES:
             try:
-                if has_node_attribute(node, attr):
-                    value = get_node_attribute(node, attr)
+                if hasattr(node, attr):
+                    value = getattr(node, attr)
                     if not _is_method_or_callable(value):
                         node_data[attr] = _clean_for_json(value)
             except Exception as e:
@@ -203,36 +190,27 @@ def _deserialize_node(node_data: dict, env: NodeEnvironment) -> Optional[Node]:
         node_type = node_data.get("_node_type")
         if not node_type:
             return None
-
+        
         node_name = Path(node_data["_path"]).name
         parent_path = str(Path(node_data["_path"]).parent)
         node_enum = getattr(NodeType, node_type.split('.')[-1].upper())
-
+        
         node = Node.create_node(node_enum, node_name, parent_path)
         print("CREATED NODE : ", node)
         if not node:
             return None
-
-        # Use attribute mapper to convert public names to internal names
+        
         for attr in NODE_ATTRIBUTES:
             try:
                 if attr in node_data:
                     value = node_data[attr]
-                    # Check if the internal attribute exists and is not a method
-                    if has_node_attribute(node, attr):
-                        internal_attr = f'_{attr}'
-                        if not inspect.ismethod(getattr(node, internal_attr, None)):
-                            set_node_attribute(node, attr, value)
+                    if not inspect.ismethod(getattr(node, attr, None)):
+                        setattr(node, attr, value)
             except Exception as e:
                 print(f"Error deserializing attribute {attr}")
                 traceback.print_exc()
                 continue
-
-        # Fix _node_type if the attribute loop overwrote the enum with a string
-        # Node.create_node() correctly sets it as NodeType enum, but the JSON has it as a string
-        if isinstance(node._node_type, str):
-            node._node_type = node_enum
-
+        
         if '_parms' in node_data and hasattr(node, '_parms'):
             for parm_name, parm_data in node_data['_parms'].items():
                 try:
@@ -241,9 +219,9 @@ def _deserialize_node(node_data: dict, env: NodeEnvironment) -> Optional[Node]:
                     print(f"Error deserializing parm {parm_name}")
                     traceback.print_exc()
                     continue
-
+        
         return node
-
+        
     except Exception as e:
         print(f"Error in _deserialize_node {e}")
         traceback.print_exc()
