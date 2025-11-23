@@ -46,8 +46,12 @@ def _migrate_node_attributes():
             continue
 
         for attr in NODE_ATTRIBUTES:
-            if hasattr(node, attr) and hasattr(node, f'_{attr}'):
-                setattr(node, f'_{attr}', getattr(node, attr))
+            public_attr = getattr(node, attr, None)
+            if public_attr is None or callable(public_attr):
+                continue
+
+            if hasattr(node, f'_{attr}'):
+                setattr(node, f'_{attr}', public_attr)
                 delattr(node, attr)
 
         if isinstance(node._node_type, str):
