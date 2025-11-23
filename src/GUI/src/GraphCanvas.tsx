@@ -54,12 +54,7 @@ const GraphCanvasInner: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
   const selectedNodeIdsRef = useRef<Set<string>>(new Set());
   const reactFlowInstanceRef = useRef<ReactFlowInstance | null>(null);
   const viewportRef = useRef<{ x: number; y: number; zoom: number } | null>(null);
-  const workspaceNodesRef = useRef(workspaceNodes);
-
-  // Keep ref synchronized with workspaceNodes
-  useEffect(() => {
-    workspaceNodesRef.current = workspaceNodes;
-  }, [workspaceNodes]);
+  const nodeDataCacheRef = useRef<Map<string, { node: NodeResponse; onBypassToggle: (sessionId: string) => void; onDisplayToggle: (sessionId: string) => void }>>(new Map());
 
   const defaultEdgeConfig = useMemo(() => ({
     type: 'smoothstep' as const,
@@ -155,14 +150,30 @@ const GraphCanvasInner: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
 
     const newNodes = enrichedNodes.map((node: NodeResponse) => {
       const nodeId = String(node.session_id);
+
+      // Get or create cached data object to prevent recreation on every render
+      let dataObj = nodeDataCacheRef.current.get(nodeId);
+      if (!dataObj || dataObj.node !== node || dataObj.onBypassToggle !== handleBypassToggle || dataObj.onDisplayToggle !== handleDisplayToggle) {
+        dataObj = { node, onBypassToggle: handleBypassToggle, onDisplayToggle: handleDisplayToggle };
+        nodeDataCacheRef.current.set(nodeId, dataObj);
+      }
+
       return {
         id: nodeId,
         type: 'custom',
         position: { x: node.position[0], y: node.position[1] },
-        data: { node, onBypassToggle: handleBypassToggle, onDisplayToggle: handleDisplayToggle },
+        data: dataObj,
         selected: nodeId === newlyCreatedNodeId || currentlySelectedIds.has(nodeId),
       };
     });
+
+    // Clean up cache for deleted nodes
+    const currentNodeIds = new Set(newNodes.map(n => n.id));
+    for (const cachedId of nodeDataCacheRef.current.keys()) {
+      if (!currentNodeIds.has(cachedId)) {
+        nodeDataCacheRef.current.delete(cachedId);
+      }
+    }
 
     setNodes(newNodes);
     setEdges(connectionsToEdges(transformedConnections, defaultEdgeConfig));
