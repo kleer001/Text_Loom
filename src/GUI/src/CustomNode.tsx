@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Handle, Position } from '@xyflow/react';
 import type { NodeResponse, InputInfo, OutputInfo } from './types';
 import * as design from './nodeDesign';
@@ -126,37 +126,93 @@ export const CustomNode: React.FC<{ data: CustomNodeData; selected?: boolean }> 
     isBypassed ? colors.handle.bypassed.fill :
     type === 'input' ? colors.handle.input.fill : colors.handle.output.fill;
 
+  const containerStyle = useMemo(() => ({
+    position: 'relative' as const,
+    padding: `${design.NODE_PADDING_VERTICAL}px ${design.NODE_PADDING_HORIZONTAL}px`,
+    border: `${design.NODE_BORDER_WIDTH}px solid ${borderColor}`,
+    borderRadius: `${design.NODE_BORDER_RADIUS}px`,
+    background: backgroundColor,
+    minWidth: `${design.NODE_MIN_WIDTH}px`,
+    minHeight: minHeight || undefined,
+    boxShadow: selected ? '0 4px 8px rgba(0,0,0,0.2)' : '0 2px 4px rgba(0,0,0,0.1)',
+  }), [borderColor, backgroundColor, minHeight, selected]);
+
+  const cookingStateContainerStyle = useMemo(() => ({
+    position: 'absolute' as const,
+    left: `${design.COOKING_STATE_LEFT}px`,
+    top: `${design.COOKING_STATE_TOP}px`,
+    display: 'flex',
+    flexDirection: 'column' as const,
+    gap: `${design.ERROR_WARNING_DUAL_GAP}px`,
+    opacity,
+  }), [opacity]);
+
+  const cookingStateCircleStyle = useMemo(() => ({
+    width: `${design.COOKING_STATE_DIAMETER}px`,
+    height: `${design.COOKING_STATE_DIAMETER}px`,
+    borderRadius: '50%',
+    background: stateColor,
+  }), [stateColor]);
+
+  const bypassButtonStyle = useMemo(() => ({
+    position: 'absolute' as const,
+    right: `${design.TEMPLATE_CIRCLE_RIGHT}px`,
+    top: '50%',
+    transform: 'translateY(-50%)',
+    width: `${design.TEMPLATE_CIRCLE_DIAMETER}px`,
+    height: `${design.TEMPLATE_CIRCLE_DIAMETER}px`,
+    borderRadius: '50%',
+    background: colors.bypass.default,
+    cursor: 'pointer',
+    opacity,
+    transition: 'background 0.2s',
+  }), [colors.bypass.default, opacity]);
+
+  const textAreaContainerStyle = useMemo(() => ({
+    position: 'relative' as const,
+    paddingTop: `${design.TEXT_AREA_TOP}px`,
+    paddingBottom: `${design.TEXT_AREA_BOTTOM}px`,
+    paddingLeft: `${design.TEXT_AREA_LEFT - design.NODE_PADDING_HORIZONTAL}px`,
+    paddingRight: `${design.TEXT_AREA_RIGHT - design.NODE_PADDING_HORIZONTAL}px`,
+    display: 'flex',
+    flexDirection: 'column' as const,
+    gap: `${design.TEXT_CONTENT_GAP}px`,
+    opacity,
+  }), [opacity]);
+
+  const textHeaderStyle = useMemo(() => ({
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: `${design.TEXT_HEADER_GAP}px`,
+  }), []);
+
+  const glyphTextStyle = useMemo(() => ({
+    fontSize: `${design.TEXT_GLYPH_SIZE}px`,
+    fontWeight: 'bold' as const,
+    flex: 1,
+    textAlign: 'center' as const,
+    color: textColor,
+  }), [textColor]);
+
+  const typeTextStyle = useMemo(() => ({
+    fontSize: `${design.TEXT_TYPE_FONT_SIZE}px`,
+    color: textColor,
+    fontWeight: '500',
+  }), [textColor]);
+
+  const nameTextStyle = useMemo(() => ({
+    fontSize: `${design.TEXT_FONT_SIZE}px`,
+    fontWeight: 'bold' as const,
+    color: textColor,
+    textAlign: 'center' as const,
+  }), [textColor]);
+
   return (
-    <div
-      style={{
-        position: 'relative',
-        padding: `${design.NODE_PADDING_VERTICAL}px ${design.NODE_PADDING_HORIZONTAL}px`,
-        border: `${design.NODE_BORDER_WIDTH}px solid ${borderColor}`,
-        borderRadius: `${design.NODE_BORDER_RADIUS}px`,
-        background: backgroundColor,
-        minWidth: `${design.NODE_MIN_WIDTH}px`,
-        minHeight: minHeight || undefined,
-        boxShadow: selected ? '0 4px 8px rgba(0,0,0,0.2)' : '0 2px 4px rgba(0,0,0,0.1)',
-      }}
-    >
-      <div
-        style={{
-          position: 'absolute',
-          left: `${design.COOKING_STATE_LEFT}px`,
-          top: `${design.COOKING_STATE_TOP}px`,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: `${design.ERROR_WARNING_DUAL_GAP}px`,
-          opacity,
-        }}
-      >
+    <div style={containerStyle}>
+      <div style={cookingStateContainerStyle}>
         <div
-          style={{
-            width: `${design.COOKING_STATE_DIAMETER}px`,
-            height: `${design.COOKING_STATE_DIAMETER}px`,
-            borderRadius: '50%',
-            background: stateColor,
-          }}
+          style={cookingStateCircleStyle}
           title="Cooking state"
         />
 
@@ -182,19 +238,7 @@ export const CustomNode: React.FC<{ data: CustomNodeData; selected?: boolean }> 
           e.stopPropagation();
           onBypassToggle?.(node.session_id);
         }}
-        style={{
-          position: 'absolute',
-          right: `${design.TEMPLATE_CIRCLE_RIGHT}px`,
-          top: '50%',
-          transform: 'translateY(-50%)',
-          width: `${design.TEMPLATE_CIRCLE_DIAMETER}px`,
-          height: `${design.TEMPLATE_CIRCLE_DIAMETER}px`,
-          borderRadius: '50%',
-          background: colors.bypass.default,
-          cursor: 'pointer',
-          opacity,
-          transition: 'background 0.2s',
-        }}
+        style={bypassButtonStyle}
         onMouseEnter={(e) => {
           e.currentTarget.style.background = colors.bypass.hover;
         }}
@@ -205,58 +249,18 @@ export const CustomNode: React.FC<{ data: CustomNodeData; selected?: boolean }> 
       />
 
 
-      <div
-        style={{
-          position: 'relative',
-          paddingTop: `${design.TEXT_AREA_TOP}px`,
-          paddingBottom: `${design.TEXT_AREA_BOTTOM}px`,
-          paddingLeft: `${design.TEXT_AREA_LEFT - design.NODE_PADDING_HORIZONTAL}px`,
-          paddingRight: `${design.TEXT_AREA_RIGHT - design.NODE_PADDING_HORIZONTAL}px`,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: `${design.TEXT_CONTENT_GAP}px`,
-          opacity,
-        }}
-      >
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: `${design.TEXT_HEADER_GAP}px`,
-          }}
-        >
-          <div
-            style={{
-              fontSize: `${design.TEXT_GLYPH_SIZE}px`,
-              fontWeight: 'bold',
-              flex: 1,
-              textAlign: 'center',
-              color: textColor,
-            }}
-          >
+      <div style={textAreaContainerStyle}>
+        <div style={textHeaderStyle}>
+          <div style={glyphTextStyle}>
             {node.glyph || '?'}
           </div>
 
-          <div
-            style={{
-              fontSize: `${design.TEXT_TYPE_FONT_SIZE}px`,
-              color: textColor,
-              fontWeight: '500',
-            }}
-          >
+          <div style={typeTextStyle}>
             {node.type}
           </div>
         </div>
 
-        <div
-          style={{
-            fontSize: `${design.TEXT_FONT_SIZE}px`,
-            fontWeight: 'bold',
-            color: textColor,
-            textAlign: 'center',
-          }}
-        >
+        <div style={nameTextStyle}>
           {node.name}
         </div>
       </div>
