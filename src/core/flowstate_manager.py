@@ -34,11 +34,11 @@ SOFTWARE_NAME = "Text Loom"
 VERSION = 0.01
 
 NODE_ATTRIBUTES = [
-    '_name', '_path', '_selected', '_color', '_position', '_session_id', '_node_type',
-    '_children', '_depth', '_inputs', '_outputs', '_state', '_errors', '_warnings',
-    '_is_time_dependent', '_last_cook_time', '_cook_count', '_file_hash',
-    '_param_hash', '_last_input_size', '_input_node', '_output_node',
-    '_internal_nodes_created', '_parent_looper'
+    'name', 'path', 'selected', 'color', 'position', 'session_id', 'node_type',
+    'children', 'depth', 'inputs', 'outputs', 'state', 'errors', 'warnings',
+    'is_time_dependent', 'last_cook_time', 'cook_count', 'file_hash',
+    'param_hash', 'last_input_size', 'input_node', 'output_node',
+    'internal_nodes_created', 'parent_looper'
 ]
 
 PARM_ATTRIBUTES = ['name', 'type', 'node', 'script_callback', 'value']
@@ -90,14 +90,7 @@ def _apply_node_data(node: Node, node_data: dict) -> None:
                 value = node_data[attr]
                 if not inspect.ismethod(getattr(node, attr, None)):
                     setattr(node, attr, value)
-
-        # Fix _node_type if the attribute loop overwrote the enum with a string
-        # The node was created with the correct enum, but JSON has it as a string
-        if isinstance(node._node_type, str):
-            node_type_str = node._node_type
-            node_enum = getattr(NodeType, node_type_str.split('.')[-1].upper())
-            node._node_type = node_enum
-
+        
         if '_parms' in node_data and hasattr(node, '_parms'):
             for parm_name, parm_data in node_data['_parms'].items():
                 try:
@@ -197,16 +190,16 @@ def _deserialize_node(node_data: dict, env: NodeEnvironment) -> Optional[Node]:
         node_type = node_data.get("_node_type")
         if not node_type:
             return None
-
+        
         node_name = Path(node_data["_path"]).name
         parent_path = str(Path(node_data["_path"]).parent)
         node_enum = getattr(NodeType, node_type.split('.')[-1].upper())
-
+        
         node = Node.create_node(node_enum, node_name, parent_path)
         print("CREATED NODE : ", node)
         if not node:
             return None
-
+        
         for attr in NODE_ATTRIBUTES:
             try:
                 if attr in node_data:
@@ -217,12 +210,7 @@ def _deserialize_node(node_data: dict, env: NodeEnvironment) -> Optional[Node]:
                 print(f"Error deserializing attribute {attr}")
                 traceback.print_exc()
                 continue
-
-        # Fix _node_type if the attribute loop overwrote the enum with a string
-        # Node.create_node() correctly sets it as NodeType enum, but the JSON has it as a string
-        if isinstance(node._node_type, str):
-            node._node_type = node_enum
-
+        
         if '_parms' in node_data and hasattr(node, '_parms'):
             for parm_name, parm_data in node_data['_parms'].items():
                 try:
@@ -231,9 +219,9 @@ def _deserialize_node(node_data: dict, env: NodeEnvironment) -> Optional[Node]:
                     print(f"Error deserializing parm {parm_name}")
                     traceback.print_exc()
                     continue
-
+        
         return node
-
+        
     except Exception as e:
         print(f"Error in _deserialize_node {e}")
         traceback.print_exc()

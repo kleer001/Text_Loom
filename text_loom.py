@@ -108,12 +108,10 @@ class ServerProbe:
     @staticmethod
     def is_ready(port: int, timeout: int = SERVER_TIMEOUT) -> bool:
         start = time.time()
-
         while time.time() - start < timeout:
             if ServerProbe._can_connect(port):
                 return True
             time.sleep(0.5)
-
         return False
 
     @staticmethod
@@ -250,20 +248,11 @@ class GUILauncher:
         ).start()
 
     def _open_browser_if_requested(self):
-        if not self.config.open_browser:
-            self._show_urls()
-            return
+        self._show_urls()
 
-        Output.warn("Waiting for servers to start...")
-
-        if ServerProbe.is_ready(self.config.frontend_port):
-            time.sleep(1)
-            url = f"http://localhost:{self.config.frontend_port}"
-            Output.info(f"Opening browser: {url}\n")
-            webbrowser.open(url)
-        else:
-            Output.warn("Frontend not ready, skipping browser launch")
-            print(f"  Manually open: http://localhost:{self.config.frontend_port}\n")
+        if self.config.open_browser and ServerProbe.is_ready(self.config.frontend_port):
+            time.sleep(0.5)
+            webbrowser.open(f"http://localhost:{self.config.frontend_port}")
 
     def _show_urls(self):
         print(f"GUI available at: http://localhost:{self.config.frontend_port}")

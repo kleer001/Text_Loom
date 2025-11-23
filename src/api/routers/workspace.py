@@ -11,9 +11,9 @@ Handles workspace-related API operations:
 from fastapi import APIRouter, HTTPException, Body
 from fastapi.responses import JSONResponse
 from api.models import WorkspaceState, NodeResponse, ConnectionResponse, SuccessResponse, node_to_response, connection_to_response
-from core.base_classes import NodeEnvironment
+from core.base_classes import NodeEnvironment, NodeType
 from core.global_store import GlobalStore
-from core.flowstate_manager import save_flowstate, load_flowstate
+from core.flowstate_manager import save_flowstate, load_flowstate, NODE_ATTRIBUTES
 from core.undo_manager import UndoManager
 from typing import Dict, Any
 from pydantic import BaseModel
@@ -37,6 +37,25 @@ class UndoRedoResponse(BaseModel):
     message: str
 
 router = APIRouter()
+
+
+def _migrate_node_attributes():
+    for path in NodeEnvironment.list_nodes():
+        node = NodeEnvironment.node_from_name(path)
+        if not node:
+            continue
+
+        for attr in NODE_ATTRIBUTES:
+            public_attr = getattr(node, attr, None)
+            if public_attr is None or callable(public_attr):
+                continue
+
+            if hasattr(node, f'_{attr}'):
+                setattr(node, f'_{attr}', public_attr)
+                delattr(node, attr)
+
+        if isinstance(node._node_type, str):
+            node._node_type = getattr(NodeType, node._node_type.split('.')[-1].upper())
 
 
 @router.get(
@@ -267,6 +286,8 @@ def import_workspace(flowstate_data: Dict[str, Any] = Body(...)) -> SuccessRespo
 
         if not success:
             raise Exception("Failed to load flowstate from data")
+
+        _migrate_node_attributes()
 
         return SuccessResponse(
             success=True,
