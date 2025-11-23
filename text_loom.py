@@ -6,6 +6,7 @@ import os
 import socket
 import argparse
 import subprocess
+import webbrowser
 import time
 from enum import Enum
 from pathlib import Path
@@ -101,6 +102,26 @@ class ProcessStream:
     def stream(self):
         for line in self._read_lines():
             print(self._format_line(line), flush=True)
+
+
+class ServerProbe:
+    @staticmethod
+    def is_ready(port: int, timeout: int = SERVER_TIMEOUT) -> bool:
+        start = time.time()
+        while time.time() - start < timeout:
+            if ServerProbe._can_connect(port):
+                return True
+            time.sleep(0.5)
+        return False
+
+    @staticmethod
+    def _can_connect(port: int) -> bool:
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+                sock.settimeout(1)
+                return sock.connect_ex(('localhost', port)) == 0
+        except OSError:
+            return False
 
 
 class REPLLauncher:
@@ -228,6 +249,10 @@ class GUILauncher:
 
     def _open_browser_if_requested(self):
         self._show_urls()
+
+        if self.config.open_browser and ServerProbe.is_ready(self.config.frontend_port):
+            time.sleep(0.5)
+            webbrowser.open(f"http://localhost:{self.config.frontend_port}")
 
     def _show_urls(self):
         print(f"GUI available at: http://localhost:{self.config.frontend_port}")
