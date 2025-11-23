@@ -91,7 +91,7 @@ const NodeHandle: React.FC<HandleProps> = ({
   );
 };
 
-export const CustomNode: React.FC<{ data: CustomNodeData; selected?: boolean }> = ({
+const CustomNodeComponent: React.FC<{ data: CustomNodeData; selected?: boolean }> = ({
   data,
   selected
 }) => {
@@ -291,3 +291,5 @@ export const CustomNode: React.FC<{ data: CustomNodeData; selected?: boolean }> 
     </div>
   );
 };
+
+export const CustomNode = React.memo(CustomNodeComponent);
