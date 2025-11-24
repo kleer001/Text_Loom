@@ -41,14 +41,6 @@ class UndoRedoResponse(BaseModel):
 
 
 def prepare_nodes_for_save():
-    """
-    Prepare nodes for saving by creating temporary public attributes from private ones.
-    flowstate_manager expects public attribute names (position, color, etc.) but nodes
-    use private attributes (_position, _color, etc.). This creates temporary public
-    attributes that will be cleaned up after save.
-    """
-    # Attributes that have methods should not be migrated
-    # (name, path, session_id are handled specially in _serialize_node)
     skip_attrs = {'name', 'path', 'session_id', 'node_type'}
 
     for path in NodeEnvironment.list_nodes():
@@ -67,9 +59,6 @@ def prepare_nodes_for_save():
 
 
 def cleanup_temp_attributes():
-    """
-    Remove temporary public attributes created by prepare_nodes_for_save().
-    """
     skip_attrs = {'name', 'path', 'session_id', 'node_type'}
 
     for path in NodeEnvironment.list_nodes():
@@ -88,12 +77,6 @@ def cleanup_temp_attributes():
 
 
 def migrate_node_attributes():
-    """
-    Migrate public attributes to private ones after loading.
-    flowstate_manager loads data into public attributes (position, color, etc.)
-    but nodes expect private attributes (_position, _color, etc.). This migrates
-    the loaded data to the correct private attributes.
-    """
     skip_attrs = {'name', 'path', 'session_id', 'node_type'}
 
     for path in NodeEnvironment.list_nodes():
