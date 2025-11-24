@@ -24,7 +24,7 @@
 ## Testing Requirements
 * **Framework:** pytest
 * **Scope:** Unit tests for all non-trivial functions/methods
-* **Structure:** Separate test files (e.g., `test_module.py`)
+* **Structure:** Separate test files (e.g., `test_module.py`). Tests all go into src/tests .
 * **Fixtures:** Use pytest fixtures for setup/teardown
 * **Coverage:** Focus on edge cases and error paths, not just happy paths
 
