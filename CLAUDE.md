@@ -16,6 +16,11 @@
 * **Modularity:** Output code in a modular structure (e.g., separate implementation, execution, and test files).
 * **Versions:** Use modern syntax ("latest and greatest") unless overridden by `requirements.txt` or `package.json`.
 
+## Code Maintenance
+* **`src/core` Protection:** The `src/core` directory contains established foundational code.
+    * **Bug Fixes:** You **MUST NOT** implement bug fixes or refactor code within `src/core`. If a bug is identified there, you must **halt** and report the issue to the user.
+    * **Improvements:** You may propose clean-up or refactoring improvements for files in `src/core`, but you **MUST NOT** implement them without **explicit user permission**. Focus on working around `src/core` via composition or extension instead.
+
 ## Testing Requirements
 * **Framework:** pytest
 * **Scope:** Unit tests for all non-trivial functions/methods
