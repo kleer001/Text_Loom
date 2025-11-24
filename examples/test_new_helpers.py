@@ -1,3 +1,14 @@
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).parent.parent / 'src'))
+
+from repl.helpers import (
+    create, connect, node_type, input_names, output_names, run,
+    cook_count, last_cook_time, needs_to_cook, parm, cook_dependencies,
+    input_nodes, errors, warnings, is_time_dependent, node_exists,
+    inputs_with_indices, outputs_with_indices, children
+)
+
 print("=== Testing new helper functions ===")
 
 text = create('text', 'test_node', text_string="Hello")

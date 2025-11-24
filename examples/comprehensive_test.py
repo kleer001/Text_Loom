@@ -1,3 +1,12 @@
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).parent.parent / 'src'))
+
+from repl.helpers import (
+    create, ls, types, connect_next, run, parm, inspect, tree,
+    find, disconnect, set_global, get_global, destroy
+)
+
 print("=== Testing all helper functions ===")
 
 print("\n1. Creating nodes...")

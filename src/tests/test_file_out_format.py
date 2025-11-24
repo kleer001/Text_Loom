@@ -15,10 +15,10 @@ test_cases = [
     ('malformed.txt', '["unclosed'),
 ]
 
-def test_format(use_format_output):
+def run_format_test(use_format_output):
     file_in = Node.create_node(NodeType.FILE_IN, node_name="file_in_1")
     file_out = Node.create_node(NodeType.FILE_OUT, node_name="file_out_1")
-    
+
     print(f"\nTesting with format_output={use_format_output}")
     file_out.set_input(0, file_in)
     file_out._parms["format_output"].set(use_format_output)
@@ -58,8 +58,9 @@ def test_format(use_format_output):
         os.remove(input_path)
         os.remove(output_path)
 
-print("\n=== Testing with format_output=True ===")
-test_format(True)
+if __name__ == "__main__":
+    print("\n=== Testing with format_output=True ===")
+    run_format_test(True)
 
-print("\n=== Testing with format_output=False ===")
-test_format(False)
+    print("\n=== Testing with format_output=False ===")
+    run_format_test(False)
