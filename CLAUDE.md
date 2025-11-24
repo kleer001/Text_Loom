@@ -16,6 +16,13 @@
 * **Modularity:** Output code in a modular structure (e.g., separate implementation, execution, and test files).
 * **Versions:** Use modern syntax ("latest and greatest") unless overridden by `requirements.txt` or `package.json`.
 
+## Testing Requirements
+* **Framework:** pytest
+* **Scope:** Unit tests for all non-trivial functions/methods
+* **Structure:** Separate test files (e.g., `test_module.py`)
+* **Fixtures:** Use pytest fixtures for setup/teardown
+* **Coverage:** Focus on edge cases and error paths, not just happy paths
+
 ## Code Style & Typing
 * **Type Safety:** Mandatory.
     * Define explicit interfaces/types for all inputs.
