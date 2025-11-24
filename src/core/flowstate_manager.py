@@ -34,11 +34,11 @@ SOFTWARE_NAME = "Text Loom"
 VERSION = 0.01
 
 NODE_ATTRIBUTES = [
-    '_name', '_path', '_selected', '_color', '_position', '_session_id', '_node_type',
-    '_children', '_depth', '_inputs', '_outputs', '_state', '_errors', '_warnings',
-    '_is_time_dependent', '_last_cook_time', '_cook_count', '_file_hash',
-    '_param_hash', '_last_input_size', '_input_node', '_output_node',
-    '_internal_nodes_created', '_parent_looper'
+    'name', 'path', 'selected', 'color', 'position', 'session_id', 'node_type',
+    'children', 'depth', 'inputs', 'outputs', 'state', 'errors', 'warnings',
+    'is_time_dependent', 'last_cook_time', 'cook_count', 'file_hash',
+    'param_hash', 'last_input_size', 'input_node', 'output_node',
+    'internal_nodes_created', 'parent_looper'
 ]
 
 PARM_ATTRIBUTES = ['name', 'type', 'node', 'script_callback', 'value']
@@ -89,8 +89,6 @@ def _apply_node_data(node: Node, node_data: dict) -> None:
             if attr in node_data:
                 value = node_data[attr]
                 if not inspect.ismethod(getattr(node, attr, None)):
-                    if attr in ('_position', '_color') and isinstance(value, list):
-                        value = tuple(value)
                     setattr(node, attr, value)
         
         if '_parms' in node_data and hasattr(node, '_parms'):
@@ -207,8 +205,6 @@ def _deserialize_node(node_data: dict, env: NodeEnvironment) -> Optional[Node]:
                 if attr in node_data:
                     value = node_data[attr]
                     if not inspect.ismethod(getattr(node, attr, None)):
-                        if attr in ('_position', '_color') and isinstance(value, list):
-                            value = tuple(value)
                         setattr(node, attr, value)
             except Exception as e:
                 print(f"Error deserializing attribute {attr}")

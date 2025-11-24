@@ -40,18 +40,77 @@ class UndoRedoResponse(BaseModel):
     message: str
 
 
-def migrate_node_attributes():
+def prepare_nodes_for_save():
+    """
+    Prepare nodes for saving by creating temporary public attributes from private ones.
+    flowstate_manager expects public attribute names (position, color, etc.) but nodes
+    use private attributes (_position, _color, etc.). This creates temporary public
+    attributes that will be cleaned up after save.
+    """
+    # Attributes that have methods should not be migrated
+    # (name, path, session_id are handled specially in _serialize_node)
+    skip_attrs = {'name', 'path', 'session_id', 'node_type'}
+
     for path in NodeEnvironment.list_nodes():
         node = NodeEnvironment.node_from_name(path)
         if not node:
             continue
 
         for attr in NODE_ATTRIBUTES:
+            if attr in skip_attrs:
+                continue
+            private_attr_name = f'_{attr}'
+            if hasattr(node, private_attr_name):
+                private_value = getattr(node, private_attr_name)
+                if private_value is not None and not callable(private_value):
+                    setattr(node, attr, private_value)
+
+
+def cleanup_temp_attributes():
+    """
+    Remove temporary public attributes created by prepare_nodes_for_save().
+    """
+    skip_attrs = {'name', 'path', 'session_id', 'node_type'}
+
+    for path in NodeEnvironment.list_nodes():
+        node = NodeEnvironment.node_from_name(path)
+        if not node:
+            continue
+
+        for attr in NODE_ATTRIBUTES:
+            if attr in skip_attrs:
+                continue
+            if hasattr(node, attr) and hasattr(node, f'_{attr}'):
+                try:
+                    delattr(node, attr)
+                except AttributeError:
+                    pass
+
+
+def migrate_node_attributes():
+    """
+    Migrate public attributes to private ones after loading.
+    flowstate_manager loads data into public attributes (position, color, etc.)
+    but nodes expect private attributes (_position, _color, etc.). This migrates
+    the loaded data to the correct private attributes.
+    """
+    skip_attrs = {'name', 'path', 'session_id', 'node_type'}
+
+    for path in NodeEnvironment.list_nodes():
+        node = NodeEnvironment.node_from_name(path)
+        if not node:
+            continue
+
+        for attr in NODE_ATTRIBUTES:
+            if attr in skip_attrs:
+                continue
             public_attr = getattr(node, attr, None)
             if public_attr is None or callable(public_attr):
                 continue
 
             if hasattr(node, f'_{attr}'):
+                if attr in ('position', 'color') and isinstance(public_attr, list):
+                    public_attr = tuple(public_attr)
                 setattr(node, f'_{attr}', public_attr)
                 delattr(node, attr)
 
@@ -103,10 +162,13 @@ def save_workspace_to_temp_file() -> str:
     with tempfile.NamedTemporaryFile(mode='w', suffix='.tl', delete=False) as tmp:
         tmp_path = tmp.name
 
-    if not save_flowstate(tmp_path):
-        raise Exception("Failed to save flowstate to temporary file")
-
-    return tmp_path
+    try:
+        prepare_nodes_for_save()
+        if not save_flowstate(tmp_path):
+            raise Exception("Failed to save flowstate to temporary file")
+        return tmp_path
+    finally:
+        cleanup_temp_attributes()
 
 
 def load_workspace_from_temp_file(flowstate_data: Dict[str, Any]) -> str:
