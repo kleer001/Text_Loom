@@ -209,6 +209,9 @@ def create_node(request: NodeCreateRequest) -> List[NodeResponse]:
 
         if request.position:
             node._position = tuple(request.position)
+            if node_type == NodeType.LOOPER and node._internal_nodes_created:
+                node._input_node._position = [request.position[0], request.position[1]]
+                node._output_node._position = [request.position[0] + 150.0, request.position[1]]
 
         created_nodes = [node]
         if node_type == NodeType.LOOPER:
