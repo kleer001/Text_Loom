@@ -12,8 +12,8 @@ sys.path.insert(0, '..')
 from core.base_classes import Node, NodeType, NodeEnvironment
 
 
-def test_node_indices(node_type: NodeType, expected_inputs: int, expected_outputs: int):
-    """Test that a node type uses integer indices correctly."""
+def check_node_indices(node_type: NodeType, expected_inputs: int, expected_outputs: int):
+    """Check that a node type uses integer indices correctly."""
     print(f"\n{'='*60}")
     print(f"Testing {node_type.value}")
     print('='*60)
@@ -55,8 +55,8 @@ def test_node_indices(node_type: NodeType, expected_inputs: int, expected_output
     return True
 
 
-def test_connection_creation():
-    """Test that connections work with integer indices."""
+def check_connection_creation():
+    """Check that connections work with integer indices."""
     print(f"\n{'='*60}")
     print("Testing Connection Creation with Integer Indices")
     print('='*60)
@@ -101,8 +101,8 @@ def test_connection_creation():
     return True
 
 
-def test_multi_output_node():
-    """Test multi-output nodes (SplitNode, SectionNode, FolderNode)."""
+def check_multi_output_node():
+    """Check multi-output nodes (SplitNode, SectionNode, FolderNode)."""
     print(f"\n{'='*60}")
     print("Testing Multi-Output Node (SplitNode)")
     print('='*60)
@@ -142,8 +142,8 @@ def test_multi_output_node():
     return True
 
 
-def test_dynamic_input_node():
-    """Test MergeNode with dynamic inputs."""
+def check_dynamic_input_node():
+    """Check MergeNode with dynamic inputs."""
     print(f"\n{'='*60}")
     print("Testing Dynamic Input Node (MergeNode)")
     print('='*60)
@@ -201,17 +201,17 @@ def main():
     ]
 
     for node_type, exp_in, exp_out in node_tests:
-        if not test_node_indices(node_type, exp_in, exp_out):
+        if not check_node_indices(node_type, exp_in, exp_out):
             all_passed = False
 
     # Test connection functionality
-    if not test_connection_creation():
+    if not check_connection_creation():
         all_passed = False
 
-    if not test_multi_output_node():
+    if not check_multi_output_node():
         all_passed = False
 
-    if not test_dynamic_input_node():
+    if not check_dynamic_input_node():
         all_passed = False
 
     # Final summary
