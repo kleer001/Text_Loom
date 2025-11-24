@@ -294,12 +294,9 @@ class LooperNode(Node):
         try:
             input_node_name = "inputNullNode"
             self._input_node = Node.create_node(NodeType.INPUT_NULL, node_name=input_node_name, parent_path=self.path())
-            parent_position = self._position
-            self._input_node._position = [parent_position[0], parent_position[1]]
 
             output_node_name = "outputNullNode"
             self._output_node = Node.create_node(NodeType.OUTPUT_NULL, node_name=output_node_name, parent_path=self.path())
-            self._output_node._position = [parent_position[0] + 150.0, parent_position[1]]
 
             input_node_parms = self._input_node._parms
             if "in_node" in input_node_parms:

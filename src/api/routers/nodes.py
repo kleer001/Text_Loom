@@ -30,6 +30,7 @@ from core.enums import generate_node_types
 from core.undo_manager import UndoManager
 from core.internal_path import InternalPath
 from utils.node_loader import discover_node_types
+from config.ui_constants import LOOPER_OUTPUT_NODE_OFFSET_X
 
 logger = logging.getLogger("api.routers.nodes")
 router = APIRouter()
@@ -209,9 +210,11 @@ def create_node(request: NodeCreateRequest) -> List[NodeResponse]:
 
         if request.position:
             node._position = tuple(request.position)
-            if node_type == NodeType.LOOPER and node._internal_nodes_created:
-                node._input_node._position = [request.position[0], request.position[1]]
-                node._output_node._position = [request.position[0] + 150.0, request.position[1]]
+
+        if node_type == NodeType.LOOPER and node._internal_nodes_created:
+            parent_pos = node._position
+            node._input_node._position = [parent_pos[0], parent_pos[1]]
+            node._output_node._position = [parent_pos[0] + LOOPER_OUTPUT_NODE_OFFSET_X, parent_pos[1]]
 
         created_nodes = [node]
         if node_type == NodeType.LOOPER:
