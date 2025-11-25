@@ -166,7 +166,6 @@ class LooperNode(Node):
             self.add_warning("The current parameter values will result in no iterations.")
 
     def _internal_cook(self, force: bool = False) -> None:
-
         self.set_state(NodeState.COOKING)
         self._cook_count += 1
         start_time = time.time()
@@ -181,16 +180,11 @@ class LooperNode(Node):
             return
 
         # Clear staging_data at the beginning of a major cook
-        print("LOOPER DATA = ",self._parms["staging_data"].eval())
-        print("LOOPER CLEARING DATA?")
         self._parms["staging_data"].set([])
-        print("LOOPER DATA = ",self._parms["staging_data"].eval())
 
-        # 🔧 ADD THIS LINE - Clear the OutputNullNode's accumulated data
-        print("STAGING DATA = ",self._output_node._parms["out_data"].eval())
+        # Clear the OutputNullNode's accumulated data
         if self._output_node:
             self._output_node._parms["out_data"].set([])
-        print("STAGING DATA = ",self._output_node._parms["out_data"].eval())
 
         try:
             self._perform_iterations()
@@ -198,7 +192,7 @@ class LooperNode(Node):
             error_trace = traceback.format_exc()
             self.add_error(f"Error during iteration: {error_trace}")
             self.set_state(NodeState.UNCOOKED)
-
+            return
 
         self._last_cook_time = (time.time() - start_time) * 1000  # Convert to milliseconds
 

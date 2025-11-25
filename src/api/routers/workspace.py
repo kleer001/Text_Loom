@@ -18,7 +18,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from api.models import WorkspaceState, NodeResponse, ConnectionResponse, SuccessResponse, node_to_response, connection_to_response
 from api.router_utils import raise_http_error
-from core.base_classes import NodeEnvironment, NodeType
+from core.base_classes import Node, NodeEnvironment, NodeType
 from core.global_store import GlobalStore
 from core.flowstate_manager import save_flowstate, load_flowstate, NODE_ATTRIBUTES
 from core.undo_manager import UndoManager
@@ -76,7 +76,33 @@ def cleanup_temp_attributes():
                     pass
 
 
+def ensure_looper_positions(node: Node) -> None:
+    """Ensure LooperNode internal nodes have valid positions with proper offset."""
+    from config.ui_constants import LOOPER_OUTPUT_NODE_OFFSET_X
+
+    if node.type() != NodeType.LOOPER or not node._internal_nodes_created:
+        return
+
+    # Only proceed if internal nodes exist as proper Node objects
+    if not (hasattr(node, '_input_node') and hasattr(node._input_node, '_position')):
+        return
+    if not (hasattr(node, '_output_node') and hasattr(node._output_node, '_position')):
+        return
+
+    parent_pos = node._position
+    input_pos = node._input_node._position
+    output_pos = node._output_node._position
+
+    # Apply default offset if both positions are at origin
+    if (input_pos == [0.0, 0.0] or input_pos == (0.0, 0.0)) and \
+       (output_pos == [0.0, 0.0] or output_pos == (0.0, 0.0)):
+        node._input_node._position = [parent_pos[0], parent_pos[1]]
+        node._output_node._position = [parent_pos[0] + LOOPER_OUTPUT_NODE_OFFSET_X, parent_pos[1]]
+
+
 def migrate_node_attributes():
+    from config.ui_constants import LOOPER_OUTPUT_NODE_OFFSET_X
+
     skip_attrs = {'name', 'path', 'session_id', 'node_type'}
 
     for path in NodeEnvironment.list_nodes():
@@ -99,6 +125,9 @@ def migrate_node_attributes():
 
         if isinstance(node._node_type, str):
             node._node_type = getattr(NodeType, node._node_type.split('.')[-1].upper())
+
+        # Ensure LooperNode internal nodes have valid positions after loading
+        ensure_looper_positions(node)
 
 
 def collect_all_nodes() -> list[NodeResponse]:
