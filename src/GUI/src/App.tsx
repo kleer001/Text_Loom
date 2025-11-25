@@ -280,23 +280,27 @@ const AppContent: React.FC = () => {
       <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
         <Box sx={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
           <Box sx={{ flex: 1, position: 'relative' }}>
-            {loading && !error ? (
+            {loading && !error && (
               <Box
                 sx={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  height: '100%',
+                  backgroundColor: 'rgba(0, 0, 0, 0.3)',
+                  zIndex: 1000,
+                  pointerEvents: 'none',
                 }}
               >
                 <CircularProgress />
               </Box>
-            ) : (
-              <>
-                <GraphCanvas onNodeFocus={setFocusedNode} />
-                <AddNodeMenu variant="fab" />
-              </>
             )}
+            <GraphCanvas onNodeFocus={setFocusedNode} />
+            <AddNodeMenu variant="fab" />
           </Box>
 
           <Paper
