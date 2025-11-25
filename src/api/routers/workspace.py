@@ -135,9 +135,6 @@ def collect_all_nodes() -> list[NodeResponse]:
     for path in NodeEnvironment.list_nodes():
         node = NodeEnvironment.node_from_name(path)
         if node:
-            # Ensure LooperNode internal nodes have valid positions before returning to GUI
-            ensure_looper_positions(node)
-
             try:
                 nodes.append(node_to_response(node))
             except Exception as e:
