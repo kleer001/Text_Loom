@@ -304,13 +304,13 @@ def load_flowstate(filepath: str) -> bool:
                     continue
                 
                 if node.type() == NodeType.LOOPER and node._internal_nodes_created:
-                    input_path = str(node.input_node.path())
-                    output_path = str(node.output_node.path())
-                    
+                    input_path = str(node._input_node.path())
+                    output_path = str(node._output_node.path())
+
                     if input_path in save_data["nodes"]:
-                        _apply_node_data(node.input_node, save_data["nodes"][input_path])
+                        _apply_node_data(node._input_node, save_data["nodes"][input_path])
                     if output_path in save_data["nodes"]:
-                        _apply_node_data(node.output_node, save_data["nodes"][output_path])
+                        _apply_node_data(node._output_node, save_data["nodes"][output_path])
                     
             except Exception as e:
                 print(f"Error creating node {node_path}")
