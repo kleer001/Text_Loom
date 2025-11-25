@@ -55,6 +55,7 @@ const GraphCanvasInner: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
   const reactFlowInstanceRef = useRef<ReactFlowInstance | null>(null);
   const viewportRef = useRef<{ x: number; y: number; zoom: number } | null>(null);
   const nodeDataCacheRef = useRef<Map<string, { node: NodeResponse; onBypassToggle: (sessionId: string) => void; onDisplayToggle: (sessionId: string) => void }>>(new Map());
+  const nodeObjectCacheRef = useRef<Map<string, Node>>(new Map());
   const workspaceNodesRef = useRef<NodeResponse[]>([]);
 
   const defaultEdgeConfig = useMemo(() => ({
@@ -151,6 +152,9 @@ const GraphCanvasInner: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
 
     const newNodes = enrichedNodes.map((node: NodeResponse) => {
       const nodeId = String(node.session_id);
+      const isSelected = nodeId === newlyCreatedNodeId || currentlySelectedIds.has(nodeId);
+      const posX = node.position[0];
+      const posY = node.position[1];
 
       // Get or create cached data object to prevent recreation on every render
       let dataObj = nodeDataCacheRef.current.get(nodeId);
@@ -159,13 +163,27 @@ const GraphCanvasInner: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
         nodeDataCacheRef.current.set(nodeId, dataObj);
       }
 
-      return {
+      // Get cached node object and only create new one if something changed
+      const cachedNode = nodeObjectCacheRef.current.get(nodeId);
+      if (
+        cachedNode &&
+        cachedNode.position.x === posX &&
+        cachedNode.position.y === posY &&
+        cachedNode.data === dataObj &&
+        cachedNode.selected === isSelected
+      ) {
+        return cachedNode;
+      }
+
+      const newNode: Node = {
         id: nodeId,
         type: 'custom',
-        position: { x: node.position[0], y: node.position[1] },
+        position: { x: posX, y: posY },
         data: dataObj,
-        selected: nodeId === newlyCreatedNodeId || currentlySelectedIds.has(nodeId),
+        selected: isSelected,
       };
+      nodeObjectCacheRef.current.set(nodeId, newNode);
+      return newNode;
     });
 
     // Clean up cache for deleted nodes
@@ -173,6 +191,7 @@ const GraphCanvasInner: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
     for (const cachedId of nodeDataCacheRef.current.keys()) {
       if (!currentNodeIds.has(cachedId)) {
         nodeDataCacheRef.current.delete(cachedId);
+        nodeObjectCacheRef.current.delete(cachedId);
       }
     }
 
