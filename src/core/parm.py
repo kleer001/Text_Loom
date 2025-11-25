@@ -114,7 +114,8 @@ class Parm:
                 self._default_value = new_value
             self._value = new_value
             self._is_default = (self._value == self._default_value)
-            self._node.set_state(NodeState.UNCOOKED)
+            if self._node.state() != NodeState.COOKING:
+                self._node.set_state(NodeState.UNCOOKED)
 
     def script_callback(self) -> str:
         """Return the contents of the script that gets runs when this parameter changes."""
