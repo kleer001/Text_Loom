@@ -37,7 +37,7 @@ NODE_ATTRIBUTES = [
     'name', 'path', 'selected', 'color', 'position', 'session_id', 'node_type',
     'children', 'depth', 'inputs', 'outputs', 'state', 'errors', 'warnings',
     'is_time_dependent', 'last_cook_time', 'cook_count', 'file_hash',
-    'param_hash', 'last_input_size', 'input_node', 'output_node',
+    'param_hash', 'last_input_size',
     'internal_nodes_created', 'parent_looper'
 ]
 
