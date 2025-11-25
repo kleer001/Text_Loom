@@ -166,50 +166,69 @@ class LooperNode(Node):
             self.add_warning("The current parameter values will result in no iterations.")
 
     def _internal_cook(self, force: bool = False) -> None:
+        print(f"[DEBUG] LooperNode._internal_cook() called, current state: {self._state}")
 
         self.set_state(NodeState.COOKING)
+        print(f"[DEBUG] After set_state(COOKING), state is now: {self._state}")
         self._cook_count += 1
         start_time = time.time()
 
         if self.errors():
+            print(f"[DEBUG] Looper has errors: {self.errors()}, setting UNCOOKED and returning")
             self.set_state(NodeState.UNCOOKED)
             return
 
         # Check if we need to cook
+        print(f"[DEBUG] Before inputs check, state: {self._state}")
         if not self.inputs() and not self._output_node.inputs():
             self.set_state(NodeState.UNCHANGED)
             return
+        print(f"[DEBUG] After inputs check, state: {self._state}")
 
         # Clear staging_data at the beginning of a major cook
-        print("LOOPER DATA = ",self._parms["staging_data"].eval())
+        print("LOOPER DATA = ",self._parms["staging_data"].raw_value())
+        print(f"[DEBUG] After staging_data.raw_value(), state: {self._state}")
         print("LOOPER CLEARING DATA?")
         self._parms["staging_data"].set([])
-        print("LOOPER DATA = ",self._parms["staging_data"].eval())
+        print(f"[DEBUG] After staging_data.set(), state: {self._state}")
+        print("LOOPER DATA = ",self._parms["staging_data"].raw_value())
 
-        # 🔧 ADD THIS LINE - Clear the OutputNullNode's accumulated data
-        print("STAGING DATA = ",self._output_node._parms["out_data"].eval())
+        # Clear the OutputNullNode's accumulated data
+        print("STAGING DATA = ",self._output_node._parms["out_data"].raw_value())
+        print(f"[DEBUG] After output_node.raw_value(), state: {self._state}")
         if self._output_node:
             self._output_node._parms["out_data"].set([])
-        print("STAGING DATA = ",self._output_node._parms["out_data"].eval())
+        print(f"[DEBUG] After output_node.set(), state: {self._state}")
+        print("STAGING DATA = ",self._output_node._parms["out_data"].raw_value())
+        print(f"[DEBUG] Before calling _perform_iterations, state: {self._state}")
 
         try:
             self._perform_iterations()
         except Exception as e:
+            print(f"[DEBUG] EXCEPTION caught in _internal_cook: {e}")
             error_trace = traceback.format_exc()
             self.add_error(f"Error during iteration: {error_trace}")
             self.set_state(NodeState.UNCOOKED)
+            print(f"[DEBUG] Set state to UNCOOKED due to exception, returning")
+            return
 
 
         self._last_cook_time = (time.time() - start_time) * 1000  # Convert to milliseconds
 
+        print(f"[DEBUG] After iterations, state is: {self._state}")
         if self.state() == NodeState.COOKING:
+            print(f"[DEBUG] Setting state to UNCHANGED")
             self.set_state(NodeState.UNCHANGED)
+        else:
+            print(f"[DEBUG] NOT setting to UNCHANGED because state is {self._state}, not COOKING")
 
         self._output = self._parms["staging_data"].raw_value()
+        print(f"[DEBUG] Final state: {self._state}")
 
 
     def _perform_iterations(self):
         print("\n∞ loop: starting loop, cleaning up")
+        print(f"[DEBUG] _perform_iterations START, looper state: {self._state}")
         loop_manager.clean_stale_loops(self.path())
 
         min_val = self._parms["min"].eval()
@@ -220,6 +239,7 @@ class LooperNode(Node):
         timeout_limit = self._parms["timeout_limit"].eval()
         feedback_mode = self._parms["feedback_mode"].eval()
         cook_loops = self._parms["cook_loops"].eval()
+        print(f"[DEBUG] After param evals, looper state: {self._state}")
 
         self._input_node._parms["feedback_mode"].set(feedback_mode)
         self._output_node._parms["feedback_mode"].set(feedback_mode)
@@ -265,6 +285,7 @@ class LooperNode(Node):
 
         loop_manager.set_loop(self.path(), value=None)
         print("∞ loop: end of loop reached, cleaning up\n")
+        print(f"[DEBUG] _perform_iterations END, looper state: {self._state}")
 
     def input_names(self) -> Dict[int, str]:
         return {0: "Input Data"}
