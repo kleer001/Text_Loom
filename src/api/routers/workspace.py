@@ -77,6 +77,8 @@ def cleanup_temp_attributes():
 
 
 def migrate_node_attributes():
+    from config.ui_constants import LOOPER_OUTPUT_NODE_OFFSET_X
+
     skip_attrs = {'name', 'path', 'session_id', 'node_type'}
 
     for path in NodeEnvironment.list_nodes():
@@ -99,6 +101,20 @@ def migrate_node_attributes():
 
         if isinstance(node._node_type, str):
             node._node_type = getattr(NodeType, node._node_type.split('.')[-1].upper())
+
+        if node.type() == NodeType.LOOPER and node._internal_nodes_created:
+            parent_pos = node._position
+
+            # Check if internal nodes have Node objects (not dicts from serialization)
+            if hasattr(node, '_input_node') and hasattr(node._input_node, '_position'):
+                input_pos = getattr(node._input_node, 'position', None) or getattr(node._input_node, '_position', [0.0, 0.0])
+                if input_pos == [0.0, 0.0] or input_pos == (0.0, 0.0):
+                    node._input_node._position = [parent_pos[0], parent_pos[1]]
+
+            if hasattr(node, '_output_node') and hasattr(node._output_node, '_position'):
+                output_pos = getattr(node._output_node, 'position', None) or getattr(node._output_node, '_position', [0.0, 0.0])
+                if output_pos == [0.0, 0.0] or output_pos == (0.0, 0.0):
+                    node._output_node._position = [parent_pos[0] + LOOPER_OUTPUT_NODE_OFFSET_X, parent_pos[1]]
 
 
 def collect_all_nodes() -> list[NodeResponse]:
