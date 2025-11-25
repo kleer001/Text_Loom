@@ -7,7 +7,7 @@ import { useWorkspace } from './WorkspaceContext';
 import { GlobalEditor } from './GlobalEditor';
 import { GlobalRow } from './GlobalRow';
 
-export const GlobalsPanel: React.FC = () => {
+const GlobalsPanelComponent: React.FC = () => {
   const { globals, setGlobal, deleteGlobal } = useWorkspace();
 
   const handleSave = useCallback(async (key: string, value: string) => {
@@ -100,3 +100,5 @@ export const GlobalsPanel: React.FC = () => {
     </Box>
   );
 };
+
+export const GlobalsPanel = React.memo(GlobalsPanelComponent);

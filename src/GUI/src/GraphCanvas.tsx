@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState, startTransition } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ReactFlow,
   Background,
@@ -178,11 +178,10 @@ const GraphCanvasInner: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
 
     const newEdges = connectionsToEdges(transformedConnections, defaultEdgeConfig);
 
-    startTransition(() => {
-      setLooperSystems(systems);
-      setNodes(newNodes);
-      setEdges(newEdges);
-    });
+    // Batch updates: React 18 automatically batches these in useEffect
+    setLooperSystems(systems);
+    setNodes(newNodes);
+    setEdges(newEdges);
 
     // Restore viewport after state updates
     if (viewportRef.current && reactFlowInstanceRef.current) {
@@ -202,7 +201,7 @@ const GraphCanvasInner: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
         onNodeFocus(newNode);
       }
     }
-  }, [workspaceNodes, connections, setNodes, setEdges, newlyCreatedNodeId, onNodeFocus, handleBypassToggle, handleDisplayToggle, defaultEdgeConfig]);
+  }, [workspaceNodes, connections, setNodes, setEdges, newlyCreatedNodeId, onNodeFocus, defaultEdgeConfig]);
 
   const handleSelectionChange = useCallback(
     (params: { nodes: Node[]; edges: Edge[] }) => {

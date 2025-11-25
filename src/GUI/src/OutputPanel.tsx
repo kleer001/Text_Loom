@@ -77,7 +77,7 @@ const formatOutputForClipboard = (data: string[][]): string =>
 const hasOutput = (executionResult: ExecutionResponse): boolean =>
   !!(executionResult.output_data && executionResult.output_data.length > 0);
 
-export const OutputPanel: React.FC<OutputPanelProps> = ({ executionResult, nodeName, onClose }) => {
+const OutputPanelComponent: React.FC<OutputPanelProps> = ({ executionResult, nodeName, onClose }) => {
   const [isExpanded, setIsExpanded] = useState(true);
 
   const handleCopyOutput = () => {
@@ -187,3 +187,5 @@ export const OutputPanel: React.FC<OutputPanelProps> = ({ executionResult, nodeN
     </Paper>
   );
 };
+
+export const OutputPanel = React.memo(OutputPanelComponent);

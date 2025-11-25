@@ -15,7 +15,7 @@ interface NodeDetailsPanelProps {
   node: NodeResponse | null;
 }
 
-export const NodeDetailsPanel: React.FC<NodeDetailsPanelProps> = ({ node }) => {
+const NodeDetailsPanelComponent: React.FC<NodeDetailsPanelProps> = ({ node }) => {
   const { updateNode, executeNode } = useWorkspace();
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState('');
@@ -335,3 +335,5 @@ export const NodeDetailsPanel: React.FC<NodeDetailsPanelProps> = ({ node }) => {
     </Box>
   );
 };
+
+export const NodeDetailsPanel = React.memo(NodeDetailsPanelComponent);
