@@ -18,7 +18,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from api.models import WorkspaceState, NodeResponse, ConnectionResponse, SuccessResponse, node_to_response, connection_to_response
 from api.router_utils import raise_http_error
-from core.base_classes import NodeEnvironment, NodeType
+from core.base_classes import Node, NodeEnvironment, NodeType
 from core.global_store import GlobalStore
 from core.flowstate_manager import save_flowstate, load_flowstate, NODE_ATTRIBUTES
 from core.undo_manager import UndoManager
