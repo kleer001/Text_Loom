@@ -296,7 +296,13 @@ const AppContent: React.FC = () => {
                   pointerEvents: 'none',
                 }}
               >
-                <CircularProgress />
+                <CircularProgress
+                  sx={{
+                    pointerEvents: 'auto',
+                    color: 'primary.main',
+                  }}
+                  size={60}
+                />
               </Box>
             )}
             <GraphCanvas onNodeFocus={setFocusedNode} />
