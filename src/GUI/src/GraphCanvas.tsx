@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState, startTransition } from 'react';
 import {
   ReactFlow,
   Background,
@@ -55,6 +55,7 @@ const GraphCanvasInner: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
   const reactFlowInstanceRef = useRef<ReactFlowInstance | null>(null);
   const viewportRef = useRef<{ x: number; y: number; zoom: number } | null>(null);
   const nodeDataCacheRef = useRef<Map<string, { node: NodeResponse; onBypassToggle: (sessionId: string) => void; onDisplayToggle: (sessionId: string) => void }>>(new Map());
+  const workspaceNodesRef = useRef<NodeResponse[]>([]);
 
   const defaultEdgeConfig = useMemo(() => ({
     type: 'smoothstep' as const,
@@ -136,14 +137,14 @@ const GraphCanvasInner: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
   }, [onNodesChangeInternal, shouldPreventDeselection]);
 
   useEffect(() => {
+    workspaceNodesRef.current = workspaceNodes;
+
     // Save current viewport before transformation
     if (reactFlowInstanceRef.current) {
       viewportRef.current = reactFlowInstanceRef.current.getViewport();
     }
 
     const { displayNodes, looperSystems: systems } = transformLooperNodes(workspaceNodes);
-    setLooperSystems(systems);
-
     const transformedConnections = transformConnectionNodeIds(connections, systems);
     const enrichedNodes = enrichNodesWithConnectionState(displayNodes, transformedConnections);
     const currentlySelectedIds = selectedNodeIdsRef.current;
@@ -175,8 +176,13 @@ const GraphCanvasInner: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
       }
     }
 
-    setNodes(newNodes);
-    setEdges(connectionsToEdges(transformedConnections, defaultEdgeConfig));
+    const newEdges = connectionsToEdges(transformedConnections, defaultEdgeConfig);
+
+    startTransition(() => {
+      setLooperSystems(systems);
+      setNodes(newNodes);
+      setEdges(newEdges);
+    });
 
     // Restore viewport after state updates
     if (viewportRef.current && reactFlowInstanceRef.current) {
