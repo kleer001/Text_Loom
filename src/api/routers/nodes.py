@@ -31,6 +31,7 @@ from core.undo_manager import UndoManager
 from core.internal_path import InternalPath
 from utils.node_loader import discover_node_types
 from config.ui_constants import LOOPER_OUTPUT_NODE_OFFSET_X
+from api.routers.workspace import ensure_looper_positions
 
 logger = logging.getLogger("api.routers.nodes")
 router = APIRouter()
@@ -173,7 +174,9 @@ def list_nodes() -> List[NodeResponse]:
     }
 )
 def get_node(session_id: str = Path(..., description="Unique session ID of the node")) -> NodeResponse:
-    return node_to_response(find_node_by_session_id(session_id))
+    node = find_node_by_session_id(session_id)
+    ensure_looper_positions(node)
+    return node_to_response(node)
 
 
 @router.post(
@@ -219,6 +222,10 @@ def create_node(request: NodeCreateRequest) -> List[NodeResponse]:
         created_nodes = [node]
         if node_type == NodeType.LOOPER:
             created_nodes.extend(find_child_nodes(node.path()))
+
+        # Ensure all nodes have valid positions before returning
+        for n in created_nodes:
+            ensure_looper_positions(n)
 
         responses = [node_to_response(n) for n in created_nodes]
 
@@ -287,6 +294,10 @@ def update_node(session_id: str, request: NodeUpdateRequest = Body(...)) -> List
 
         if request.color is not None:
             target_node._color = tuple(request.color)
+
+        # Ensure all affected nodes have valid positions before returning
+        for n in affected_nodes:
+            ensure_looper_positions(n)
 
         return [node_to_response(node) for node in affected_nodes]
 

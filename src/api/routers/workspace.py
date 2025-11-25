@@ -76,6 +76,30 @@ def cleanup_temp_attributes():
                     pass
 
 
+def ensure_looper_positions(node: Node) -> None:
+    """Ensure LooperNode internal nodes have valid positions with proper offset."""
+    from config.ui_constants import LOOPER_OUTPUT_NODE_OFFSET_X
+
+    if node.type() != NodeType.LOOPER or not node._internal_nodes_created:
+        return
+
+    # Only proceed if internal nodes exist as proper Node objects
+    if not (hasattr(node, '_input_node') and hasattr(node._input_node, '_position')):
+        return
+    if not (hasattr(node, '_output_node') and hasattr(node._output_node, '_position')):
+        return
+
+    parent_pos = node._position
+    input_pos = node._input_node._position
+    output_pos = node._output_node._position
+
+    # Apply default offset if both positions are at origin
+    if (input_pos == [0.0, 0.0] or input_pos == (0.0, 0.0)) and \
+       (output_pos == [0.0, 0.0] or output_pos == (0.0, 0.0)):
+        node._input_node._position = [parent_pos[0], parent_pos[1]]
+        node._output_node._position = [parent_pos[0] + LOOPER_OUTPUT_NODE_OFFSET_X, parent_pos[1]]
+
+
 def migrate_node_attributes():
     from config.ui_constants import LOOPER_OUTPUT_NODE_OFFSET_X
 
@@ -102,19 +126,8 @@ def migrate_node_attributes():
         if isinstance(node._node_type, str):
             node._node_type = getattr(NodeType, node._node_type.split('.')[-1].upper())
 
-        if node.type() == NodeType.LOOPER and node._internal_nodes_created:
-            parent_pos = node._position
-
-            # Check if internal nodes have Node objects (not dicts from serialization)
-            if hasattr(node, '_input_node') and hasattr(node._input_node, '_position'):
-                input_pos = getattr(node._input_node, 'position', None) or getattr(node._input_node, '_position', [0.0, 0.0])
-                if input_pos == [0.0, 0.0] or input_pos == (0.0, 0.0):
-                    node._input_node._position = [parent_pos[0], parent_pos[1]]
-
-            if hasattr(node, '_output_node') and hasattr(node._output_node, '_position'):
-                output_pos = getattr(node._output_node, 'position', None) or getattr(node._output_node, '_position', [0.0, 0.0])
-                if output_pos == [0.0, 0.0] or output_pos == (0.0, 0.0):
-                    node._output_node._position = [parent_pos[0] + LOOPER_OUTPUT_NODE_OFFSET_X, parent_pos[1]]
+        # Ensure LooperNode internal nodes have valid positions after loading
+        ensure_looper_positions(node)
 
 
 def collect_all_nodes() -> list[NodeResponse]:
@@ -122,6 +135,9 @@ def collect_all_nodes() -> list[NodeResponse]:
     for path in NodeEnvironment.list_nodes():
         node = NodeEnvironment.node_from_name(path)
         if node:
+            # Ensure LooperNode internal nodes have valid positions before returning to GUI
+            ensure_looper_positions(node)
+
             try:
                 nodes.append(node_to_response(node))
             except Exception as e:
