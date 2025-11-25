@@ -291,7 +291,7 @@ const AppContent: React.FC = () => {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  backgroundColor: 'rgba(0, 0, 0, 0.3)',
+                  backgroundColor: 'transparent',
                   zIndex: 1000,
                   pointerEvents: 'none',
                 }}
