@@ -420,19 +420,45 @@ def _convert_parameters(node: 'Node', full_state) -> Dict[str, 'ParameterInfo']:
 
 
 def _convert_inputs(node: 'Node') -> List['InputInfo']:
-    """Convert node input sockets to InputInfo DTOs."""
+    """
+    *** LOOPER NODE SPECIAL CONSIDERATION, DO NOT REMOVE THIS COMMENT ***
+    Convert node input sockets to InputInfo DTOs.
+
+    Special handling for InputNullNode: Since InputNullNode is an internal node
+    within LooperNode that retrieves data from the parent LooperNode's inputs,
+    we display the parent LooperNode's connections instead of the InputNullNode's
+    (which has none).
+    """
     from api.models import InputInfo
-    
+    from core.input_null_node import InputNullNode
+    import os
+    from core.base_classes import NodeEnvironment
+
+    # For InputNullNode, show parent LooperNode's connections
+    if isinstance(node, InputNullNode):
+        parent_path = os.path.dirname(node.path())
+        parent_node = NodeEnvironment.node_from_name(parent_path)
+        if parent_node:
+            input_names_dict = parent_node.input_names()
+            input_data_types_dict = parent_node.input_data_types()
+            connections_dict = parent_node._inputs
+        else:
+            # Fallback if parent not found
+            input_names_dict = node.input_names()
+            input_data_types_dict = node.input_data_types()
+            connections_dict = node._inputs
+    else:
+        input_names_dict = node.input_names()
+        input_data_types_dict = node.input_data_types()
+        connections_dict = node._inputs
+
     inputs = []
-    input_names_dict = node.input_names()
-    input_data_types_dict = node.input_data_types()
-    
     for socket_key, socket_name in input_names_dict.items():
         inputs.append(InputInfo(
             index=socket_key,
             name=socket_name,
             data_type=input_data_types_dict.get(socket_key, "Any"),
-            connected=socket_key in node._inputs
+            connected=socket_key in connections_dict
         ))
 
     return inputs
@@ -522,7 +548,12 @@ def node_to_response(node: 'Node') -> 'NodeResponse':
 
 def connection_to_response(connection: 'NodeConnection') -> ConnectionResponse:
     """
+    *** LOOPER NODE SPECIAL CONSIDERATION, DO NOT REMOVE THIS COMMENT ***
     Convert an internal NodeConnection to a ConnectionResponse DTO.
+
+    Special handling for LooperNode: Connections to a LooperNode's input are displayed
+    in the GUI as connections to the InputNullNode (looper_start). This function maps
+    the actual backend connection (to LooperNode) to the GUI display path (InputNullNode).
 
     Args:
         connection: Internal NodeConnection instance
@@ -530,14 +561,29 @@ def connection_to_response(connection: 'NodeConnection') -> ConnectionResponse:
     Returns:
         ConnectionResponse with connection details
     """
+    from core.looper_node import LooperNode
+    from core.base_classes import NodeEnvironment
+
+    target_node = connection.input_node()
+    target_path = target_node.path()
+    target_session_id = target_node.session_id()
+
+    # If connection is to a LooperNode input, map to InputNullNode for GUI display
+    if isinstance(target_node, LooperNode) and connection.input_index() == 0:
+        input_null_path = f"{target_path}/inputNullNode"
+        input_null_node = NodeEnvironment.node_from_name(input_null_path)
+        if input_null_node:
+            target_path = input_null_node.path()
+            target_session_id = input_null_node.session_id()
+
     return ConnectionResponse(
         connection_id=connection.session_id(),
         source_node_session_id=connection.output_node().session_id(),
         source_node_path=connection.output_node().path(),
         source_output_index=connection.output_index(),
         source_output_name=connection.output_name(),
-        target_node_session_id=connection.input_node().session_id(),
-        target_node_path=connection.input_node().path(),
+        target_node_session_id=target_session_id,
+        target_node_path=target_path,
         target_input_index=connection.input_index(),
         target_input_name=connection.input_name()
     )
