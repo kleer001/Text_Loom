@@ -1,114 +1,39 @@
 import React, { useMemo } from 'react';
 import { Handle, Position } from '@xyflow/react';
-import type { NodeResponse, InputInfo, OutputInfo } from './types';
+import type { NodeResponse } from './types';
 import * as design from './nodeDesign';
 import { useTheme } from './ThemeContext';
 
 interface CustomNodeData {
   node: NodeResponse;
+  size?: 'large' | 'medium' | 'small';
   onBypassToggle?: (sessionId: string) => void;
-  onDisplayToggle?: (sessionId: string) => void;
 }
 
-const MIN_HANDLE_SPACING = 12;
-const VERTICAL_PADDING = 20;
-
-const calculateMinHeight = (inputCount: number, outputCount: number): number => {
-  const handleCount = Math.max(inputCount, outputCount);
-  return handleCount > 0 ? (handleCount + 1) * MIN_HANDLE_SPACING + VERTICAL_PADDING : 0;
+const calculateMinHeight = (inputCount: number, outputCount: number, minSpacing: number): number | undefined => {
+  const count = Math.max(inputCount, outputCount);
+  return count > 0 ? (count + 1) * minSpacing : undefined;
 };
 
 const getOpacity = (isBypassed: boolean): number =>
   isBypassed ? design.OPACITY_BYPASSED : design.OPACITY_ACTIVE;
 
-interface IndicatorCircleProps {
-  color: string;
-  title: string;
-  diameter?: number;
-  outlineColor?: string;
-}
-
-const IndicatorCircle: React.FC<IndicatorCircleProps> = ({
-  color,
-  title,
-  diameter = design.ERROR_WARNING_DIAMETER,
-  outlineColor
-}) => (
-  <div
-    style={{
-      width: `${diameter}px`,
-      height: `${diameter}px`,
-      borderRadius: '50%',
-      background: color,
-      boxShadow: outlineColor
-        ? `0 0 0 2px ${color}, 0 0 0 4px ${outlineColor}`
-        : undefined,
-    }}
-    title={title}
-  />
-);
-
-interface HandleProps {
-  item: InputInfo | OutputInfo;
-  idx: number;
-  total: number;
-  type: 'target' | 'source';
-  position: Position;
-  isBypassed: boolean;
-  borderColor: string;
-  fillColor: string;
-}
-
-const NodeHandle: React.FC<HandleProps> = ({
-  item,
-  idx,
-  total,
-  type,
-  position,
-  isBypassed,
-  borderColor,
-  fillColor,
-}) => {
-  const positionProp = position === Position.Left ? 'left' : 'right';
-
-  return (
-    <Handle
-      key={`${type}-${item.index}`}
-      type={type}
-      position={position}
-      id={`${type === 'target' ? 'input' : 'output'}-${idx}`}
-      title={`${item.name} (${item.data_type})`}
-      style={{
-        top: `${((idx + 1) / (total + 1)) * 100}%`,
-        [positionProp]: `-${design.HANDLE_OFFSET}px`,
-        width: `${design.HANDLE_DIAMETER}px`,
-        height: `${design.HANDLE_DIAMETER}px`,
-        border: `${design.HANDLE_BORDER_WIDTH}px solid ${borderColor}`,
-        background: fillColor,
-        opacity: getOpacity(isBypassed),
-      }}
-    />
-  );
-};
-
 const CustomNodeComponent: React.FC<{ data: CustomNodeData; selected?: boolean }> = ({
   data,
   selected
 }) => {
-  const { node, onBypassToggle, onDisplayToggle: _onDisplayToggle } = data;
+  const { node, size = 'large', onBypassToggle } = data;
   const { mode } = useTheme();
   const colors = design.getColors(mode);
+  const L = design.Layout(size);
 
   const isBypassed = node.parameters?.bypass?.value === true;
-  const _isOnDisplay = node.parameters?.display?.value === true;
-  // _onDisplayToggle and _isOnDisplay are reserved for future display toggle feature
-  void _onDisplayToggle;
-  void _isOnDisplay;
   const hasError = node.errors.length > 0;
   const hasWarning = node.warnings.length > 0;
+  const opacity = getOpacity(isBypassed);
 
-  const minHeight = calculateMinHeight(node.inputs.length, node.outputs.length);
-  const stateColor = colors.cooking[node.state as keyof typeof colors.cooking] ?? colors.cooking.uncooked;
+  const minHeight = calculateMinHeight(node.inputs.length, node.outputs.length, L.handle.minSpacing);
+
   const borderColor = selected
     ? colors.border.selected
     : isBypassed
@@ -116,182 +41,194 @@ const CustomNodeComponent: React.FC<{ data: CustomNodeData; selected?: boolean }
     : colors.border.active;
   const backgroundColor = isBypassed ? colors.background.bypassed : colors.background.active;
   const textColor = isBypassed ? colors.text.bypassed : colors.text.active;
-  const opacity = getOpacity(isBypassed);
-
-  const getHandleBorderColor = (type: 'input' | 'output'): string =>
-    isBypassed ? colors.handle.bypassed.border :
-    type === 'input' ? colors.handle.input.border : colors.handle.output.border;
-
-  const getHandleFillColor = (type: 'input' | 'output'): string =>
-    isBypassed ? colors.handle.bypassed.fill :
-    type === 'input' ? colors.handle.input.fill : colors.handle.output.fill;
 
   const containerStyle = useMemo(() => ({
     position: 'relative' as const,
-    padding: `${design.NODE_PADDING_VERTICAL}px ${design.NODE_PADDING_HORIZONTAL}px`,
-    border: `${design.NODE_BORDER_WIDTH}px solid ${borderColor}`,
-    borderRadius: `${design.NODE_BORDER_RADIUS}px`,
+    padding: `${L.node.paddingY}px ${L.node.paddingX}px`,
+    border: `${L.node.borderWidth}px solid ${borderColor}`,
+    borderRadius: `${L.node.borderRadius}px`,
     background: backgroundColor,
-    minWidth: `${design.NODE_MIN_WIDTH}px`,
+    minWidth: `${L.node.minWidth}px`,
     minHeight: minHeight || undefined,
     boxShadow: selected ? '0 4px 8px rgba(0,0,0,0.2)' : '0 2px 4px rgba(0,0,0,0.1)',
-  }), [borderColor, backgroundColor, minHeight, selected]);
+  }), [L.node.paddingY, L.node.paddingX, L.node.borderWidth, borderColor, L.node.borderRadius, backgroundColor, L.node.minWidth, minHeight, selected]);
 
-  const cookingStateContainerStyle = useMemo(() => ({
-    position: 'absolute' as const,
-    left: `${design.COOKING_STATE_LEFT}px`,
-    top: `${design.COOKING_STATE_TOP}px`,
+  const textAreaStyle = useMemo(() => ({
+    paddingTop: L.text.paddingTop,
+    paddingBottom: L.text.paddingBottom,
+    paddingLeft: L.text.paddingSide,
+    paddingRight: L.text.paddingSide,
     display: 'flex',
     flexDirection: 'column' as const,
-    gap: `${design.ERROR_WARNING_DUAL_GAP}px`,
+    gap: L.text.gapLines,
     opacity,
-  }), [opacity]);
+  }), [L.text.paddingTop, L.text.paddingBottom, L.text.paddingSide, L.text.gapLines, opacity]);
+
+  const glyphStyle = useMemo(() => ({
+    fontSize: L.text.glyphSize,
+    fontWeight: 'bold' as const,
+    textAlign: 'center' as const,
+    color: textColor,
+  }), [L.text.glyphSize, textColor]);
+
+  const typeStyle = useMemo(() => ({
+    fontSize: L.text.typeSize,
+    color: textColor,
+    fontWeight: '500',
+  }), [L.text.typeSize, textColor]);
+
+  const nameStyle = useMemo(() => ({
+    fontSize: L.text.nameSize,
+    fontWeight: 'bold' as const,
+    textAlign: 'center' as const,
+    color: textColor,
+  }), [L.text.nameSize, textColor]);
+
+  const indicatorsContainerStyle = useMemo(() => ({
+    position: 'absolute' as const,
+    left: L.indicators.offset,
+    top: L.indicators.offset,
+    display: 'flex',
+    flexDirection: 'column' as const,
+    gap: L.indicators.gap,
+    opacity,
+  }), [L.indicators.offset, L.indicators.gap, opacity]);
 
   const cookingStateCircleStyle = useMemo(() => ({
-    width: `${design.COOKING_STATE_DIAMETER}px`,
-    height: `${design.COOKING_STATE_DIAMETER}px`,
+    width: L.indicators.diameter,
+    height: L.indicators.diameter,
     borderRadius: '50%',
-    background: stateColor,
-  }), [stateColor]);
+    background: colors.cooking[node.state] || colors.cooking.uncooked,
+  }), [L.indicators.diameter, colors.cooking, node.state]);
 
   const bypassButtonStyle = useMemo(() => ({
     position: 'absolute' as const,
-    right: `${design.TEMPLATE_CIRCLE_RIGHT}px`,
+    right: L.bypass.offsetRight,
     top: '50%',
     transform: 'translateY(-50%)',
-    width: `${design.TEMPLATE_CIRCLE_DIAMETER}px`,
-    height: `${design.TEMPLATE_CIRCLE_DIAMETER}px`,
+    width: L.bypass.diameter,
+    height: L.bypass.diameter,
     borderRadius: '50%',
     background: colors.bypass.default,
     cursor: 'pointer',
     opacity,
     transition: 'background 0.2s',
-  }), [colors.bypass.default, opacity]);
-
-  const textAreaContainerStyle = useMemo(() => ({
-    position: 'relative' as const,
-    paddingTop: `${design.TEXT_AREA_TOP}px`,
-    paddingBottom: `${design.TEXT_AREA_BOTTOM}px`,
-    paddingLeft: `${design.TEXT_AREA_LEFT - design.NODE_PADDING_HORIZONTAL}px`,
-    paddingRight: `${design.TEXT_AREA_RIGHT - design.NODE_PADDING_HORIZONTAL}px`,
-    display: 'flex',
-    flexDirection: 'column' as const,
-    gap: `${design.TEXT_CONTENT_GAP}px`,
-    opacity,
-  }), [opacity]);
-
-  const textHeaderStyle = useMemo(() => ({
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: `${design.TEXT_HEADER_GAP}px`,
-  }), []);
-
-  const glyphTextStyle = useMemo(() => ({
-    fontSize: `${design.TEXT_GLYPH_SIZE}px`,
-    fontWeight: 'bold' as const,
-    flex: 1,
-    textAlign: 'center' as const,
-    color: textColor,
-  }), [textColor]);
-
-  const typeTextStyle = useMemo(() => ({
-    fontSize: `${design.TEXT_TYPE_FONT_SIZE}px`,
-    color: textColor,
-    fontWeight: '500',
-  }), [textColor]);
-
-  const nameTextStyle = useMemo(() => ({
-    fontSize: `${design.TEXT_FONT_SIZE}px`,
-    fontWeight: 'bold' as const,
-    color: textColor,
-    textAlign: 'center' as const,
-  }), [textColor]);
+  }), [L.bypass.offsetRight, L.bypass.diameter, colors.bypass.default, opacity]);
 
   return (
     <div style={containerStyle}>
-      <div style={cookingStateContainerStyle}>
+
+      {L.visibility.showIndicators && (
+        <div style={indicatorsContainerStyle}>
+          <div
+            style={cookingStateCircleStyle}
+            title="Cooking state"
+          />
+
+          {hasError && (
+            <div
+              style={{
+                width: L.indicators.diameter,
+                height: L.indicators.diameter,
+                borderRadius: '50%',
+                background: colors.error.fill,
+                boxShadow: `0 0 0 2px ${colors.error.fill}, 0 0 0 4px ${colors.error.outline}`,
+              }}
+              title="Has errors"
+            />
+          )}
+
+          {hasWarning && (
+            <div
+              style={{
+                width: L.indicators.diameter,
+                height: L.indicators.diameter,
+                borderRadius: '50%',
+                background: colors.warning.fill,
+                boxShadow: `0 0 0 2px ${colors.warning.fill}, 0 0 0 4px ${colors.warning.outline}`,
+              }}
+              title="Has warnings"
+            />
+          )}
+        </div>
+      )}
+
+      {L.visibility.showBypass && (
         <div
-          style={cookingStateCircleStyle}
-          title="Cooking state"
+          onClick={(e) => {
+            e.stopPropagation();
+            onBypassToggle?.(node.session_id);
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = colors.bypass.hover;
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = colors.bypass.default;
+          }}
+          style={bypassButtonStyle}
+          title={isBypassed ? 'Bypassed (Template)' : 'Click to bypass'}
         />
+      )}
 
-        {hasError && (
-          <IndicatorCircle
-            color={colors.error.fill}
-            title="Has errors"
-            outlineColor={colors.error.outline}
-          />
-        )}
+      <div style={textAreaStyle}>
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: L.handle.diameter }}>
+          <div style={glyphStyle}>{node.glyph || '?'}</div>
+          <div style={typeStyle}>{node.type}</div>
+        </div>
 
-        {hasWarning && (
-          <IndicatorCircle
-            color={colors.warning.fill}
-            title="Has warnings"
-            outlineColor={colors.warning.outline}
-          />
+        {L.visibility.showName && (
+          <div style={nameStyle}>{node.name}</div>
         )}
       </div>
 
-      <div
-        onClick={(e) => {
-          e.stopPropagation();
-          onBypassToggle?.(node.session_id);
-        }}
-        style={bypassButtonStyle}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.background = colors.bypass.hover;
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.background = colors.bypass.default;
-        }}
-        title={isBypassed ? 'Bypassed (Template)' : 'Click to bypass'}
-      />
+      {node.inputs.map((input, i) => {
+        const handleBorderColor = isBypassed ? colors.handle.bypassed.border : colors.handle.input.border;
+        const handleFillColor = isBypassed ? colors.handle.bypassed.fill : colors.handle.input.fill;
 
+        return (
+          <Handle
+            key={input.index}
+            type="target"
+            position={Position.Left}
+            id={`input-${i}`}
+            title={`${input.name} (${input.data_type})`}
+            style={{
+              top: `${((i + 1) / (node.inputs.length + 1)) * 100}%`,
+              left: -L.handle.offset,
+              width: L.handle.diameter,
+              height: L.handle.diameter,
+              border: `${L.handle.borderWidth}px solid ${handleBorderColor}`,
+              background: handleFillColor,
+              opacity,
+            }}
+          />
+        );
+      })}
 
-      <div style={textAreaContainerStyle}>
-        <div style={textHeaderStyle}>
-          <div style={glyphTextStyle}>
-            {node.glyph || '?'}
-          </div>
+      {node.outputs.map((output, i) => {
+        const handleBorderColor = isBypassed ? colors.handle.bypassed.border : colors.handle.output.border;
+        const handleFillColor = isBypassed ? colors.handle.bypassed.fill : colors.handle.output.fill;
 
-          <div style={typeTextStyle}>
-            {node.type}
-          </div>
-        </div>
+        return (
+          <Handle
+            key={output.index}
+            type="source"
+            position={Position.Right}
+            id={`output-${i}`}
+            title={`${output.name} (${output.data_type})`}
+            style={{
+              top: `${((i + 1) / (node.outputs.length + 1)) * 100}%`,
+              right: -L.handle.offset,
+              width: L.handle.diameter,
+              height: L.handle.diameter,
+              border: `${L.handle.borderWidth}px solid ${handleBorderColor}`,
+              background: handleFillColor,
+              opacity,
+            }}
+          />
+        );
+      })}
 
-        <div style={nameTextStyle}>
-          {node.name}
-        </div>
-      </div>
-
-      {node.inputs.map((input, idx) => (
-        <NodeHandle
-          key={`input-${input.index}`}
-          item={input}
-          idx={idx}
-          total={node.inputs.length}
-          type="target"
-          position={Position.Left}
-          isBypassed={isBypassed}
-          borderColor={getHandleBorderColor('input')}
-          fillColor={getHandleFillColor('input')}
-        />
-      ))}
-
-      {node.outputs.map((output, idx) => (
-        <NodeHandle
-          key={`output-${output.index}`}
-          item={output}
-          idx={idx}
-          total={node.outputs.length}
-          type="source"
-          position={Position.Right}
-          isBypassed={isBypassed}
-          borderColor={getHandleBorderColor('output')}
-          fillColor={getHandleFillColor('output')}
-        />
-      ))}
     </div>
   );
 };
