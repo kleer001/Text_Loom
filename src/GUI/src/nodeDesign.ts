@@ -1,48 +1,84 @@
 type ThemeMode = 'light' | 'dark';
 
-export const NODE_MIN_WIDTH = 150;
-export const NODE_PADDING_VERTICAL = 10;
-export const NODE_PADDING_HORIZONTAL = 15;
-export const NODE_BORDER_WIDTH = 2;
-export const NODE_BORDER_RADIUS = 8;
+export const SCALES = {
+  large: {
+    UNIT: 4,
+    FONT_MULT: 1.0,
+    ICON_MULT: 1.0,
+    HANDLE_MULT: 1.0,
+    SHOW_NAME: true,
+    SHOW_INDICATORS: true,
+    SHOW_BYPASS: true,
+  },
+  medium: {
+    UNIT: 3,
+    FONT_MULT: 0.9,
+    ICON_MULT: 0.85,
+    HANDLE_MULT: 0.9,
+    SHOW_NAME: true,
+    SHOW_INDICATORS: true,
+    SHOW_BYPASS: true,
+  },
+  small: {
+    UNIT: 2,
+    FONT_MULT: 0.8,
+    ICON_MULT: 0.75,
+    HANDLE_MULT: 0.8,
+    SHOW_NAME: false,
+    SHOW_INDICATORS: false,
+    SHOW_BYPASS: true,
+  },
+};
 
-export const INDICATOR_EDGE_OFFSET = 8;
+export const Layout = (scale: keyof typeof SCALES) => {
+  const S = SCALES[scale];
+  return {
+    UNIT: S.UNIT,
 
-export const COOKING_STATE_DIAMETER = 12;
-export const COOKING_STATE_LEFT = INDICATOR_EDGE_OFFSET;
-export const COOKING_STATE_TOP = INDICATOR_EDGE_OFFSET;
+    node: {
+      minWidth: 150,
+      paddingX: 3 * S.UNIT,
+      paddingY: 2 * S.UNIT,
+      borderRadius: 2 * S.UNIT,
+      borderWidth: 2,
+    },
 
-export const ERROR_WARNING_DIAMETER = 12;
-export const ERROR_WARNING_LEFT = INDICATOR_EDGE_OFFSET;
-export const ERROR_WARNING_BOTTOM = INDICATOR_EDGE_OFFSET;
-export const ERROR_WARNING_DUAL_WIDTH = 6;
-export const ERROR_WARNING_DUAL_GAP = 2;
+    text: {
+      glyphSize: 14 * S.FONT_MULT,
+      typeSize: 10 * S.FONT_MULT,
+      nameSize: 14 * S.FONT_MULT,
+      gapHeader: 2 * S.UNIT,
+      gapLines: 1.5 * S.UNIT,
+      paddingTop: 2 * S.UNIT,
+      paddingBottom: 2 * S.UNIT,
+      paddingSide: 2 * S.UNIT,
+    },
 
-export const TEMPLATE_CIRCLE_DIAMETER = 12;
-export const TEMPLATE_CIRCLE_RIGHT = INDICATOR_EDGE_OFFSET;
-export const TEMPLATE_CIRCLE_FONT_SIZE = 14;
+    indicators: {
+      diameter: 12 * S.ICON_MULT,
+      offset: 2 * S.UNIT,
+      gap: 1 * S.UNIT,
+    },
 
-export const TEXT_SPACING_FROM_INDICATOR = 8;
-export const TEXT_AREA_TOP = INDICATOR_EDGE_OFFSET;
-export const TEXT_AREA_BOTTOM = INDICATOR_EDGE_OFFSET;
-export const TEXT_AREA_LEFT = ERROR_WARNING_LEFT + ERROR_WARNING_DIAMETER + TEXT_SPACING_FROM_INDICATOR;
-export const TEXT_AREA_RIGHT = TEMPLATE_CIRCLE_RIGHT + TEMPLATE_CIRCLE_DIAMETER + TEXT_SPACING_FROM_INDICATOR;
+    bypass: {
+      diameter: 12 * S.ICON_MULT,
+      offsetRight: 2 * S.UNIT,
+    },
 
-export const TEXT_LINE_HEIGHT = 20;
-export const TEXT_FONT_SIZE = 14;
-export const TEXT_TYPE_FONT_SIZE = 9;
-export const TEXT_GLYPH_SIZE = 14;
-export const TEXT_ELEMENT_MARGIN = 2;
-export const TEXT_CONTENT_GAP = 6;
-export const TEXT_HEADER_GAP = 8;
+    handle: {
+      diameter: 12 * S.HANDLE_MULT,
+      borderWidth: 2,
+      offset: 1.5 * S.UNIT,
+      minSpacing: 2 * S.UNIT,
+    },
 
-export const HANDLE_DIAMETER = 10;
-export const HANDLE_BORDER_WIDTH = 2;
-export const HANDLE_OFFSET = 6;
-
-export const EDGE_WIDTH_DEFAULT = 2;
-export const EDGE_WIDTH_HOVER = 3;
-export const EDGE_WIDTH_SELECTED = 4;
+    visibility: {
+      showName: S.SHOW_NAME,
+      showIndicators: S.SHOW_INDICATORS,
+      showBypass: S.SHOW_BYPASS,
+    },
+  };
+};
 
 export const OPACITY_BYPASSED = 0.6;
 export const OPACITY_ACTIVE = 1;
