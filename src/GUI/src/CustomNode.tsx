@@ -171,7 +171,7 @@ const CustomNodeComponent: React.FC<{ data: CustomNodeData; selected?: boolean }
       )}
 
       <div style={textAreaStyle}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: L.text.gapHeader }}>
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: L.handle.diameter }}>
           <div style={glyphStyle}>{node.glyph || '?'}</div>
           <div style={typeStyle}>{node.type}</div>
         </div>
