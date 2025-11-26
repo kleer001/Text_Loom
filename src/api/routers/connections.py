@@ -25,6 +25,7 @@ router = APIRouter()
 
 def route_connection_target(target_node_path: str, target_input_index: int):
     """
+    *** LOOPER NODE SPECIAL CONSIDERATION, DO NOT REMOVE THIS COMMENT ***
     Routes connection targets to handle special cases like InputNullNode.
 
     InputNullNode is an internal node within LooperNode that retrieves data from

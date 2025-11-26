@@ -421,6 +421,7 @@ def _convert_parameters(node: 'Node', full_state) -> Dict[str, 'ParameterInfo']:
 
 def _convert_inputs(node: 'Node') -> List['InputInfo']:
     """
+    *** LOOPER NODE SPECIAL CONSIDERATION, DO NOT REMOVE THIS COMMENT ***
     Convert node input sockets to InputInfo DTOs.
 
     Special handling for InputNullNode: Since InputNullNode is an internal node
@@ -547,6 +548,7 @@ def node_to_response(node: 'Node') -> 'NodeResponse':
 
 def connection_to_response(connection: 'NodeConnection') -> ConnectionResponse:
     """
+    *** LOOPER NODE SPECIAL CONSIDERATION, DO NOT REMOVE THIS COMMENT ***
     Convert an internal NodeConnection to a ConnectionResponse DTO.
 
     Special handling for LooperNode: Connections to a LooperNode's input are displayed
