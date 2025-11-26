@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
   ReactFlow,
   Background,
@@ -135,11 +135,12 @@ const GraphCanvasInner: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
     onNodesChangeInternal(filteredChanges);
   }, [onNodesChangeInternal, shouldPreventDeselection]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     // Save current viewport before transformation
-    if (reactFlowInstanceRef.current) {
-      viewportRef.current = reactFlowInstanceRef.current.getViewport();
-    }
+    // COMMENTED OUT THE FOLLOWING 3 lines to attempt to fix flickering
+    // if (reactFlowInstanceRef.current) {
+    //   viewportRef.current = reactFlowInstanceRef.current.getViewport();
+    // }
 
     const { displayNodes, looperSystems: systems } = transformLooperNodes(workspaceNodes);
     setLooperSystems(systems);
@@ -179,16 +180,17 @@ const GraphCanvasInner: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
     setEdges(connectionsToEdges(transformedConnections, defaultEdgeConfig));
 
     // Restore viewport after state updates
-    if (viewportRef.current && reactFlowInstanceRef.current) {
-      const savedViewport = viewportRef.current;
-      // Use multiple attempts to ensure restoration
-      requestAnimationFrame(() => {
-        reactFlowInstanceRef.current?.setViewport(savedViewport, { duration: 0 });
-      });
-      setTimeout(() => {
-        reactFlowInstanceRef.current?.setViewport(savedViewport, { duration: 0 });
-      }, 0);
-    }
+    // COMMENTED OUT TO 193 To try and fix refreshing blinking issue
+    // if (viewportRef.current && reactFlowInstanceRef.current) {
+    //   const savedViewport = viewportRef.current;
+    //   // Use multiple attempts to ensure restoration
+    //   requestAnimationFrame(() => {
+    //     reactFlowInstanceRef.current?.setViewport(savedViewport, { duration: 0 });
+    //   });
+    //   setTimeout(() => {
+    //     reactFlowInstanceRef.current?.setViewport(savedViewport, { duration: 0 });
+    //   }, 0);
+    // }
 
     if (newlyCreatedNodeId) {
       const newNode = enrichedNodes.find((n: NodeResponse) => String(n.session_id) === newlyCreatedNodeId);
@@ -391,6 +393,11 @@ const GraphCanvasInner: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
   }, []);
 
   useEffect(() => {
+    console.log('GraphCanvas MOUNTED');
+    return () => console.log('GraphCanvas UNMOUNTED');
+  }, []);   
+
+  useLayoutEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement;
       const isInputField = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA';
@@ -422,16 +429,16 @@ const GraphCanvasInner: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
     // Initialize viewport ref with current state
     viewportRef.current = instance.getViewport();
   }, []);
-
-  const onMove = useCallback(() => {
-    // Continuously track viewport changes
-    if (reactFlowInstanceRef.current) {
-      viewportRef.current = reactFlowInstanceRef.current.getViewport();
-    }
-  }, []);
+// COMMENTED OUT To try and fix blinking issue
+//   const onMove = useCallback(() => {
+//     // Continuously track viewport changes
+//     if (reactFlowInstanceRef.current) {
+//       viewportRef.current = reactFlowInstanceRef.current.getViewport();
+//     }
+//   }, []);
 
   // Handle custom events from MenuBar for edit operations
-  useEffect(() => {
+  useLayoutEffect(() => {
     const handleSelectAll = () => {
       if (reactFlowInstanceRef.current) {
         const allNodes = reactFlowInstanceRef.current.getNodes();
@@ -588,7 +595,7 @@ const GraphCanvasInner: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
         isValidConnection={isValidConnection}
         nodeTypes={nodeTypes}
         onInit={onInit}
-        onMove={onMove}
+        //onMove={onMove}
         fitView={false}
         minZoom={0.1}
         maxZoom={2}
