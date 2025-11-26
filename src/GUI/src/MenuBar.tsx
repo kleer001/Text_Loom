@@ -15,10 +15,12 @@ import {
   DialogActions,
   Switch,
   FormControlLabel,
+  Select,
 } from '@mui/material';
 import { useFileManager } from './hooks/useFileManager';
 import { useWorkspace } from './WorkspaceContext';
 import { useTheme } from './ThemeContext';
+import { useNodePreferences } from './NodePreferencesContext';
 import { apiClient } from './apiClient';
 
 // Props for dialogs that will be managed by parent
@@ -54,6 +56,7 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({ open, title, message, onC
 
 export const MenuBar: React.FC<MenuBarProps> = ({ onKeyboardShortcuts, onAbout }) => {
   const { mode, toggleTheme } = useTheme();
+  const { nodeSize, setNodeSize } = useNodePreferences();
   const { loadWorkspace } = useWorkspace();
   const { currentFilePath, isDirty, save, saveAs, open, newWorkspace } = useFileManager();
 
@@ -437,6 +440,22 @@ export const MenuBar: React.FC<MenuBarProps> = ({ onKeyboardShortcuts, onAbout }
               label="Autosave"
               sx={{ m: 0, width: '100%' }}
             />
+          </MenuItem>
+          <MenuItem
+            sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
+          >
+            <Typography variant="body2" sx={{ mr: 2 }}>Node Size</Typography>
+            <Select
+              value={nodeSize}
+              onChange={(e) => setNodeSize(e.target.value as 'large' | 'medium' | 'small')}
+              size="small"
+              onClick={(e) => e.stopPropagation()}
+              sx={{ minWidth: 100 }}
+            >
+              <MenuItem value="small">Small</MenuItem>
+              <MenuItem value="medium">Medium</MenuItem>
+              <MenuItem value="large">Large</MenuItem>
+            </Select>
           </MenuItem>
         </Menu>
 

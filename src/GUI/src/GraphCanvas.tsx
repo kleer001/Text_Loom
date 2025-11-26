@@ -22,6 +22,7 @@ import { DESELECTION_DELAY_MS } from './constants';
 import { transformLooperNodes, type LooperSystem, getOriginalNodeId } from './looperTransform';
 import { LoopBoundary } from './LoopBoundary';
 import { useTheme } from './ThemeContext';
+import { useNodePreferences } from './NodePreferencesContext';
 import * as design from './nodeDesign';
 
 const nodeTypes = {
@@ -34,6 +35,7 @@ interface GraphCanvasProps {
 
 const GraphCanvasInner: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
   const { mode } = useTheme();
+  const { nodeSize } = useNodePreferences();
   const colors = useMemo(() => design.getColors(mode), [mode]);
   const {
     nodes: workspaceNodes,
@@ -54,7 +56,7 @@ const GraphCanvasInner: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
   const selectedNodeIdsRef = useRef<Set<string>>(new Set());
   const reactFlowInstanceRef = useRef<ReactFlowInstance | null>(null);
   const viewportRef = useRef<{ x: number; y: number; zoom: number } | null>(null);
-  const nodeDataCacheRef = useRef<Map<string, { node: NodeResponse; onBypassToggle: (sessionId: string) => void; onDisplayToggle: (sessionId: string) => void }>>(new Map());
+  const nodeDataCacheRef = useRef<Map<string, { node: NodeResponse; size: 'large' | 'medium' | 'small'; onBypassToggle: (sessionId: string) => void; onDisplayToggle: (sessionId: string) => void }>>(new Map());
 
   const defaultEdgeConfig = useMemo(() => ({
     type: 'smoothstep' as const,
@@ -154,8 +156,8 @@ const GraphCanvasInner: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
 
       // Get or create cached data object to prevent recreation on every render
       let dataObj = nodeDataCacheRef.current.get(nodeId);
-      if (!dataObj || dataObj.node !== node || dataObj.onBypassToggle !== handleBypassToggle || dataObj.onDisplayToggle !== handleDisplayToggle) {
-        dataObj = { node, onBypassToggle: handleBypassToggle, onDisplayToggle: handleDisplayToggle };
+      if (!dataObj || dataObj.node !== node || dataObj.onBypassToggle !== handleBypassToggle || dataObj.onDisplayToggle !== handleDisplayToggle || dataObj.size !== nodeSize) {
+        dataObj = { node, size: nodeSize, onBypassToggle: handleBypassToggle, onDisplayToggle: handleDisplayToggle };
         nodeDataCacheRef.current.set(nodeId, dataObj);
       }
 
@@ -198,7 +200,7 @@ const GraphCanvasInner: React.FC<GraphCanvasProps> = ({ onNodeFocus }) => {
         onNodeFocus(newNode);
       }
     }
-  }, [workspaceNodes, connections, setNodes, setEdges, newlyCreatedNodeId, onNodeFocus, handleBypassToggle, handleDisplayToggle, defaultEdgeConfig]);
+  }, [workspaceNodes, connections, setNodes, setEdges, newlyCreatedNodeId, onNodeFocus, handleBypassToggle, handleDisplayToggle, defaultEdgeConfig, nodeSize]);
 
   const handleSelectionChange = useCallback(
     (params: { nodes: Node[]; edges: Edge[] }) => {

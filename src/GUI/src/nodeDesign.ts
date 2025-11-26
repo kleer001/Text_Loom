@@ -83,6 +83,10 @@ export const Layout = (scale: keyof typeof SCALES) => {
 export const OPACITY_BYPASSED = 0.6;
 export const OPACITY_ACTIVE = 1;
 
+export const EDGE_WIDTH_DEFAULT = 2;
+export const EDGE_WIDTH_HOVER = 3;
+export const EDGE_WIDTH_SELECTED = 4;
+
 export const getColors = (mode: ThemeMode) => ({
   cooking: {
     uncooked: '#ff9800',

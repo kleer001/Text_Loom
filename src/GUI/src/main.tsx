@@ -5,6 +5,7 @@ import ReactDOM from 'react-dom/client';
 import { App } from './App';
 import { CssBaseline, ThemeProvider as MuiThemeProvider } from '@mui/material';
 import { ThemeProvider, useTheme } from './ThemeContext';
+import { NodePreferencesProvider } from './NodePreferencesContext';
 import { lightTheme, darkTheme } from './theme';
 import '@xyflow/react/dist/style.css';
 
@@ -21,7 +22,9 @@ const ThemedApp: React.FC = () => {
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <ThemeProvider>
-      <ThemedApp />
+      <NodePreferencesProvider>
+        <ThemedApp />
+      </NodePreferencesProvider>
     </ThemeProvider>
   </React.StrictMode>
 );
