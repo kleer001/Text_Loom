@@ -6,6 +6,7 @@ from typing import List, Dict, Any, Tuple
 from pathlib import Path
 from core.base_classes import Node, NodeType, NodeState
 from core.parm import Parm, ParameterType
+from core.enums import FunctionalGroup
 
 
 class FolderNode(Node):
@@ -49,6 +50,7 @@ class FolderNode(Node):
     """
 
     GLYPH = '📁'
+    GROUP = FunctionalGroup.FILE
     SINGLE_INPUT = False
     SINGLE_OUTPUT = False
 

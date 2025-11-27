@@ -7,6 +7,7 @@ import ast
 from typing import List, Dict, Any
 from core.base_classes import Node, NodeType, NodeState
 from core.parm import Parm, ParameterType
+from core.enums import FunctionalGroup
 
 
 class FileOutNode(Node):
@@ -42,6 +43,7 @@ class FileOutNode(Node):
     """
 
     GLYPH = '⤴'
+    GROUP = FunctionalGroup.FILE
     SINGLE_INPUT = True
     SINGLE_OUTPUT = True
 

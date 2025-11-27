@@ -3,6 +3,7 @@ from core.base_classes import Node, NodeType, NodeState
 from core.parm import Parm, ParameterType
 from core.llm_utils import get_clean_llm_response
 from core.findLLM import *
+from core.enums import FunctionalGroup
 
 class QueryNode(Node):
 
@@ -65,6 +66,7 @@ class QueryNode(Node):
 
 
     GLYPH = '⌘'
+    GROUP = FunctionalGroup.FLOW
     SINGLE_INPUT = True
     SINGLE_OUTPUT = True
     

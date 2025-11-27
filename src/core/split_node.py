@@ -5,6 +5,7 @@ import time
 import random
 from core.base_classes import Node, NodeType, NodeState
 from core.parm import Parm, ParameterType
+from core.enums import FunctionalGroup
 
 class SplitNode(Node):
     SINGLE_OUTPUT = False
@@ -55,6 +56,7 @@ class SplitNode(Node):
     """
 
     GLYPH = '⋔'
+    GROUP = FunctionalGroup.LIST
 
     def __init__(self, name: str, path: str, node_type: NodeType):
         super().__init__(name, path, [0.0, 0.0], node_type)
