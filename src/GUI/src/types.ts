@@ -27,6 +27,7 @@ export interface NodeResponse {
   path: string;
   type: string;
   glyph: string;
+  group: string;
   state: string;
   parameters: Record<string, ParameterInfo>;
   inputs: InputInfo[];

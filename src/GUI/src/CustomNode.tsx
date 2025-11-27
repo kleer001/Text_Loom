@@ -25,6 +25,7 @@ const CustomNodeComponent: React.FC<{ data: CustomNodeData; selected?: boolean }
   const { node, size = 'large', onBypassToggle } = data;
   const { mode } = useTheme();
   const colors = design.getColors(mode);
+  const groupColors = design.getGroupColors(node.group || '', mode);
   const L = design.Layout(size);
 
   const isBypassed = node.parameters?.bypass?.value === true;
@@ -39,7 +40,8 @@ const CustomNodeComponent: React.FC<{ data: CustomNodeData; selected?: boolean }
     : isBypassed
     ? colors.border.bypassed
     : colors.border.active;
-  const backgroundColor = isBypassed ? colors.background.bypassed : colors.background.active;
+  const backgroundColor = isBypassed ? colors.background.bypassed : groupColors.background;
+  const glyphBg = isBypassed ? colors.glyph.background.bypassed : groupColors.glyphBackground;
   const textColor = isBypassed ? colors.text.bypassed : colors.text.active;
 
   const containerStyle = useMemo(() => ({
@@ -121,14 +123,14 @@ const CustomNodeComponent: React.FC<{ data: CustomNodeData; selected?: boolean }
     top: 0,
     bottom: 0,
     width: L.text.glyphSize + 2 * L.glyph.padding,
-    background: isBypassed ? colors.glyph.background.bypassed : colors.glyph.background.active,
+    background: glyphBg,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     borderTopLeftRadius: `${L.node.borderRadius}px`,
     borderBottomLeftRadius: `${L.node.borderRadius}px`,
     pointerEvents: 'none' as const,
-  }), [L.text.glyphSize, L.glyph.padding, L.node.borderRadius, isBypassed, colors.glyph.background]);
+  }), [L.text.glyphSize, L.glyph.padding, L.node.borderRadius, glyphBg]);
 
   const templateToggleStyle = useMemo(() => ({
     position: 'absolute' as const,

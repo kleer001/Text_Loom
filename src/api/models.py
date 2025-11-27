@@ -156,6 +156,7 @@ class NodeResponse(BaseModel):
     path: str = Field(..., description="Full path (unique identifier)")
     type: str = Field(..., description="Node type (e.g., 'text', 'fileout', 'query')")
     glyph: str = Field(default="", description="Node type glyph character")
+    group: str = Field(default="", description="Node functional group color (e.g., 'orange', 'grey', 'green', 'purple')")
 
     # Processing state
     state: NodeStateEnum = Field(..., description="Current processing state")
@@ -511,12 +512,16 @@ def node_to_response(node: 'Node') -> 'NodeResponse':
         outputs = _convert_outputs(node)
 
         # Build response
+        group_enum = getattr(node.__class__, 'GROUP', None)
+        group_color = group_enum.value.get('color', '') if group_enum else ''
+
         response = NodeResponse(
             session_id=node.session_id(),
             name=node.name(),
             path=node.path(),
             type=node.type().value,  # Use enum's value directly
             glyph=getattr(node.__class__, 'GLYPH', ''),  # Get GLYPH class attribute
+            group=group_color,
             state=full_state.state.value,
             errors=full_state.errors,
             warnings=full_state.warnings,
