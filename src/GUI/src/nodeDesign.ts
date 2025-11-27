@@ -119,8 +119,6 @@ export const getColors = (mode: ThemeMode) => ({
   template: {
     off: mode === 'light' ? '#9CA3AF' : '#6B7280',
     on: mode === 'light' ? '#4B5563' : '#374151',
-    offHover: mode === 'light' ? '#D1D5DB' : '#9CA3AF',
-    onHover: mode === 'light' ? '#6B7280' : '#4B5563',
   },
   glyph: {
     background: {
