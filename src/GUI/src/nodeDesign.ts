@@ -72,6 +72,16 @@ export const Layout = (scale: keyof typeof SCALES) => {
       minSpacing: 2 * S.UNIT,
     },
 
+    glyph: {
+      padding: 1.5 * S.UNIT,
+      bufferFromEdge: 1.5 * S.UNIT,
+    },
+
+    template: {
+      width: 12 * S.ICON_MULT,
+      paddingY: 1 * S.UNIT,
+    },
+
     visibility: {
       showName: S.SHOW_NAME,
       showIndicators: S.SHOW_INDICATORS,
@@ -105,6 +115,16 @@ export const getColors = (mode: ThemeMode) => ({
   bypass: {
     default: mode === 'light' ? '#CED0D5' : '#4B5563',
     hover: mode === 'light' ? '#E5E7EB' : '#6B7280',
+  },
+  template: {
+    off: mode === 'light' ? '#9CA3AF' : '#6B7280',
+    on: mode === 'light' ? '#4B5563' : '#374151',
+  },
+  glyph: {
+    background: {
+      active: mode === 'light' ? '#F3F4F6' : '#4B5563',
+      bypassed: mode === 'light' ? '#4B5563' : '#111827',
+    },
   },
   text: {
     active: mode === 'light' ? '#1F2937' : '#F9FAFB',
