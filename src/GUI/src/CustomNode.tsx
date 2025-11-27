@@ -127,20 +127,23 @@ const CustomNodeComponent: React.FC<{ data: CustomNodeData; selected?: boolean }
     justifyContent: 'center',
     borderTopLeftRadius: `${L.node.borderRadius}px`,
     borderBottomLeftRadius: `${L.node.borderRadius}px`,
+    pointerEvents: 'none' as const,
   }), [L.text.glyphSize, L.glyph.padding, L.node.borderRadius, isBypassed, colors.glyph.background]);
 
   const templateToggleStyle = useMemo(() => ({
     position: 'absolute' as const,
     right: 0,
-    top: L.template.paddingY,
-    bottom: L.template.paddingY,
+    top: 0,
+    bottom: 0,
     width: L.template.width,
     background: isBypassed ? colors.template.on : colors.template.off,
     cursor: 'pointer',
     borderTopRightRadius: `${L.node.borderRadius}px`,
     borderBottomRightRadius: `${L.node.borderRadius}px`,
     transition: 'background 0.2s',
-  }), [L.template.width, L.template.paddingY, L.node.borderRadius, isBypassed, colors.template]);
+    zIndex: 10,
+    pointerEvents: 'auto' as const,
+  }), [L.template.width, L.node.borderRadius, isBypassed, colors.template]);
 
   const smallNodeNameStyle = useMemo(() => ({
     fontSize: L.text.nameSize,
@@ -151,6 +154,7 @@ const CustomNodeComponent: React.FC<{ data: CustomNodeData; selected?: boolean }
     display: 'flex',
     alignItems: 'center',
     minHeight: '100%',
+    pointerEvents: 'none' as const,
   }), [L.text.nameSize, L.text.glyphSize, L.glyph.padding, L.glyph.bufferFromEdge, L.template.width, textColor]);
 
   return (
