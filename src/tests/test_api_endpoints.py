@@ -81,7 +81,7 @@ def setup_test_workspace():
     }
 
 
-def test_endpoint(name: str, url: str, expected_status: int = 200) -> Dict[str, Any]:
+def check_endpoint(name: str, url: str, expected_status: int = 200) -> Dict[str, Any]:
     """Test a single endpoint and return results."""
     print(f"\n{name}")
     print("-" * 60)
@@ -138,25 +138,25 @@ def main():
     results = []
     
     # Test root endpoint
-    result = test_endpoint(
+    result = check_endpoint(
         "1. Root Health Check",
         BASE_URL
     )
     results.append(result)
     if result['success']:
         print(f"Response: {json.dumps(result['data'], indent=2)}")
-    
+
     # Test API info
-    result = test_endpoint(
+    result = check_endpoint(
         "2. API Info",
         API_BASE
     )
     results.append(result)
     if result['success']:
         print(f"Endpoints: {list(result['data']['endpoints'].keys())}")
-    
+
     # Test workspace endpoint
-    result = test_endpoint(
+    result = check_endpoint(
         "3. Get Workspace",
         f"{API_BASE}/workspace"
     )
@@ -166,27 +166,27 @@ def main():
         print(f"Nodes: {len(data['nodes'])}")
         print(f"Connections: {len(data['connections'])}")
         print(f"Globals: {len(data['globals'])}")
-        
+
         # Show node details
         if data['nodes']:
             print("\nNodes found:")
             for node in data['nodes']:
                 print(f"  - {node['name']} ({node['type']}) at {node['path']}")
-        
+
         # Show connections
         if data['connections']:
             print("\nConnections found:")
             for conn in data['connections']:
                 print(f"  - {conn['source_node_path']} -> {conn['target_node_path']}")
-        
+
         # Show globals
         if data['globals']:
             print("\nGlobals found:")
             for key, value in data['globals'].items():
                 print(f"  - {key} = {value}")
-    
+
     # Test list nodes endpoint
-    result = test_endpoint(
+    result = check_endpoint(
         "4. List All Nodes",
         f"{API_BASE}/nodes"
     )
@@ -202,11 +202,11 @@ def main():
             print(f"  Type: {first_node['type']}")
             print(f"  Path: {first_node['path']}")
             print(f"  Parameters: {len(first_node['parameters'])}")
-    
+
     # Test get specific node
     if result['success'] and nodes_list:
         session_id = nodes_list[0]['session_id']
-        result = test_endpoint(
+        result = check_endpoint(
             f"5. Get Node by Session ID ({session_id})",
             f"{API_BASE}/nodes/{session_id}"
         )
@@ -217,9 +217,9 @@ def main():
             print(f"Parameters:")
             for pname, pinfo in node['parameters'].items():
                 print(f"  - {pname}: {pinfo['value']} ({pinfo['type']})")
-    
+
     # Test 404 error
-    result = test_endpoint(
+    result = check_endpoint(
         "6. Test 404 Error (Invalid Session ID)",
         f"{API_BASE}/nodes/999999999",
         expected_status=404

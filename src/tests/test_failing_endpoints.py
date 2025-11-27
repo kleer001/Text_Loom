@@ -53,15 +53,15 @@ def clear_workspace():
     logger.info("Workspace cleared")
 
 
-def test_create_node(node_type: str, node_name: str, position: list) -> Dict[str, Any]:
+def check_create_node(node_type: str, node_name: str, position: list) -> Dict[str, Any]:
     """
     Test creating a single node.
-    
+
     Args:
         node_type: Type of node to create (e.g., "text", "file_out")
         node_name: Name for the node
         position: [x, y] position
-        
+
     Returns:
         Dictionary with test results
     """
@@ -222,20 +222,20 @@ def main():
     # ========================================
     # TEST 1: Create TextNode
     # ========================================
-    result1 = test_create_node(
+    result1 = check_create_node(
         node_type="text",
         node_name="test_text",
         position=[100.0, 100.0]
     )
     results.append(result1)
-    
+
     # Small delay between tests
     time.sleep(0.5)
-    
+
     # ========================================
     # TEST 2: Create FileOutNode
     # ========================================
-    result2 = test_create_node(
+    result2 = check_create_node(
         node_type="file_out",
         node_name="test_fileout",
         position=[300.0, 100.0]

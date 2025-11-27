@@ -47,7 +47,7 @@ def clear_workspace():
     print("✓ Workspace cleared")
 
 
-def test_request(name: str, method: str, url: str, data: Dict = None, expected_status: int = 200) -> Dict[str, Any]:
+def make_request(name: str, method: str, url: str, data: Dict = None, expected_status: int = 200) -> Dict[str, Any]:
     """Test a single endpoint and return results."""
     print(f"\n{name}")
     print("-" * 60)
@@ -123,7 +123,7 @@ def main():
     # ========================================
     # TEST 1: Create TextNode
     # ========================================
-    result = test_request(
+    result = make_request(
         "1. Create TextNode",
         "POST",
         f"{API_BASE}/nodes",
@@ -142,7 +142,7 @@ def main():
     # ========================================
     # TEST 2: Create FileOutNode
     # ========================================
-    result = test_request(
+    result = make_request(
         "2. Create FileOutNode",
         "POST",
         f"{API_BASE}/nodes",
@@ -162,7 +162,7 @@ def main():
     # TEST 3: Update TextNode parameters
     # ========================================
     if 'text' in test_nodes:
-        result = test_request(
+        result = make_request(
             "3. Update TextNode Parameters",
             "PUT",
             f"{API_BASE}/nodes/{test_nodes['text']['session_id']}",
@@ -182,7 +182,7 @@ def main():
     # TEST 4: Update FileOutNode filename
     # ========================================
     if 'fileout' in test_nodes:
-        result = test_request(
+        result = make_request(
             "4. Update FileOutNode Filename",
             "PUT",
             f"{API_BASE}/nodes/{test_nodes['fileout']['session_id']}",
@@ -200,7 +200,7 @@ def main():
     # TEST 5: Create connection
     # ========================================
     if 'text' in test_nodes and 'fileout' in test_nodes:
-        result = test_request(
+        result = make_request(
             "5. Create Connection (Text → FileOut)",
             "POST",
             f"{API_BASE}/connections",
@@ -220,7 +220,7 @@ def main():
     # TEST 6: Execute FileOutNode
     # ========================================
     if 'fileout' in test_nodes:
-        result = test_request(
+        result = make_request(
             "6. Execute FileOutNode",
             "POST",
             f"{API_BASE}/nodes/{test_nodes['fileout']['session_id']}/execute",
@@ -244,7 +244,7 @@ def main():
     # ========================================
     # TEST 7: Set global variable
     # ========================================
-    result = test_request(
+    result = make_request(
         "7. Set Global Variable",
         "PUT",
         f"{API_BASE}/globals/TESTVAR",
@@ -257,7 +257,7 @@ def main():
     # ========================================
     # TEST 8: Get global variable
     # ========================================
-    result = test_request(
+    result = make_request(
         "8. Get Global Variable",
         "GET",
         f"{API_BASE}/globals/TESTVAR",
@@ -270,7 +270,7 @@ def main():
     # ========================================
     # TEST 9: List all globals
     # ========================================
-    result = test_request(
+    result = make_request(
         "9. List All Globals",
         "GET",
         f"{API_BASE}/globals",
@@ -286,7 +286,7 @@ def main():
     # TEST 10: Update node UI state
     # ========================================
     if 'text' in test_nodes:
-        result = test_request(
+        result = make_request(
             "10. Update Node UI State",
             "PUT",
             f"{API_BASE}/nodes/{test_nodes['text']['session_id']}",
@@ -304,7 +304,7 @@ def main():
     # TEST 11: Delete connection
     # ========================================
     if 'text' in test_nodes and 'fileout' in test_nodes:
-        result = test_request(
+        result = make_request(
             "11. Delete Connection",
             "DELETE",
             f"{API_BASE}/connections",
@@ -322,7 +322,7 @@ def main():
     # ========================================
     # TEST 12: Delete global variable
     # ========================================
-    result = test_request(
+    result = make_request(
         "12. Delete Global Variable",
         "DELETE",
         f"{API_BASE}/globals/TESTVAR",
@@ -336,7 +336,7 @@ def main():
     # TEST 13: Delete nodes
     # ========================================
     if 'text' in test_nodes:
-        result = test_request(
+        result = make_request(
             "13. Delete TextNode",
             "DELETE",
             f"{API_BASE}/nodes/{test_nodes['text']['session_id']}",
@@ -347,7 +347,7 @@ def main():
             print(f"✓ Deleted text node")
     
     if 'fileout' in test_nodes:
-        result = test_request(
+        result = make_request(
             "14. Delete FileOutNode",
             "DELETE",
             f"{API_BASE}/nodes/{test_nodes['fileout']['session_id']}",
@@ -360,7 +360,7 @@ def main():
     # ========================================
     # TEST 15: Verify workspace is empty
     # ========================================
-    result = test_request(
+    result = make_request(
         "15. Verify Empty Workspace",
         "GET",
         f"{API_BASE}/workspace",
