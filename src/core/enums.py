@@ -30,3 +30,9 @@ class NodeState(Enum):
     UNCHANGED = 'unchanged'
     UNCOOKED = 'uncooked'
     COOKED = 'cooked'
+
+class FunctionalGroup(Enum):
+    FILE = {"type":"file","color": "orange"}
+    TEXT = {"type": "text", "color": "grey"}
+    LIST = {"type": "list", "color": "green"}
+    FLOW = {"type":"flow", "color": "purple"}
