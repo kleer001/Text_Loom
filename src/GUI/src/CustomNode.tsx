@@ -53,6 +53,7 @@ const CustomNodeComponent: React.FC<{ data: CustomNodeData; selected?: boolean }
     minWidth: `${L.node.minWidth}px`,
     minHeight: minHeight || undefined,
     boxShadow: selected ? '0 4px 8px rgba(0,0,0,0.2)' : '0 2px 4px rgba(0,0,0,0.1)',
+    overflow: 'hidden' as const,
   }), [L.node.paddingY, L.node.paddingX, L.node.borderWidth, borderColor, L.node.borderRadius, backgroundColor, L.node.minWidth, minHeight, selected]);
 
   const textAreaStyle = useMemo(() => ({
@@ -119,38 +120,36 @@ const CustomNodeComponent: React.FC<{ data: CustomNodeData; selected?: boolean }
 
   const glyphBackgroundStyle = useMemo(() => ({
     position: 'absolute' as const,
-    left: 0,
+    left: -L.node.paddingX,
     top: 0,
     bottom: 0,
-    width: L.text.glyphSize + 2 * L.glyph.padding,
+    width: (L.text.glyphSize + 2 * L.glyph.padding) * 1.1,
     background: glyphBg,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    borderTopLeftRadius: `${L.node.borderRadius}px`,
-    borderBottomLeftRadius: `${L.node.borderRadius}px`,
     pointerEvents: 'none' as const,
-  }), [L.text.glyphSize, L.glyph.padding, L.node.borderRadius, glyphBg]);
+  }), [L.text.glyphSize, L.glyph.padding, L.node.paddingX, glyphBg]);
 
   const templateToggleStyle = useMemo(() => ({
     position: 'absolute' as const,
-    right: 0,
+    right: -L.node.paddingX,
     top: 0,
     bottom: 0,
-    width: L.template.width,
+    width: L.template.width * 1.1,
     background: isBypassed ? colors.template.on : colors.template.off,
     cursor: 'pointer',
     transition: 'background 0.2s',
     zIndex: 10,
     pointerEvents: 'auto' as const,
-  }), [L.template.width, isBypassed, colors.template]);
+  }), [L.template.width, L.node.paddingX, isBypassed, colors.template]);
 
   const smallNodeNameStyle = useMemo(() => ({
     fontSize: L.text.nameSize,
     fontWeight: 'bold' as const,
     color: textColor,
-    paddingLeft: L.text.glyphSize + 2 * L.glyph.padding + L.glyph.bufferFromEdge,
-    paddingRight: L.template.width + L.glyph.bufferFromEdge,
+    paddingLeft: (L.text.glyphSize + 2 * L.glyph.padding) * 1.1 + L.glyph.bufferFromEdge,
+    paddingRight: L.template.width * 1.1 + L.glyph.bufferFromEdge,
     display: 'flex',
     alignItems: 'center',
     minHeight: '100%',

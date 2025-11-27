@@ -4,6 +4,7 @@ import re
 from typing import Dict
 from core.base_classes import Node, NodeType, NodeState
 from core.parm import Parm, ParameterType
+from core.enums import FunctionalGroup
 
 
 class StringTransformNode(Node):
@@ -20,6 +21,7 @@ class StringTransformNode(Node):
     """
 
     GLYPH = '⎔'
+    GROUP = FunctionalGroup.TEXT
     SINGLE_INPUT = True
     SINGLE_OUTPUT = True
 
