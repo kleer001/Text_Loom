@@ -138,12 +138,10 @@ const CustomNodeComponent: React.FC<{ data: CustomNodeData; selected?: boolean }
     width: L.template.width,
     background: isBypassed ? colors.template.on : colors.template.off,
     cursor: 'pointer',
-    borderTopRightRadius: `${L.node.borderRadius}px`,
-    borderBottomRightRadius: `${L.node.borderRadius}px`,
     transition: 'background 0.2s',
     zIndex: 10,
     pointerEvents: 'auto' as const,
-  }), [L.template.width, L.node.borderRadius, isBypassed, colors.template]);
+  }), [L.template.width, isBypassed, colors.template]);
 
   const smallNodeNameStyle = useMemo(() => ({
     fontSize: L.text.nameSize,
