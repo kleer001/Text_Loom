@@ -20,6 +20,10 @@
 * **`src/core` Protection:** The `src/core` directory contains established foundational code.
     * **Bug Fixes:** You **MUST NOT** implement bug fixes or refactor code within `src/core`. If a bug is identified there, you must **halt** and report the issue to the user.
     * **Improvements:** You may propose clean-up or refactoring improvements for files in `src/core`, but you **MUST NOT** implement them without **explicit user permission**. Focus on working around `src/core` via composition or extension instead.
+* **`/` Protection:** The root directory is public facing and should be kept clean as possible.
+  *  Keep free of loose scripts or specific tests or helper functions. **(tests go into src/tests)**
+  *  Keep free of nonessential output or input files.
+  *  Should have only: main directories, install files (such as requirements and setup/start), README.md, LICENSE, and essential dot files (such as .gitignore and .envs), any LLM system prompts, essential package files for docker, React, etc.
 
 ## Testing Requirements
 * **Framework:** pytest

@@ -77,7 +77,7 @@ def test_looper_connection_creation():
 
     # Create source node (text node)
     text_node = Node.create_node(NodeType.TEXT, "source_text")
-    text_node._parms["text"].set("Test data")
+    text_node._parms["text_string"].set("Test data")
     text_node.cook()
 
     # Create looper node
