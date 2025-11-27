@@ -206,6 +206,12 @@ const CustomNodeComponent: React.FC<{ data: CustomNodeData; selected?: boolean }
               e.stopPropagation();
               onBypassToggle?.(node.session_id);
             }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = isBypassed ? colors.template.onHover : colors.template.offHover;
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = isBypassed ? colors.template.on : colors.template.off;
+            }}
             style={templateToggleStyle}
             title={isBypassed ? 'Template Mode On' : 'Template Mode Off'}
           />
