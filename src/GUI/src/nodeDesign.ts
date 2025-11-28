@@ -71,7 +71,7 @@ export const SCALES = {
     ICON_MULT: 0.75,
     HANDLE_MULT: 0.8,
     SHOW_NAME: false,
-    SHOW_INDICATORS: false,
+    SHOW_INDICATORS: true,
     SHOW_BYPASS: true,
   },
 };

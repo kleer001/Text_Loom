@@ -95,6 +95,7 @@ const CustomNodeComponent: React.FC<{ data: CustomNodeData; selected?: boolean }
     flexDirection: 'column' as const,
     gap: L.indicators.gap,
     opacity,
+    zIndex: 15,
   }), [L.indicators.offset, L.indicators.gap, opacity]);
 
   const cookingStateCircleStyle = useMemo(() => ({
