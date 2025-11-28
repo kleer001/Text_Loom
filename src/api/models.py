@@ -20,6 +20,8 @@ import logging
 from typing import Any
 from typing import Union
 
+from core.enums import FunctionalGroup
+
 # Set up logging
 logger = logging.getLogger("api.patch")
 logger.setLevel(logging.DEBUG)
@@ -513,7 +515,9 @@ def node_to_response(node: 'Node') -> 'NodeResponse':
 
         # Build response
         group_enum = getattr(node.__class__, 'GROUP', None)
-        group_color = group_enum.value.get('color', '') if group_enum else ''
+        group_color = ''
+        if group_enum and isinstance(group_enum, FunctionalGroup):
+            group_color = group_enum.value.get('color', '')
 
         response = NodeResponse(
             session_id=node.session_id(),
