@@ -120,7 +120,7 @@ const CustomNodeComponent: React.FC<{ data: CustomNodeData; selected?: boolean }
 
   const glyphBackgroundStyle = useMemo(() => ({
     position: 'absolute' as const,
-    left: -L.node.paddingX,
+    left: 0,
     top: 0,
     bottom: 0,
     width: (L.text.glyphSize + 2 * L.glyph.padding) * 2,
@@ -131,11 +131,11 @@ const CustomNodeComponent: React.FC<{ data: CustomNodeData; selected?: boolean }
     pointerEvents: 'none' as const,
     borderTopLeftRadius: `${L.node.borderRadius}px`,
     borderBottomLeftRadius: `${L.node.borderRadius}px`,
-  }), [L.text.glyphSize, L.glyph.padding, L.node.paddingX, L.node.borderRadius, glyphBg]);
+  }), [L.text.glyphSize, L.glyph.padding, L.node.borderRadius, glyphBg]);
 
   const templateToggleStyle = useMemo(() => ({
     position: 'absolute' as const,
-    right: -L.node.paddingX,
+    right: 0,
     top: 0,
     bottom: 0,
     width: L.template.width,
@@ -146,7 +146,7 @@ const CustomNodeComponent: React.FC<{ data: CustomNodeData; selected?: boolean }
     pointerEvents: 'auto' as const,
     borderTopRightRadius: `${L.node.borderRadius}px`,
     borderBottomRightRadius: `${L.node.borderRadius}px`,
-  }), [L.template.width, L.node.paddingX, L.node.borderRadius, isBypassed, colors.template]);
+  }), [L.template.width, L.node.borderRadius, isBypassed, colors.template]);
 
   const smallNodeNameStyle = useMemo(() => ({
     fontSize: L.text.nameSize,
