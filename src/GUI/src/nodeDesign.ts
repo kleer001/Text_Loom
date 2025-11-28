@@ -52,6 +52,8 @@ export const SCALES = {
     FONT_MULT: 1.0,
     ICON_MULT: 1.0,
     HANDLE_MULT: 1.0,
+    GLYPH_BUFFER_MULT: 1.5,
+    GLYPH_PADDING_MULT: 1.5,
     SHOW_TYPE: true,
     SHOW_NAME: true,
     SHOW_INDICATORS: true,
@@ -62,6 +64,8 @@ export const SCALES = {
     FONT_MULT: 0.9,
     ICON_MULT: 0.85,
     HANDLE_MULT: 0.9,
+    GLYPH_BUFFER_MULT: 1.25,
+    GLYPH_PADDING_MULT: 1.5,
     SHOW_TYPE: false,
     SHOW_NAME: true,
     SHOW_INDICATORS: true,
@@ -72,6 +76,8 @@ export const SCALES = {
     FONT_MULT: 0.8,
     ICON_MULT: 0.75,
     HANDLE_MULT: 0.8,
+    GLYPH_BUFFER_MULT: 0.75,
+    GLYPH_PADDING_MULT: 2.25,
     SHOW_TYPE: false,
     SHOW_NAME: false,
     SHOW_INDICATORS: false,
@@ -122,8 +128,8 @@ export const Layout = (scale: keyof typeof SCALES) => {
     },
 
     glyph: {
-      padding: 1.5 * S.UNIT,
-      bufferFromEdge: 1.5 * S.UNIT,
+      padding: S.GLYPH_PADDING_MULT * S.UNIT,
+      bufferFromEdge: S.GLYPH_BUFFER_MULT * S.UNIT,
     },
 
     template: {
