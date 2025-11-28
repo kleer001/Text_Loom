@@ -32,7 +32,7 @@ class NodeState(Enum):
     COOKED = 'cooked'
 
 class FunctionalGroup(Enum):
-    FILE = {"type": "file", "color": "orange"}
+    FILE = {"type":"file","color": "orange"}
     TEXT = {"type": "text", "color": "grey"}
     LIST = {"type": "list", "color": "green"}
-    FLOW = {"type": "flow", "color": "purple"}
+    FLOW = {"type":"flow", "color": "purple"}

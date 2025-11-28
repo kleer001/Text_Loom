@@ -6,7 +6,6 @@ from core.base_classes import Node, NodeType, NodeState
 from core.parm import Parm, ParameterType
 from core.enums import FunctionalGroup
 
-
 class ChunkNode(Node):
     """Splits text into chunks using various strategies.
 
@@ -24,6 +23,7 @@ class ChunkNode(Node):
     GROUP = FunctionalGroup.TEXT
     SINGLE_INPUT = True
     SINGLE_OUTPUT = True
+    GROUP = FunctionalGroup.FILE
 
     def __init__(self, name: str, path: str, node_type: NodeType):
         super().__init__(name, path, [0.0, 0.0], node_type)
