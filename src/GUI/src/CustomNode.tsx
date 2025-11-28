@@ -53,7 +53,6 @@ const CustomNodeComponent: React.FC<{ data: CustomNodeData; selected?: boolean }
     minWidth: `${L.node.minWidth}px`,
     minHeight: minHeight || undefined,
     boxShadow: selected ? '0 4px 8px rgba(0,0,0,0.2)' : '0 2px 4px rgba(0,0,0,0.1)',
-    overflow: 'hidden' as const,
   }), [L.node.paddingY, L.node.paddingX, L.node.borderWidth, borderColor, L.node.borderRadius, backgroundColor, L.node.minWidth, minHeight, selected]);
 
   const textAreaStyle = useMemo(() => ({
@@ -130,7 +129,9 @@ const CustomNodeComponent: React.FC<{ data: CustomNodeData; selected?: boolean }
     alignItems: 'center',
     justifyContent: 'center',
     pointerEvents: 'none' as const,
-  }), [L.text.glyphSize, L.glyph.padding, L.node.paddingX, glyphBg]);
+    borderTopLeftRadius: `${L.node.borderRadius}px`,
+    borderBottomLeftRadius: `${L.node.borderRadius}px`,
+  }), [L.text.glyphSize, L.glyph.padding, L.node.paddingX, L.node.borderRadius, glyphBg]);
 
   const templateToggleStyle = useMemo(() => ({
     position: 'absolute' as const,
@@ -143,7 +144,9 @@ const CustomNodeComponent: React.FC<{ data: CustomNodeData; selected?: boolean }
     transition: 'background 0.2s',
     zIndex: 10,
     pointerEvents: 'auto' as const,
-  }), [L.template.width, L.node.paddingX, isBypassed, colors.template]);
+    borderTopRightRadius: `${L.node.borderRadius}px`,
+    borderBottomRightRadius: `${L.node.borderRadius}px`,
+  }), [L.template.width, L.node.paddingX, L.node.borderRadius, isBypassed, colors.template]);
 
   const smallNodeNameStyle = useMemo(() => ({
     fontSize: L.text.nameSize,
