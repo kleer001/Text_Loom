@@ -52,6 +52,7 @@ export const SCALES = {
     FONT_MULT: 1.0,
     ICON_MULT: 1.0,
     HANDLE_MULT: 1.0,
+    SHOW_TYPE: true,
     SHOW_NAME: true,
     SHOW_INDICATORS: true,
     SHOW_BYPASS: true,
@@ -61,6 +62,7 @@ export const SCALES = {
     FONT_MULT: 0.9,
     ICON_MULT: 0.85,
     HANDLE_MULT: 0.9,
+    SHOW_TYPE: false,
     SHOW_NAME: true,
     SHOW_INDICATORS: true,
     SHOW_BYPASS: true,
@@ -70,6 +72,7 @@ export const SCALES = {
     FONT_MULT: 0.8,
     ICON_MULT: 0.75,
     HANDLE_MULT: 0.8,
+    SHOW_TYPE: false,
     SHOW_NAME: false,
     SHOW_INDICATORS: false,
     SHOW_BYPASS: true,
@@ -129,6 +132,7 @@ export const Layout = (scale: keyof typeof SCALES) => {
     },
 
     visibility: {
+      showType: S.SHOW_TYPE,
       showName: S.SHOW_NAME,
       showIndicators: S.SHOW_INDICATORS,
       showBypass: S.SHOW_BYPASS,
