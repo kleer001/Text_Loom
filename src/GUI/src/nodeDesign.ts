@@ -52,8 +52,14 @@ export const SCALES = {
     FONT_MULT: 1.0,
     ICON_MULT: 1.0,
     HANDLE_MULT: 1.0,
+    GLYPH_BUFFER_MULT: 1.5,
+    GLYPH_PADDING_MULT: 1.5,
+    NODE_PADDING_MULT: 1.0,
+    TEXT_PADDING_MULT: 1.0,
+    SHOW_TYPE: true,
     SHOW_NAME: true,
     SHOW_INDICATORS: true,
+    SHOW_ERROR_WARNING: true,
     SHOW_BYPASS: true,
   },
   medium: {
@@ -61,8 +67,14 @@ export const SCALES = {
     FONT_MULT: 0.9,
     ICON_MULT: 0.85,
     HANDLE_MULT: 0.9,
+    GLYPH_BUFFER_MULT: 0.75,
+    GLYPH_PADDING_MULT: 1.5,
+    NODE_PADDING_MULT: 0.5,
+    TEXT_PADDING_MULT: 0.5,
+    SHOW_TYPE: false,
     SHOW_NAME: true,
     SHOW_INDICATORS: true,
+    SHOW_ERROR_WARNING: false,
     SHOW_BYPASS: true,
   },
   small: {
@@ -70,8 +82,14 @@ export const SCALES = {
     FONT_MULT: 0.8,
     ICON_MULT: 0.75,
     HANDLE_MULT: 0.8,
+    GLYPH_BUFFER_MULT: 0.75,
+    GLYPH_PADDING_MULT: 2.25,
+    NODE_PADDING_MULT: 0.5,
+    TEXT_PADDING_MULT: 0.5,
+    SHOW_TYPE: false,
     SHOW_NAME: false,
     SHOW_INDICATORS: false,
+    SHOW_ERROR_WARNING: false,
     SHOW_BYPASS: true,
   },
 };
@@ -84,7 +102,7 @@ export const Layout = (scale: keyof typeof SCALES) => {
     node: {
       minWidth: 150,
       paddingX: 3 * S.UNIT,
-      paddingY: 2 * S.UNIT,
+      paddingY: 2 * S.UNIT * S.NODE_PADDING_MULT,
       borderRadius: 2 * S.UNIT,
       borderWidth: 2,
     },
@@ -95,8 +113,8 @@ export const Layout = (scale: keyof typeof SCALES) => {
       nameSize: 14 * S.FONT_MULT,
       gapHeader: 2 * S.UNIT,
       gapLines: 1.5 * S.UNIT,
-      paddingTop: 2 * S.UNIT,
-      paddingBottom: 2 * S.UNIT,
+      paddingTop: 2 * S.UNIT * S.TEXT_PADDING_MULT,
+      paddingBottom: 2 * S.UNIT * S.TEXT_PADDING_MULT,
       paddingSide: 2 * S.UNIT,
     },
 
@@ -119,8 +137,8 @@ export const Layout = (scale: keyof typeof SCALES) => {
     },
 
     glyph: {
-      padding: 1.5 * S.UNIT,
-      bufferFromEdge: 1.5 * S.UNIT,
+      padding: S.GLYPH_PADDING_MULT * S.UNIT,
+      bufferFromEdge: S.GLYPH_BUFFER_MULT * S.UNIT,
     },
 
     template: {
@@ -129,8 +147,10 @@ export const Layout = (scale: keyof typeof SCALES) => {
     },
 
     visibility: {
+      showType: S.SHOW_TYPE,
       showName: S.SHOW_NAME,
       showIndicators: S.SHOW_INDICATORS,
+      showErrorWarning: S.SHOW_ERROR_WARNING,
       showBypass: S.SHOW_BYPASS,
     },
   };

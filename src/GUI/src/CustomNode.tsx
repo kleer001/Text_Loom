@@ -89,13 +89,14 @@ const CustomNodeComponent: React.FC<{ data: CustomNodeData; selected?: boolean }
   const indicatorsContainerStyle = useMemo(() => ({
     position: 'absolute' as const,
     left: L.indicators.offset,
-    top: L.indicators.offset,
+    top: size === 'medium' ? '50%' : L.indicators.offset,
+    transform: size === 'medium' ? 'translateY(-50%)' : undefined,
     display: 'flex',
     flexDirection: 'column' as const,
     gap: L.indicators.gap,
     opacity,
     zIndex: 15,
-  }), [L.indicators.offset, L.indicators.gap, opacity]);
+  }), [L.indicators.offset, L.indicators.gap, opacity, size]);
 
   const cookingStateCircleStyle = useMemo(() => ({
     width: L.indicators.diameter,
@@ -170,7 +171,7 @@ const CustomNodeComponent: React.FC<{ data: CustomNodeData; selected?: boolean }
             title="Cooking state"
           />
 
-          {hasError && (
+          {L.visibility.showErrorWarning && hasError && (
             <div
               style={{
                 width: L.indicators.diameter,
@@ -183,7 +184,7 @@ const CustomNodeComponent: React.FC<{ data: CustomNodeData; selected?: boolean }
             />
           )}
 
-          {hasWarning && (
+          {L.visibility.showErrorWarning && hasWarning && (
             <div
               style={{
                 width: L.indicators.diameter,
@@ -239,7 +240,9 @@ const CustomNodeComponent: React.FC<{ data: CustomNodeData; selected?: boolean }
           <div style={textAreaStyle}>
             <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: L.handle.diameter }}>
               <div style={glyphStyle}>{node.glyph || '?'}</div>
-              <div style={typeStyle}>{node.type}</div>
+              {L.visibility.showType && (
+                <div style={typeStyle}>{node.type}</div>
+              )}
             </div>
 
             {L.visibility.showName && (
