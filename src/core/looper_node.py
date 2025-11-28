@@ -9,6 +9,7 @@ from core.parm import Parm, ParameterType
 from core.input_null_node import InputNullNode
 from core.output_null_node import OutputNullNode
 from core.loop_manager import LoopManager, loop_manager
+from core.enums import FunctionalGroup
 
 from dataclasses import dataclass
 
@@ -93,6 +94,7 @@ class LooperNode(Node):
         Result: Only processes iteration #5
     """
     GLYPH = '⟲'
+    GROUP = FunctionalGroup.FLOW
     SINGLE_INPUT = True
     SINGLE_OUTPUT = True
 

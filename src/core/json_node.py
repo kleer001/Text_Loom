@@ -3,6 +3,7 @@ import time
 from typing import List, Dict, Any, Union
 from core.base_classes import Node, NodeType, NodeState
 from core.parm import Parm, ParameterType
+from core.enums import FunctionalGroup
 
 
 class JsonNode(Node):
@@ -50,6 +51,7 @@ class JsonNode(Node):
     """
 
     GLYPH = '{'
+    GROUP = FunctionalGroup.LIST
     SINGLE_INPUT = True
     SINGLE_OUTPUT = True
 

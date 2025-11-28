@@ -2,6 +2,7 @@ import time
 from typing import List, Dict, Any
 from core.base_classes import Node, NodeType, NodeState
 from core.parm import Parm, ParameterType
+from core.enums import FunctionalGroup
 
 class MergeNode(Node):
     """Represents a Merge Node in the workspace.
@@ -48,6 +49,7 @@ class MergeNode(Node):
     """
 
     GLYPH = '⋈'
+    GROUP = FunctionalGroup.LIST
     SINGLE_INPUT = False
     SINGLE_OUTPUT = True
 

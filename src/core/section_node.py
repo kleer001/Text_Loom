@@ -5,6 +5,7 @@ import re
 import os
 from core.base_classes import Node, NodeType, NodeState
 from core.parm import Parm, ParameterType
+from core.enums import FunctionalGroup
 import json
 
 class SectionNode(Node):
@@ -87,6 +88,7 @@ class SectionNode(Node):
     """
 
     GLYPH = '§'
+    GROUP = FunctionalGroup.TEXT
     SINGLE_OUTPUT = False
     SINGLE_INPUT = True
 

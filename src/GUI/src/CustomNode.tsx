@@ -25,6 +25,7 @@ const CustomNodeComponent: React.FC<{ data: CustomNodeData; selected?: boolean }
   const { node, size = 'large', onBypassToggle } = data;
   const { mode } = useTheme();
   const colors = design.getColors(mode);
+  const groupColors = design.getGroupColors(node.group || '', mode);
   const L = design.Layout(size);
 
   const isBypassed = node.parameters?.bypass?.value === true;
@@ -39,7 +40,8 @@ const CustomNodeComponent: React.FC<{ data: CustomNodeData; selected?: boolean }
     : isBypassed
     ? colors.border.bypassed
     : colors.border.active;
-  const backgroundColor = isBypassed ? colors.background.bypassed : colors.background.active;
+  const backgroundColor = isBypassed ? colors.background.bypassed : groupColors.background;
+  const glyphBg = isBypassed ? colors.glyph.background.bypassed : groupColors.glyphBackground;
   const textColor = isBypassed ? colors.text.bypassed : colors.text.active;
 
   const containerStyle = useMemo(() => ({
@@ -92,6 +94,7 @@ const CustomNodeComponent: React.FC<{ data: CustomNodeData; selected?: boolean }
     flexDirection: 'column' as const,
     gap: L.indicators.gap,
     opacity,
+    zIndex: 15,
   }), [L.indicators.offset, L.indicators.gap, opacity]);
 
   const cookingStateCircleStyle = useMemo(() => ({
@@ -114,6 +117,48 @@ const CustomNodeComponent: React.FC<{ data: CustomNodeData; selected?: boolean }
     opacity,
     transition: 'background 0.2s',
   }), [L.bypass.offsetRight, L.bypass.diameter, colors.bypass.default, opacity]);
+
+  const glyphBackgroundStyle = useMemo(() => ({
+    position: 'absolute' as const,
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: (L.text.glyphSize + 2 * L.glyph.padding) * 2,
+    background: glyphBg,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    pointerEvents: 'none' as const,
+    borderTopLeftRadius: `${L.node.borderRadius}px`,
+    borderBottomLeftRadius: `${L.node.borderRadius}px`,
+  }), [L.text.glyphSize, L.glyph.padding, L.node.borderRadius, glyphBg]);
+
+  const templateToggleStyle = useMemo(() => ({
+    position: 'absolute' as const,
+    right: 0,
+    top: 0,
+    bottom: 0,
+    width: L.template.width,
+    background: isBypassed ? colors.template.on : colors.template.off,
+    cursor: 'pointer',
+    transition: 'background 0.2s',
+    zIndex: 10,
+    pointerEvents: 'auto' as const,
+    borderTopRightRadius: `${L.node.borderRadius}px`,
+    borderBottomRightRadius: `${L.node.borderRadius}px`,
+  }), [L.template.width, L.node.borderRadius, isBypassed, colors.template]);
+
+  const smallNodeNameStyle = useMemo(() => ({
+    fontSize: L.text.nameSize,
+    fontWeight: 'bold' as const,
+    color: textColor,
+    paddingLeft: (L.text.glyphSize + 2 * L.glyph.padding) * 2 + L.glyph.bufferFromEdge,
+    paddingRight: L.template.width + L.glyph.bufferFromEdge,
+    display: 'flex',
+    alignItems: 'center',
+    minHeight: '100%',
+    pointerEvents: 'none' as const,
+  }), [L.text.nameSize, L.text.glyphSize, L.glyph.padding, L.glyph.bufferFromEdge, L.template.width, textColor]);
 
   return (
     <div style={containerStyle}>
@@ -153,33 +198,56 @@ const CustomNodeComponent: React.FC<{ data: CustomNodeData; selected?: boolean }
         </div>
       )}
 
-      {L.visibility.showBypass && (
-        <div
-          onClick={(e) => {
-            e.stopPropagation();
-            onBypassToggle?.(node.session_id);
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = colors.bypass.hover;
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = colors.bypass.default;
-          }}
-          style={bypassButtonStyle}
-          title={isBypassed ? 'Bypassed (Template)' : 'Click to bypass'}
-        />
+      {size === 'small' ? (
+        <>
+          <div style={glyphBackgroundStyle}>
+            <div style={{ ...glyphStyle, opacity }}>{node.glyph || '?'}</div>
+          </div>
+
+          <div style={{ ...smallNodeNameStyle, opacity }}>
+            {node.name}
+          </div>
+
+          <div
+            onClick={(e) => {
+              e.stopPropagation();
+              onBypassToggle?.(node.session_id);
+            }}
+            style={templateToggleStyle}
+            title={isBypassed ? 'Template Mode On' : 'Template Mode Off'}
+          />
+        </>
+      ) : (
+        <>
+          {L.visibility.showBypass && (
+            <div
+              onClick={(e) => {
+                e.stopPropagation();
+                onBypassToggle?.(node.session_id);
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = colors.bypass.hover;
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = colors.bypass.default;
+              }}
+              style={bypassButtonStyle}
+              title={isBypassed ? 'Bypassed (Template)' : 'Click to bypass'}
+            />
+          )}
+
+          <div style={textAreaStyle}>
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: L.handle.diameter }}>
+              <div style={glyphStyle}>{node.glyph || '?'}</div>
+              <div style={typeStyle}>{node.type}</div>
+            </div>
+
+            {L.visibility.showName && (
+              <div style={nameStyle}>{node.name}</div>
+            )}
+          </div>
+        </>
       )}
-
-      <div style={textAreaStyle}>
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: L.handle.diameter }}>
-          <div style={glyphStyle}>{node.glyph || '?'}</div>
-          <div style={typeStyle}>{node.type}</div>
-        </div>
-
-        {L.visibility.showName && (
-          <div style={nameStyle}>{node.name}</div>
-        )}
-      </div>
 
       {node.inputs.map((input, i) => {
         const handleBorderColor = isBypassed ? colors.handle.bypassed.border : colors.handle.input.border;

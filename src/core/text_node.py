@@ -4,6 +4,7 @@ from typing import List, Dict, Any
 from core.base_classes import Node, NodeType, NodeState
 from core.parm import Parm, ParameterType
 from core.loop_manager import LoopManager
+from core.enums import FunctionalGroup
 
 class TextNode(Node):
     """A node that manipulates text strings with advanced list support.
@@ -43,6 +44,7 @@ class TextNode(Node):
 
 
     GLYPH = 'Ꭲ'
+    GROUP = FunctionalGroup.TEXT
     SINGLE_INPUT = True
     SINGLE_OUTPUT = True
 

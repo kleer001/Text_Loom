@@ -20,6 +20,7 @@ class ChunkNode(Node):
     """
 
     GLYPH = '⊞'
+    GROUP = FunctionalGroup.TEXT
     SINGLE_INPUT = True
     SINGLE_OUTPUT = True
     GROUP = FunctionalGroup.FILE

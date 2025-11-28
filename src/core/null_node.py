@@ -1,5 +1,6 @@
 from typing import Any, Dict, List, Optional, Tuple
 from core.base_classes import Node, NodeType, NodeState
+from core.enums import FunctionalGroup
 
 class NullNode(Node):
     """
@@ -10,6 +11,7 @@ class NullNode(Node):
     """
 
     GLYPH = '∅'
+    GROUP = FunctionalGroup.FLOW
     SINGLE_INPUT = True
     SINGLE_OUTPUT = True
 

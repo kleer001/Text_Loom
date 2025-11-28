@@ -20,6 +20,8 @@ import logging
 from typing import Any
 from typing import Union
 
+from core.enums import FunctionalGroup
+
 # Set up logging
 logger = logging.getLogger("api.patch")
 logger.setLevel(logging.DEBUG)
@@ -156,6 +158,7 @@ class NodeResponse(BaseModel):
     path: str = Field(..., description="Full path (unique identifier)")
     type: str = Field(..., description="Node type (e.g., 'text', 'fileout', 'query')")
     glyph: str = Field(default="", description="Node type glyph character")
+    group: str = Field(default="", description="Node functional group color (e.g., 'orange', 'grey', 'green', 'purple')")
 
     # Processing state
     state: NodeStateEnum = Field(..., description="Current processing state")
@@ -511,12 +514,18 @@ def node_to_response(node: 'Node') -> 'NodeResponse':
         outputs = _convert_outputs(node)
 
         # Build response
+        group_enum = getattr(node.__class__, 'GROUP', None)
+        group_color = ''
+        if group_enum and isinstance(group_enum, FunctionalGroup):
+            group_color = group_enum.value.get('color', '')
+
         response = NodeResponse(
             session_id=node.session_id(),
             name=node.name(),
             path=node.path(),
             type=node.type().value,  # Use enum's value directly
             glyph=getattr(node.__class__, 'GLYPH', ''),  # Get GLYPH class attribute
+            group=group_color,
             state=full_state.state.value,
             errors=full_state.errors,
             warnings=full_state.warnings,

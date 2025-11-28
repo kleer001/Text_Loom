@@ -1,5 +1,51 @@
 type ThemeMode = 'light' | 'dark';
 
+const GROUP_COLORS = {
+  orange: {
+    0: '#602c10',
+    100: '#b7541f',
+    200: '#e38959',
+    300: '#f2c7b1',
+    400: '#f8e0d3',
+  },
+  grey: {
+    0: '#17191c',
+    100: '#3c4048',
+    200: '#6b7280',
+    300: '#a0a6b0',
+    400: '#d8dadf',
+  },
+  green: {
+    0: '#10602c',
+    100: '#1fb754',
+    200: '#59e389',
+    300: '#b1f2c7',
+    400: '#d3f8e0',
+  },
+  purple: {
+    0: '#2c1060',
+    100: '#541fb7',
+    200: '#8959e3',
+    300: '#c7b1f2',
+    400: '#e0d3f8',
+  },
+};
+
+export const getGroupColors = (group: string, mode: ThemeMode) => {
+  const palette = GROUP_COLORS[group as keyof typeof GROUP_COLORS];
+  if (!palette) {
+    return {
+      background: mode === 'light' ? '#FFFFFF' : '#374151',
+      glyphBackground: mode === 'light' ? '#F3F4F6' : '#4B5563',
+    };
+  }
+
+  return {
+    background: mode === 'light' ? palette[400] : palette[100],
+    glyphBackground: mode === 'light' ? palette[300] : palette[0],
+  };
+};
+
 export const SCALES = {
   large: {
     UNIT: 4,
@@ -72,6 +118,16 @@ export const Layout = (scale: keyof typeof SCALES) => {
       minSpacing: 2 * S.UNIT,
     },
 
+    glyph: {
+      padding: 1.5 * S.UNIT,
+      bufferFromEdge: 1.5 * S.UNIT,
+    },
+
+    template: {
+      width: 24 * S.ICON_MULT,
+      paddingY: 1 * S.UNIT,
+    },
+
     visibility: {
       showName: S.SHOW_NAME,
       showIndicators: S.SHOW_INDICATORS,
@@ -106,9 +162,19 @@ export const getColors = (mode: ThemeMode) => ({
     default: mode === 'light' ? '#CED0D5' : '#4B5563',
     hover: mode === 'light' ? '#E5E7EB' : '#6B7280',
   },
+  template: {
+    off: mode === 'light' ? '#9CA3AF' : '#6B7280',
+    on: mode === 'light' ? '#4B5563' : '#374151',
+  },
+  glyph: {
+    background: {
+      active: mode === 'light' ? '#F3F4F6' : '#4B5563',
+      bypassed: mode === 'light' ? '#4B5563' : '#111827',
+    },
+  },
   text: {
     active: mode === 'light' ? '#1F2937' : '#F9FAFB',
-    bypassed: mode === 'light' ? '#4B5563' : '#9CA3AF',
+    bypassed: mode === 'light' ? '#FFFFFF' : '#F9FAFB',
   },
   background: {
     active: mode === 'light' ? '#FFFFFF' : '#374151',

@@ -5,6 +5,7 @@ from typing import Dict
 from collections import Counter
 from core.base_classes import Node, NodeType, NodeState
 from core.parm import Parm, ParameterType
+from core.enums import FunctionalGroup
 
 
 class CountNode(Node):
@@ -22,6 +23,7 @@ class CountNode(Node):
     """
 
     GLYPH = '#'
+    GROUP = FunctionalGroup.LIST
     SINGLE_INPUT = True
     SINGLE_OUTPUT = True
 

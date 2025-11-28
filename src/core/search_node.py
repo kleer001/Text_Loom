@@ -4,6 +4,7 @@ import re
 from typing import Dict, Tuple
 from core.base_classes import Node, NodeType, NodeState
 from core.parm import Parm, ParameterType
+from core.enums import FunctionalGroup
 
 
 class SearchNode(Node):
@@ -20,6 +21,7 @@ class SearchNode(Node):
     """
 
     GLYPH = '🔍'
+    GROUP = FunctionalGroup.LIST
     SINGLE_INPUT = True
     SINGLE_OUTPUT = False
 
