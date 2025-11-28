@@ -174,7 +174,7 @@ export const getColors = (mode: ThemeMode) => ({
   },
   text: {
     active: mode === 'light' ? '#1F2937' : '#F9FAFB',
-    bypassed: '#FFFFFF',
+    bypassed: mode === 'light' ? '#FFFFFF' : '#F9FAFB',
   },
   background: {
     active: mode === 'light' ? '#FFFFFF' : '#374151',
