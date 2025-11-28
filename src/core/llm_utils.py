@@ -189,3 +189,73 @@ def get_clean_llm_response(prompt):
             return content  # only if it's a NOT list item, aka a Riff!
         return "Error: Failed to get a response from the LLM"
     return "Error: No active Local LLM found"
+
+
+def query_llm_with_tokens(prompt, active_llm, config=None):
+    import litellm
+    from core.models import TokenUsage
+
+    config = config or load_config()
+
+    if not active_llm:
+        print("Error: No active LLM specified")
+        return None, None
+
+    if active_llm not in config:
+        print(f"Error: {active_llm} not found in config")
+        return None, None
+
+    settings = {**config["DEFAULT"], **config[active_llm]}
+    model_name = settings.get("model", "mistral:latest")
+
+    llm_provider = settings.get("provider", "ollama")
+    full_model_name = f"{llm_provider}/{model_name}"
+
+    api_base = settings.get("url", "http://localhost:11434")
+
+    try:
+        response = litellm.completion(
+            model=full_model_name,
+            messages=[{"role": "user", "content": prompt}],
+            api_base=api_base
+        )
+
+        content = response.choices[0].message.content
+
+        token_usage = None
+        if hasattr(response, 'usage') and response.usage:
+            token_usage = TokenUsage(
+                input_tokens=response.usage.prompt_tokens,
+                output_tokens=response.usage.completion_tokens,
+                total_tokens=response.usage.total_tokens
+            )
+
+        return content, token_usage
+
+    except Exception as e:
+        print(f"Error querying {active_llm} with LiteLLM: {e}")
+        return None, None
+
+
+def get_clean_llm_response_with_tokens(prompt):
+    from core.models import LLMResponse, TokenUsage
+
+    config = load_config()
+    active_llm = get_active_llm_from_config()
+
+    if not active_llm:
+        return LLMResponse(
+            content="Error: No active Local LLM found",
+            token_usage=None
+        )
+
+    content, token_usage = query_llm_with_tokens(prompt, active_llm, config)
+
+    if content is None:
+        return LLMResponse(
+            content="Error: Failed to get a response from the LLM",
+            token_usage=None
+        )
+
+    return LLMResponse(content=content, token_usage=token_usage)
+

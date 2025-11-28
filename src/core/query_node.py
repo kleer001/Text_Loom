@@ -1,9 +1,10 @@
 from typing import List, Dict, Any
 from core.base_classes import Node, NodeType, NodeState
 from core.parm import Parm, ParameterType
-from core.llm_utils import get_clean_llm_response
+from core.llm_utils import get_clean_llm_response, get_clean_llm_response_with_tokens
 from core.findLLM import *
 from core.enums import FunctionalGroup
+from core.token_manager import get_token_manager
 
 class QueryNode(Node):
 
@@ -80,13 +81,17 @@ class QueryNode(Node):
             "response": Parm("response", ParameterType.STRINGLIST, self),
             "llm_name": Parm("llm_name", ParameterType.STRING, self),
             "find_llm": Parm("find_llm", ParameterType.BUTTON, self),
-            "respond": Parm("respond", ParameterType.BUTTON, self)
+            "respond": Parm("respond", ParameterType.BUTTON, self),
+            "track_tokens": Parm("track_tokens", ParameterType.TOGGLE, self),
+            "token_usage": Parm("token_usage", ParameterType.STRING, self)
         })
 
         # Set default values
         self._parms["limit"].set("True")
         self._parms["response"].set([])
         self._parms["llm_name"].set("Ollama")
+        self._parms["track_tokens"].set("True")
+        self._parms["token_usage"].set("")
 
         # Set button callbacks
         self._parms["find_llm"].set_script_callback(self._find_llm_callback)
@@ -112,14 +117,38 @@ class QueryNode(Node):
             llm_name = find_local_LLM()
             self._parms["llm_name"].set(llm_name)
 
+        track_tokens = self._parms["track_tokens"].eval()
+        token_manager = get_token_manager() if track_tokens else None
+
         responses = []
+        total_input_tokens = 0
+        total_output_tokens = 0
+        total_tokens = 0
+
         for prompt in input_data:
             try:
-                response = get_clean_llm_response(prompt)
-                responses.append(response)
+                if track_tokens:
+                    llm_response = get_clean_llm_response_with_tokens(prompt)
+                    responses.append(llm_response.content)
+
+                    if llm_response.token_usage:
+                        token_manager.add_usage(self.name(), llm_response.token_usage)
+                        total_input_tokens += llm_response.token_usage.input_tokens
+                        total_output_tokens += llm_response.token_usage.output_tokens
+                        total_tokens += llm_response.token_usage.total_tokens
+                else:
+                    response = get_clean_llm_response(prompt)
+                    responses.append(response)
+
             except Exception as e:
                 self.add_error(f"Error processing prompt: {str(e)}")
-                responses.append("")  # Add an empty string for failed responses
+                responses.append("")
+
+        if track_tokens:
+            token_summary = f"Input: {total_input_tokens}, Output: {total_output_tokens}, Total: {total_tokens}"
+            self._parms["token_usage"].set(token_summary)
+        else:
+            self._parms["token_usage"].set("Token tracking disabled")
 
         self._parms["response"].set(responses)
         self._output = responses
