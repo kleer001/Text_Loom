@@ -6,6 +6,7 @@ from enum import Enum
 from dataclasses import dataclass
 
 from core.token_manager import get_token_manager
+from TUI.messages import OutputMessage, FileLoaded
 
 
 class Mode(Enum):
@@ -43,7 +44,12 @@ class ModeLine(Static):
 
     def on_mount(self) -> None:
         self._update_token_info()
-        self.set_interval(5.0, self._update_token_info)
+
+    def on_output_message(self, message: OutputMessage) -> None:
+        self._update_token_info()
+
+    def on_file_loaded(self, message: FileLoaded) -> None:
+        self._update_token_info()
 
     def watch_mode(self) -> None:
         self._refresh_display()
