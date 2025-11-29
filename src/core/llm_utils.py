@@ -228,11 +228,19 @@ def query_llm_with_tokens(prompt: str, active_llm: str, config=None) -> Tuple[Op
 
         token_usage = None
         if hasattr(response, 'usage') and response.usage:
-            token_usage = TokenUsage(
-                input_tokens=response.usage.prompt_tokens,
-                output_tokens=response.usage.completion_tokens,
-                total_tokens=response.usage.total_tokens
-            )
+            try:
+                input_tokens = int(response.usage.prompt_tokens) if response.usage.prompt_tokens is not None else 0
+                output_tokens = int(response.usage.completion_tokens) if response.usage.completion_tokens is not None else 0
+                total_tokens = int(response.usage.total_tokens) if response.usage.total_tokens is not None else 0
+
+                token_usage = TokenUsage(
+                    input_tokens=input_tokens,
+                    output_tokens=output_tokens,
+                    total_tokens=total_tokens
+                )
+            except (ValueError, TypeError, AttributeError) as e:
+                print(f"Warning: Failed to parse token usage from LLM response: {e}")
+                token_usage = None
 
         return content, token_usage
 

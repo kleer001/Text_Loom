@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Box,
   Typography,
@@ -31,8 +31,9 @@ export const TokensPanel: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const successTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const loadTokenData = async (): Promise<void> => {
+  const loadTokenData = useCallback(async (): Promise<void> => {
     setLoading(true);
     setError(null);
 
@@ -51,9 +52,9 @@ export const TokensPanel: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const handleReset = async (): Promise<void> => {
+  const handleReset = useCallback(async (): Promise<void> => {
     if (!window.confirm('Are you sure you want to reset all token tracking data? This cannot be undone.')) {
       return;
     }
@@ -62,13 +63,17 @@ export const TokensPanel: React.FC = () => {
     setError(null);
     setSuccessMessage(null);
 
+    if (successTimeoutRef.current) {
+      clearTimeout(successTimeoutRef.current);
+    }
+
     try {
       const result = await apiClient.resetTokenTracking();
       setSuccessMessage(result.message);
       setTotals({ input_tokens: 0, output_tokens: 0, total_tokens: 0 });
       setHistory([]);
 
-      setTimeout(() => setSuccessMessage(null), 3000);
+      successTimeoutRef.current = setTimeout(() => setSuccessMessage(null), 3000);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to reset token data';
       setError(message);
@@ -76,7 +81,7 @@ export const TokensPanel: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   const formatTimestamp = (timestamp: string): string => {
     const date = new Date(timestamp);
@@ -89,6 +94,14 @@ export const TokensPanel: React.FC = () => {
 
   useEffect(() => {
     loadTokenData();
+  }, [loadTokenData]);
+
+  useEffect(() => {
+    return () => {
+      if (successTimeoutRef.current) {
+        clearTimeout(successTimeoutRef.current);
+      }
+    };
   }, []);
 
   return (

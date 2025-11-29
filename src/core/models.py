@@ -14,6 +14,14 @@ class TokenUsage:
     output_tokens: int
     total_tokens: int
 
+    def __post_init__(self) -> None:
+        if self.input_tokens < 0:
+            raise ValueError(f"input_tokens must be >= 0, got {self.input_tokens}")
+        if self.output_tokens < 0:
+            raise ValueError(f"output_tokens must be >= 0, got {self.output_tokens}")
+        if self.total_tokens < 0:
+            raise ValueError(f"total_tokens must be >= 0, got {self.total_tokens}")
+
     def to_dict(self) -> Dict[str, int]:
         return asdict(self)
 
