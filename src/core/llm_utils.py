@@ -1,10 +1,13 @@
 import configparser
+from typing import Optional, Tuple
 
 import requests
-import os 
+import os
+import litellm
 
 from core.text_utils import parse_list
 from core.findLLM import get_active_llm_from_config
+from core.models import TokenUsage, LLMResponse
 
 
 """
@@ -191,10 +194,7 @@ def get_clean_llm_response(prompt):
     return "Error: No active Local LLM found"
 
 
-def query_llm_with_tokens(prompt, active_llm, config=None):
-    import litellm
-    from core.models import TokenUsage
-
+def query_llm_with_tokens(prompt: str, active_llm: str, config=None) -> Tuple[Optional[str], Optional[TokenUsage]]:
     config = config or load_config()
 
     if not active_llm:
@@ -220,6 +220,10 @@ def query_llm_with_tokens(prompt, active_llm, config=None):
             api_base=api_base
         )
 
+        if not response.choices:
+            print("Error: No choices in LLM response")
+            return None, None
+
         content = response.choices[0].message.content
 
         token_usage = None
@@ -237,9 +241,7 @@ def query_llm_with_tokens(prompt, active_llm, config=None):
         return None, None
 
 
-def get_clean_llm_response_with_tokens(prompt):
-    from core.models import LLMResponse, TokenUsage
-
+def get_clean_llm_response_with_tokens(prompt: str) -> LLMResponse:
     config = load_config()
     active_llm = get_active_llm_from_config()
 

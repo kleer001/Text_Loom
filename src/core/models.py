@@ -1,3 +1,9 @@
+"""Data models for LLM token usage tracking.
+
+Provides immutable dataclasses for representing token counts and LLM responses
+with JSON serialization support for React GUI integration.
+"""
+
 from dataclasses import dataclass, asdict
 from typing import Dict, Any, Optional
 
