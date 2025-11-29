@@ -247,7 +247,15 @@ def node_tokens(node_name: str) -> Dict[str, int]:
 
 
 def reset_tokens() -> None:
-    """Reset all token tracking data."""
+    """Reset all token tracking data.
+
+    Prompts for confirmation before clearing all token history.
+    """
+    response = input("Reset all token tracking data? This cannot be undone. (y/N): ")
+    if response.lower() != 'y':
+        print("✗ Token reset cancelled")
+        return
+
     get_token_manager().reset()
     print("✓ Token tracking data reset")
 

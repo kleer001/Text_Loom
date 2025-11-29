@@ -96,7 +96,13 @@ class ModeLine(Static):
         else:
             self.token_view_mode = "session"
 
-    def action_reset_tokens(self) -> None:
+    async def action_reset_tokens(self) -> None:
+        from TUI.reset_tokens_modal import ResetTokensConfirmation
+
+        confirmed = await self.app.push_screen_wait(ResetTokensConfirmation())
+        if not confirmed:
+            return
+
         try:
             token_manager = get_token_manager()
             token_manager.reset()
