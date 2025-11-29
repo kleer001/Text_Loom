@@ -1,74 +1,73 @@
 [NODE]
 ↑/↓: Navigate nodes
 Enter: Select/Connect node
-p: Select node parameters  
 Space: Expand/collapse node
 a: Add node
 d: Delete node
 r: Rename node
-x: Delete connection
+m: Move node path
+p: Select node parameters
 i: Start input connection
 o: Start output connection
+x: Delete connection
 Esc: Cancel connection
 e: Get node output
-m: Move node path
-shift-c: Cook node
-ctrl+o: Open File
-ctrl+s: Quick Save
-ctrl+d: Save As
-ctrl+z: Undo
-ctrl+y: Redo
-ctrl+q: Quit
-ctrl+w: Clear All
-ctrl+l: Load Theme
+Shift+C: Cook node
+Ctrl+O: Open file
+Ctrl+S: Quick save
+Ctrl+D: Save as
+Ctrl+W: Clear all
+Ctrl+Z: Undo
+Ctrl+Y: Redo
+Ctrl+L: Load theme
+Ctrl+Q: Quit
 
 [PARAMETER]
 j/k: Navigate parameters
 Enter: Edit parameter
-Esc: Exit edit mode
 Tab: Next field
-ctrl+x: Remove Current Set
-ctrl+f: Clear All Sets
+Esc: Exit edit mode
+Ctrl+X: Remove current set
+Ctrl+F: Clear all sets
 
 [GLOBAL]
 j/k: Navigate variables
 Enter: Edit value
+n: New variable
 cut <KEY>: Delete variable
 cut all globals: Delete all variables
-n: New variable
 
 [FILE]
 j/k: Navigate files
 Enter: Select
-q: Exit to previous mode
 s: Save
-S: Save As
+S: Save as
+q: Exit to previous mode
 
 [HELP]
-This IS the help system. 
-Ctrl + n: Node 
-Ctrl + p: Parameter    
-Ctrl + g: Global
-Ctrl + f: File    
-Ctrl + h: Help        
-Ctrl + k: Keymap
+Ctrl+N: Node mode
+Ctrl+P: Parameter mode
+Ctrl+G: Global mode
+Ctrl+F: File mode
+Ctrl+H: Help mode
+Ctrl+K: Keymap mode
 
 [KEYMAP]
 j/k: Navigate bindings
 Enter: Edit binding
-d: Delete binding
 n: New binding
+d: Delete binding
 q: Exit to previous mode
 
 [STATUS]
 j/k: Scroll output
-G: Jump to bottom
 gg: Jump to top
+G: Jump to bottom
 n: Next match
 N: Previous match
 
 [OUTPUT]
 j/k: Scroll output
-G: Jump to bottom
 gg: Jump to top
+G: Jump to bottom
 c: Clear output
