@@ -34,16 +34,9 @@ curl -X POST http://127.0.0.1:8000/api/v1/nodes \
   }'
 ```
 
-**Important:** Node types must match enum names exactly (use underscores):
-- ✅ `file_out` not `fileout`
-- ✅ `file_in` not `filein`  
-- ✅ `make_list` not `makelist`
-- ✅ `input_null` not `inputnull`
-- ✅ `output_null` not `outputnull`
-
-**Available node types:** `text`, `file_out`, `file_in`, `null`, `merge`, `split`, `query`, `looper`, `make_list`, `section`, `folder`, `json`, `input_null`, `output_null`
-
-Node types are discovered dynamically from the backend, so new types are automatically supported.
+**Node Type Naming:**
+- Use underscores: `file_out`, `file_in`, `make_list`, `input_null`, `output_null`
+- Available types: `text`, `file_out`, `file_in`, `null`, `merge`, `split`, `query`, `looper`, `make_list`, `section`, `folder`, `json`, `input_null`, `output_null`
 
 ### Update Node
 ```bash
@@ -54,8 +47,7 @@ curl -X PUT http://127.0.0.1:8000/api/v1/nodes/123456789 \
       "text_string": "Updated text",
       "pass_through": false
     },
-    "position": [150.0, 250.0],
-    "selected": true
+    "position": [150.0, 250.0]
   }'
 ```
 
@@ -70,10 +62,10 @@ curl -X POST http://127.0.0.1:8000/api/v1/nodes/123456789/execute
 ```
 
 **Response includes:**
-- `success`: boolean indicating if execution succeeded
-- `output_data`: array of output lists (for multi-output nodes)
+- `success`: boolean
+- `output_data`: array of output lists
 - `execution_time`: milliseconds
-- `node_state`: "cooked", "unchanged", "error", etc.
+- `node_state`: "cooked", "unchanged", "error"
 - `errors`: array of error messages
 - `warnings`: array of warning messages
 
@@ -127,8 +119,8 @@ curl -X PUT http://127.0.0.1:8000/api/v1/globals/MYVAR \
 ```
 
 **Key requirements:**
-- Must be at least 2 characters
-- Must be all uppercase
+- At least 2 characters
+- All uppercase
 - Cannot start with '$'
 
 ### Delete Global
@@ -157,27 +149,27 @@ Returns:
 ### Create a Simple Text → FileOut Pipeline
 
 ```bash
-# 1. Create text node
+# Create text node
 TEXT_NODE=$(curl -s -X POST http://127.0.0.1:8000/api/v1/nodes \
   -H "Content-Type: application/json" \
   -d '{"type": "text", "name": "my_text"}' | jq -r '.session_id')
 
-# 2. Set text content
+# Set text content
 curl -X PUT http://127.0.0.1:8000/api/v1/nodes/$TEXT_NODE \
   -H "Content-Type: application/json" \
   -d '{"parameters": {"text_string": "Hello World", "pass_through": false}}'
 
-# 3. Create fileout node (note the underscore!)
+# Create fileout node
 FILEOUT_NODE=$(curl -s -X POST http://127.0.0.1:8000/api/v1/nodes \
   -H "Content-Type: application/json" \
   -d '{"type": "file_out", "name": "output"}' | jq -r '.session_id')
 
-# 4. Set output filename
+# Set output filename
 curl -X PUT http://127.0.0.1:8000/api/v1/nodes/$FILEOUT_NODE \
   -H "Content-Type: application/json" \
   -d '{"parameters": {"file_name": "./output.txt"}}'
 
-# 5. Connect them
+# Connect them
 curl -X POST http://127.0.0.1:8000/api/v1/connections \
   -H "Content-Type: application/json" \
   -d "{
@@ -187,10 +179,10 @@ curl -X POST http://127.0.0.1:8000/api/v1/connections \
     \"target_input_index\": 0
   }"
 
-# 6. Execute
+# Execute
 curl -X POST http://127.0.0.1:8000/api/v1/nodes/$FILEOUT_NODE/execute
 
-# 7. Check the file
+# Check the file
 cat ./output.txt
 ```
 
@@ -210,7 +202,7 @@ curl http://127.0.0.1:8000/api/v1/workspace | jq '.connections'
 curl http://127.0.0.1:8000/api/v1/globals | jq '.globals'
 ```
 
-### Batch Operations (using jq)
+### Batch Operations
 
 ```bash
 # Delete all nodes
@@ -240,8 +232,7 @@ All errors follow this format:
 {
   "detail": {
     "error": "error_code",
-    "message": "Human-readable message",
-    "additional_context": "..."
+    "message": "Human-readable message"
   }
 }
 ```
@@ -279,7 +270,7 @@ requests.put(
     json={"parameters": {"text_string": "Hello API!"}}
 )
 
-# Create output node (note: file_out with underscore!)
+# Create output node
 fileout = requests.post(
     f"{BASE_URL}/nodes",
     json={"type": "file_out", "name": "output"}
@@ -309,48 +300,22 @@ print(f"Time: {result['execution_time']:.2f}ms")
 
 ## 🔍 Interactive Documentation
 
-### Swagger UI (Recommended)
-Open in browser: `http://127.0.0.1:8000/api/v1/docs`
+### Swagger UI
+`http://127.0.0.1:8000/api/v1/docs`
 
-Features:
-- Try all endpoints interactively
-- See request/response schemas
-- View examples
-- Test authentication (if added)
+Features: Try endpoints interactively, view schemas, test workflows
 
-### ReDoc (Alternative)
-Open in browser: `http://127.0.0.1:8000/api/v1/redoc`
+### ReDoc
+`http://127.0.0.1:8000/api/v1/redoc`
 
-Features:
-- Clean, readable documentation
-- Better for API reference
-- Mobile-friendly
+Features: Clean reference, mobile-friendly
 
 ---
 
 ## ⚡ Performance Tips
 
-1. **Batch reads**: Use `GET /workspace` instead of multiple `GET /nodes/{id}` calls
-2. **Partial updates**: Only send changed parameters in PUT requests
-3. **Connection management**: Connections auto-replace, no need to delete first
-4. **Error handling**: Check `success` field in execution responses, not just HTTP status
-5. **Session IDs**: Cache session IDs on frontend to avoid path lookups
-
----
-
-## 🔐 Future: Authentication
-
-Currently no authentication. When added, endpoints will require:
-
-```bash
-curl -H "Authorization: Bearer YOUR_TOKEN" \
-  http://127.0.0.1:8000/api/v1/nodes
-```
-
----
-
-## 📞 Support
-
-- **API Docs**: http://127.0.0.1:8000/api/v1/docs
-- **GitHub**: [TextLoom Repository]
-- **Issues**: Report bugs via GitHub Issues
+- **Batch reads**: Use `GET /workspace` instead of multiple `GET /nodes/{id}` calls
+- **Partial updates**: Only send changed parameters in PUT requests
+- **Connection management**: Connections auto-replace, no need to delete first
+- **Error handling**: Check `success` field in execution responses
+- **Session IDs**: Cache session IDs on frontend to avoid path lookups
