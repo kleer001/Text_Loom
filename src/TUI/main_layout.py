@@ -5,6 +5,7 @@ from textual.widgets import Static
 from TUI.node_window import NodeWindow, NodeSelected
 from TUI.parameter_window import ParameterWindow
 from TUI.global_window import GlobalWindow
+from TUI.token_window import TokenWindow
 from TUI.output_window import OutputWindow
 from TUI.status_window import StatusWindow
 from TUI.messages import OutputMessage
@@ -39,6 +40,7 @@ class MainLayout(Grid):
             yield OutputWindow()
         with Vertical():
             yield GlobalWindow()
+            yield TokenWindow()
             yield StatusWindow()
 
     def on_node_selected(self, event: NodeSelected) -> None:
