@@ -73,10 +73,35 @@ G: Jump to bottom
 gg: Jump to top
 c: Clear output
 
-[MODELINE] (Token Tracking)
+[MODELINE]
+The modeline displays at the bottom of the screen showing current state and token usage.
+
+Display Format:
+📝🧵 [MODE] filename | debug_info | Keys: keypress   🪙 token_info
+
+Components:
+📝🧵: Mode indicator showing current screen (NODE, PARAMETER, GLOBAL, etc.)
+filename: Current workspace file path (shows "untitled" if not saved)
+debug_info: Optional debug information when available
+Keys: keypress: Shows last keypress sequence when available
+🪙: Token usage from LLM queries (right side)
+
+Token Tracking Keybindings:
 t: Toggle token view (session ↔ node)
-shift+x: Reset all token data
-📝🧵 Shows current mode and file
-🪙 Shows token usage (right side)
-  Session mode: Total tokens for session
-  Node mode: Tokens for selected node
+shift+x: Reset all token data (requires confirmation)
+
+Token Display Modes:
+Session mode: Shows session-wide totals
+  Format: "🪙 in:X out:Y total:Z"
+  Example: "🪙 in:1,250 out:3,400 total:4,650"
+
+Node mode: Shows per-node totals for selected node
+  Format: "🪙 NodeName: in:X out:Y total:Z"
+  Example: "🪙 QueryNode_1: in:450 out:890 total:1,340"
+  Shows "(none selected)" if no node is selected
+
+Token Updates:
+- Automatically updates when nodes are cooked/executed
+- Updates when workspace file is loaded
+- Updates when toggling between modes
+- Updates when selecting different nodes (in node mode)
