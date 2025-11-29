@@ -1,10 +1,13 @@
 import configparser
+from typing import Optional, Tuple
 
 import requests
-import os 
+import os
+import litellm
 
 from core.text_utils import parse_list
 from core.findLLM import get_active_llm_from_config
+from core.models import TokenUsage, LLMResponse
 
 
 """
@@ -189,3 +192,80 @@ def get_clean_llm_response(prompt):
             return content  # only if it's a NOT list item, aka a Riff!
         return "Error: Failed to get a response from the LLM"
     return "Error: No active Local LLM found"
+
+
+def query_llm_with_tokens(prompt: str, active_llm: str, config=None) -> Tuple[Optional[str], Optional[TokenUsage]]:
+    config = config or load_config()
+
+    if not active_llm:
+        print("Error: No active LLM specified")
+        return None, None
+
+    if active_llm not in config:
+        print(f"Error: {active_llm} not found in config")
+        return None, None
+
+    settings = {**config["DEFAULT"], **config[active_llm]}
+    model_name = settings.get("model", "mistral:latest")
+
+    llm_provider = settings.get("provider", "ollama")
+    full_model_name = f"{llm_provider}/{model_name}"
+
+    api_base = settings.get("url", "http://localhost:11434")
+
+    try:
+        response = litellm.completion(
+            model=full_model_name,
+            messages=[{"role": "user", "content": prompt}],
+            api_base=api_base
+        )
+
+        if not response.choices:
+            print("Error: No choices in LLM response")
+            return None, None
+
+        content = response.choices[0].message.content
+
+        token_usage = None
+        if hasattr(response, 'usage') and response.usage:
+            try:
+                input_tokens = int(response.usage.prompt_tokens) if response.usage.prompt_tokens is not None else 0
+                output_tokens = int(response.usage.completion_tokens) if response.usage.completion_tokens is not None else 0
+                total_tokens = int(response.usage.total_tokens) if response.usage.total_tokens is not None else 0
+
+                token_usage = TokenUsage(
+                    input_tokens=input_tokens,
+                    output_tokens=output_tokens,
+                    total_tokens=total_tokens
+                )
+            except (ValueError, TypeError, AttributeError) as e:
+                print(f"Warning: Failed to parse token usage from LLM response: {e}")
+                token_usage = None
+
+        return content, token_usage
+
+    except Exception as e:
+        print(f"Error querying {active_llm} with LiteLLM: {e}")
+        return None, None
+
+
+def get_clean_llm_response_with_tokens(prompt: str) -> LLMResponse:
+    config = load_config()
+    active_llm = get_active_llm_from_config()
+
+    if not active_llm:
+        return LLMResponse(
+            content="Error: No active Local LLM found",
+            token_usage=None
+        )
+
+    content, token_usage = query_llm_with_tokens(prompt, active_llm, config)
+
+    if content is None:
+        return LLMResponse(
+            content="Error: Failed to get a response from the LLM",
+            token_usage=None
+        )
+
+    return LLMResponse(content=content, token_usage=token_usage)
+

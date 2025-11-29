@@ -10,7 +10,8 @@ from repl.helpers import (
     children, set_parent, errors, clear_errors, warnings, clear_warnings,
     input_names, output_names, node_type, input_nodes,
     cook_count, last_cook_time, needs_to_cook, is_time_dependent, cook_dependencies,
-    inputs_with_indices, outputs_with_indices, node_exists, rename
+    inputs_with_indices, outputs_with_indices, node_exists, rename,
+    token_totals, token_history, node_tokens, reset_tokens
 )
 
 
@@ -50,6 +51,12 @@ Organization & introspection:
   node_type(node)                - Get node type
   input_names(node)              - Get input names dict
   output_names(node)             - Get output names dict
+
+Token tracking (LLM queries):
+  token_totals()                 - Get session-wide token usage
+  token_history()                - Get query history with timestamps
+  node_tokens(node_name)         - Get per-node token totals
+  reset_tokens()                 - Clear all token tracking data
 
 Type 'help()' to see all functions. Tab completion enabled.
 """
@@ -96,6 +103,10 @@ def run_shell(flowstate_file: Optional[Path] = None, script_file: Optional[Path]
         'outputs_with_indices': outputs_with_indices,
         'node_exists': node_exists,
         'rename': rename,
+        'token_totals': token_totals,
+        'token_history': token_history,
+        'node_tokens': node_tokens,
+        'reset_tokens': reset_tokens,
     })
 
     if flowstate_file:

@@ -8,6 +8,7 @@ class Mode(Enum):
     NODE = auto()
     PARAMETER = auto()
     GLOBAL = auto()
+    TOKENS = auto()
     FILE = auto()
     HELP = auto()
     KEYMAP = auto()

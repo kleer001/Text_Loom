@@ -508,6 +508,11 @@ class TUIApp(App[None]):
         self.logger.debug(f"Global deleted: {message.key}")
         self._handle_network_change("global_deleted")
 
+    def on_node_selected(self, message: NodeSelected) -> None:
+        self.logger.debug(f"Node selected: {message.node_path}")
+        node_name = message.node_path.split('/')[-1] if message.node_path else ""
+        self.mode_line.selected_node_name = node_name
+
 if __name__ == "__main__":
     print("Starting main...")
     app = TUIApp()

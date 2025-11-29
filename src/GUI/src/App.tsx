@@ -14,10 +14,12 @@ import {
 } from '@mui/material';
 import InfoIcon from '@mui/icons-material/Info';
 import PublicIcon from '@mui/icons-material/Public';
+import ShowChartIcon from '@mui/icons-material/ShowChart';
 import { WorkspaceProvider, useWorkspace } from './WorkspaceContext';
 import { GraphCanvas } from './GraphCanvas';
 import { NodeDetailsPanel } from './NodeDetailsPanel';
 import { GlobalsPanel } from './GlobalsPanel';
+import { TokensPanel } from './TokensPanel';
 import { AddNodeMenu } from './AddNodeMenu';
 import { OutputPanel } from './OutputPanel';
 import { MenuBar } from './MenuBar';
@@ -34,7 +36,7 @@ const AppContent: React.FC = () => {
   const { nodes, loadWorkspace, loading, error, lastExecutionResult, lastExecutedNodeName, clearExecutionResult } = useWorkspace();
   const { save, saveAs, open, newWorkspace, isDirty, markClean } = useFileManager();
   const [focusedNode, setFocusedNode] = useState<NodeResponse | null>(null);
-  const [activeTab, setActiveTab] = useState<'details' | 'globals'>('details');
+  const [activeTab, setActiveTab] = useState<'details' | 'globals' | 'tokens'>('details');
   const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
   const [autosaveRecovery, setAutosaveRecovery] = useState<{
@@ -338,11 +340,18 @@ const AppContent: React.FC = () => {
                 icon={<PublicIcon />}
                 iconPosition="start"
               />
+              <Tab
+                value="tokens"
+                label="Tokens"
+                icon={<ShowChartIcon />}
+                iconPosition="start"
+              />
             </Tabs>
 
             <Box sx={{ flex: 1, overflow: 'hidden' }}>
               {activeTab === 'details' && <NodeDetailsPanel node={focusedNode} />}
               {activeTab === 'globals' && <GlobalsPanel />}
+              {activeTab === 'tokens' && <TokensPanel />}
             </Box>
           </Paper>
         </Box>

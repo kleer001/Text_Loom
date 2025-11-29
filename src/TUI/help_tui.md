@@ -1,7 +1,7 @@
 [NODE]
 ↑/↓: Navigate nodes
 Enter: Select/Connect node
-p: Select node parameters  
+p: Select node parameters
 Space: Expand/collapse node
 a: Add node
 d: Delete node
@@ -45,12 +45,12 @@ s: Save
 S: Save As
 
 [HELP]
-This IS the help system. 
-Ctrl + n: Node 
-Ctrl + p: Parameter    
+This IS the help system.
+Ctrl + n: Node
+Ctrl + p: Parameter
 Ctrl + g: Global
-Ctrl + f: File    
-Ctrl + h: Help        
+Ctrl + f: File
+Ctrl + h: Help
 Ctrl + k: Keymap
 
 [KEYMAP]
@@ -72,3 +72,11 @@ j/k: Scroll output
 G: Jump to bottom
 gg: Jump to top
 c: Clear output
+
+[MODELINE] (Token Tracking)
+t: Toggle token view (session ↔ node)
+shift+x: Reset all token data
+📝🧵 Shows current mode and file
+🪙 Shows token usage (right side)
+  Session mode: Total tokens for session
+  Node mode: Tokens for selected node

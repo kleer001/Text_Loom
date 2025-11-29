@@ -12,7 +12,9 @@ import type {
   ExecutionResponse,
   GlobalsListResponse,
   GlobalResponse,
-  GlobalSetRequest
+  GlobalSetRequest,
+  TokenTotalsResponse,
+  TokenHistoryResponse
 } from './types';
 
 const API_BASE_URL = 'http://localhost:8000/api/v1';
@@ -219,6 +221,25 @@ class ApiClient {
     }>;
   }> {
     return this.fetchJson(`/files/browse?path=${encodeURIComponent(path)}`);
+  }
+
+  // Token tracking operations
+  async getTokenTotals(): Promise<TokenTotalsResponse> {
+    return this.fetchJson<TokenTotalsResponse>('/tokens/totals');
+  }
+
+  async getTokenHistory(): Promise<TokenHistoryResponse> {
+    return this.fetchJson<TokenHistoryResponse>('/tokens/history');
+  }
+
+  async getNodeTokenTotals(nodeName: string): Promise<TokenTotalsResponse> {
+    return this.fetchJson<TokenTotalsResponse>(`/tokens/node/${encodeURIComponent(nodeName)}`);
+  }
+
+  async resetTokenTracking(): Promise<{ success: boolean; message: string }> {
+    return this.fetchJson<{ success: boolean; message: string }>('/tokens/reset', {
+      method: 'POST',
+    });
   }
 }
 

@@ -3,6 +3,7 @@ from pathlib import Path
 from core.base_classes import Node, NodeEnvironment, NodeType
 from core.flowstate_manager import save_flowstate, load_flowstate
 from core.global_store import GlobalStore
+from core.token_manager import get_token_manager
 from utils.node_loader import discover_node_types
 
 
@@ -228,4 +229,33 @@ def node_exists(path: str) -> bool:
 
 def rename(old_path: str, new_parent_path: str) -> tuple:
     return NodeEnvironment.update_node_path(old_path, new_parent_path)
+
+
+def token_totals() -> Dict[str, int]:
+    """Get session-wide token usage totals."""
+    return get_token_manager().get_totals()
+
+
+def token_history() -> List[Dict[str, Any]]:
+    """Get complete token usage history with timestamps."""
+    return get_token_manager().get_history()
+
+
+def node_tokens(node_name: str) -> Dict[str, int]:
+    """Get token usage totals for a specific node."""
+    return get_token_manager().get_node_totals(node_name)
+
+
+def reset_tokens() -> None:
+    """Reset all token tracking data.
+
+    Prompts for confirmation before clearing all token history.
+    """
+    response = input("Reset all token tracking data? This cannot be undone. (y/N): ")
+    if response.lower() != 'y':
+        print("✗ Token reset cancelled")
+        return
+
+    get_token_manager().reset()
+    print("✓ Token tracking data reset")
 
