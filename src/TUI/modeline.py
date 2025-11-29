@@ -4,6 +4,8 @@ from typing import ClassVar
 from enum import Enum
 from dataclasses import dataclass
 
+from core.token_manager import get_token_manager
+
 
 class Mode(Enum):
     NODE = "NODE"
@@ -28,18 +30,34 @@ class ModeLine(Static):
     path: str = reactive("untitled")
     debug_info: str = reactive("")
     keypress: str = reactive("")
+    token_info: str = reactive("")
+
+    def on_mount(self) -> None:
+        self._update_token_info()
+        self.set_interval(5.0, self._update_token_info)
 
     def watch_mode(self) -> None:
         self._refresh_display()
 
     def watch_path(self) -> None:
         self._refresh_display()
-        
+
     def watch_debug_info(self) -> None:
         self._refresh_display()
 
     def watch_keypress(self) -> None:
         self._refresh_display()
+
+    def watch_token_info(self) -> None:
+        self._refresh_display()
+
+    def _update_token_info(self) -> None:
+        try:
+            token_manager = get_token_manager()
+            totals = token_manager.get_totals()
+            self.token_info = f"in:{totals['input_tokens']:,} out:{totals['output_tokens']:,} total:{totals['total_tokens']:,}"
+        except Exception:
+            self.token_info = ""
 
     def _refresh_display(self) -> None:
         display_text = f"📝🧵 [{self.mode}] {self.path}"
@@ -47,4 +65,6 @@ class ModeLine(Static):
             display_text += f" | {self.debug_info}"
         if self.keypress:
             display_text += f" | Keys: {self.keypress}"
+        if self.token_info:
+            display_text += f"   🪙 {self.token_info}"
         self.update(display_text)
