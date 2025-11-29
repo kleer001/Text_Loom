@@ -33,7 +33,7 @@ curl -fsSL https://raw.githubusercontent.com/kleer001/Text_Loom/master/install.s
 ```bash
 git clone https://github.com/kleer001/Text_Loom
 cd Text_Loom
-python3 docker_wizard.py
+python3 docker/docker_wizard.py
 ```
 
 ---

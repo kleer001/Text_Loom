@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Dict, List, Tuple
 from enum import Enum
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 
 try:
     from core.findLLM import load_config
@@ -298,7 +298,7 @@ def launch_containers(use_ollama: bool):
 def main():
     print_header("Text Loom Docker Setup Wizard")
 
-    os.chdir(Path(__file__).parent)
+    os.chdir(Path(__file__).parent.parent)
 
     print_header("Step 1: Prerequisites")
     docker_ok, compose_ok = check_prerequisites()

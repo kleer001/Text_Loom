@@ -262,3 +262,22 @@ fabric.properties
 /script_jail/
 /saved_cues/
 save_file.json
+
+# Test/autosave output files - prevent clutter in src/
+src/*.json
+!src/tests/**/*.json
+src/autosave.json
+src/demo_*.json
+src/save_file*.json
+src/test_positions.json
+
+# Build artifacts
+src/configparser
+configparser
+
+# Development/analysis tools - not for release
+src/code_stats.py
+src/dependency_analyzer.py
+src/extract_class.py
+src/find_imports.py
+src/import_analyzer.py
