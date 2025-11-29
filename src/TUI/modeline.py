@@ -1,5 +1,6 @@
 from textual.reactive import reactive
 from textual.widgets import Static
+from textual.binding import Binding
 from typing import ClassVar
 from enum import Enum
 from dataclasses import dataclass
@@ -26,11 +27,19 @@ class ModeLine(Static):
         padding: 0 1;
     }
     """
+
+    BINDINGS = [
+        Binding("t", "toggle_token_view", "Toggle Token View", show=False),
+        Binding("shift+x", "reset_tokens", "Reset Tokens", show=False),
+    ]
+
     mode: Mode = reactive(Mode.NODE)
     path: str = reactive("untitled")
     debug_info: str = reactive("")
     keypress: str = reactive("")
     token_info: str = reactive("")
+    selected_node_name: str = reactive("")
+    token_view_mode: str = reactive("session")
 
     def on_mount(self) -> None:
         self._update_token_info()
@@ -51,13 +60,43 @@ class ModeLine(Static):
     def watch_token_info(self) -> None:
         self._refresh_display()
 
+    def watch_token_view_mode(self) -> None:
+        self._update_token_info()
+
+    def watch_selected_node_name(self) -> None:
+        if self.token_view_mode == "node":
+            self._update_token_info()
+
     def _update_token_info(self) -> None:
         try:
             token_manager = get_token_manager()
-            totals = token_manager.get_totals()
-            self.token_info = f"in:{totals['input_tokens']:,} out:{totals['output_tokens']:,} total:{totals['total_tokens']:,}"
+
+            if self.token_view_mode == "session":
+                totals = token_manager.get_totals()
+                self.token_info = f"in:{totals['input_tokens']:,} out:{totals['output_tokens']:,} total:{totals['total_tokens']:,}"
+            elif self.token_view_mode == "node" and self.selected_node_name:
+                totals = token_manager.get_node_totals(self.selected_node_name)
+                self.token_info = f"{self.selected_node_name}: in:{totals['input_tokens']:,} out:{totals['output_tokens']:,} total:{totals['total_tokens']:,}"
+            elif self.token_view_mode == "node":
+                self.token_info = "node: (none selected)"
+            else:
+                self.token_info = ""
         except Exception:
             self.token_info = ""
+
+    def action_toggle_token_view(self) -> None:
+        if self.token_view_mode == "session":
+            self.token_view_mode = "node"
+        else:
+            self.token_view_mode = "session"
+
+    def action_reset_tokens(self) -> None:
+        try:
+            token_manager = get_token_manager()
+            token_manager.reset()
+            self._update_token_info()
+        except Exception:
+            pass
 
     def _refresh_display(self) -> None:
         display_text = f"📝🧵 [{self.mode}] {self.path}"
