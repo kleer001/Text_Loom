@@ -119,3 +119,23 @@ export interface GlobalsListResponse {
 export interface GlobalSetRequest {
   value: string | number | boolean;
 }
+
+// Token tracking types
+export interface TokenTotalsResponse {
+  input_tokens: number;
+  output_tokens: number;
+  total_tokens: number;
+}
+
+export interface TokenHistoryEntry {
+  timestamp: string;
+  node_name: string;
+  input_tokens: number;
+  output_tokens: number;
+  total_tokens: number;
+}
+
+export interface TokenHistoryResponse {
+  count: number;
+  history: TokenHistoryEntry[];
+}
