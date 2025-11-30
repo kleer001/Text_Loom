@@ -7,16 +7,66 @@ from core.parm import Parm, ParameterType
 from core.enums import FunctionalGroup
 
 class ChunkNode(Node):
-    """Splits text into chunks using various strategies.
+    """A node that splits text into chunks using various strategies.
 
-    Supports chunking by character count, sentence boundaries, or paragraph
-    boundaries. Can respect sentence/paragraph boundaries to avoid mid-sentence
-    splits and supports overlapping chunks for context preservation.
+    Supports chunking by character count, sentence boundaries, or paragraph boundaries.
+    Can respect sentence/paragraph boundaries to avoid mid-sentence splits and supports
+    overlapping chunks for context preservation. This is particularly useful for
+    preparing text for LLM processing with token limits or creating manageable text
+    segments.
 
     Attributes:
-        GLYPH (str): Display glyph '⊞'
-        SINGLE_INPUT (bool): Accepts single input connection
-        SINGLE_OUTPUT (bool): Produces single output connection
+        chunk_mode (str): Determines the chunking strategy. Options: "character"
+            (splits by character count), "sentence" (splits by sentence boundaries
+            using punctuation detection), "paragraph" (splits by paragraph boundaries
+            using double newlines).
+        chunk_size (int): Target size for each chunk in characters. The actual size
+            may vary based on boundary respect settings. Default: 1000.
+        overlap_size (int): Number of characters to overlap between consecutive chunks.
+            Useful for maintaining context across chunk boundaries. Default: 100.
+        respect_boundaries (bool): When True and chunk_mode is "character", avoids
+            splitting mid-sentence. When False, splits strictly at character count.
+            Default: True.
+        min_chunk_size (int): Minimum size for a chunk in characters. Chunks smaller
+            than this are merged with the previous chunk. Default: 50.
+        add_metadata (bool): When True, prepends each chunk with metadata in format
+            "Chunk N/Total: {content}". Default: False.
+        enabled (bool): Enables/disables the node's functionality. Default: True.
+
+    Example:
+        >>> node = Node.create_node(NodeType.CHUNK, node_name="chunker")
+        >>> node._parms["chunk_mode"].set("character")
+        >>> node._parms["chunk_size"].set(500)
+        >>> node._parms["overlap_size"].set(50)
+        >>> node._parms["respect_boundaries"].set(True)
+        >>> node.cook()
+        # Splits text into ~500 character chunks with 50 character overlap
+
+    Note:
+        **Chunking Strategies:**
+        *   "character": Splits by character count
+        *   "sentence": Splits by sentence boundaries (uses punctuation detection)
+        *   "paragraph": Splits by paragraph boundaries (double newlines)
+
+        **Boundary Respect:**
+        *   When respect_boundaries is True, chunks may be larger than chunk_size
+        *   Sentence detection uses regex for periods, exclamation marks, question marks
+        *   Paragraph detection requires double newlines (`\n\n`)
+
+        **Input:**
+        *   `List[str]`: Collection of text items to chunk
+
+        **Output:**
+        *   `List[str]`: Text chunks (all input items are chunked and concatenated)
+
+        **Edge Cases:**
+        *   Sentence detection: `(?<=[.!?])\s+` regex pattern
+        *   Paragraph detection: requires `\n\n` separator
+        *   Overlap is measured in characters, not semantic units
+        *   Minimum chunk size prevents orphaned fragments
+        *   Multiple input items are processed sequentially
+        *   When respect_boundaries is True, chunks preserve complete sentences
+        *   Metadata format when add_metadata is True: "Chunk N/Total: {content}"
     """
 
     GLYPH = '⊞'

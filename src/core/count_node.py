@@ -9,17 +9,71 @@ from core.enums import FunctionalGroup
 
 
 class CountNode(Node):
-    """Performs counting and statistical operations on text lists.
+    """A node that performs counting and statistical operations on text lists.
 
-    Provides counting operations (items, words, characters, lines),
-    deduplication with order preservation, and frequency analysis for
-    words and characters. Results can be formatted as plain text,
-    labeled output, or JSON.
+    Provides counting operations (items, words, characters, lines), deduplication with
+    order preservation, and frequency analysis for words and characters. Results can be
+    formatted as plain text, labeled output, or JSON for downstream processing.
 
     Attributes:
-        GLYPH (str): Display glyph '#'
-        SINGLE_INPUT (bool): Accepts single input connection
-        SINGLE_OUTPUT (bool): Produces single output connection
+        stat_mode (str): Determines the statistical operation to perform. Options:
+            "count" (counts based on count_what parameter), "deduplicate" (removes
+            duplicate items from list), "word_freq" (analyzes word frequency across
+            all input items), "char_freq" (analyzes character frequency).
+        count_what (str): When stat_mode is "count", specifies what to count. Options:
+            "items" (total number of list items), "words" (total word count across
+            all items), "characters" (total character count), "lines" (total line
+            count including newlines + 1 per item).
+        preserve_order (bool): When True in deduplicate mode, maintains the original
+            order of first occurrences. When False, sorts deduplicated items
+            alphabetically.
+        top_n (int): For frequency modes, limits output to top N most frequent items.
+            Set to 0 for unlimited (all items).
+        case_sensitive (bool): When True, treats uppercase and lowercase as distinct
+            in deduplication and frequency analysis. When False, normalizes to lowercase.
+        format_output (str): Determines output format. Options: "plain" (simple values
+            or key: value for frequencies), "labeled" (descriptive labels like
+            "Items count: 5"), "json" (JSON formatted output for programmatic processing).
+        enabled (bool): Enables/disables the node's functionality.
+
+    Example:
+        >>> node = Node.create_node(NodeType.COUNT, node_name="counter")
+        >>> node._parms["stat_mode"].set("count")
+        >>> node._parms["count_what"].set("words")
+        >>> node._parms["format_output"].set("plain")
+        >>> node.cook()
+        # Outputs total word count as a string
+
+    Note:
+        **Statistical Modes:**
+        *   "count": Counts items, words, characters, or lines based on count_what
+        *   "deduplicate": Removes duplicate items (optionally preserving order)
+        *   "word_freq": Analyzes word frequency across all input items
+        *   "char_freq": Analyzes character frequency across all input items
+
+        **Count Types:**
+        *   "items": Total number of list items
+        *   "words": Total word count (whitespace splitting)
+        *   "characters": Total character count across all items
+        *   "lines": Total line count (counts newlines + 1 per item)
+
+        **Format Options:**
+        *   "plain": Simple values ["4"] or ["word: 5", "hello: 3"]
+        *   "labeled": Descriptive ["Items count: 4"] or ["Item 1: value"]
+        *   "json": JSON format for programmatic processing
+
+        **Input:**
+        *   `List[str]`: Collection of text items to analyze
+
+        **Output:**
+        *   `List[str]`: Statistical results (format depends on stat_mode and format_output)
+
+        **Edge Cases:**
+        *   Word counting uses simple whitespace splitting
+        *   Line counting includes implicit final line (count of newlines + 1 per item)
+        *   Deduplication with preserve_order=False uses alphabetical sorting
+        *   Frequency analysis with top_n=0 returns all items sorted by frequency
+        *   Case-insensitive mode normalizes text to lowercase for comparison
     """
 
     GLYPH = '#'
