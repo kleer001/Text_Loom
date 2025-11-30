@@ -14,7 +14,7 @@ from mcp.types import Tool, TextContent, ImageContent, EmbeddedResource
 from mcp.server.stdio import stdio_server
 
 from mcp.session_manager import get_session_manager
-from mcp.workflow_builder import WorkflowBuilder, get_available_node_types
+from mcp.workflow_builder import WorkflowBuilder, get_available_node_types, get_node_details
 
 
 app = Server("text-loom")
@@ -39,8 +39,22 @@ async def list_tools() -> List[Tool]:
         ),
         Tool(
             name="list_node_types",
-            description="List all available node types and their descriptions",
+            description="List all available node types with brief descriptions (lightweight - ~500 tokens). Use get_node_details for full documentation.",
             inputSchema={"type": "object", "properties": {}}
+        ),
+        Tool(
+            name="get_node_details",
+            description="Get detailed documentation for a specific node type including full docstring, parameters, types, and defaults. Use after list_node_types to get specifics.",
+            inputSchema={
+                "type": "object",
+                "required": ["node_type"],
+                "properties": {
+                    "node_type": {
+                        "type": "string",
+                        "description": "Node type name (e.g., 'query', 'file_out', 'looper')"
+                    }
+                }
+            }
         ),
         Tool(
             name="add_node",
@@ -221,9 +235,32 @@ async def call_tool(name: str, arguments: Any) -> List[TextContent]:
                 type="text",
                 text=json.dumps({
                     "success": True,
-                    "node_types": node_types
+                    "node_types": node_types,
+                    "note": "Use get_node_details(node_type) for full documentation of a specific node"
                 }, indent=2)
             )]
+
+        elif name == "get_node_details":
+            node_type = arguments["node_type"]
+
+            try:
+                details = get_node_details(node_type)
+                return [TextContent(
+                    type="text",
+                    text=json.dumps({
+                        "success": True,
+                        "node_details": details
+                    }, indent=2)
+                )]
+            except ValueError as e:
+                return [TextContent(
+                    type="text",
+                    text=json.dumps({
+                        "success": False,
+                        "error": str(e),
+                        "hint": "Use list_node_types to see available types"
+                    }, indent=2)
+                )]
 
         elif name == "add_node":
             session_id = arguments["session_id"]

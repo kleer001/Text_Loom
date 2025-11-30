@@ -150,19 +150,19 @@ class WorkflowBuilder:
 
 
 def get_available_node_types() -> List[Dict[str, Any]]:
-    """Get detailed information about all available node types.
+    """Get lightweight list of all available node types.
+
+    Returns minimal info for browsing - use get_node_details() for full docs.
 
     Returns:
         List of dicts containing:
         - type: Node type name (lowercase)
-        - description: Short description
-        - docstring: Full class docstring with examples and details
-        - parameters: List of available parameters with types and defaults
+        - description: Short one-line description
+        - parameter_names: List of parameter names (no types/defaults)
         - inputs: Number of inputs (or "multiple" for unlimited)
         - outputs: Number of outputs
     """
     node_types = []
-    core_dir = Path(__file__).parent.parent / "core"
 
     for node_type in NodeType:
         type_name = node_type.name.lower()
@@ -178,7 +178,6 @@ def get_available_node_types() -> List[Dict[str, Any]]:
                 node_class = getattr(module, class_name)
             except ImportError:
                 # If import fails, try to load just for docstring extraction
-                # by importing with modified sys.modules to stub dependencies
                 import sys
                 original_modules = sys.modules.copy()
                 try:
@@ -191,11 +190,13 @@ def get_available_node_types() -> List[Dict[str, Any]]:
                     sys.modules.clear()
                     sys.modules.update(original_modules)
 
-            # Extract docstring
+            # Extract docstring (just first line for description)
             docstring = inspect.getdoc(node_class) or "No documentation available"
+            description = docstring.split('\n')[0]
 
-            # Extract parameters from __init__
+            # Extract just parameter names (lightweight)
             parameters = _extract_parameters(node_class)
+            param_names = [p["name"] for p in parameters]
 
             # Get input/output info from class attributes
             single_input = getattr(node_class, 'SINGLE_INPUT', True)
@@ -203,9 +204,8 @@ def get_available_node_types() -> List[Dict[str, Any]]:
 
             node_types.append({
                 "type": type_name,
-                "description": docstring.split('\n')[0],  # First line as short description
-                "docstring": docstring,
-                "parameters": parameters,
+                "description": description,
+                "parameter_names": param_names,
                 "inputs": 1 if single_input else "multiple",
                 "outputs": 1 if single_output else "multiple"
             })
@@ -215,13 +215,92 @@ def get_available_node_types() -> List[Dict[str, Any]]:
             node_types.append({
                 "type": type_name,
                 "description": _get_fallback_description(node_type),
-                "docstring": _get_fallback_docstring(node_type),
-                "parameters": [],
+                "parameter_names": [],
                 "inputs": 1,
                 "outputs": 1
             })
 
     return node_types
+
+
+def get_node_details(node_type_name: str) -> Dict[str, Any]:
+    """Get detailed documentation for a specific node type.
+
+    Args:
+        node_type_name: Node type (e.g., "query", "file_out")
+
+    Returns:
+        Dict containing:
+        - type: Node type name
+        - description: Short description
+        - docstring: Full class docstring with examples and details
+        - parameters: List of parameters with names, types, and defaults
+        - inputs: Number of inputs
+        - outputs: Number of outputs
+
+    Raises:
+        ValueError: If node type doesn't exist
+    """
+    # Find the NodeType enum value
+    try:
+        node_type = NodeType[node_type_name.upper()]
+    except KeyError:
+        raise ValueError(f"Unknown node type: {node_type_name}")
+
+    type_name = node_type.name.lower()
+
+    # Import the node class dynamically
+    try:
+        module_name = f"core.{type_name}_node"
+        class_name = ''.join(word.capitalize() for word in type_name.split('_')) + 'Node'
+
+        # Try importing - some nodes have dependencies that may not be installed
+        try:
+            module = importlib.import_module(module_name)
+            node_class = getattr(module, class_name)
+        except ImportError:
+            # If import fails, try to load just for docstring extraction
+            import sys
+            original_modules = sys.modules.copy()
+            try:
+                # Stub out problematic imports
+                sys.modules['litellm'] = type('module', (), {})()
+                module = importlib.import_module(module_name)
+                node_class = getattr(module, class_name)
+            finally:
+                # Restore original modules
+                sys.modules.clear()
+                sys.modules.update(original_modules)
+
+        # Extract full docstring
+        docstring = inspect.getdoc(node_class) or "No documentation available"
+
+        # Extract detailed parameters
+        parameters = _extract_parameters(node_class)
+
+        # Get input/output info from class attributes
+        single_input = getattr(node_class, 'SINGLE_INPUT', True)
+        single_output = getattr(node_class, 'SINGLE_OUTPUT', True)
+
+        return {
+            "type": type_name,
+            "description": docstring.split('\n')[0],
+            "docstring": docstring,
+            "parameters": parameters,
+            "inputs": 1 if single_input else "multiple",
+            "outputs": 1 if single_output else "multiple"
+        }
+
+    except (ImportError, AttributeError) as e:
+        # Fallback for nodes that can't be imported at all
+        return {
+            "type": type_name,
+            "description": _get_fallback_description(node_type),
+            "docstring": _get_fallback_docstring(node_type),
+            "parameters": [],
+            "inputs": 1,
+            "outputs": 1
+        }
 
 
 def _extract_parameters(node_class) -> List[Dict[str, Any]]:
