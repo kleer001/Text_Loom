@@ -18,10 +18,10 @@ source .venv/bin/activate
 pip install -e .
 export PYTHONPATH=$PYTHONPATH:$(pwd)/src
 
-./text_loom.py              # Start GUI (default)
-./text_loom.py -t           # Terminal UI
-./text_loom.py -r           # Python REPL
-./text_loom.py -b -f work.json  # Batch execute
+./text_loom              # Start GUI (default)
+./text_loom -t           # Terminal UI
+./text_loom -r           # Python REPL
+./text_loom -b -f work.json  # Batch execute
 ```
 
 **One-liner:**
@@ -33,7 +33,7 @@ curl -fsSL https://raw.githubusercontent.com/kleer001/Text_Loom/master/install.s
 ```bash
 git clone https://github.com/kleer001/Text_Loom
 cd Text_Loom
-python3 docker_wizard.py
+python3 docker/docker_wizard.py
 ```
 
 ---
@@ -43,12 +43,42 @@ python3 docker_wizard.py
 Choose your workflow—all use the same core:
 
 ```bash
-./text_loom.py -r           # REPL: Interactive Python shell (hython-style)
-./text_loom.py -t           # TUI: Terminal UI (keyboard-driven)
-./text_loom.py -a           # API: FastAPI server (automation)
-./text_loom.py -g           # GUI: Web interface (visual)
-./text_loom.py -b           # Batch: Non-interactive execution
+./text_loom -r           # REPL: Interactive Python shell (hython-style)
+./text_loom -t           # TUI: Terminal UI (keyboard-driven)
+./text_loom -a           # API: FastAPI server (automation)
+./text_loom -g           # GUI: Web interface (visual)
+./text_loom -b           # Batch: Non-interactive execution
 ```
+
+---
+
+## LLM Integration (MCP)
+
+**Let Claude build workflows for you!**
+
+Text Loom includes an MCP (Model Context Protocol) server that enables LLMs like Claude to create workflows programmatically:
+
+```bash
+# Configure Claude Desktop with Text Loom
+# Add to ~/Library/Application Support/Claude/claude_desktop_config.json:
+{
+  "mcpServers": {
+    "text-loom": {
+      "command": "/path/to/Text_Loom/mcp_server"
+    }
+  }
+}
+```
+
+Then ask Claude:
+> "Using Text Loom, create a workflow that reads article.txt, summarizes it, and saves to summary.txt"
+
+Claude will:
+- ✅ Create the workflow
+- ✅ Execute it
+- ✅ Give you the JSON to save and reuse
+
+**Learn more:** [`/docs/MCP_INTEGRATION.md`](docs/MCP_INTEGRATION.md)
 
 ---
 

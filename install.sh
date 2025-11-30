@@ -98,7 +98,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/.venv/bin/activate"
 export PYTHONPATH="$SCRIPT_DIR/src:$PYTHONPATH"
 echo "Text_Loom environment activated!"
-echo "Run: ./text_loom.py"
+echo "Run: ./text_loom"
 EOL
 
     chmod +x activate.sh
@@ -110,13 +110,13 @@ next_steps() {
     echo -e "${MAGENTA}${BOLD}Installation Complete!${NC}"
     echo
     echo -e "${CYAN}Quick start:${NC}"
-    echo -e "  ${GREEN}cd $INSTALL_DIR && source activate.sh && ./text_loom.py${NC}"
+    echo -e "  ${GREEN}cd $INSTALL_DIR && source activate.sh && ./text_loom${NC}"
     echo
     echo -e "${CYAN}Available modes:${NC}"
-    echo -e "  ${GREEN}./text_loom.py -t${NC}  ${YELLOW}Terminal UI${NC}"
-    echo -e "  ${GREEN}./text_loom.py -r${NC}  ${YELLOW}Python REPL${NC}"
-    echo -e "  ${GREEN}./text_loom.py -g${NC}  ${YELLOW}Web GUI${NC}"
-    echo -e "  ${GREEN}./text_loom.py -b${NC}  ${YELLOW}Batch mode${NC}"
+    echo -e "  ${GREEN}./text_loom -t${NC}  ${YELLOW}Terminal UI${NC}"
+    echo -e "  ${GREEN}./text_loom -r${NC}  ${YELLOW}Python REPL${NC}"
+    echo -e "  ${GREEN}./text_loom -g${NC}  ${YELLOW}Web GUI${NC}"
+    echo -e "  ${GREEN}./text_loom -b${NC}  ${YELLOW}Batch mode${NC}"
     echo
     echo -e "${MAGENTA}${BOLD}Set up LLM API keys before using Query nodes${NC}"
     echo

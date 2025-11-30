@@ -8,16 +8,65 @@ from core.enums import FunctionalGroup
 
 
 class SearchNode(Node):
-    """Searches and filters text items based on patterns and keywords.
+    """A node that searches and filters text items based on patterns and keywords.
 
     Supports multiple search modes (contains, exact, starts_with, ends_with, regex)
-    and can combine multiple keywords with AND/OR/NOT boolean logic. Provides
-    dual outputs: matching items and non-matching items.
+    and can combine multiple keywords with AND/OR/NOT boolean logic. Provides dual
+    outputs for matching and non-matching items, making it ideal for filtering and
+    routing text through node graphs.
 
     Attributes:
-        GLYPH (str): Display glyph '🔍'
-        SINGLE_INPUT (bool): Accepts single input connection
-        SINGLE_OUTPUT (bool): Produces multiple output connections
+        search_text (str): The search term(s) to match against. Multiple terms can be
+            separated by commas or spaces. Each term is treated according to the
+            boolean_mode setting.
+        search_mode (str): Determines how to match search terms. Options: "contains"
+            (item contains term anywhere), "exact" (item equals term), "starts_with"
+            (item starts with term), "ends_with" (item ends with term), "regex"
+            (term is regular expression).
+        case_sensitive (bool): When True, matches are case-sensitive. When False,
+            ignores case differences.
+        boolean_mode (str): Controls how multiple search terms are combined. Options:
+            "OR" (matches items matching ANY term), "AND" (matches items matching ALL
+            terms), "NOT" (matches items matching NONE of the terms).
+        invert_match (bool): When True, inverts the matching logic (matching items go
+            to non-matching output and vice versa).
+        enabled (bool): Enables/disables the node's functionality.
+
+    Example:
+        >>> node = Node.create_node(NodeType.SEARCH, node_name="filter")
+        >>> node._parms["search_text"].set("apple, banana")
+        >>> node._parms["search_mode"].set("contains")
+        >>> node._parms["boolean_mode"].set("OR")
+        >>> node.cook()
+        # Matches items containing either "apple" or "banana"
+
+    Note:
+        **Search Modes:**
+        *   "contains": Item contains the search term anywhere
+        *   "exact": Item exactly equals the search term
+        *   "starts_with": Item starts with the search term
+        *   "ends_with": Item ends with the search term
+        *   "regex": Search term is interpreted as a regular expression
+
+        **Boolean Logic:**
+        *   "OR": Matches items that match ANY search term
+        *   "AND": Matches items that match ALL search terms
+        *   "NOT": Matches items that match NONE of the search terms
+
+        **Input:**
+        *   `List[str]`: Collection of text items to search/filter
+
+        **Outputs:**
+        *   Output 0 (Matching): Items that match the search criteria
+        *   Output 1 (Non-Matching): Items that don't match the search criteria
+        *   Output 2 (Empty): Always empty list (reserved for future use)
+
+        **Edge Cases:**
+        *   Multiple search terms in search_text are split by commas or whitespace
+        *   Empty search_text matches nothing (all items go to non-matching output)
+        *   Invalid regex patterns generate warnings and fail to match
+        *   Case-insensitive mode converts both text and terms to lowercase
+        *   Combining invert_match with boolean_mode allows complex filtering logic
     """
 
     GLYPH = '🔍'
