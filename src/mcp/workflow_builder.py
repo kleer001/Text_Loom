@@ -5,9 +5,13 @@ High-level interface for creating Text Loom workflows programmatically.
 Simplifies node creation and connection for LLM agents.
 """
 
+import importlib
+import inspect
 from typing import Dict, List, Any, Optional, Tuple
+from pathlib import Path
 from core.base_classes import Node, NodeEnvironment, NodeType
 from core.global_store import GlobalStore
+from core.parm import ParameterType
 
 
 class WorkflowBuilder:
@@ -145,17 +149,127 @@ class WorkflowBuilder:
         }
 
 
-def get_available_node_types() -> List[Dict[str, str]]:
-    return [
-        {
-            "type": node_type.name.lower(),
-            "description": _get_node_description(node_type)
-        }
-        for node_type in NodeType
-    ]
+def get_available_node_types() -> List[Dict[str, Any]]:
+    """Get detailed information about all available node types.
+
+    Returns:
+        List of dicts containing:
+        - type: Node type name (lowercase)
+        - description: Short description
+        - docstring: Full class docstring with examples and details
+        - parameters: List of available parameters with types and defaults
+        - inputs: Number of inputs (or "multiple" for unlimited)
+        - outputs: Number of outputs
+    """
+    node_types = []
+    core_dir = Path(__file__).parent.parent / "core"
+
+    for node_type in NodeType:
+        type_name = node_type.name.lower()
+
+        # Import the node class dynamically
+        try:
+            module_name = f"core.{type_name}_node"
+            class_name = ''.join(word.capitalize() for word in type_name.split('_')) + 'Node'
+
+            # Try importing - some nodes have dependencies that may not be installed
+            try:
+                module = importlib.import_module(module_name)
+                node_class = getattr(module, class_name)
+            except ImportError:
+                # If import fails, try to load just for docstring extraction
+                # by importing with modified sys.modules to stub dependencies
+                import sys
+                original_modules = sys.modules.copy()
+                try:
+                    # Stub out problematic imports
+                    sys.modules['litellm'] = type('module', (), {})()
+                    module = importlib.import_module(module_name)
+                    node_class = getattr(module, class_name)
+                finally:
+                    # Restore original modules
+                    sys.modules.clear()
+                    sys.modules.update(original_modules)
+
+            # Extract docstring
+            docstring = inspect.getdoc(node_class) or "No documentation available"
+
+            # Extract parameters from __init__
+            parameters = _extract_parameters(node_class)
+
+            # Get input/output info from class attributes
+            single_input = getattr(node_class, 'SINGLE_INPUT', True)
+            single_output = getattr(node_class, 'SINGLE_OUTPUT', True)
+
+            node_types.append({
+                "type": type_name,
+                "description": docstring.split('\n')[0],  # First line as short description
+                "docstring": docstring,
+                "parameters": parameters,
+                "inputs": 1 if single_input else "multiple",
+                "outputs": 1 if single_output else "multiple"
+            })
+
+        except (ImportError, AttributeError) as e:
+            # Fallback for nodes that can't be imported at all
+            node_types.append({
+                "type": type_name,
+                "description": _get_fallback_description(node_type),
+                "docstring": _get_fallback_docstring(node_type),
+                "parameters": [],
+                "inputs": 1,
+                "outputs": 1
+            })
+
+    return node_types
 
 
-def _get_node_description(node_type: NodeType) -> str:
+def _extract_parameters(node_class) -> List[Dict[str, Any]]:
+    """Extract parameter information from a node class by parsing __init__ source.
+
+    Instead of instantiating (which may fail due to dependencies), we parse
+    the source code to find Parm definitions.
+    """
+    parameters = []
+
+    try:
+        # Get the source code of __init__
+        source = inspect.getsource(node_class.__init__)
+
+        # Parse for Parm definitions
+        # Pattern: "param_name": Parm("param_name", ParameterType.TYPE, ...)
+        import re
+        parm_pattern = r'"([^"]+)":\s*Parm\("([^"]+)",\s*ParameterType\.(\w+)'
+        matches = re.findall(parm_pattern, source)
+
+        for key, name, param_type in matches:
+            parameters.append({
+                "name": name,
+                "type": param_type,
+            })
+
+        # Also look for .set() calls to find defaults
+        # Pattern: self._parms["param_name"].set(value)
+        set_pattern = r'self\._parms\["([^"]+)"\]\.set\(([^)]+)\)'
+        set_matches = re.findall(set_pattern, source)
+
+        # Create a dict of defaults
+        defaults = {name: value for name, value in set_matches}
+
+        # Add defaults to parameters
+        for param in parameters:
+            if param["name"] in defaults:
+                param["default"] = defaults[param["name"]]
+
+    except Exception as e:
+        # If parsing fails, return empty list
+        pass
+
+    return parameters
+
+
+def _get_fallback_description(node_type: NodeType) -> str:
+    """Fallback descriptions for nodes that can't be dynamically loaded."""
     descriptions = {
         NodeType.TEXT: "Static text input - stores text string",
         NodeType.FILE_OUT: "Write data to file",
@@ -173,3 +287,26 @@ def _get_node_description(node_type: NodeType) -> str:
         NodeType.OUTPUT_NULL: "Null output - receives but discards data"
     }
     return descriptions.get(node_type, "No description available")
+
+
+def _get_fallback_docstring(node_type: NodeType) -> str:
+    """Fallback docstrings with basic parameter info for common nodes."""
+    docstrings = {
+        NodeType.QUERY: """A node that interfaces with Large Language Models (LLMs) to process text prompts and generate responses.
+
+Sends text to LLMs and returns responses. Supports multiple LLM providers.
+
+Parameters:
+    limit (bool): If True, restricts processing to only the first prompt
+    llm_name (str): Identifier for the target LLM (e.g., "Ollama", "Claude", "GPT-4")
+    response (List[str]): Stores the history of LLM responses
+    track_tokens (bool): Enable token usage tracking
+
+Input:
+    List[str]: Collection of prompts to process
+
+Output:
+    List[str]: Generated LLM responses corresponding to input prompts
+""",
+    }
+    return docstrings.get(node_type, f"Node type: {node_type.name.lower()}\n\nNo detailed documentation available.")
