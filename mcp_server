@@ -1,0 +1,18 @@
+#!/usr/bin/env python3
+"""
+Text Loom MCP Server Launcher
+
+Starts the MCP server for Text Loom, enabling LLM integration.
+"""
+
+import sys
+import os
+from pathlib import Path
+
+PROJECT_ROOT = Path(__file__).parent.resolve()
+sys.path.insert(0, str(PROJECT_ROOT / 'src'))
+
+if __name__ == "__main__":
+    from mcp.server import main
+    import asyncio
+    asyncio.run(main())

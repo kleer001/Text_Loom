@@ -52,6 +52,36 @@ Choose your workflow—all use the same core:
 
 ---
 
+## LLM Integration (MCP)
+
+**Let Claude build workflows for you!**
+
+Text Loom includes an MCP (Model Context Protocol) server that enables LLMs like Claude to create workflows programmatically:
+
+```bash
+# Configure Claude Desktop with Text Loom
+# Add to ~/Library/Application Support/Claude/claude_desktop_config.json:
+{
+  "mcpServers": {
+    "text-loom": {
+      "command": "/path/to/Text_Loom/mcp_server"
+    }
+  }
+}
+```
+
+Then ask Claude:
+> "Using Text Loom, create a workflow that reads article.txt, summarizes it, and saves to summary.txt"
+
+Claude will:
+- ✅ Create the workflow
+- ✅ Execute it
+- ✅ Give you the JSON to save and reuse
+
+**Learn more:** [`/docs/MCP_INTEGRATION.md`](docs/MCP_INTEGRATION.md)
+
+---
+
 ## What Makes Text Loom Different
 
 | Feature | Text Loom | n8n | LangChain | ComfyUI | Zapier | Node-RED |
