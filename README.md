@@ -18,10 +18,10 @@ source .venv/bin/activate
 pip install -e .
 export PYTHONPATH=$PYTHONPATH:$(pwd)/src
 
-./text_loom.py              # Start GUI (default)
-./text_loom.py -t           # Terminal UI
-./text_loom.py -r           # Python REPL
-./text_loom.py -b -f work.json  # Batch execute
+./text_loom              # Start GUI (default)
+./text_loom -t           # Terminal UI
+./text_loom -r           # Python REPL
+./text_loom -b -f work.json  # Batch execute
 ```
 
 **One-liner:**
@@ -43,11 +43,11 @@ python3 docker/docker_wizard.py
 Choose your workflow—all use the same core:
 
 ```bash
-./text_loom.py -r           # REPL: Interactive Python shell (hython-style)
-./text_loom.py -t           # TUI: Terminal UI (keyboard-driven)
-./text_loom.py -a           # API: FastAPI server (automation)
-./text_loom.py -g           # GUI: Web interface (visual)
-./text_loom.py -b           # Batch: Non-interactive execution
+./text_loom -r           # REPL: Interactive Python shell (hython-style)
+./text_loom -t           # TUI: Terminal UI (keyboard-driven)
+./text_loom -a           # API: FastAPI server (automation)
+./text_loom -g           # GUI: Web interface (visual)
+./text_loom -b           # Batch: Non-interactive execution
 ```
 
 ---

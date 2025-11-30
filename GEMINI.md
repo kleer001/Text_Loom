@@ -49,29 +49,29 @@ Text Loom can be run in several modes:
 
 *   **GUI Mode:**
     ```bash
-    ./text_loom.py -g
+    ./text_loom -g
     ```
     This will start the FastAPI backend and the Vite development server for the React frontend. The GUI will be accessible at `http://localhost:5173`.
 
 *   **TUI Mode:**
     ```bash
-    ./text_loom.py -t
+    ./text_loom -t
     ```
 
 *   **REPL Mode:**
     ```bash
-    ./text_loom.py -r
+    ./text_loom -r
     ```
 
 *   **API Only:**
     ```bash
-    ./text_loom.py -a
+    ./text_loom -a
     ```
     The API documentation will be available at `http://localhost:8000/api/v1/docs`.
 
 *   **Batch Mode:**
     ```bash
-    ./text_loom.py -b -f <workflow_file.json>
+    ./text_loom -b -f <workflow_file.json>
     ```
 
 ### Testing
