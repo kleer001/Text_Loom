@@ -35,8 +35,6 @@ class Session:
 class SessionManager:
     def __init__(self):
         self.sessions: Dict[str, Session] = {}
-        self._original_env = None
-        self._current_session: Optional[str] = None
 
     def create_session(self, metadata: Optional[Dict[str, Any]] = None) -> str:
         session_id = str(uuid.uuid4())
@@ -118,7 +116,6 @@ class SessionContext:
             NodeEnvironment.nodes.clear()
             self.manager._clear_globals()
 
-        self.manager._current_session = self.session_id
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -127,8 +124,6 @@ class SessionContext:
         if self.saved_state_file and self.saved_state_file.exists():
             load_flowstate(str(self.saved_state_file))
             self.saved_state_file.unlink()
-
-        self.manager._current_session = None
 
 
 _global_session_manager = SessionManager()

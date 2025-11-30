@@ -20,6 +20,21 @@ from mcp.workflow_builder import WorkflowBuilder, get_available_node_types, get_
 app = Server("text-loom")
 
 
+def _json_response(data: Dict[str, Any]) -> List[TextContent]:
+    """Create standardized JSON response for MCP tool calls."""
+    return [TextContent(type="text", text=json.dumps(data, indent=2))]
+
+
+def _success_response(data: Dict[str, Any]) -> List[TextContent]:
+    """Create success response with data."""
+    return _json_response({"success": True, **data})
+
+
+def _error_response(error: str, **kwargs) -> List[TextContent]:
+    """Create error response."""
+    return _json_response({"success": False, "error": error, **kwargs})
+
+
 @app.list_tools()
 async def list_tools() -> List[Tool]:
     """List all available MCP tools for Text Loom."""
@@ -210,198 +225,143 @@ async def list_tools() -> List[Tool]:
     ]
 
 
+def _handle_create_session(manager, arguments: Dict) -> List[TextContent]:
+    metadata = arguments.get("metadata", {})
+    session_id = manager.create_session(metadata)
+    return _success_response({
+        "session_id": session_id,
+        "message": "Session created. Use this session_id for all workflow operations."
+    })
+
+
+def _handle_list_node_types(manager, arguments: Dict) -> List[TextContent]:
+    node_types = get_available_node_types()
+    return _success_response({
+        "node_types": node_types,
+        "note": "Use get_node_details(node_type) for full documentation of a specific node"
+    })
+
+
+def _handle_get_node_details(manager, arguments: Dict) -> List[TextContent]:
+    try:
+        details = get_node_details(arguments["node_type"])
+        return _success_response({"node_details": details})
+    except ValueError as e:
+        return _error_response(str(e), hint="Use list_node_types to see available types")
+
+
+def _handle_add_node(manager, arguments: Dict) -> List[TextContent]:
+    session_id = arguments["session_id"]
+    with manager.use_session(session_id):
+        builder = WorkflowBuilder()
+        node_session_id = builder.add_node(
+            node_type=arguments["node_type"],
+            name=arguments["name"],
+            parameters=arguments.get("parameters"),
+            position=tuple(arguments["position"]) if "position" in arguments else None
+        )
+        return _success_response({
+            "node_session_id": node_session_id,
+            "name": arguments["name"],
+            "type": arguments["node_type"]
+        })
+
+
+def _handle_connect_nodes(manager, arguments: Dict) -> List[TextContent]:
+    session_id = arguments["session_id"]
+    with manager.use_session(session_id):
+        builder = WorkflowBuilder()
+        builder.connect(
+            source_name=arguments["source_name"],
+            target_name=arguments["target_name"],
+            source_output=arguments.get("source_output", 0),
+            target_input=arguments.get("target_input", 0)
+        )
+        return _success_response({
+            "connection": {
+                "source": arguments["source_name"],
+                "target": arguments["target_name"]
+            }
+        })
+
+
+def _handle_execute_workflow(manager, arguments: Dict) -> List[TextContent]:
+    session_id = arguments["session_id"]
+    with manager.use_session(session_id):
+        builder = WorkflowBuilder()
+        results = builder.execute_all()
+        return _json_response({
+            "success": results["success"],
+            "results": results["results"],
+            "errors": results.get("errors", [])
+        })
+
+
+def _handle_get_node_output(manager, arguments: Dict) -> List[TextContent]:
+    session_id = arguments["session_id"]
+    with manager.use_session(session_id):
+        builder = WorkflowBuilder()
+        output = builder.get_output(arguments["node_name"], arguments.get("output_index", 0))
+        return _success_response({
+            "node": arguments["node_name"],
+            "output": output
+        })
+
+
+def _handle_export_workflow(manager, arguments: Dict) -> List[TextContent]:
+    flowstate = manager.export_session(arguments["session_id"])
+    return _success_response({
+        "flowstate": flowstate,
+        "message": "Workflow exported. User can save this JSON and load it in Text Loom GUI/TUI."
+    })
+
+
+def _handle_set_global(manager, arguments: Dict) -> List[TextContent]:
+    session_id = arguments["session_id"]
+    with manager.use_session(session_id):
+        builder = WorkflowBuilder()
+        builder.set_global(arguments["key"], arguments["value"])
+        return _success_response({
+            "global": {
+                "key": arguments["key"],
+                "value": arguments["value"]
+            }
+        })
+
+
+def _handle_delete_session(manager, arguments: Dict) -> List[TextContent]:
+    success = manager.delete_session(arguments["session_id"])
+    return _success_response({
+        "message": "Session deleted" if success else "Session not found"
+    }) if success else _error_response("Session not found")
+
+
+TOOL_HANDLERS = {
+    "create_session": _handle_create_session,
+    "list_node_types": _handle_list_node_types,
+    "get_node_details": _handle_get_node_details,
+    "add_node": _handle_add_node,
+    "connect_nodes": _handle_connect_nodes,
+    "execute_workflow": _handle_execute_workflow,
+    "get_node_output": _handle_get_node_output,
+    "export_workflow": _handle_export_workflow,
+    "set_global": _handle_set_global,
+    "delete_session": _handle_delete_session
+}
+
+
 @app.call_tool()
 async def call_tool(name: str, arguments: Any) -> List[TextContent]:
     """Handle tool calls from LLM."""
-
     manager = get_session_manager()
 
     try:
-        if name == "create_session":
-            metadata = arguments.get("metadata", {})
-            session_id = manager.create_session(metadata)
-            return [TextContent(
-                type="text",
-                text=json.dumps({
-                    "success": True,
-                    "session_id": session_id,
-                    "message": "Session created. Use this session_id for all workflow operations."
-                }, indent=2)
-            )]
-
-        elif name == "list_node_types":
-            node_types = get_available_node_types()
-            return [TextContent(
-                type="text",
-                text=json.dumps({
-                    "success": True,
-                    "node_types": node_types,
-                    "note": "Use get_node_details(node_type) for full documentation of a specific node"
-                }, indent=2)
-            )]
-
-        elif name == "get_node_details":
-            node_type = arguments["node_type"]
-
-            try:
-                details = get_node_details(node_type)
-                return [TextContent(
-                    type="text",
-                    text=json.dumps({
-                        "success": True,
-                        "node_details": details
-                    }, indent=2)
-                )]
-            except ValueError as e:
-                return [TextContent(
-                    type="text",
-                    text=json.dumps({
-                        "success": False,
-                        "error": str(e),
-                        "hint": "Use list_node_types to see available types"
-                    }, indent=2)
-                )]
-
-        elif name == "add_node":
-            session_id = arguments["session_id"]
-
-            with manager.use_session(session_id):
-                builder = WorkflowBuilder()
-                node_session_id = builder.add_node(
-                    node_type=arguments["node_type"],
-                    name=arguments["name"],
-                    parameters=arguments.get("parameters"),
-                    position=tuple(arguments["position"]) if "position" in arguments else None
-                )
-
-                return [TextContent(
-                    type="text",
-                    text=json.dumps({
-                        "success": True,
-                        "node_session_id": node_session_id,
-                        "name": arguments["name"],
-                        "type": arguments["node_type"]
-                    }, indent=2)
-                )]
-
-        elif name == "connect_nodes":
-            session_id = arguments["session_id"]
-
-            with manager.use_session(session_id):
-                builder = WorkflowBuilder()
-                builder.connect(
-                    source_name=arguments["source_name"],
-                    target_name=arguments["target_name"],
-                    source_output=arguments.get("source_output", 0),
-                    target_input=arguments.get("target_input", 0)
-                )
-
-                return [TextContent(
-                    type="text",
-                    text=json.dumps({
-                        "success": True,
-                        "connection": {
-                            "source": arguments["source_name"],
-                            "target": arguments["target_name"]
-                        }
-                    }, indent=2)
-                )]
-
-        elif name == "execute_workflow":
-            session_id = arguments["session_id"]
-
-            with manager.use_session(session_id):
-                builder = WorkflowBuilder()
-                results = builder.execute_all()
-
-                return [TextContent(
-                    type="text",
-                    text=json.dumps({
-                        "success": results["success"],
-                        "results": results["results"],
-                        "errors": results.get("errors", [])
-                    }, indent=2)
-                )]
-
-        elif name == "get_node_output":
-            session_id = arguments["session_id"]
-            node_name = arguments["node_name"]
-            output_index = arguments.get("output_index", 0)
-
-            with manager.use_session(session_id):
-                builder = WorkflowBuilder()
-                output = builder.get_output(node_name, output_index)
-
-                return [TextContent(
-                    type="text",
-                    text=json.dumps({
-                        "success": True,
-                        "node": node_name,
-                        "output": output
-                    }, indent=2)
-                )]
-
-        elif name == "export_workflow":
-            session_id = arguments["session_id"]
-            flowstate = manager.export_session(session_id)
-
-            return [TextContent(
-                type="text",
-                text=json.dumps({
-                    "success": True,
-                    "flowstate": flowstate,
-                    "message": "Workflow exported. User can save this JSON and load it in Text Loom GUI/TUI."
-                }, indent=2)
-            )]
-
-        elif name == "set_global":
-            session_id = arguments["session_id"]
-
-            with manager.use_session(session_id):
-                builder = WorkflowBuilder()
-                builder.set_global(arguments["key"], arguments["value"])
-
-                return [TextContent(
-                    type="text",
-                    text=json.dumps({
-                        "success": True,
-                        "global": {
-                            "key": arguments["key"],
-                            "value": arguments["value"]
-                        }
-                    }, indent=2)
-                )]
-
-        elif name == "delete_session":
-            session_id = arguments["session_id"]
-            success = manager.delete_session(session_id)
-
-            return [TextContent(
-                type="text",
-                text=json.dumps({
-                    "success": success,
-                    "message": "Session deleted" if success else "Session not found"
-                }, indent=2)
-            )]
-
-        else:
-            return [TextContent(
-                type="text",
-                text=json.dumps({
-                    "success": False,
-                    "error": f"Unknown tool: {name}"
-                }, indent=2)
-            )]
-
+        handler = TOOL_HANDLERS.get(name)
+        if handler:
+            return handler(manager, arguments)
+        return _error_response(f"Unknown tool: {name}")
     except Exception as e:
-        return [TextContent(
-            type="text",
-            text=json.dumps({
-                "success": False,
-                "error": str(e),
-                "tool": name
-            }, indent=2)
-        )]
+        return _error_response(str(e), tool=name)
 
 
 async def main():

@@ -17,10 +17,6 @@ from core.parm import ParameterType
 class WorkflowBuilder:
     """Helper class for building Text Loom workflows programmatically."""
 
-    def __init__(self):
-        self.nodes: Dict[str, Node] = {}
-        self.connections: List[Tuple[str, int, str, int]] = []
-
     def add_node(
         self,
         node_type: str,
@@ -28,27 +24,23 @@ class WorkflowBuilder:
         parameters: Optional[Dict[str, Any]] = None,
         position: Optional[Tuple[float, float]] = None
     ) -> str:
+        from core.node import Node
+
         node_type_enum = NodeType[node_type.upper()]
 
-        node_class = NodeEnvironment.get_node_class(node_type_enum)
-        if not node_class:
-            raise ValueError(f"Unknown node type: {node_type}")
-
-        node = node_class()
-        node.name = name
+        node = Node.create_node(node_type_enum, name, parent_path='/')
 
         if parameters:
             for key, value in parameters.items():
-                if hasattr(node, key):
-                    setattr(node, key, value)
+                if key in node._parms:
+                    node._parms[key].set(value)
+                else:
+                    raise ValueError(f"Unknown parameter: {key}")
 
         if position:
             node.position = list(position)
 
-        NodeEnvironment.register_node(node)
-        self.nodes[name] = node
-
-        return node.session_id
+        return node.session_id()
 
     def connect(
         self,
@@ -57,37 +49,42 @@ class WorkflowBuilder:
         source_output: int = 0,
         target_input: int = 0
     ) -> bool:
-        source = self.nodes.get(source_name)
-        target = self.nodes.get(target_name)
+        source = NodeEnvironment.node_from_name(source_name)
+        target = NodeEnvironment.node_from_name(target_name)
 
         if not source or not target:
             raise ValueError(f"Node not found: {source_name if not source else target_name}")
 
-        target.connect_input(target_input, source, source_output)
-        self.connections.append((source_name, source_output, target_name, target_input))
+        target.set_input(target_input, source, source_output)
 
         return True
 
     def execute_node(self, name: str) -> Dict[str, Any]:
-        node = self.nodes.get(name)
+        from core.base_classes import NodeState
+
+        node = NodeEnvironment.node_from_name(name)
         if not node:
             raise ValueError(f"Node not found: {name}")
 
         node.cook()
 
         return {
-            "success": node.status.cooked,
-            "output": [output.data if output else [] for output in node.outputs],
-            "errors": node.status.errors,
-            "warnings": node.status.warnings,
-            "state": node.status.state.name
+            "success": node.state() == NodeState.UNCHANGED,
+            "output": node.get_output() if hasattr(node, 'get_output') else [],
+            "errors": node.errors() if hasattr(node, 'errors') else [],
+            "warnings": node.warnings() if hasattr(node, 'warnings') else [],
+            "state": node.state().name
         }
 
     def execute_all(self) -> Dict[str, Any]:
         results = {}
         errors = []
 
-        for name, node in self.nodes.items():
+        for path in NodeEnvironment.list_nodes():
+            if path == '/':
+                continue
+            node = NodeEnvironment.nodes[path]
+            name = node.name()
             try:
                 result = self.execute_node(name)
                 results[name] = result
@@ -104,49 +101,42 @@ class WorkflowBuilder:
         }
 
     def get_output(self, name: str, output_index: int = 0) -> List[str]:
-        node = self.nodes.get(name)
+        node = NodeEnvironment.node_from_name(name)
         if not node:
             raise ValueError(f"Node not found: {name}")
 
-        if output_index >= len(node.outputs):
-            raise ValueError(f"Output index {output_index} out of range")
-
-        output = node.outputs[output_index]
-        return output.data if output else []
+        return node.get_output()
 
     def set_global(self, key: str, value: List[str]) -> None:
         GlobalStore.set(key, value)
 
-    def get_global(self, key: str) -> Optional[List[str]]:
-        return GlobalStore.get(key)
 
-    def clear(self) -> None:
-        NodeEnvironment.clear()
-        GlobalStore.clear()
-        self.nodes.clear()
-        self.connections.clear()
+def _import_node_class(type_name: str):
+    """Import a node class with fallback stubbing for missing dependencies.
 
-    def to_dict(self) -> Dict[str, Any]:
-        return {
-            "nodes": [
-                {
-                    "name": name,
-                    "type": node.node_type.name,
-                    "session_id": node.session_id,
-                    "position": node.position
-                }
-                for name, node in self.nodes.items()
-            ],
-            "connections": [
-                {
-                    "source": src,
-                    "source_output": src_out,
-                    "target": tgt,
-                    "target_input": tgt_in
-                }
-                for src, src_out, tgt, tgt_in in self.connections
-            ]
-        }
+    Args:
+        type_name: Node type name (lowercase, e.g., 'query', 'file_out')
+
+    Returns:
+        Tuple of (node_class, was_stubbed)
+    """
+    module_name = f"core.{type_name}_node"
+    class_name = ''.join(word.capitalize() for word in type_name.split('_')) + 'Node'
+
+    try:
+        module = importlib.import_module(module_name)
+        return getattr(module, class_name), False
+    except ImportError:
+        import sys
+        original_modules = sys.modules.copy()
+        try:
+            sys.modules['litellm'] = type('module', (), {})()
+            module = importlib.import_module(module_name)
+            node_class = getattr(module, class_name)
+            return node_class, True
+        finally:
+            sys.modules.clear()
+            sys.modules.update(original_modules)
 
 
 def get_available_node_types() -> List[Dict[str, Any]]:
@@ -167,38 +157,15 @@ def get_available_node_types() -> List[Dict[str, Any]]:
     for node_type in NodeType:
         type_name = node_type.name.lower()
 
-        # Import the node class dynamically
         try:
-            module_name = f"core.{type_name}_node"
-            class_name = ''.join(word.capitalize() for word in type_name.split('_')) + 'Node'
+            node_class, _ = _import_node_class(type_name)
 
-            # Try importing - some nodes have dependencies that may not be installed
-            try:
-                module = importlib.import_module(module_name)
-                node_class = getattr(module, class_name)
-            except ImportError:
-                # If import fails, try to load just for docstring extraction
-                import sys
-                original_modules = sys.modules.copy()
-                try:
-                    # Stub out problematic imports
-                    sys.modules['litellm'] = type('module', (), {})()
-                    module = importlib.import_module(module_name)
-                    node_class = getattr(module, class_name)
-                finally:
-                    # Restore original modules
-                    sys.modules.clear()
-                    sys.modules.update(original_modules)
-
-            # Extract docstring (just first line for description)
             docstring = inspect.getdoc(node_class) or "No documentation available"
             description = docstring.split('\n')[0]
 
-            # Extract just parameter names (lightweight)
             parameters = _extract_parameters(node_class)
             param_names = [p["name"] for p in parameters]
 
-            # Get input/output info from class attributes
             single_input = getattr(node_class, 'SINGLE_INPUT', True)
             single_output = getattr(node_class, 'SINGLE_OUTPUT', True)
 
@@ -211,7 +178,6 @@ def get_available_node_types() -> List[Dict[str, Any]]:
             })
 
         except (ImportError, AttributeError) as e:
-            # Fallback for nodes that can't be imported at all
             node_types.append({
                 "type": type_name,
                 "description": _get_fallback_description(node_type),
@@ -249,36 +215,12 @@ def get_node_details(node_type_name: str) -> Dict[str, Any]:
 
     type_name = node_type.name.lower()
 
-    # Import the node class dynamically
     try:
-        module_name = f"core.{type_name}_node"
-        class_name = ''.join(word.capitalize() for word in type_name.split('_')) + 'Node'
+        node_class, _ = _import_node_class(type_name)
 
-        # Try importing - some nodes have dependencies that may not be installed
-        try:
-            module = importlib.import_module(module_name)
-            node_class = getattr(module, class_name)
-        except ImportError:
-            # If import fails, try to load just for docstring extraction
-            import sys
-            original_modules = sys.modules.copy()
-            try:
-                # Stub out problematic imports
-                sys.modules['litellm'] = type('module', (), {})()
-                module = importlib.import_module(module_name)
-                node_class = getattr(module, class_name)
-            finally:
-                # Restore original modules
-                sys.modules.clear()
-                sys.modules.update(original_modules)
-
-        # Extract full docstring
         docstring = inspect.getdoc(node_class) or "No documentation available"
-
-        # Extract detailed parameters
         parameters = _extract_parameters(node_class)
 
-        # Get input/output info from class attributes
         single_input = getattr(node_class, 'SINGLE_INPUT', True)
         single_output = getattr(node_class, 'SINGLE_OUTPUT', True)
 
@@ -292,7 +234,6 @@ def get_node_details(node_type_name: str) -> Dict[str, Any]:
         }
 
     except (ImportError, AttributeError) as e:
-        # Fallback for nodes that can't be imported at all
         return {
             "type": type_name,
             "description": _get_fallback_description(node_type),
