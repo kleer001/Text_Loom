@@ -330,7 +330,7 @@ const AppContent: React.FC = () => {
             >
               <Tab
                 value="details"
-                label="Node Details"
+                label="Node"
                 icon={<InfoIcon />}
                 iconPosition="start"
               />
