@@ -112,8 +112,6 @@ setup_gui() {
     if [ "$NODE_AVAILABLE" = true ]; then
         step "Installing GUI dependencies..."
 
-        npm install --quiet || warn "Root npm install failed"
-
         cd src/GUI || fail "Cannot cd to src/GUI"
         npm install --quiet || fail "GUI npm install failed"
 
