@@ -102,7 +102,7 @@ const CustomNodeComponent: React.FC<{ data: CustomNodeData; selected?: boolean }
     width: L.indicators.diameter,
     height: L.indicators.diameter,
     borderRadius: '50%',
-    background: colors.cooking[node.state] || colors.cooking.uncooked,
+    background: colors.cooking[node.state as keyof typeof colors.cooking] || colors.cooking.uncooked,
   }), [L.indicators.diameter, colors.cooking, node.state]);
 
   const bypassButtonStyle = useMemo(() => ({

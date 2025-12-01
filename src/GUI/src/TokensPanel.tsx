@@ -31,7 +31,7 @@ export const TokensPanel: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const successTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const successTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const loadTokenData = useCallback(async (): Promise<void> => {
     setLoading(true);
@@ -144,7 +144,7 @@ export const TokensPanel: React.FC = () => {
       )}
 
       <Grid container spacing={2} sx={{ mb: 3 }}>
-        <Grid item xs={4}>
+        <Grid size={{ xs: 4 }}>
           <Card>
             <CardContent>
               <Typography color="text.secondary" gutterBottom variant="body2">
@@ -156,7 +156,7 @@ export const TokensPanel: React.FC = () => {
             </CardContent>
           </Card>
         </Grid>
-        <Grid item xs={4}>
+        <Grid size={{ xs: 4 }}>
           <Card>
             <CardContent>
               <Typography color="text.secondary" gutterBottom variant="body2">
@@ -168,7 +168,7 @@ export const TokensPanel: React.FC = () => {
             </CardContent>
           </Card>
         </Grid>
-        <Grid item xs={4}>
+        <Grid size={{ xs: 4 }}>
           <Card>
             <CardContent>
               <Typography color="text.secondary" gutterBottom variant="body2">
