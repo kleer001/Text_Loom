@@ -53,6 +53,25 @@ check_prerequisites() {
 
     [ "$major" -ge 3 ] && [ "$minor" -ge 8 ] || fail "Python 3.8+ required (found $version)"
     ok "Python $version detected"
+
+    if command -v node >/dev/null 2>&1; then
+        local node_version node_major
+        node_version=$(node -v | sed 's/v//')
+        node_major=${node_version%%.*}
+        if [ "$node_major" -ge 18 ]; then
+            ok "Node.js $node_version detected"
+            require npm
+            ok "npm found"
+            NODE_AVAILABLE=true
+        else
+            warn "Node.js $node_version found (18+ recommended for GUI)"
+            NODE_AVAILABLE=false
+        fi
+    else
+        warn "Node.js not found - GUI mode will not be available"
+        warn "Install Node.js 18+ to enable GUI: https://nodejs.org/"
+        NODE_AVAILABLE=false
+    fi
 }
 
 clone_repo() {
@@ -87,6 +106,25 @@ setup_venv() {
     pip install -e . --quiet || fail "Package install failed"
 
     ok "Dependencies installed"
+}
+
+setup_gui() {
+    if [ "$NODE_AVAILABLE" = true ]; then
+        step "Installing GUI dependencies..."
+
+        npm install --quiet || warn "Root npm install failed"
+
+        cd src/GUI || fail "Cannot cd to src/GUI"
+        npm install --quiet || fail "GUI npm install failed"
+
+        step "Building GUI..."
+        npm run build --quiet || fail "GUI build failed"
+        cd ../..
+
+        ok "GUI setup complete"
+    else
+        warn "Skipping GUI setup (Node.js not available)"
+    fi
 }
 
 create_activation_helper() {
@@ -127,6 +165,7 @@ main() {
     check_prerequisites
     clone_repo
     setup_venv
+    setup_gui
     create_activation_helper
     next_steps
 }

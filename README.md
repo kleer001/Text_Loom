@@ -13,16 +13,26 @@ Build complex text workflows by connecting nodes—no code required. Query LLMs,
 ```bash
 git clone https://github.com/kleer001/Text_Loom
 cd Text_Loom
+
+# Python setup
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -e .
 export PYTHONPATH=$PYTHONPATH:$(pwd)/src
+
+# GUI setup (requires Node.js 18+)
+npm install              # Root dependencies
+cd src/GUI && npm install && npm run build && cd ../..
 
 ./text_loom              # Start GUI (default)
 ./text_loom -t           # Terminal UI
 ./text_loom -r           # Python REPL
 ./text_loom -b -f work.json  # Batch execute
 ```
+
+**Prerequisites:**
+- Python 3.8+
+- Node.js 18+ and npm (for GUI mode)
 
 **One-liner:**
 ```bash
