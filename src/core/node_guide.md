@@ -1259,3 +1259,197 @@ Output: ["leading spaces  ", "more spaces  "]
 - Case transformations follow Python's str.upper(), str.lower(), str.title(), and str.capitalize() behavior
 - Empty find_text returns the original text unchanged
 - The node uses hash-based change detection to avoid unnecessary reprocessing
+
+---
+
+## 17. FolderOutNode
+
+**FolderOutNode: A node that writes input list items as separate files into a specified folder.**
+
+Takes a list of strings and writes each item as an individual file in the target directory. Perfect for batch processing workflows that need to split processed data into multiple output files. File naming supports both sequential numbering and custom patterns with advanced collision handling.
+
+### Key Features
+
+1. **Flexible File Naming:**
+   - Pattern-based filename generation with variable substitution
+   - Supports `{index}` (0-based), `{count}` (1-based), and `{input}` (content-based) patterns
+   - Custom file extensions for all outputs
+   - Automatic filename sanitization for filesystem compatibility
+
+2. **Smart Collision Handling:**
+   - Conservative default: preserves existing files with automatic suffix generation
+   - Optional overwrite mode for replacing existing files
+   - Unique filename generation with _1, _2, _3 suffixes
+   - Handles edge cases (long filenames, invalid characters, empty strings)
+
+3. **Performance Optimization:**
+   - Per-file hash-based change detection
+   - Skips writing unchanged files (unless forced)
+   - Automatic file existence verification
+   - Efficient batch processing of large lists
+
+4. **Robust File Operations:**
+   - Automatic directory creation (creates nested paths as needed)
+   - UTF-8 encoding for proper unicode support
+   - Comprehensive error handling with clear messages
+   - File existence checking to recreate deleted files
+
+### Parameters
+
+**folder_path** (str, default: "./output"): The directory path where files will be written. Creates the directory structure if it doesn't exist. Supports both relative and absolute paths.
+
+**filename_pattern** (str, default: "output_{count}.txt"): Template for output filenames. Supports the following substitutions:
+- `{index}` - Sequential number starting from 0 (0, 1, 2, ...)
+- `{count}` - Sequential number starting from 1 (1, 2, 3, ...)
+- `{input}` - First 20 characters of content (sanitized for filesystem safety)
+
+**file_extension** (str, default: ".txt"): File extension applied to all output files. If the pattern already ends with this extension, it won't be duplicated. If pattern has a different extension, both will be present (e.g., "file.md.txt").
+
+**overwrite** (bool, default: False): Controls file collision behavior:
+- When False (default): Preserves existing files by appending numeric suffixes (_1, _2, etc.)
+- When True: Overwrites existing files with matching names
+
+**refresh** (button): Forces all files to be written, regardless of hash checks. Useful for manually triggering file regeneration.
+
+**format_output** (bool, default: True): Controls output format:
+- When True: Writes raw string content directly to files
+- When False: Preserves Python list format for each item (e.g., "['text']")
+
+**enabled** (bool, default: True): Enables/disables the node's functionality.
+
+### Input/Output
+
+**Input:** List[str] - A list of strings, where each item becomes a separate file
+**Output:** List[str] - A list of absolute file paths for all created files
+
+### Usage Examples
+
+**Example 1: Simple numbered files**
+```
+Input: ["First document", "Second document", "Third document"]
+folder_path: "./output"
+filename_pattern: "doc_{count}"
+file_extension: ".txt"
+
+Creates:
+- ./output/doc_1.txt (contains: "First document")
+- ./output/doc_2.txt (contains: "Second document")
+- ./output/doc_3.txt (contains: "Third document")
+
+Output: ["./output/doc_1.txt", "./output/doc_2.txt", "./output/doc_3.txt"]
+```
+
+**Example 2: Content-based filenames**
+```
+Input: ["Chapter One", "Chapter Two", "Chapter Three"]
+filename_pattern: "chapter_{input}"
+file_extension: ".md"
+
+Creates:
+- chapter_Chapter_One.md
+- chapter_Chapter_Two.md
+- chapter_Chapter_Three.md
+```
+
+**Example 3: Zero-indexed filenames**
+```
+Input: ["Item A", "Item B", "Item C"]
+filename_pattern: "item_{index}"
+file_extension: ".txt"
+
+Creates:
+- item_0.txt
+- item_1.txt
+- item_2.txt
+```
+
+**Example 4: Collision handling with overwrite=False**
+```
+Input: ["New content"]
+filename_pattern: "output_{count}"
+file_extension: ".txt"
+overwrite: False
+
+First run creates: output_1.txt
+Second run creates: output_1_1.txt (preserves existing file)
+Third run creates: output_1_2.txt
+```
+
+**Example 5: Collision handling with overwrite=True**
+```
+Input: ["Updated content"]
+filename_pattern: "data"
+file_extension: ".txt"
+overwrite: True
+
+First run creates: data.txt
+Second run overwrites: data.txt (replaces with new content)
+```
+
+**Example 6: Nested directory structure**
+```
+Input: ["Report data"]
+folder_path: "./reports/2024/january"
+filename_pattern: "report_{count}"
+
+Creates directory structure if it doesn't exist:
+./reports/2024/january/report_1.txt
+```
+
+**Example 7: Mixed pattern with index and content**
+```
+Input: ["Summary text", "Analysis results", "Conclusion notes"]
+filename_pattern: "{index}_summary_{input}"
+
+Creates:
+- 0_summary_Summary_text.txt
+- 1_summary_Analysis_results.txt
+- 2_summary_Conclusion_notes.txt
+```
+
+**Example 8: Format output modes**
+```
+Input: ["test data"]
+
+With format_output=True:
+File contains: test data
+
+With format_output=False:
+File contains: ['test data']
+```
+
+**Example 9: Special character sanitization**
+```
+Input: ["File: test/data", "Query? Yes!", "Path\\to\\file"]
+filename_pattern: "output_{input}"
+
+Creates (with sanitization):
+- output_File_testdata.txt
+- output_Query_Yes.txt
+- output_Pathtofile.txt
+```
+
+**Example 10: Long filename handling**
+```
+Input: ["x" * 300]  # Very long content
+filename_pattern: "{input}"
+
+Creates:
+- [first 200 chars of content].txt (automatically truncated to filesystem limits)
+```
+
+### Notes
+
+- **Hash-based optimization:** Files are only written if content has changed since the last cook, or if the file doesn't exist, unless refresh is triggered
+- **Filename sanitization:** Automatically removes invalid characters (/ \ : * ? " < > |) and converts spaces to underscores
+- **Filesystem limits:** Filenames are automatically truncated to 255 characters to ensure compatibility across all filesystems
+- **Empty content handling:** Empty strings or strings with only invalid characters result in "file" as the base filename
+- **Directory permissions:** Errors are reported if the folder_path cannot be created or written to
+- **File path output:** Returns absolute paths for all created files, making them easy to use in subsequent nodes
+- **UTF-8 encoding:** All files are written with UTF-8 encoding for proper unicode support
+- **Extension handling:** If filename_pattern already includes the file_extension, it won't be duplicated
+- **Per-file tracking:** Each file's content hash is tracked independently for efficient change detection
+- **Automatic recreation:** If a file is deleted externally, the node will recreate it on the next cook
+- **Empty list handling:** Empty input lists result in empty output lists (no files created)
+- **Error propagation:** Validation errors (no input, wrong type) set the node to UNCOOKED state with clear error messages
+- **Time-dependent:** The node is always marked as time-dependent to ensure proper recooking when needed

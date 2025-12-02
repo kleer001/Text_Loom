@@ -151,6 +151,10 @@ class FolderOutNode(Node):
         if not filename.endswith(extension):
             filename = filename + extension
 
+        if len(filename) > 255:
+            name_without_ext = filename[:-len(extension)] if extension else filename
+            filename = name_without_ext[:255-len(extension)] + extension
+
         return filename
 
     def _sanitize_filename(self, text: str) -> str:
@@ -162,6 +166,12 @@ class FolderOutNode(Node):
 
         sanitized = sanitized.replace(' ', '_')
         sanitized = sanitized.strip().strip('.')
+
+        if not sanitized:
+            sanitized = "file"
+
+        if len(sanitized) > 200:
+            sanitized = sanitized[:200]
 
         return sanitized
 
