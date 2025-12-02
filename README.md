@@ -1,8 +1,15 @@
 # Text Loom
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![Release](https://img.shields.io/github/v/release/kleer001/Text_Loom)](https://github.com/kleer001/Text_Loom/releases)
+[![Issues](https://img.shields.io/github/issues/kleer001/Text_Loom)](https://github.com/kleer001/Text_Loom/issues)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+
 **Visual programming for LLM workflows. Node-based text processing in your terminal.**
 
-Build complex text workflows by connecting nodes—no code required. Query LLMs, transform text, iterate over lists, and save results.
+Build complex text pipelines by connecting nodes—no code required. Process files, query LLMs, transform data, and automate workflows with a simple visual interface.
 
 <img src="images/mainwin3_trim.gif" alt="Text Loom Demo" width="800">
 
@@ -54,13 +61,13 @@ Choose your workflow—all use the same core:
 
 ## LLM Integration (MCP)
 
-**Let Claude build workflows for you!**
+**Let AI assistants build workflows for you!**
 
-Text Loom includes an MCP (Model Context Protocol) server that enables LLMs like Claude to create workflows programmatically:
+Text Loom includes an MCP (Model Context Protocol) server that enables LLM tools to create workflows programmatically:
 
 ```bash
-# Configure Claude Desktop with Text Loom
-# Add to ~/Library/Application Support/Claude/claude_desktop_config.json:
+# Configure your MCP-compatible LLM tool with Text Loom
+# Example configuration:
 {
   "mcpServers": {
     "text-loom": {
@@ -70,15 +77,29 @@ Text Loom includes an MCP (Model Context Protocol) server that enables LLMs like
 }
 ```
 
-Then ask Claude:
+Then ask your LLM assistant:
 > "Using Text Loom, create a workflow that reads article.txt, summarizes it, and saves to summary.txt"
 
-Claude will:
+Your assistant will:
 - ✅ Create the workflow
 - ✅ Execute it
 - ✅ Give you the JSON to save and reuse
 
 **Learn more:** [`/docs/MCP_INTEGRATION.md`](docs/MCP_INTEGRATION.md)
+
+---
+
+## Key Features
+
+**Text-First Design** — Strings and lists are the foundation. No JSON wrappers or object hierarchies.
+
+**Multiple Interfaces** — Terminal UI, Web GUI, Python REPL, REST API, or batch mode—use what fits your workflow.
+
+**LLM Integration** — Native support for major LLM providers and local models.
+
+**Lightweight & Offline** — <50MB footprint, runs entirely self-hosted without internet dependency.
+
+**MCP-Enabled** — Integrate with LLM tools to build workflows conversationally.
 
 ---
 
@@ -107,7 +128,7 @@ Claude will:
 
 **Visual workflows** - Connect nodes, not code
 
-**LLM integration** - Ollama, OpenAI, Claude, Gemini, local models
+**LLM integration** - Support for major API providers and local models
 
 **Batch processing** - Loop over lists, transform files in bulk
 
@@ -135,4 +156,8 @@ Text Loom makes procedural prompt engineering and text manipulation visual and i
 
 ## Contributing
 
-Issues and PRs welcome. MIT License.
+Contributions welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
+## License
+
+MIT License - see [LICENSE](LICENSE) for details.
