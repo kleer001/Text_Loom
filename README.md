@@ -1,8 +1,19 @@
 # Text Loom
 
-**Visual programming for LLM workflows. Node-based text processing in your terminal.**
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![Release](https://img.shields.io/github/v/release/kleer001/Text_Loom)](https://github.com/kleer001/Text_Loom/releases)
+[![Issues](https://img.shields.io/github/issues/kleer001/Text_Loom)](https://github.com/kleer001/Text_Loom/issues)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
-Build complex text workflows by connecting nodes—no code required. Query LLMs, transform text, iterate over lists, and save results.
+**Node-based text processing. Visual programming exists for images, audio, 3D, and games—now it exists for text.**
+
+**Can't pick an interface? Neither could we—so here's five.**
+
+Node-based text processing for everyone: terminal nerds (TUI), browser people (GUI), Python enthusiasts (REPL), automation addicts (API), and server minimalists (batch). Build workflows by connecting nodes, no code required.*
+
+<sub>*Except in REPL mode. Obviously.</sub>
 
 <img src="images/mainwin3_trim.gif" alt="Text Loom Demo" width="800">
 
@@ -64,13 +75,13 @@ Choose your workflow—all use the same core:
 
 ## LLM Integration (MCP)
 
-**Let Claude build workflows for you!**
+**Let AI assistants build workflows for you!**
 
-Text Loom includes an MCP (Model Context Protocol) server that enables LLMs like Claude to create workflows programmatically:
+Text Loom includes an MCP (Model Context Protocol) server that enables LLM tools to create workflows programmatically:
 
 ```bash
-# Configure Claude Desktop with Text Loom
-# Add to ~/Library/Application Support/Claude/claude_desktop_config.json:
+# Configure your MCP-compatible LLM tool with Text Loom
+# Example configuration:
 {
   "mcpServers": {
     "text-loom": {
@@ -80,15 +91,29 @@ Text Loom includes an MCP (Model Context Protocol) server that enables LLMs like
 }
 ```
 
-Then ask Claude:
+Then ask your LLM assistant:
 > "Using Text Loom, create a workflow that reads article.txt, summarizes it, and saves to summary.txt"
 
-Claude will:
+Your assistant will:
 - ✅ Create the workflow
 - ✅ Execute it
 - ✅ Give you the JSON to save and reuse
 
 **Learn more:** [`/docs/MCP_INTEGRATION.md`](docs/MCP_INTEGRATION.md)
+
+---
+
+## Key Features
+
+**Text-First Design** — Strings and lists are the foundation. No JSON wrappers or object hierarchies.
+
+**Multiple Interfaces** — Terminal UI, Web GUI, Python REPL, REST API, or batch mode—use what fits your workflow.
+
+**LLM Integration** — Native support for major LLM providers and local models.
+
+**Lightweight & Offline** — <50MB footprint, runs entirely self-hosted without internet dependency.
+
+**MCP-Enabled** — Integrate with LLM tools to build workflows conversationally.
 
 ---
 
@@ -117,7 +142,7 @@ Claude will:
 
 **Visual workflows** - Connect nodes, not code
 
-**LLM integration** - Ollama, OpenAI, Claude, Gemini, local models
+**LLM integration** - Support for major API providers and local models
 
 **Batch processing** - Loop over lists, transform files in bulk
 
@@ -145,4 +170,63 @@ Text Loom makes procedural prompt engineering and text manipulation visual and i
 
 ## Contributing
 
-Issues and PRs welcome. MIT License.
+Contributions welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
+---
+
+## Real-World Examples
+
+### Customer Service - Ticket Triage
+```
+File In node (support_tickets.txt)
+→ Split node (split by ticket)
+→ Looper node (process each ticket)
+  → Query node (classify: bug/feature/question/complaint)
+  → Conditional node (route based on classification)
+    → Query node (generate appropriate response template)
+→ Merge node (group by category)
+→ Folder Out node (sorted by ticket type)
+```
+*Auto-classify and generate response templates for support tickets.*
+
+### Data Entry - Contact List Normalization
+```
+File In node (messy_contacts.csv)
+→ Split node (split by line)
+→ Looper node (process each contact)
+  → RegEx node (extract phone numbers)
+  → Query node (standardize format to (XXX) XXX-XXXX)
+  → Text node (reconstruct clean entry)
+→ Merge node (combine cleaned contacts)
+→ File Out node (clean_contacts.csv)
+```
+*Clean and standardize thousands of inconsistent contact records.*
+
+### DevOps/IT - Log Analysis
+```
+Folder node (175 log files)
+→ Looper node (process each file)
+  → Search node (find "Warning|Memory Corruption|Syntax|Decoupling")
+  → Text node (add filename prefix)
+→ Merge node (collate all errors)
+→ File Out node (errors_summary.txt)
+```
+*Find specific errors across hundreds of log files in seconds.*
+
+### Legal/Compliance - Contract Clause Extraction
+```
+Folder node (200 vendor contracts)
+→ Looper node (process each contract)
+  → Search node (find "indemnification|liability|termination")
+  → Query node (extract full clause context)
+  → Text node (add contract filename and page)
+→ Merge node (compile all clauses)
+→ File Out node (clause_comparison.csv)
+```
+*Extract and compare specific clauses across hundreds of contracts.*
+
+---
+
+## License
+
+MIT License - see [LICENSE](LICENSE) for details.
