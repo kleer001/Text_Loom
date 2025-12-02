@@ -18,6 +18,8 @@ This is a technical reference for experienced developers who understand object-o
 ```python
 # Filename: src/core/your_node_name_node.py
 class YourNodeNameNode(Node):
+    GLYPH = '⚡'                  # Visual identifier (single character/emoji)
+    GROUP = FunctionalGroup.XXX  # Functional grouping (TEXT/FILE/LIST/FLOW)
     SINGLE_INPUT = True/False    # Connection limits
     SINGLE_OUTPUT = True/False
 ```
@@ -57,6 +59,25 @@ Nodes exist in a dependency graph where data flows from inputs to outputs. The s
 3. Calls `_internal_cook()` for actual processing
 4. Updates state and caches results
 
+### Visual Identity & Grouping
+
+Each node has a visual identity defined by two class variables:
+
+**GLYPH:** A single character or emoji that represents the node visually in the UI. Choose something intuitive:
+- Text operations: `'Ꭲ'`, `'⎔'`, `'§'`
+- File I/O: `'⤵'` (in), `'⤴'` (out), `'📁'` (folder)
+- List operations: `'⋈'` (merge), `'⋔'` (split), `'≣'` (make list)
+- Flow control: `'⟲'` (loop), `'∅'` (null), `'⌘'` (query)
+- Search/Find: `'🔍'`, `'#'` (count)
+
+**GROUP:** Categorizes nodes by function using `FunctionalGroup` enum:
+- `FunctionalGroup.TEXT` - Text manipulation and formatting
+- `FunctionalGroup.FILE` - File system operations
+- `FunctionalGroup.LIST` - List processing and transformation
+- `FunctionalGroup.FLOW` - Control flow and logic
+
+These identifiers help users quickly recognize node types and organize their workflows.
+
 ### Connection System
 
 Nodes connect through `NodeConnection` objects that link outputs to inputs. The base `Node` class manages these connections automatically - you define the interface through name and type methods.
@@ -80,20 +101,23 @@ Every node inherits from the base `Node` class and must implement specific metho
 ```python
 from core.base_classes import Node, NodeType, NodeState
 from core.parm import Parm, ParameterType
+from core.enums import FunctionalGroup
 
 class ExampleNode(Node):
+    GLYPH = '⚡'                    # Visual identifier in UI
+    GROUP = FunctionalGroup.TEXT   # Functional category
     SINGLE_INPUT = True
     SINGLE_OUTPUT = True
-    
+
     def __init__(self, name: str, path: str, node_type: NodeType):
         super().__init__(name, path, [0.0, 0.0], node_type)
         self._is_time_dependent = False
-        
+
         # Initialize parameters
         self._parms: Dict[str, Parm] = {
             "param_name": Parm("param_name", ParameterType.STRING, self),
         }
-        
+
         # Set defaults
         self._parms["param_name"].set("default_value")
 ```
