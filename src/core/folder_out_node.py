@@ -1,12 +1,3 @@
-"""
-FolderOutNode Implementation Specification
-
-This file serves as a specification document for implementing FolderOutNode.
-A developer should use this spec to create the full implementation.
-
-STATUS: SPECIFICATION ONLY - NOT YET IMPLEMENTED
-"""
-
 import os
 import hashlib
 import time
@@ -68,86 +59,166 @@ class FolderOutNode(Node):
         are preserved by appending "_1", "_2", etc. to the filename.
     """
 
-    GLYPH = '📂'  # Open folder - writing files out
+    GLYPH = '📂'
     GROUP = FunctionalGroup.FILE
     SINGLE_INPUT = True
     SINGLE_OUTPUT = True
 
-    # IMPLEMENTATION NOTES:
-    #
-    # 1. __init__ method should:
-    #    - Call super().__init__(name, path, [0.0, 0.0], NodeType.FOLDER_OUT)
-    #    - Set self._is_time_dependent = True
-    #    - Initialize self._file_hashes = {} to track per-file hash state
-    #    - Create parameters dict with all attributes above
-    #    - Set defaults:
-    #        * folder_path: "./output"
-    #        * filename_pattern: "output_{count}.txt"
-    #        * file_extension: ".txt"
-    #        * overwrite: False  # CONSERVATIVE DEFAULT
-    #        * format_output: True
-    #    - Set refresh button callback: self._parms["refresh"].set_script_callback("self.node().refresh()")
-    #
-    # 2. _internal_cook method should:
-    #    - Set state to COOKING
-    #    - Get input data from self.inputs()[0].output_node().eval(requesting_node=self)
-    #    - Validate input is List[str]
-    #    - For each item in input list:
-    #        a. Generate filename using _generate_filename(item, index)
-    #        b. Build full path: os.path.join(folder_path, filename)
-    #        c. If not overwrite and file exists, append suffix (_1, _2, etc.)
-    #        d. Check hash to see if write is needed (unless force=True)
-    #        e. Write file if needed (create directory with os.makedirs if needed)
-    #        f. Track hash in self._file_hashes[full_path]
-    #        g. Append full_path to output list
-    #    - Set self._output to list of file paths created
-    #    - Handle exceptions and set appropriate error states
-    #    - Track cook time
-    #
-    # 3. _generate_filename helper method should:
-    #    - Take (content: str, index: int) as parameters
-    #    - Parse filename_pattern and replace:
-    #        * {index} with str(index)
-    #        * {count} with str(index + 1)
-    #        * {input} with _sanitize_filename(content[:20])
-    #    - Add file_extension if not already present
-    #    - Return generated filename
-    #
-    # 4. _sanitize_filename helper method should:
-    #    - Remove/replace invalid filename characters
-    #    - Replace spaces with underscores
-    #    - Remove: / \ : * ? " < > |
-    #    - Strip leading/trailing whitespace and dots
-    #
-    # 5. _find_unique_filename helper method should:
-    #    - Take (base_path: str) as parameter
-    #    - If overwrite=True, return base_path as-is
-    #    - If file doesn't exist, return base_path
-    #    - Otherwise, append _1, _2, _3, etc. until unique filename found
-    #    - Split on extension properly (use os.path.splitext)
-    #
-    # 6. _calculate_file_hash method should:
-    #    - Take (content: str) as parameter
-    #    - Return hashlib.md5(content.encode()).hexdigest()
-    #
-    # 7. Standard interface methods:
-    #    - input_names() -> {0: "Input Text"}
-    #    - output_names() -> {0: "File Paths"}
-    #    - input_data_types() -> {0: "List[str]"}
-    #    - output_data_types() -> {0: "List[str]"}
-    #
-    # 8. needs_to_cook method should:
-    #    - Check super().needs_to_cook() first
-    #    - Check if any file hashes have changed
-    #    - Return True if input data has changed
-    #
-    # 9. Error handling priorities:
-    #    - Validate folder_path is writable before processing
-    #    - Handle file permission errors gracefully
-    #    - Add warning (not error) if some files fail but others succeed
-    #    - Use self.add_error() for critical failures only
-    #
-    # 10. NodeType enum addition needed:
-    #     - Add FOLDER_OUT to the NodeType enum in base_classes.py
+    def __init__(self, name: str, path: str, node_type: NodeType):
+        super().__init__(name, path, [0.0, 0.0], node_type)
+        self._is_time_dependent = True
+        self._file_hashes: Dict[str, str] = {}
 
-    pass  # Implementation goes here
+        self._parms.update({
+            "folder_path": Parm("folder_path", ParameterType.STRING, self),
+            "filename_pattern": Parm("filename_pattern", ParameterType.STRING, self),
+            "file_extension": Parm("file_extension", ParameterType.STRING, self),
+            "overwrite": Parm("overwrite", ParameterType.TOGGLE, self),
+            "refresh": Parm("refresh", ParameterType.BUTTON, self),
+            "format_output": Parm("format_output", ParameterType.TOGGLE, self),
+        })
+
+        self._parms["folder_path"].set("./output")
+        self._parms["filename_pattern"].set("output_{count}.txt")
+        self._parms["file_extension"].set(".txt")
+        self._parms["overwrite"].set(False)
+        self._parms["format_output"].set(True)
+        self._parms["refresh"].set_script_callback("self.node().refresh()")
+
+    def _internal_cook(self, force: bool = False) -> None:
+        self.set_state(NodeState.COOKING)
+        self._cook_count += 1
+        start_time = time.time()
+
+        try:
+            input_data = []
+            if self.inputs():
+                input_data = self.inputs()[0].output_node().eval(requesting_node=self)
+                if not isinstance(input_data, list):
+                    self.add_error("Input must be a list of strings")
+                    self.set_state(NodeState.UNCOOKED)
+                    return
+
+            folder_path = self._parms["folder_path"].eval()
+            overwrite = self._parms["overwrite"].eval()
+
+            os.makedirs(folder_path, exist_ok=True)
+
+            output_paths: List[str] = []
+
+            for index, item in enumerate(input_data):
+                if not isinstance(item, str):
+                    item = str(item)
+
+                filename = self._generate_filename(item, index)
+                base_path = os.path.join(folder_path, filename)
+                final_path = self._find_unique_filename(base_path) if not overwrite else base_path
+
+                content_hash = self._calculate_file_hash(item)
+                needs_write = force or final_path not in self._file_hashes or self._file_hashes[final_path] != content_hash
+
+                if needs_write:
+                    with open(final_path, 'w', encoding='utf-8') as f:
+                        f.write(item)
+                    self._file_hashes[final_path] = content_hash
+
+                output_paths.append(final_path)
+
+            self._output = output_paths
+            self.set_state(NodeState.UNCHANGED)
+
+        except PermissionError as e:
+            self.add_error(f"Permission denied when writing files: {e}")
+            self.set_state(NodeState.UNCOOKED)
+        except OSError as e:
+            self.add_error(f"OS error when writing files: {e}")
+            self.set_state(NodeState.UNCOOKED)
+        except Exception as e:
+            self.add_error(f"Unexpected error: {e}")
+            self.set_state(NodeState.UNCOOKED)
+
+        self._last_cook_time = (time.time() - start_time) * 1000
+
+    def _generate_filename(self, content: str, index: int) -> str:
+        filename_pattern = self._parms["filename_pattern"].eval()
+        file_extension = self._parms["file_extension"].eval()
+
+        filename = filename_pattern.replace("{index}", str(index))
+        filename = filename.replace("{count}", str(index + 1))
+        filename = filename.replace("{input}", self._sanitize_filename(content[:20]))
+
+        if not filename.endswith(file_extension):
+            filename += file_extension
+
+        return filename
+
+    def _sanitize_filename(self, text: str) -> str:
+        invalid_chars = ['/', '\\', ':', '*', '?', '"', '<', '>', '|']
+        sanitized = text
+        for char in invalid_chars:
+            sanitized = sanitized.replace(char, '')
+        sanitized = sanitized.replace(' ', '_')
+        sanitized = sanitized.strip()
+        sanitized = sanitized.strip('.')
+        return sanitized if sanitized else "unnamed"
+
+    def _find_unique_filename(self, base_path: str) -> str:
+        overwrite = self._parms["overwrite"].eval()
+
+        if overwrite or not os.path.exists(base_path):
+            return base_path
+
+        base, ext = os.path.splitext(base_path)
+        counter = 1
+        while os.path.exists(f"{base}_{counter}{ext}"):
+            counter += 1
+
+        return f"{base}_{counter}{ext}"
+
+    def _calculate_file_hash(self, content: str) -> str:
+        return hashlib.md5(content.encode()).hexdigest()
+
+    def input_names(self) -> Dict[int, str]:
+        return {0: "Input Text"}
+
+    def output_names(self) -> Dict[int, str]:
+        return {0: "File Paths"}
+
+    def input_data_types(self) -> Dict[int, str]:
+        return {0: "List[str]"}
+
+    def output_data_types(self) -> Dict[int, str]:
+        return {0: "List[str]"}
+
+    def needs_to_cook(self) -> bool:
+        if super().needs_to_cook():
+            return True
+        if self._is_time_dependent:
+            return True
+        try:
+            folder_path = self._parms["folder_path"].raw_value()
+            filename_pattern = self._parms["filename_pattern"].raw_value()
+            file_extension = self._parms["file_extension"].raw_value()
+            overwrite = self._parms["overwrite"].raw_value()
+
+            param_hash = self._calculate_file_hash(
+                f"{folder_path}{filename_pattern}{file_extension}{overwrite}"
+            )
+
+            if self.inputs():
+                input_data = self.inputs()[0].output_node().get_output()
+                input_hash = self._calculate_file_hash(str(input_data))
+
+                if not hasattr(self, '_last_param_hash') or not hasattr(self, '_last_input_hash'):
+                    self._last_param_hash = param_hash
+                    self._last_input_hash = input_hash
+                    return True
+
+                if param_hash != self._last_param_hash or input_hash != self._last_input_hash:
+                    self._last_param_hash = param_hash
+                    self._last_input_hash = input_hash
+                    return True
+
+            return False
+        except Exception:
+            return True
