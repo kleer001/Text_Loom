@@ -7,9 +7,13 @@
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
-**Visual programming for LLM workflows. Node-based text processing in your terminal.**
+**Node-based text processing. Visual programming exists for images, audio, 3D, and games—now it exists for text.**
 
-Build complex text pipelines by connecting nodes—no code required. Process files, query LLMs, transform data, and automate workflows with a simple visual interface.
+**Can't pick an interface? Neither could we—so here's five.**
+
+Node-based text processing for everyone: terminal nerds (TUI), browser people (GUI), Python enthusiasts (REPL), automation addicts (API), and server minimalists (batch). Build workflows by connecting nodes, no code required.*
+
+<sub>*Except in REPL mode. Obviously.</sub>
 
 <img src="images/mainwin3_trim.gif" alt="Text Loom Demo" width="800">
 
