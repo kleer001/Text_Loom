@@ -162,6 +162,61 @@ Text Loom makes procedural prompt engineering and text manipulation visual and i
 
 Contributions welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
+---
+
+## Real-World Examples
+
+### Customer Service - Ticket Triage
+```
+File In node (support_tickets.txt)
+→ Split node (split by ticket)
+→ Looper node (process each ticket)
+  → Query node (classify: bug/feature/question/complaint)
+  → Conditional node (route based on classification)
+    → Query node (generate appropriate response template)
+→ Merge node (group by category)
+→ Folder Out node (sorted by ticket type)
+```
+*Auto-classify and generate response templates for support tickets.*
+
+### Data Entry - Contact List Normalization
+```
+File In node (messy_contacts.csv)
+→ Split node (split by line)
+→ Looper node (process each contact)
+  → RegEx node (extract phone numbers)
+  → Query node (standardize format to (XXX) XXX-XXXX)
+  → Text node (reconstruct clean entry)
+→ Merge node (combine cleaned contacts)
+→ File Out node (clean_contacts.csv)
+```
+*Clean and standardize thousands of inconsistent contact records.*
+
+### DevOps/IT - Log Analysis
+```
+Folder node (175 log files)
+→ Looper node (process each file)
+  → Search node (find "Warning|Memory Corruption|Syntax|Decoupling")
+  → Text node (add filename prefix)
+→ Merge node (collate all errors)
+→ File Out node (errors_summary.txt)
+```
+*Find specific errors across hundreds of log files in seconds.*
+
+### Legal/Compliance - Contract Clause Extraction
+```
+Folder node (200 vendor contracts)
+→ Looper node (process each contract)
+  → Search node (find "indemnification|liability|termination")
+  → Query node (extract full clause context)
+  → Text node (add contract filename and page)
+→ Merge node (compile all clauses)
+→ File Out node (clause_comparison.csv)
+```
+*Extract and compare specific clauses across hundreds of contracts.*
+
+---
+
 ## License
 
 MIT License - see [LICENSE](LICENSE) for details.
