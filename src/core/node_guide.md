@@ -1429,20 +1429,20 @@ Creates (with sanitization):
 - output_Pathtofile.txt
 ```
 
-**Example 10: Long filename handling**
+**Example 10: OS error handling**
 ```
 Input: ["x" * 300]  # Very long content
 filename_pattern: "{input}"
 
-Creates:
-- [first 200 chars of content].txt (automatically truncated to filesystem limits)
+Result: Error reported if filename exceeds OS limits (typically 255 chars)
+Note: OS naturally rejects invalid filenames with clear error messages
 ```
 
 ### Notes
 
 - **Hash-based optimization:** Files are only written if content has changed since the last cook, or if the file doesn't exist, unless refresh is triggered
 - **Filename sanitization:** Automatically removes invalid characters (/ \ : * ? " < > |) and converts spaces to underscores
-- **Filesystem limits:** Filenames are automatically truncated to 255 characters to ensure compatibility across all filesystems
+- **OS-enforced limits:** The OS will reject filenames that are too long (typically 255 chars) with a clear error message
 - **Empty content handling:** Empty strings or strings with only invalid characters result in "file" as the base filename
 - **Directory permissions:** Errors are reported if the folder_path cannot be created or written to
 - **File path output:** Returns absolute paths for all created files, making them easy to use in subsequent nodes
