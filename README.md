@@ -184,7 +184,7 @@ File In node (support_tickets.txt)
   → Query node (classify: bug/feature/question/complaint)
   → Query node (generate appropriate response template)
 → Merge node (group by category)
-→ Folder Out node (sorted by ticket type)
+→ File Out node (sorted_tickets.txt)
 ```
 *Auto-classify and generate response templates for support tickets.*
 
