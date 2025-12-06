@@ -49,6 +49,58 @@ Output: ["apple", "banana"]
 
 ---
 
+## InputNullNode (▷) - FLOW
+
+Retrieves input from another specified node. Primarily used inside Looper nodes for accessing external data.
+
+**Parameters:**
+- `in_node` (str, default: "") - Path to source node
+- `in_data` (List[str], default: []) - Data from source node
+- `feedback_mode` (bool, default: False) - Use previous loop output as input
+
+**Input:** None (reads from specified node)
+**Output:** List[str] from source node
+
+**Example:**
+```
+in_node: "/obj/file_reader"
+Output: [data from file_reader node's input connection]
+```
+
+**Notes:**
+- Used inside Looper nodes to access external inputs
+- Feedback mode enables iterative processing with previous results
+- Automatically detects and handles node path resolution
+
+---
+
+## OutputNullNode (◁) - FLOW
+
+Mirrors input to output parameter while accumulating data. Primarily used inside Looper nodes for collecting results.
+
+**Parameters:**
+- `out_data` (List[str], default: []) - Accumulated output data
+- `feedback_mode` (bool, default: False) - Enable feedback loop
+- `cook_loops` (bool, default: False) - Force cook on each iteration
+- `in_node` (str, default: "") - Parent node path
+
+**Input:** List[str]
+**Output:** List[str] (accumulated across iterations)
+
+**Example:**
+```
+Loop iteration 1 input: ["result1"]
+Loop iteration 2 input: ["result2"]
+Final output: ["result1", "result2"]
+```
+
+**Notes:**
+- Used inside Looper nodes to collect iteration results
+- Accumulates data by extending the list on each cook
+- Supports feedback mode for iterative refinement
+
+---
+
 ## LooperNode (⟲) - FLOW
 
 Iterative processing node for repeated operations over data ranges or input items.
@@ -108,6 +160,40 @@ line3
 **Notes:**
 - Hash checking prevents unnecessary disk writes
 - format_output=False preserves Python list format for round-trip processing
+
+---
+
+## FolderOutNode (📂) - FILE
+
+**⚠️ NOT YET IMPLEMENTED - SPECIFICATION ONLY**
+
+Writes input list items as separate files into a specified folder. Each list item becomes an individual file.
+
+**Parameters (Planned):**
+- `folder_path` (str, default: "./output") - Target directory
+- `filename_pattern` (str, default: "output_{count}.txt") - Template with {index}, {count}, {input}
+- `file_extension` (str, default: ".txt") - File extension
+- `overwrite` (bool, default: False) - Overwrite vs append suffix for collisions
+- `refresh` (button) - Force write all files
+- `format_output` (bool, default: True) - Raw string vs Python list format
+
+**Input:** List[str] (each item becomes a file)
+**Output:** List[str] (file paths created)
+
+**Example (Planned):**
+```
+Input: ["First document", "Second document", "Third document"]
+filename_pattern: "doc_{count}"
+→ Creates:
+  output/doc_1.txt (contains: "First document")
+  output/doc_2.txt (contains: "Second document")
+  output/doc_3.txt (contains: "Third document")
+```
+
+**Notes:**
+- **Status:** Specification exists at src/core/folder_out_node.py but not implemented
+- **Planned features:** Hash-based optimization, collision handling, sanitized filenames
+- **Use FileOutNode** with a Looper node for similar functionality until implementation
 
 ---
 
@@ -488,10 +574,12 @@ Output: ["Hi World", "Hi WORLD"]
 
 ## Node Groups
 
-**FLOW:** QueryNode, NullNode, LooperNode
-**FILE:** FileOutNode, FileInNode, FolderNode
+**FLOW:** QueryNode, NullNode, InputNullNode, OutputNullNode, LooperNode
+**FILE:** FileOutNode, FolderOutNode ⚠️, FileInNode, FolderNode
 **TEXT:** TextNode, SectionNode, MakeListNode, ChunkNode, StringTransformNode
 **LIST:** SplitNode, MergeNode, JSONNode, CountNode, SearchNode
+
+**Total: 19 nodes** (18 implemented, 1 specification only)
 
 ---
 
