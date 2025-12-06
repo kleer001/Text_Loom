@@ -165,25 +165,27 @@ line3
 
 ## FolderOutNode (📂) - FILE
 
-**⚠️ NOT YET IMPLEMENTED - SPECIFICATION ONLY**
+Writes input list items as separate files into a specified folder. Each list item becomes an individual file with configurable naming patterns.
 
-Writes input list items as separate files into a specified folder. Each list item becomes an individual file.
-
-**Parameters (Planned):**
-- `folder_path` (str, default: "./output") - Target directory
-- `filename_pattern` (str, default: "output_{count}.txt") - Template with {index}, {count}, {input}
-- `file_extension` (str, default: ".txt") - File extension
-- `overwrite` (bool, default: False) - Overwrite vs append suffix for collisions
-- `refresh` (button) - Force write all files
-- `format_output` (bool, default: True) - Raw string vs Python list format
+**Parameters:**
+- `folder_path` (str, default: "./output") - Target directory (created if doesn't exist)
+- `filename_pattern` (str, default: "output_{count}.txt") - Template with placeholders:
+  - `{index}` - Sequential number (0-based)
+  - `{count}` - Sequential number (1-based)
+  - `{input}` - First 20 chars of content (sanitized)
+- `file_extension` (str, default: ".txt") - File extension for all outputs
+- `overwrite` (bool, default: False) - Overwrite existing files vs append suffix
+- `refresh` (button) - Force write all files regardless of hash checks
+- `format_output` (bool, default: True) - Raw string vs Python list format per file
 
 **Input:** List[str] (each item becomes a file)
 **Output:** List[str] (file paths created)
 
-**Example (Planned):**
+**Example:**
 ```
 Input: ["First document", "Second document", "Third document"]
 filename_pattern: "doc_{count}"
+folder_path: "./output"
 → Creates:
   output/doc_1.txt (contains: "First document")
   output/doc_2.txt (contains: "Second document")
@@ -191,9 +193,10 @@ filename_pattern: "doc_{count}"
 ```
 
 **Notes:**
-- **Status:** Specification exists at src/core/folder_out_node.py but not implemented
-- **Planned features:** Hash-based optimization, collision handling, sanitized filenames
-- **Use FileOutNode** with a Looper node for similar functionality until implementation
+- Hash-based optimization prevents unnecessary rewrites
+- Collision handling appends "_1", "_2" when overwrite=False
+- Sanitizes filenames (removes invalid characters like / \\ : * ? " < > |)
+- Creates directory structure automatically
 
 ---
 
@@ -575,11 +578,11 @@ Output: ["Hi World", "Hi WORLD"]
 ## Node Groups
 
 **FLOW:** QueryNode, NullNode, InputNullNode, OutputNullNode, LooperNode
-**FILE:** FileOutNode, FolderOutNode ⚠️, FileInNode, FolderNode
+**FILE:** FileOutNode, FolderOutNode, FileInNode, FolderNode
 **TEXT:** TextNode, SectionNode, MakeListNode, ChunkNode, StringTransformNode
 **LIST:** SplitNode, MergeNode, JSONNode, CountNode, SearchNode
 
-**Total: 19 nodes** (18 implemented, 1 specification only)
+**Total: 19 nodes**
 
 ---
 

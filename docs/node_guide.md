@@ -134,7 +134,126 @@ This node writes content to a text file with intelligent change detection. The h
 
 ---
 
-## 5. FileInNode
+## 5. FolderOutNode
+
+**FolderOutNode: A node that writes each input list item as a separate file in a specified folder.**
+
+This node enables batch file creation workflows by writing each string in the input list as an individual file. It provides flexible filename templating, automatic directory creation, and collision handling for safe batch operations.
+
+### Parameters
+
+**folder_path** (str): The directory path where files will be written. Directory is created automatically if it doesn't exist. Default: "./output"
+
+**filename_pattern** (str): Template string for generating filenames. Supports placeholders:
+- `{index}` - Sequential number starting from 0
+- `{count}` - Sequential number starting from 1
+- `{input}` - First 20 characters of content (sanitized for filesystem)
+
+Example patterns:
+- `"output_{count}.txt"` → output_1.txt, output_2.txt, output_3.txt
+- `"doc_{index}"` → doc_0, doc_1, doc_2
+- `"file_{input}"` → file_First_document.txt, file_Second_document.txt
+
+Default: "output_{count}.txt"
+
+**file_extension** (str): File extension appended to all generated filenames. Default: ".txt"
+
+**overwrite** (bool): Controls handling of existing files:
+- When True: Overwrites existing files without warning
+- When False: Appends numeric suffix (_1, _2, etc.) to avoid collisions
+Default: False (conservative, prevents data loss)
+
+**refresh** (button): Forces all files to be written immediately, bypassing hash-based change detection.
+
+**format_output** (bool): Controls how content is written to files:
+- When True: Writes raw string content (human-readable)
+- When False: Preserves Python list format for each item
+Default: True
+
+### Features
+
+- Automatic directory creation (creates nested paths as needed)
+- Hash-based change detection (only writes when content changes)
+- Filename sanitization (removes invalid characters: / \\ : * ? " < > |)
+- Collision avoidance (appends numeric suffix when overwrite=False)
+- Batch output tracking (returns list of created file paths)
+
+### Input/Output
+
+**Input:** List[str] - Each item becomes a separate file
+**Output:** List[str] - List of file paths for created files
+
+### Usage Examples
+
+**Example 1: Sequential numbered files**
+```
+Input: ["First document", "Second document", "Third document"]
+folder_path: "./output"
+filename_pattern: "doc_{count}"
+file_extension: ".txt"
+
+Creates:
+- ./output/doc_1.txt (contains: "First document")
+- ./output/doc_2.txt (contains: "Second document")
+- ./output/doc_3.txt (contains: "Third document")
+
+Output: ["./output/doc_1.txt", "./output/doc_2.txt", "./output/doc_3.txt"]
+```
+
+**Example 2: Content-based filenames**
+```
+Input: ["Meeting notes for Monday", "Project requirements", "Status update"]
+filename_pattern: "file_{input}"
+file_extension: ".md"
+
+Creates:
+- ./output/file_Meeting_notes_for_M.md
+- ./output/file_Project_requiremen.md
+- ./output/file_Status_update.md
+
+Note: {input} uses first 20 chars, sanitized
+```
+
+**Example 3: Collision handling**
+```
+Input: ["New data", "More data"]
+folder_path: "./existing"
+filename_pattern: "data"
+overwrite: False
+
+If ./existing/data.txt already exists:
+Creates:
+- ./existing/data_1.txt (contains: "New data")
+- ./existing/data_2.txt (contains: "More data")
+```
+
+**Example 4: Batch processing with LLM output**
+```
+Workflow:
+Folder node (read 100 files)
+→ Looper node (process each)
+  → Query node (summarize content)
+→ Merge node (collect summaries)
+→ Folder Out node (write summaries to files)
+  filename_pattern: "summary_{count}"
+  folder_path: "./summaries"
+
+Result: 100 summary files in ./summaries/
+```
+
+### Notes
+
+- All file paths in output are absolute paths for clarity
+- Hash checking prevents redundant writes on unchanged content
+- Refresh button bypasses caching for forced regeneration
+- format_output=False enables round-trip processing with FileInNode
+- Filename sanitization ensures cross-platform compatibility
+- Parent directories created automatically (no manual mkdir needed)
+- Empty input list produces empty output list (no files created)
+
+---
+
+## 6. FileInNode
 
 **FileInNode: A node that reads and parses text files or input strings into lists.**
 
@@ -170,7 +289,7 @@ This node can either read from a file or take input text, parsing formatted stri
 
 ---
 
-## 6. TextNode
+## 7. TextNode
 
 **TextNode: A node that manipulates text strings with advanced list support.**
 
@@ -205,7 +324,7 @@ Takes a list of strings as input and either appends or prepends text based on th
 
 ---
 
-## 7. SplitNode
+## 8. SplitNode
 
 **SplitNode: A versatile node for splitting lists of strings into two parts based on various expressions.**
 
@@ -252,7 +371,7 @@ Examples:
 
 ---
 
-## 8. SectionNode
+## 9. SectionNode
 
 **SectionNode: A node that sections input text based on prefix matching patterns.**
 
@@ -338,7 +457,7 @@ Output[2]: ["DETECTIVE SMITH: Hello", "(looking around)", "A: Detailed answer"]
 
 ---
 
-## 9. MakeListNode
+## 10. MakeListNode
 
 **MakeListNode: A node that parses numbered lists from text into a list of strings.**
 
@@ -420,7 +539,7 @@ Output: [
 
 ---
 
-## 10. MergeNode
+## 11. MergeNode
 
 **MergeNode: A node that combines multiple input string lists into a single output list.**
 
@@ -484,7 +603,7 @@ Output: ["Hello World How Are You Today?"]
 
 ---
 
-## 11. FolderNode
+## 12. FolderNode
 
 **FolderNode: A directory scanning node for batch file processing workflows.**
 
@@ -616,7 +735,7 @@ Output 2: [Error messages]
 
 ---
 
-## 12. JSONNode
+## 13. JSONNode
 
 **JSONNode: A node that parses JSON text and extracts data as text lists.**
 
@@ -749,7 +868,7 @@ Output: ['{"id": 1, "name": "Item1"}', '{"id": 2, "name": "Item2"}']
 
 ---
 
-## 13. ChunkNode
+## 14. ChunkNode
 
 **ChunkNode: A node that splits text into chunks using various strategies.**
 
@@ -854,7 +973,7 @@ Output: [
 
 ---
 
-## 14. CountNode
+## 15. CountNode
 
 **CountNode: A node that performs counting and statistical operations on text lists.**
 
@@ -964,7 +1083,7 @@ Output: ['{"l": 2, "h": 1}']
 
 ---
 
-## 15. SearchNode
+## 16. SearchNode
 
 **SearchNode: A node that searches and filters text items based on patterns and keywords.**
 
@@ -1094,7 +1213,7 @@ Output 1 (Non-Matching): ["test.txt"]
 - Combining invert_match with boolean_mode allows complex filtering logic
 - The node provides warnings for regex errors in the log
 
-## 16. StringTransformNode
+## 17. StringTransformNode
  
 **StringTransformNode: A node that performs various string transformations on text items.**
  
