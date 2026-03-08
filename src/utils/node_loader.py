@@ -50,7 +50,7 @@ def discover_node_types(exclude: Optional[List[str]] = None) -> Dict[str, type]:
             if node_class:
                 node_types[node_type] = node_class
         except (ImportError, AttributeError) as e:
-            logger.debug(f"Could not load node type {node_type}: {e}")
+            logger.warning(f"Could not load node type '{node_type}': {e}")
 
     return node_types
 

@@ -3,7 +3,6 @@ from typing import Optional, Tuple
 
 import requests
 import os
-import litellm
 
 from core.text_utils import parse_list
 from core.findLLM import get_active_llm_from_config
@@ -214,6 +213,7 @@ def query_llm_with_tokens(prompt: str, active_llm: str, config=None) -> Tuple[Op
     api_base = settings.get("url", "http://localhost:11434")
 
     try:
+        import litellm
         response = litellm.completion(
             model=full_model_name,
             messages=[{"role": "user", "content": prompt}],
