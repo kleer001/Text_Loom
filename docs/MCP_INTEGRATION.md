@@ -184,7 +184,7 @@ Every LLM-created workflow is **exportable**:
 ### Components
 
 ```
-src/mcp/
+src/tloom_mcp/
 ├── __init__.py           # Package init
 ├── server.py             # MCP server (9 tools)
 ├── session_manager.py    # Workspace isolation

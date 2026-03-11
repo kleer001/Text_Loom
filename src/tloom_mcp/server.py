@@ -13,8 +13,8 @@ from mcp.server import Server
 from mcp.types import Tool, TextContent, ImageContent, EmbeddedResource
 from mcp.server.stdio import stdio_server
 
-from mcp.session_manager import get_session_manager
-from mcp.workflow_builder import WorkflowBuilder, get_available_node_types, get_node_details
+from tloom_mcp.session_manager import get_session_manager
+from tloom_mcp.workflow_builder import WorkflowBuilder, get_available_node_types, get_node_details
 
 
 app = Server("text-loom")

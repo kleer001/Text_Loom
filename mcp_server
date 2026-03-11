@@ -13,6 +13,6 @@ PROJECT_ROOT = Path(__file__).parent.resolve()
 sys.path.insert(0, str(PROJECT_ROOT / 'src'))
 
 if __name__ == "__main__":
-    from mcp.server import main
+    from tloom_mcp.server import main
     import asyncio
     asyncio.run(main())
