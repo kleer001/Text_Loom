@@ -1,4 +1,4 @@
-textual>=0.52.1
+textual>=8.2.8
 fastapi>=0.104.0
 uvicorn[standard]>=0.24.0
 requests>=2.32.2
