@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [ "mainXXX" ]
 
+permissions:
+  contents: read
+
 jobs:
 
   build:
@@ -14,5 +17,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+      with:
+        persist-credentials: false
     - name: Build the Docker image
-      run: docker build . --file Dockerfile --tag my-image-name:$(date +%s)
+      run: docker build . --file docker/Dockerfile --tag my-image-name:$(date +%s)

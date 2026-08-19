@@ -3,7 +3,7 @@ FROM node:20-alpine AS frontend-builder
 WORKDIR /app/frontend
 
 COPY src/GUI/package*.json ./
-RUN npm install
+RUN npm ci
 
 COPY src/GUI/ ./
 RUN npm run build
@@ -26,7 +26,12 @@ COPY --from=frontend-builder /app/frontend/dist ./src/GUI/dist
 
 ENV PYTHONPATH=/app/src
 
-RUN mkdir -p /workspace && chmod 777 /workspace
+RUN groupadd --gid 1000 textloom \
+    && useradd --uid 1000 --gid textloom --create-home textloom \
+    && mkdir -p /workspace \
+    && chown -R textloom:textloom /workspace /app
+
+USER textloom
 
 WORKDIR /app/src
 
