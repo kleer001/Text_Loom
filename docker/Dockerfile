@@ -8,7 +8,7 @@ RUN npm ci
 COPY src/GUI/ ./
 RUN npm run build
 
-FROM python:3.11-slim
+FROM python:3.14-slim
 
 WORKDIR /app
 
