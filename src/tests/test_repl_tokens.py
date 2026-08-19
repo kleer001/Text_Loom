@@ -11,6 +11,8 @@ Usage (direct):
 
 import sys
 import os
+from contextlib import contextmanager
+from unittest.mock import patch
 
 parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(parent_dir)
@@ -21,6 +23,13 @@ from repl.helpers import (
 )
 from core.token_manager import get_token_manager
 from core.models import TokenUsage
+
+
+@contextmanager
+def confirmed_reset_prompt():
+    """Answers the interactive reset_tokens() confirmation with 'y'."""
+    with patch('builtins.input', return_value='y'):
+        yield
 
 
 def print_section(title):
@@ -133,7 +142,8 @@ def test_reset_tokens():
     print(f"  Totals: {token_totals()}")
     print(f"  History entries: {len(token_history())}")
 
-    reset_tokens()
+    with confirmed_reset_prompt():
+        reset_tokens()
 
     print("\nAfter reset:")
     totals = token_totals()
@@ -151,7 +161,8 @@ def test_repl_workflow():
     print_section("Test: Complete REPL Workflow")
 
     clear()
-    reset_tokens()
+    with confirmed_reset_prompt():
+        reset_tokens()
 
     print("Creating test nodes with REPL helpers...")
 

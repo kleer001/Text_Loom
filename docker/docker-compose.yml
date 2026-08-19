@@ -7,8 +7,8 @@ services:
       dockerfile: docker/Dockerfile
     container_name: textloom
     ports:
-      - "8000:8000"
-      - "5173:5173"
+      - "127.0.0.1:8000:8000"
+      - "127.0.0.1:5173:5173"
     volumes:
       - textloom-workspace:/workspace
       - ../src/core/settings.cfg:/app/src/core/settings.cfg
